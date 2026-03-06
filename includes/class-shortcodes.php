@@ -470,12 +470,12 @@ trait FisHotel_Shortcodes {
                         if (!confirm('Remove ' + fishName + ' from your request? This cannot be undone.')) return;
                         btn.disabled = true;
                         btn.innerText = '…';
-                        fetch(fishotelAjax.ajaxurl, {
+                        fetch("<?php echo admin_url( 'admin-ajax.php' ); ?>", {
                             method: 'POST',
                             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                             body: new URLSearchParams({
                                 action: 'fishotel_remove_request_item',
-                                nonce: fishotelAjax.nonce,
+                                nonce: '<?php echo wp_create_nonce( 'fishotel_batch_ajax' ); ?>',
                                 request_id: requestId,
                                 batch_id: batchId
                             })

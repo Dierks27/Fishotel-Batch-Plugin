@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.3.2 - Previously requested items: × remove button with AJAX handler.
- * Version:           2.3.2
+ * Description:       Stable 2.3.3 - Fix fishotelAjax undefined; inline ajaxurl+nonce in removePrevItem.
+ * Version:           2.3.3
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.3.2' );
+define( 'FISHOTEL_VERSION', '2.3.3' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
