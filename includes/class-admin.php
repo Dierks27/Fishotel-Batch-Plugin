@@ -90,7 +90,12 @@ trait FisHotel_Admin {
                 $key = sanitize_key( $batch );
                 $title_key = sanitize_title( $batch );
                 if ( isset( $_POST['assign_' . $key] ) ) $new_assignments[$batch] = sanitize_text_field( $_POST['assign_' . $key] );
-                if ( isset( $_POST['status_' . $key] ) ) $new_statuses[$batch] = sanitize_text_field( $_POST['status_' . $key] );
+                if ( isset( $_POST['status_' . $key] ) ) {
+                $stage = sanitize_key( $_POST['status_' . $key] );
+                if ( array_key_exists( $stage, $this->get_valid_stages() ) ) {
+                    $new_statuses[ $batch ] = $stage;
+                }
+            }
                 if ( isset( $_POST['deposit_amount_' . $key] ) && (float) $_POST['deposit_amount_' . $key] > 0 ) {
                     $new_deposit_amounts[$title_key] = floatval( $_POST['deposit_amount_' . $key] );
                 }
@@ -104,15 +109,7 @@ trait FisHotel_Admin {
         }
 
         $pages = get_pages( [ 'sort_column' => 'post_title' ] );
-        $stage_options = [
-            'open_ordering' => '1. Open Ordering',
-            'arrived'       => '2. Orders Closed / Arrived',
-            'quarantine'    => '3. In Quarantine',
-            'verification'  => '4. Customer Verification',
-            'draft_pool'    => '5. Draft Pool (Round 1 & 2)',
-            'fulfillment'   => '6. Fulfillment / Drafting',
-            'completed'     => '7. Completed'
-        ];
+        $stage_options = $this->get_valid_stages();
         ?>
         <div class="wrap fishotel-admin">
             <h1>FisHotel Batch Manager</h1>
@@ -222,6 +219,16 @@ trait FisHotel_Admin {
                                         </button>
                                     </form>
                                 <?php endif; ?>
+                                <?php
+                                $del_nonce  = wp_create_nonce( 'fishotel_delete_batch_' . sanitize_key( $batch ) );
+                                $delete_url = admin_url( 'admin-post.php?action=fishotel_delete_batch&batch_name=' . rawurlencode( $batch ) . '&_wpnonce=' . $del_nonce );
+                                ?>
+                                <a href="<?php echo esc_url( $delete_url ); ?>"
+                                   class="button button-small"
+                                   style="background:#c0392b;color:#fff;border-color:#a93226;margin-left:4px;"
+                                   onclick="return confirm('Delete batch <?php echo esc_js( $batch ); ?>? This cannot be undone.')">
+                                    🗑 Delete
+                                </a>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -522,7 +529,18 @@ trait FisHotel_Admin {
 
         $total_fish = array_sum( array_column( $species, 'total' ) );
         $num_species = count( $species );
+        $export_url = wp_nonce_url(
+            admin_url( 'admin-post.php?action=fishotel_export_order_excel&batch=' . urlencode( $selected ) ),
+            'fishotel_export_excel'
+        );
         ?>
+
+        <p style="margin-bottom:16px;">
+            <a href="<?php echo esc_url( $export_url ); ?>"
+               style="display:inline-block;background:#27ae60;color:#fff;font-weight:700;padding:9px 22px;border-radius:6px;text-decoration:none;font-size:14px;border:1px solid #1e8449;">
+                📥 Export Order to Excel
+            </a>
+        </p>
 
         <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:20px;margin-bottom:16px;display:flex;gap:40px;flex-wrap:wrap;">
             <div><span style="color:#aaa;font-size:13px;">BATCH</span><br><strong style="color:#b5a165;font-size:1.2em;"><?php echo esc_html( $selected ); ?></strong></div>
@@ -1854,6 +1872,21 @@ trait FisHotel_Admin {
     }
 
     /**
+     * Canonical list of valid stage slugs and their display labels.
+     * Used as the whitelist for the batch-settings save handler and the dropdown.
+     */
+    private function get_valid_stages(): array {
+        return [
+            'open_ordering' => 'Open Ordering',
+            'arrived'       => 'Arrived',
+            'graduation'    => 'Graduation',
+            'verification'  => 'Verification',
+            'draft'         => 'Draft',
+            'invoicing'     => 'Invoicing',
+        ];
+    }
+
+    /**
      * Maps each stage to the action that advances it to the next stage.
      * To add a new stage transition, append an entry here — no other changes needed.
      */
@@ -1911,6 +1944,49 @@ trait FisHotel_Admin {
         exit;
     }
 
+    public function delete_batch() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
+        $batch_name = sanitize_text_field( wp_unslash( $_REQUEST['batch_name'] ?? '' ) );
+        if ( ! $batch_name ) wp_die( 'No batch specified.' );
+        if ( ! wp_verify_nonce( sanitize_key( $_REQUEST['_wpnonce'] ?? '' ), 'fishotel_delete_batch_' . sanitize_key( $batch_name ) ) ) {
+            wp_die( 'Security check failed.' );
+        }
+
+        // Remove from the batches list.
+        $batches_str   = get_option( 'fishotel_batches', '' );
+        $batches_array = array_values( array_filter( array_map( 'trim', explode( "\n", $batches_str ) ), fn( $b ) => $b !== $batch_name ) );
+        update_option( 'fishotel_batches', implode( "\n", $batches_array ) );
+
+        // Remove from all per-batch option arrays.
+        $statuses = get_option( 'fishotel_batch_statuses', [] );
+        unset( $statuses[ $batch_name ] );
+        update_option( 'fishotel_batch_statuses', $statuses );
+
+        $assignments = get_option( 'fishotel_batch_page_assignments', [] );
+        unset( $assignments[ $batch_name ] );
+        update_option( 'fishotel_batch_page_assignments', $assignments );
+
+        $deposit_amounts = get_option( 'fishotel_batch_deposit_amounts', [] );
+        unset( $deposit_amounts[ sanitize_title( $batch_name ) ] );
+        update_option( 'fishotel_batch_deposit_amounts', $deposit_amounts );
+
+        // Delete all fish_batch posts for this batch (NOT fish_requests or wallet data).
+        $batch_post_ids = get_posts( [
+            'post_type'   => 'fish_batch',
+            'numberposts' => -1,
+            'post_status' => 'any',
+            'fields'      => 'ids',
+            'meta_key'    => '_batch_name',
+            'meta_value'  => $batch_name,
+        ] );
+        foreach ( $batch_post_ids as $pid ) {
+            wp_delete_post( $pid, true );
+        }
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
+        exit;
+    }
+
     public function create_product_from_master() {
         if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'create_product_from_master' ) ) wp_die( 'Security check failed.' );
         $master_id = intval( $_GET['master_id'] );
@@ -1932,6 +2008,280 @@ trait FisHotel_Admin {
             exit;
         }
         wp_die( 'Failed to create product.' );
+    }
+
+    // =========================================================================
+    // Stage 2 Step 4 — Excel Order Export
+    // =========================================================================
+
+    public function export_order_excel() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Access denied.' );
+        }
+        if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_REQUEST['_wpnonce'] ), 'fishotel_export_excel' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+
+        $batch = isset( $_GET['batch'] ) ? sanitize_text_field( wp_unslash( $_GET['batch'] ) ) : '';
+        if ( ! $batch ) {
+            wp_die( 'No batch specified.' );
+        }
+
+        $requests = get_posts( [
+            'post_type'   => 'fish_request',
+            'numberposts' => -1,
+            'post_status' => 'any',
+            'meta_key'    => '_batch_name',
+            'meta_value'  => $batch,
+        ] );
+
+        // Aggregate by batch_id: separate customer qty vs padding qty.
+        $rows      = []; // batch_id => row array
+        $sci_cache = [];
+
+        foreach ( $requests as $req ) {
+            $is_admin = (bool) get_post_meta( $req->ID, '_is_admin_order', true );
+            $items    = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
+
+            foreach ( $items as $item ) {
+                $batch_id  = intval( $item['batch_id'] ?? 0 );
+                $fish_name = (string) ( $item['fish_name'] ?? 'Unknown' );
+                $qty       = intval( $item['qty'] ?? 1 );
+                $price     = floatval( $item['price'] ?? 0 );
+
+                if ( ! $batch_id ) continue;
+
+                if ( ! isset( $rows[ $batch_id ] ) ) {
+                    $item_code = (string) get_post_meta( $batch_id, '_item_code', true );
+
+                    if ( ! isset( $sci_cache[ $batch_id ] ) ) {
+                        $master_id             = get_post_meta( $batch_id, '_master_id', true );
+                        $sci_cache[ $batch_id ] = $master_id ? (string) get_post_meta( (int) $master_id, '_scientific_name', true ) : '';
+                    }
+
+                    $rows[ $batch_id ] = [
+                        'item_code' => $item_code,
+                        'fish_name' => $fish_name,
+                        'sci_name'  => $sci_cache[ $batch_id ],
+                        'price'     => $price,
+                        'cust_qty'  => 0,
+                        'pad_qty'   => 0,
+                    ];
+                }
+
+                if ( $is_admin ) {
+                    $rows[ $batch_id ]['pad_qty'] += $qty;
+                } else {
+                    $rows[ $batch_id ]['cust_qty'] += $qty;
+                }
+                if ( $rows[ $batch_id ]['price'] == 0 && $price > 0 ) {
+                    $rows[ $batch_id ]['price'] = $price;
+                }
+            }
+        }
+
+        // Sort alphabetically by common name.
+        uasort( $rows, fn( $a, $b ) => strcasecmp( $a['fish_name'], $b['fish_name'] ) );
+
+        $xlsx     = $this->build_order_xlsx( $batch, array_values( $rows ) );
+        $filename = 'order-' . sanitize_title( $batch ) . '-' . gmdate( 'Y-m-d' ) . '.xlsx';
+
+        // Send download headers — nothing must be echoed before this point.
+        header( 'Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' );
+        header( 'Content-Disposition: attachment; filename="' . rawurlencode( $filename ) . '"' );
+        header( 'Content-Length: ' . strlen( $xlsx ) );
+        header( 'Cache-Control: max-age=0' );
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo $xlsx;
+        exit;
+    }
+
+    /**
+     * Build a real .xlsx binary using ZipArchive + hand-crafted OOXML.
+     * No Composer/external dependencies — pure PHP.
+     *
+     * Columns: Item Code | Common Name | Scientific Name | Unit Price |
+     *          Customer Qty | Padding (Dierks) | TOTAL QTY (=E+F)
+     *
+     * @param string $batch_name Batch label used in the title row.
+     * @param array  $rows       Array of row data arrays (already sorted).
+     * @return string Binary XLSX content.
+     */
+    private function build_order_xlsx( string $batch_name, array $rows ): string {
+
+        // ---- Shared string table ----------------------------------------
+        $ss     = [];
+        $ss_map = [];
+        $add_ss = function ( string $val ) use ( &$ss, &$ss_map ): int {
+            if ( ! isset( $ss_map[ $val ] ) ) {
+                $ss_map[ $val ] = count( $ss );
+                $ss[]           = $val;
+            }
+            return $ss_map[ $val ];
+        };
+
+        $title_str = $batch_name . ' — ' . gmdate( 'F j, Y' );
+        $headers   = [ 'Item Code', 'Common Name', 'Scientific Name', 'Unit Price', 'Customer Qty', 'Padding (Dierks)', 'TOTAL QTY' ];
+
+        $add_ss( $title_str );
+        $add_ss( 'TOTALS' );
+        foreach ( $headers as $h ) $add_ss( $h );
+        foreach ( $rows as $row ) {
+            $add_ss( (string) $row['item_code'] );
+            $add_ss( (string) $row['fish_name'] );
+            $add_ss( (string) $row['sci_name'] );
+        }
+
+        // ---- Sheet data -------------------------------------------------
+        $data_start = 3;  // row 1 = title, row 2 = headers
+        $num_rows   = count( $rows );
+        $totals_row = $data_start + $num_rows;
+        $cols       = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G' ];
+        $sheet_rows = '';
+
+        // Row 1: merged title (A1:G1), style 2 (bold-large-centred)
+        $sheet_rows .= '<row r="1"><c r="A1" t="s" s="2"><v>' . $add_ss( $title_str ) . '</v></c></row>';
+
+        // Row 2: bold headers, style 1
+        $sheet_rows .= '<row r="2">';
+        foreach ( $headers as $hi => $h ) {
+            $sheet_rows .= '<c r="' . $cols[ $hi ] . '2" t="s" s="1"><v>' . $add_ss( $h ) . '</v></c>';
+        }
+        $sheet_rows .= '</row>';
+
+        // Data rows (style indices: 0=default, 3=currency)
+        foreach ( $rows as $ri => $row ) {
+            $r           = $ri + $data_start;
+            $sheet_rows .= '<row r="' . $r . '">'
+                . '<c r="A' . $r . '" t="s" s="0"><v>' . $add_ss( (string) $row['item_code'] ) . '</v></c>'
+                . '<c r="B' . $r . '" t="s" s="0"><v>' . $add_ss( (string) $row['fish_name'] ) . '</v></c>'
+                . '<c r="C' . $r . '" t="s" s="0"><v>' . $add_ss( (string) $row['sci_name'] ) . '</v></c>'
+                . '<c r="D' . $r . '" t="n" s="3"><v>' . esc_attr( (string) $row['price'] ) . '</v></c>'
+                . '<c r="E' . $r . '" t="n" s="0"><v>' . intval( $row['cust_qty'] ) . '</v></c>'
+                . '<c r="F' . $r . '" t="n" s="0"><v>' . intval( $row['pad_qty'] ) . '</v></c>'
+                . '<c r="G' . $r . '" t="n" s="0"><f>E' . $r . '+F' . $r . '</f></c>'
+                . '</row>';
+        }
+
+        // TOTALS row: style 1=bold for qty cols, 4=bold-currency for price
+        $dr = $data_start;
+        $lr = $totals_row - 1;
+        $sheet_rows .= '<row r="' . $totals_row . '">'
+            . '<c r="A' . $totals_row . '" t="s" s="1"><v>' . $add_ss( 'TOTALS' ) . '</v></c>'
+            . '<c r="D' . $totals_row . '" t="n" s="4"><f>SUM(D' . $dr . ':D' . $lr . ')</f></c>'
+            . '<c r="E' . $totals_row . '" t="n" s="1"><f>SUM(E' . $dr . ':E' . $lr . ')</f></c>'
+            . '<c r="F' . $totals_row . '" t="n" s="1"><f>SUM(F' . $dr . ':F' . $lr . ')</f></c>'
+            . '<c r="G' . $totals_row . '" t="n" s="1"><f>SUM(G' . $dr . ':G' . $lr . ')</f></c>'
+            . '</row>';
+
+        // ---- Build XML strings ------------------------------------------
+
+        $sheet_xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            . '<cols>'
+            . '<col min="1" max="1" width="14" customWidth="1"/>'
+            . '<col min="2" max="2" width="26" customWidth="1"/>'
+            . '<col min="3" max="3" width="30" customWidth="1"/>'
+            . '<col min="4" max="4" width="13" customWidth="1"/>'
+            . '<col min="5" max="5" width="15" customWidth="1"/>'
+            . '<col min="6" max="6" width="18" customWidth="1"/>'
+            . '<col min="7" max="7" width="15" customWidth="1"/>'
+            . '</cols>'
+            . '<sheetData>' . $sheet_rows . '</sheetData>'
+            . '<mergeCells count="1"><mergeCell ref="A1:G1"/></mergeCells>'
+            . '</worksheet>';
+
+        // Shared strings XML
+        $ss_items = '';
+        foreach ( $ss as $s ) {
+            $ss_items .= '<si><t xml:space="preserve">' . htmlspecialchars( $s, ENT_XML1, 'UTF-8' ) . '</t></si>';
+        }
+        $ss_xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+            . ' count="' . count( $ss ) . '" uniqueCount="' . count( $ss ) . '">'
+            . $ss_items . '</sst>';
+
+        // Styles XML
+        // Fonts: 0=default, 1=bold-11, 2=bold-13(title)
+        // Fills: 0=none (required), 1=gray125 (required)
+        // CellXfs: 0=default, 1=bold, 2=title(bold-13 centred), 3=currency, 4=bold-currency
+        $styles_xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            . '<numFmts count="1">'
+            . '<numFmt numFmtId="164" formatCode="&quot;$&quot;#,##0.00"/>'
+            . '</numFmts>'
+            . '<fonts count="3">'
+            . '<font><sz val="11"/><name val="Calibri"/></font>'
+            . '<font><b/><sz val="11"/><name val="Calibri"/></font>'
+            . '<font><b/><sz val="13"/><name val="Calibri"/></font>'
+            . '</fonts>'
+            . '<fills count="2">'
+            . '<fill><patternFill patternType="none"/></fill>'
+            . '<fill><patternFill patternType="gray125"/></fill>'
+            . '</fills>'
+            . '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+            . '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+            . '<cellXfs count="5">'
+            . '<xf numFmtId="0"   fontId="0" fillId="0" borderId="0" xfId="0"/>'
+            . '<xf numFmtId="0"   fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
+            . '<xf numFmtId="0"   fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center"/></xf>'
+            . '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+            . '<xf numFmtId="164" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>'
+            . '</cellXfs>'
+            . '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
+            . '</styleSheet>';
+
+        // Package-level XML
+        $content_types = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            . '<Default Extension="xml" ContentType="application/xml"/>'
+            . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+            . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            . '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>'
+            . '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+            . '</Types>';
+
+        $rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+            . '</Relationships>';
+
+        $workbook = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+            . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            . '<sheets><sheet name="Order" sheetId="1" r:id="rId1"/></sheets>'
+            . '</workbook>';
+
+        $workbook_rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+            . '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>'
+            . '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+            . '</Relationships>';
+
+        // ---- Assemble ZIP -----------------------------------------------
+        $tmp = wp_tempnam( 'fishotel_xlsx_' );
+        $zip = new ZipArchive();
+        if ( $zip->open( $tmp, ZipArchive::OVERWRITE ) !== true ) {
+            wp_delete_file( $tmp );
+            wp_die( 'Could not create XLSX: ZipArchive failed to open temp file.' );
+        }
+
+        $zip->addFromString( '[Content_Types].xml',          $content_types );
+        $zip->addFromString( '_rels/.rels',                  $rels );
+        $zip->addFromString( 'xl/workbook.xml',              $workbook );
+        $zip->addFromString( 'xl/_rels/workbook.xml.rels',   $workbook_rels );
+        $zip->addFromString( 'xl/styles.xml',                $styles_xml );
+        $zip->addFromString( 'xl/sharedStrings.xml',         $ss_xml );
+        $zip->addFromString( 'xl/worksheets/sheet1.xml',     $sheet_xml );
+        $zip->close();
+
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+        $data = file_get_contents( $tmp );
+        wp_delete_file( $tmp );
+
+        return $data ?: '';
     }
 
 }

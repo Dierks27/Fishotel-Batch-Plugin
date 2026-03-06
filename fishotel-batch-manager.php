@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.2.8 - Delete batch, fix stage save whitelist.
- * Version:           2.2.8
+ * Description:       Stable 2.2.9 - Fix push script to include includes/ dir.
+ * Version:           2.2.9
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.2.8' );
+define( 'FISHOTEL_VERSION', '2.2.9' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
