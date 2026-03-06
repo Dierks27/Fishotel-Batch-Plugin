@@ -114,4 +114,4 @@ class FisHotel_Batch_Manager {
 }
 
 new FisHotel_Batch_Manager();
-new FisHotel_GitHub_Updater();
+new FisHotel_GitHub_Updater( __FILE__ );
