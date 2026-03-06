@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.1.8 - Added self-hosted GitHub auto-updater.
- * Version:           2.1.8
+ * Description:       Stable 2.1.9 - Added Import Master Prices CSV tool.
+ * Version:           2.1.9
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -19,7 +19,8 @@ class FisHotel_Batch_Manager {
         add_action( 'init', [$this, 'init'] );
         add_action( 'admin_menu', [$this, 'add_admin_menu'] );
         add_action( 'admin_init', [$this, 'register_settings'] );
-        add_action( 'admin_post_fishotel_import_csv', [$this, 'handle_csv_import'] );
+        add_action( 'admin_post_fishotel_import_csv',    [$this, 'handle_csv_import'] );
+        add_action( 'admin_post_fishotel_import_prices', [$this, 'handle_price_import'] );
         add_action( 'admin_post_fishotel_process_mapping', [$this, 'process_mapping'] );
         add_action( 'admin_post_fishotel_create_product_from_master', [$this, 'create_product_from_master'] );
         add_action( 'admin_post_fishotel_delete_batch_item', [$this, 'delete_batch_item'] );
@@ -1089,6 +1090,25 @@ class FisHotel_Batch_Manager {
         if ( isset( $_GET['updated'] ) ) echo '<div class="notice notice-success is-dismissible"><p>✅ All settings saved successfully!</p></div>';
         if ( isset( $_GET['error'] ) ) echo '<div class="notice notice-error is-dismissible"><p>❌ Invalid parameters. Please try again.</p></div>';
 
+        $price_import_result = get_transient( 'fishotel_price_import_result_' . get_current_user_id() );
+        if ( $price_import_result ) {
+            delete_transient( 'fishotel_price_import_result_' . get_current_user_id() );
+            $updated  = intval( $price_import_result['updated'] );
+            $notfound = $price_import_result['not_found'];
+            echo '<div class="notice notice-info is-dismissible" style="padding:16px 20px;">';
+            echo '<p style="font-size:15px;margin:0 0 6px;"><strong>Import Master Prices — Results</strong></p>';
+            echo '<p style="margin:4px 0;">✅ <strong>' . $updated . '</strong> fish price' . ( $updated !== 1 ? 's' : '' ) . ' updated</p>';
+            echo '<p style="margin:4px 0;">❌ <strong>' . count( $notfound ) . '</strong> scientific name' . ( count( $notfound ) !== 1 ? 's' : '' ) . ' not found in Master Library</p>';
+            if ( ! empty( $notfound ) ) {
+                echo '<ul style="margin:10px 0 0 20px;color:#c00;">';
+                foreach ( $notfound as $name ) {
+                    echo '<li>' . esc_html( $name ) . '</li>';
+                }
+                echo '</ul>';
+            }
+            echo '</div>';
+        }
+
         $batches_str = get_option( 'fishotel_batches', '' );
         $batches_array = array_filter( array_map( 'trim', explode( "\n", $batches_str ) ) );
         $current = get_option( 'fishotel_current_batch', '' );
@@ -1171,6 +1191,20 @@ class FisHotel_Batch_Manager {
                         </form>
                     </div>
                 </div>
+            </div>
+
+            <!-- ===== ZONE 1b: Import Master Prices ===== -->
+            <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;margin-top:16px;">
+                <form method="post" enctype="multipart/form-data" action="<?php echo admin_url( 'admin-post.php' ); ?>">
+                    <?php wp_nonce_field( 'fishotel_import_prices_nonce' ); ?>
+                    <input type="hidden" name="action" value="fishotel_import_prices">
+                    <label style="display:block;font-weight:700;color:#fff;margin-bottom:10px;">💲 Import Master Prices</label>
+                    <p style="color:#aaa;margin:0 0 12px;font-size:13px;">CSV must have columns: <code style="background:#333;padding:2px 6px;border-radius:3px;">SCIENTIFIC NAME</code> and <code style="background:#333;padding:2px 6px;border-radius:3px;">PRICE</code>. Updates <code style="background:#333;padding:2px 6px;border-radius:3px;">_selling_price</code> on matching fish_master posts.</p>
+                    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+                        <input type="file" name="prices_csv" accept=".csv" style="color:#ddd;">
+                        <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-size:14px;">Upload &amp; Apply Prices</button>
+                    </div>
+                </form>
             </div>
 
             <!-- ===== ZONE 2: Batches Table + Save ===== -->
@@ -2311,6 +2345,87 @@ class FisHotel_Batch_Manager {
         function deselectAll() { document.querySelectorAll('input[name="selected[]"]').forEach(cb => cb.checked = false); }
         </script>
         <?php
+    }
+
+    public function handle_price_import() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_import_prices_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+        if ( ! isset( $_FILES['prices_csv'] ) || $_FILES['prices_csv']['error'] !== UPLOAD_ERR_OK ) {
+            wp_die( 'No file uploaded or upload error.' );
+        }
+
+        $file = $_FILES['prices_csv'];
+        if ( strtolower( pathinfo( $file['name'], PATHINFO_EXTENSION ) ) !== 'csv' ) {
+            wp_die( 'Please upload a .csv file.' );
+        }
+
+        $rows = [];
+        if ( ( $handle = fopen( $file['tmp_name'], 'r' ) ) !== false ) {
+            while ( ( $data = fgetcsv( $handle, 0, ',' ) ) !== false ) {
+                $rows[] = array_map( 'trim', $data );
+            }
+            fclose( $handle );
+        }
+
+        if ( empty( $rows ) ) {
+            wp_die( 'CSV file is empty.' );
+        }
+
+        // Detect header row and column indices.
+        $header    = array_map( 'strtoupper', $rows[0] );
+        $sci_col   = array_search( 'SCIENTIFIC NAME', $header, true );
+        $price_col = array_search( 'PRICE', $header, true );
+
+        if ( $sci_col === false || $price_col === false ) {
+            wp_die( 'CSV must contain "SCIENTIFIC NAME" and "PRICE" column headers.' );
+        }
+
+        // Pre-load all fish_master scientific names (lowercased) → post ID map.
+        $masters = get_posts( [
+            'post_type'      => 'fish_master',
+            'posts_per_page' => -1,
+            'post_status'    => 'any',
+            'fields'         => 'ids',
+        ] );
+
+        $sci_to_id = [];
+        foreach ( $masters as $id ) {
+            $sci = get_post_meta( $id, '_scientific_name', true );
+            if ( $sci !== '' && $sci !== false ) {
+                $sci_to_id[ strtolower( trim( $sci ) ) ] = $id;
+            }
+        }
+
+        $updated   = 0;
+        $not_found = [];
+
+        foreach ( array_slice( $rows, 1 ) as $row ) {
+            $sci_name = isset( $row[ $sci_col ] ) ? trim( $row[ $sci_col ] ) : '';
+            $price    = isset( $row[ $price_col ] ) ? $row[ $price_col ] : '';
+
+            if ( $sci_name === '' ) {
+                continue;
+            }
+
+            $key = strtolower( $sci_name );
+
+            if ( isset( $sci_to_id[ $key ] ) ) {
+                update_post_meta( $sci_to_id[ $key ], '_selling_price', floatval( $price ) );
+                $updated++;
+            } else {
+                $not_found[] = $sci_name;
+            }
+        }
+
+        set_transient(
+            'fishotel_price_import_result_' . get_current_user_id(),
+            [ 'updated' => $updated, 'not_found' => $not_found ],
+            60
+        );
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings' ) );
+        exit;
     }
 
     public function process_mapping() {
