@@ -205,12 +205,20 @@ trait FisHotel_Admin {
                                 <?php else : ?>
                                     <span style="color:#555;">—</span>
                                 <?php endif; ?>
-                                <?php if ( $current_status === 'open_ordering' ) : ?>
+                                <?php
+                                $stage_actions = $this->get_stage_actions();
+                                if ( isset( $stage_actions[ $current_status ] ) ) :
+                                    $sa = $stage_actions[ $current_status ];
+                                ?>
                                     <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" style="display:inline;margin-left:4px;">
-                                        <?php wp_nonce_field( 'fishotel_close_ordering_nonce' ); ?>
-                                        <input type="hidden" name="action" value="fishotel_close_ordering">
+                                        <?php wp_nonce_field( 'fishotel_advance_stage_nonce' ); ?>
+                                        <input type="hidden" name="action" value="fishotel_advance_stage">
                                         <input type="hidden" name="batch_name" value="<?php echo esc_attr( $batch ); ?>">
-                                        <button type="submit" class="button button-small" style="background:#c0392b;color:#fff;border-color:#a93226;" onclick="return confirm('Close ordering for \'<?php echo esc_js( $batch ); ?>\'? This immediately sets the stage to Arrived.');">🔒 Close Ordering</button>
+                                        <input type="hidden" name="next_stage" value="<?php echo esc_attr( $sa['next_stage'] ); ?>">
+                                        <button type="submit" class="button button-small" style="<?php echo esc_attr( $sa['style'] ); ?>"
+                                            onclick="return confirm('<?php echo esc_js( sprintf( $sa['confirm'], $batch ) ); ?>')">
+                                            <?php echo esc_html( $sa['label'] ); ?>
+                                        </button>
                                     </form>
                                 <?php endif; ?>
                             </td>
@@ -1529,16 +1537,44 @@ trait FisHotel_Admin {
         }
     }
 
-    public function close_ordering_handler() {
-        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_close_ordering_nonce' ) ) {
+    /**
+     * Maps each stage to the action that advances it to the next stage.
+     * To add a new stage transition, append an entry here — no other changes needed.
+     */
+    private function get_stage_actions() {
+        return [
+            'open_ordering' => [
+                'next_stage' => 'arrived',
+                'label'      => '🔒 Close Ordering',
+                'style'      => 'background:#c0392b;color:#fff;border-color:#a93226;',
+                'confirm'    => "Close ordering for '%s'? This immediately sets the stage to Arrived.",
+            ],
+            // Future transitions — uncomment and expand as stages are built:
+            // 'arrived' => [
+            //     'next_stage' => 'next_stage_key',
+            //     'label'      => '🚀 Advance Stage',
+            //     'style'      => 'background:#2980b9;color:#fff;border-color:#1a6a9a;',
+            //     'confirm'    => "Advance '%s' to the next stage?",
+            // ],
+        ];
+    }
+
+    public function advance_stage_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_advance_stage_nonce' ) ) {
             wp_die( 'Security check failed.' );
         }
         $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
-        if ( ! $batch_name ) {
-            wp_die( 'No batch specified.' );
+        $next_stage = sanitize_key( $_POST['next_stage'] ?? '' );
+        if ( ! $batch_name || ! $next_stage ) {
+            wp_die( 'Invalid parameters.' );
+        }
+        // Validate next_stage is a whitelisted transition target.
+        $valid_next = array_column( $this->get_stage_actions(), 'next_stage' );
+        if ( ! in_array( $next_stage, $valid_next, true ) ) {
+            wp_die( 'Invalid stage transition.' );
         }
         $statuses = get_option( 'fishotel_batch_statuses', [] );
-        $statuses[ $batch_name ] = 'arrived';
+        $statuses[ $batch_name ] = $next_stage;
         update_option( 'fishotel_batch_statuses', $statuses );
         wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
         exit;
