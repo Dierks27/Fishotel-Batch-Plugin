@@ -28,6 +28,7 @@ trait FisHotel_Admin {
         add_submenu_page( 'fishotel-batch-settings', 'Master Fish Library', 'Master Fish Library', 'manage_options', 'edit.php?post_type=fish_master' );
         add_submenu_page( 'fishotel-batch-settings', 'Batch Requests', 'Batch Requests', 'manage_options', 'fishotel-batch-orders', [$this, 'batch_orders_html'] );
         add_submenu_page( 'fishotel-batch-settings', 'Customer Wallets', 'Customer Wallets', 'manage_options', 'fishotel-wallets', [$this, 'wallets_html'] );
+        add_submenu_page( 'fishotel-batch-settings', 'Order Summary', 'Order Summary', 'manage_options', 'fishotel-order-summary', [$this, 'order_summary_html'] );
         add_submenu_page( 'fishotel-batch-settings', 'Sync Quarantined Fish', 'Sync Quarantined Fish', 'manage_options', 'fishotel-sync', [$this, 'sync_page_html'] );
     }
 
@@ -443,6 +444,179 @@ trait FisHotel_Admin {
         }
         </script>
         <?php
+    }
+
+    public function order_summary_html() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
+
+        $batches_str   = get_option( 'fishotel_batches', '' );
+        $batches_array = array_values( array_filter( array_map( 'trim', explode( "\n", $batches_str ) ) ) );
+        $selected      = isset( $_GET['batch'] ) ? sanitize_text_field( wp_unslash( $_GET['batch'] ) ) : ( $batches_array[0] ?? '' );
+
+        echo '<div class="wrap">';
+        echo '<h1>📋 Order Summary</h1>';
+        echo '<p style="color:#aaa;">Compiled view of all fish requested for a batch — use this to build your importer order.</p>';
+
+        // Batch selector
+        echo '<form method="get" style="margin-bottom:20px;">';
+        echo '<input type="hidden" name="page" value="fishotel-order-summary">';
+        echo '<label style="font-weight:700;margin-right:10px;">Batch:</label>';
+        echo '<select name="batch" onchange="this.form.submit()" style="min-width:220px;padding:6px 10px;border-radius:4px;">';
+        foreach ( $batches_array as $b ) {
+            echo '<option value="' . esc_attr( $b ) . '"' . selected( $selected, $b, false ) . '>' . esc_html( $b ) . '</option>';
+        }
+        echo '</select>';
+        echo '</form>';
+
+        if ( empty( $selected ) ) {
+            echo '<p>No batches found. Add one in the <a href="' . admin_url( 'admin.php?page=fishotel-batch-settings' ) . '">Batch Settings</a>.</p></div>';
+            return;
+        }
+
+        // Load all requests for this batch
+        $requests = get_posts( [
+            'post_type'      => 'fish_request',
+            'numberposts'    => -1,
+            'post_status'    => 'any',
+            'meta_key'       => '_batch_name',
+            'meta_value'     => $selected,
+        ] );
+
+        if ( empty( $requests ) ) {
+            echo '<p style="color:#aaa;">No requests found for <strong>' . esc_html( $selected ) . '</strong>.</p></div>';
+            return;
+        }
+
+        // Aggregate: fish_name → [ sci_name, total_qty, customers[ display_name => qty ] ]
+        $species   = [];
+        $sci_cache = []; // batch_id → scientific_name
+
+        foreach ( $requests as $req ) {
+            $customer_id   = (int) get_post_meta( $req->ID, '_customer_id', true );
+            $customer_data = get_userdata( $customer_id );
+            $customer_name = $customer_data ? ( $customer_data->display_name ?: $customer_data->user_login ) : 'User #' . $customer_id;
+
+            $items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
+            foreach ( $items as $item ) {
+                $fish_name = $item['fish_name'] ?? 'Unknown';
+                $qty       = intval( $item['qty'] ?? 1 );
+                $batch_id  = intval( $item['batch_id'] ?? 0 );
+
+                // Resolve scientific name (cached per batch_id)
+                if ( $batch_id && ! isset( $sci_cache[ $batch_id ] ) ) {
+                    $master_id             = get_post_meta( $batch_id, '_master_id', true );
+                    $sci_cache[ $batch_id ] = $master_id ? (string) get_post_meta( $master_id, '_scientific_name', true ) : '';
+                }
+                $sci_name = $batch_id ? ( $sci_cache[ $batch_id ] ?? '' ) : '';
+
+                if ( ! isset( $species[ $fish_name ] ) ) {
+                    $species[ $fish_name ] = [ 'sci' => $sci_name, 'total' => 0, 'customers' => [] ];
+                }
+                $species[ $fish_name ]['total'] += $qty;
+                $species[ $fish_name ]['customers'][ $customer_name ] = ( $species[ $fish_name ]['customers'][ $customer_name ] ?? 0 ) + $qty;
+            }
+        }
+
+        // Default sort: scientific name A-Z
+        uasort( $species, fn( $a, $b ) => strcasecmp( $a['sci'] ?: $a['fish_name'] ?? '', $b['sci'] ?: '' ) );
+
+        $total_fish = array_sum( array_column( $species, 'total' ) );
+        $num_species = count( $species );
+        ?>
+
+        <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:20px;margin-bottom:16px;display:flex;gap:40px;flex-wrap:wrap;">
+            <div><span style="color:#aaa;font-size:13px;">BATCH</span><br><strong style="color:#b5a165;font-size:1.2em;"><?php echo esc_html( $selected ); ?></strong></div>
+            <div><span style="color:#aaa;font-size:13px;">SPECIES</span><br><strong style="color:#fff;font-size:1.2em;"><?php echo $num_species; ?></strong></div>
+            <div><span style="color:#aaa;font-size:13px;">TOTAL FISH QTY</span><br><strong style="color:#e67e22;font-size:1.2em;"><?php echo $total_fish; ?></strong></div>
+            <div><span style="color:#aaa;font-size:13px;">REQUESTS</span><br><strong style="color:#fff;font-size:1.2em;"><?php echo count( $requests ); ?></strong></div>
+        </div>
+
+        <style>
+            #fishotel-summary-table { width:100%; border-collapse:collapse; background:#1e1e1e; color:#fff; font-size:0.93em; }
+            #fishotel-summary-table thead { position:sticky; top:32px; z-index:5; background:#111; }
+            #fishotel-summary-table th { padding:10px 14px; text-align:left; color:#b5a165; border-bottom:2px solid #444; cursor:pointer; user-select:none; white-space:nowrap; }
+            #fishotel-summary-table th:hover { background:#1a1a1a; }
+            #fishotel-summary-table th.sort-asc::after  { content:" ▲"; font-size:0.75em; }
+            #fishotel-summary-table th.sort-desc::after { content:" ▼"; font-size:0.75em; }
+            #fishotel-summary-table td { padding:9px 14px; border-bottom:1px solid #2a2a2a; vertical-align:top; }
+            #fishotel-summary-table tr:hover td { background:#252525; }
+            #fishotel-summary-table .sci { font-style:italic; color:#aaa; }
+            #fishotel-summary-table .qty-badge { background:#e67e22; color:#000; font-weight:700; border-radius:12px; padding:2px 10px; display:inline-block; }
+            #fishotel-summary-table .customer-list { color:#ccc; font-size:0.9em; }
+            #fishotel-summary-table .customer-list span { display:inline-block; background:#2a2a2a; border:1px solid #444; border-radius:4px; padding:2px 7px; margin:2px 3px 2px 0; }
+        </style>
+
+        <div style="overflow-x:auto;border-radius:8px;border:1px solid #444;">
+            <table id="fishotel-summary-table">
+                <thead>
+                    <tr>
+                        <th data-col="0">Common Name</th>
+                        <th data-col="1">Scientific Name</th>
+                        <th data-col="2" style="text-align:center;">Total Qty</th>
+                        <th data-col="3">Who Wants How Many</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ( $species as $fish_name => $data ) :
+                        $breakdown = [];
+                        arsort( $data['customers'] );
+                        foreach ( $data['customers'] as $name => $qty ) {
+                            $breakdown[] = esc_html( $name ) . ' (' . $qty . ')';
+                        }
+                    ?>
+                    <tr>
+                        <td><strong><?php echo esc_html( $fish_name ); ?></strong></td>
+                        <td class="sci"><?php echo esc_html( $data['sci'] ); ?></td>
+                        <td style="text-align:center;"><span class="qty-badge"><?php echo intval( $data['total'] ); ?></span></td>
+                        <td class="customer-list"><?php
+                            foreach ( $data['customers'] as $cname => $cqty ) {
+                                echo '<span>' . esc_html( $cname ) . ' <strong style="color:#e67e22;">×' . intval( $cqty ) . '</strong></span>';
+                            }
+                        ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <script>
+        (function() {
+            var table  = document.getElementById('fishotel-summary-table');
+            var tbody  = table.querySelector('tbody');
+            var sortCol = 1, sortDir = 1; // default: sci name asc
+
+            function getVal(row, col) {
+                var cell = row.cells[col];
+                if ( col === 2 ) return parseInt(cell.textContent.trim()) || 0;
+                return cell.textContent.trim().toLowerCase();
+            }
+
+            function sortTable(col) {
+                if ( sortCol === col ) { sortDir *= -1; } else { sortCol = col; sortDir = 1; }
+                var rows = Array.from(tbody.querySelectorAll('tr'));
+                rows.sort(function(a, b) {
+                    var av = getVal(a, sortCol), bv = getVal(b, sortCol);
+                    if ( typeof av === 'number' ) return sortDir * (av - bv);
+                    return sortDir * av.localeCompare(bv);
+                });
+                rows.forEach(function(r) { tbody.appendChild(r); });
+                table.querySelectorAll('th').forEach(function(th, i) {
+                    th.classList.remove('sort-asc','sort-desc');
+                    if ( i === sortCol ) th.classList.add( sortDir === 1 ? 'sort-asc' : 'sort-desc' );
+                });
+            }
+
+            table.querySelectorAll('th[data-col]').forEach(function(th) {
+                th.addEventListener('click', function() { sortTable(parseInt(this.dataset.col)); });
+            });
+
+            // Apply default sort indicator
+            table.querySelectorAll('th')[1].classList.add('sort-asc');
+        })();
+        </script>
+        <?php
+
+        echo '</div>';
     }
 
     public function admin_adjust_wallet() {
