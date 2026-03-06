@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class FisHotel_GitHub_Updater {
 
-    private $plugin_slug = 'fishotel-batch-manager/fishotel-batch-manager.php';
+    private $plugin_slug;
     private $plugin_file;
     private $github_raw_url = 'https://raw.githubusercontent.com/Dierks27/Fishotel-Batch-Plugin/main/fishotel-batch-manager.php';
     private $github_zip_url = 'https://github.com/Dierks27/Fishotel-Batch-Plugin/archive/refs/heads/main.zip';
@@ -19,7 +19,8 @@ class FisHotel_GitHub_Updater {
     private $cache_hours    = 12;
 
     public function __construct() {
-        $this->plugin_file = WP_PLUGIN_DIR . '/fishotel-batch-manager/fishotel-batch-manager.php';
+        $this->plugin_file = defined( 'FISHOTEL_PLUGIN_FILE' ) ? FISHOTEL_PLUGIN_FILE : __FILE__;
+        $this->plugin_slug = plugin_basename( $this->plugin_file );
         add_filter( 'pre_set_site_transient_update_plugins', [ $this, 'check_for_update' ] );
         add_filter( 'plugins_api',                           [ $this, 'plugin_info' ], 10, 3 );
         add_filter( 'upgrader_source_selection',             [ $this, 'fix_folder_name' ], 10, 4 );

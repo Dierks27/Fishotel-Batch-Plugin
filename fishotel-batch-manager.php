@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 define( 'FISHOTEL_VERSION', '2.2.3' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-helpers.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ajax.php';
