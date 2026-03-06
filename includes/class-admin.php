@@ -151,6 +151,28 @@ trait FisHotel_Admin {
             </div>
 
             <!-- ===== ZONE 2: Batches Table + Save ===== -->
+            <style>
+            .fh-icon-btn {
+                position:relative; display:inline-flex; align-items:center; justify-content:center;
+                width:32px; height:32px; border-radius:5px; border:1px solid #555;
+                background:#2a2a2a; color:#b5a165; font-size:17px; cursor:pointer;
+                text-decoration:none; line-height:1; padding:0; margin:0 2px;
+                box-sizing:border-box; vertical-align:middle;
+                transition:background .15s,border-color .15s;
+            }
+            .fh-icon-btn:hover { background:#3a3a3a; border-color:#888; color:#d4bc7e; }
+            .fh-icon-btn.fh-red { background:#7b1a10; border-color:#c0392b; color:#fff; }
+            .fh-icon-btn.fh-red:hover { background:#c0392b; border-color:#e74c3c; }
+            .fh-icon-btn::after {
+                content:attr(data-tip);
+                position:absolute; bottom:calc(100% + 7px); left:50%; transform:translateX(-50%);
+                background:#1a1a1a; color:#b5a165; border:1px solid #555; border-radius:4px;
+                padding:3px 9px; font-size:11px; white-space:nowrap;
+                pointer-events:none; opacity:0; transition:opacity .12s; z-index:200;
+            }
+            .fh-icon-btn:hover::after { opacity:1; }
+            </style>
+            <?php $stage_actions = $this->get_stage_actions(); ?>
             <form method="post" action="" id="fishotel-save-all-form" style="margin-top:24px;">
                 <?php wp_nonce_field( 'fishotel_save_all_nonce' ); ?>
                 <input type="hidden" name="fishotel_save_all" value="1">
@@ -162,7 +184,7 @@ trait FisHotel_Admin {
                             <th>Current Stage</th>
                             <th>Public Page</th>
                             <th style="width:140px;">Deposit Amount</th>
-                            <th style="width:180px;">Actions</th>
+                            <th style="width:120px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -196,39 +218,27 @@ trait FisHotel_Admin {
                                 <input type="number" step="0.01" min="0" name="deposit_amount_<?php echo $key; ?>" value="<?php echo esc_attr( $batch_deposit ); ?>" placeholder="e.g. 25.00" style="width:90px;">
                                 <small style="display:block;color:#aaa;margin-top:3px;">USD (required)</small>
                             </td>
-                            <td style="white-space:nowrap;">
+                            <td style="white-space:nowrap;padding:6px 10px;">
                                 <?php if ( $view_url ) : ?>
-                                    <a href="<?php echo esc_url( $view_url ); ?>" target="_blank" class="button button-small">View</a>
-                                    <button type="button" class="button button-small" onclick="copyShareLink('<?php echo esc_js( $embed_url ); ?>')">Copy Link</button>
-                                <?php else : ?>
-                                    <span style="color:#555;">—</span>
+                                    <a href="<?php echo esc_url( $view_url ); ?>" target="_blank"
+                                       class="fh-icon-btn" data-tip="View">👁</a>
+                                    <button type="button" class="fh-icon-btn" data-tip="Copy Link"
+                                            onclick="fhCopyLink(this,'<?php echo esc_js( $embed_url ); ?>')">📋</button>
                                 <?php endif; ?>
-                                <?php
-                                $stage_actions = $this->get_stage_actions();
-                                if ( isset( $stage_actions[ $current_status ] ) ) :
+                                <?php if ( isset( $stage_actions[ $current_status ] ) ) :
                                     $sa = $stage_actions[ $current_status ];
                                 ?>
-                                    <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" style="display:inline;margin-left:4px;">
-                                        <?php wp_nonce_field( 'fishotel_advance_stage_nonce' ); ?>
-                                        <input type="hidden" name="action" value="fishotel_advance_stage">
-                                        <input type="hidden" name="batch_name" value="<?php echo esc_attr( $batch ); ?>">
-                                        <input type="hidden" name="next_stage" value="<?php echo esc_attr( $sa['next_stage'] ); ?>">
-                                        <button type="submit" class="button button-small" style="<?php echo esc_attr( $sa['style'] ); ?>"
-                                            onclick="return confirm('<?php echo esc_js( sprintf( $sa['confirm'], $batch ) ); ?>')">
-                                            <?php echo esc_html( $sa['label'] ); ?>
-                                        </button>
-                                    </form>
+                                    <button type="button" class="fh-icon-btn fh-red"
+                                            data-tip="<?php echo esc_attr( $sa['label'] ); ?>"
+                                            onclick="if(confirm('<?php echo esc_js( sprintf( $sa['confirm'], $batch ) ); ?>')) document.getElementById('fh-adv-<?php echo $key; ?>').submit()">🔒</button>
                                 <?php endif; ?>
                                 <?php
                                 $del_nonce  = wp_create_nonce( 'fishotel_delete_batch_' . sanitize_key( $batch ) );
                                 $delete_url = admin_url( 'admin-post.php?action=fishotel_delete_batch&batch_name=' . rawurlencode( $batch ) . '&_wpnonce=' . $del_nonce );
                                 ?>
                                 <a href="<?php echo esc_url( $delete_url ); ?>"
-                                   class="button button-small"
-                                   style="background:#c0392b;color:#fff;border-color:#a93226;margin-left:4px;"
-                                   onclick="return confirm('Delete batch <?php echo esc_js( $batch ); ?>? This cannot be undone.')">
-                                    🗑 Delete
-                                </a>
+                                   class="fh-icon-btn fh-red" data-tip="Delete"
+                                   onclick="return confirm('Delete batch <?php echo esc_js( $batch ); ?>? This cannot be undone.')">🗑</a>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -275,10 +285,36 @@ trait FisHotel_Admin {
                 </div>
 
             </form>
+
+            <?php foreach ( $batches_array as $batch ) :
+                $key    = sanitize_key( $batch );
+                $cur_st = $statuses[ $batch ] ?? 'open_ordering';
+                if ( ! isset( $stage_actions[ $cur_st ] ) ) continue;
+                $sa = $stage_actions[ $cur_st ];
+            ?>
+            <form id="fh-adv-<?php echo $key; ?>" method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" style="display:none;">
+                <?php wp_nonce_field( 'fishotel_advance_stage_nonce' ); ?>
+                <input type="hidden" name="action" value="fishotel_advance_stage">
+                <input type="hidden" name="batch_name" value="<?php echo esc_attr( $batch ); ?>">
+                <input type="hidden" name="next_stage" value="<?php echo esc_attr( $sa['next_stage'] ); ?>">
+            </form>
+            <?php endforeach; ?>
+
         </div>
 
         <script>
-        function copyShareLink(url) { navigator.clipboard.writeText(url).then(() => alert('Clean Share Link copied!')); }
+        function fhCopyLink(btn, url) {
+            navigator.clipboard.writeText(url).then(function() {
+                var orig = btn.getAttribute('data-tip');
+                var origText = btn.textContent;
+                btn.setAttribute('data-tip', '✅ Copied!');
+                btn.textContent = '✅';
+                setTimeout(function() {
+                    btn.setAttribute('data-tip', orig);
+                    btn.textContent = origText;
+                }, 2000);
+            });
+        }
         document.getElementById('fishotel-advanced-toggle').addEventListener('click', function() {
             var body = document.getElementById('fishotel-advanced-body');
             if (body.style.display === 'none') {

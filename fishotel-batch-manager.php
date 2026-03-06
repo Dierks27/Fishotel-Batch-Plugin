@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.2.9 - Fix push script to include includes/ dir.
- * Version:           2.2.9
+ * Description:       Stable 2.3.0 - Icon-only action buttons in batch table.
+ * Version:           2.3.0
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.2.9' );
+define( 'FISHOTEL_VERSION', '2.3.0' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
