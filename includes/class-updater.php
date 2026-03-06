@@ -23,6 +23,7 @@ class FisHotel_GitHub_Updater {
         add_filter( 'pre_set_site_transient_update_plugins', [ $this, 'check_for_update' ] );
         add_filter( 'plugins_api',                           [ $this, 'plugin_info' ], 10, 3 );
         add_filter( 'upgrader_source_selection',             [ $this, 'fix_folder_name' ], 10, 4 );
+        add_action( 'admin_notices',                         [ $this, 'show_debug_notice' ] );
     }
 
     /**
@@ -111,6 +112,35 @@ class FisHotel_GitHub_Updater {
                 'description' => 'Self-hosted plugin. Updates delivered via GitHub.',
             ],
         ];
+    }
+
+    /**
+     * Temporary diagnostic notice — shows installed version, GitHub version,
+     * and whether the update was injected into the WP transient.
+     * Remove once the updater is confirmed working.
+     */
+    public function show_debug_notice() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        $installed = defined( 'FISHOTEL_VERSION' ) ? FISHOTEL_VERSION : 'unknown';
+        $remote    = $this->get_remote_version();
+        $transient = get_site_transient( 'update_plugins' );
+        $injected  = isset( $transient->response[ $this->plugin_slug ] );
+        $checked   = $transient->checked[ $this->plugin_slug ] ?? 'not in checked list';
+
+        echo '<div class="notice notice-info is-dismissible" style="font-family:monospace;">';
+        echo '<p><strong>FisHotel Updater Debug</strong></p>';
+        echo '<p>Installed (FISHOTEL_VERSION): <code>' . esc_html( $installed ) . '</code></p>';
+        echo '<p>Installed (transient->checked): <code>' . esc_html( $checked ) . '</code></p>';
+        echo '<p>GitHub fetched version: <code>' . esc_html( $remote ?: 'FETCH FAILED / null' ) . '</code></p>';
+        echo '<p>Plugin slug: <code>' . esc_html( $this->plugin_slug ) . '</code></p>';
+        echo '<p>Update injected into transient: <strong>' . ( $injected ? '✅ YES' : '❌ NO' ) . '</strong></p>';
+        if ( version_compare( (string) $remote, (string) $installed, '<=' ) ) {
+            echo '<p style="color:#c00;">⚠️ GitHub version is not newer than installed — no update will show.</p>';
+        }
+        echo '</div>';
     }
 
     /**

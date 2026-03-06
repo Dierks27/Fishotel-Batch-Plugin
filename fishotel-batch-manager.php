@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.2.1 - Refactored into modular include files.
- * Version:           2.2.1
+ * Description:       Stable 2.2.2 - Added updater debug notice.
+ * Version:           2.2.2
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.2.1' );
+define( 'FISHOTEL_VERSION', '2.2.2' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-helpers.php';
