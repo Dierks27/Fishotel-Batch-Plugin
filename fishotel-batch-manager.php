@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.2.6 - Stage 2 Step 3: Admin padding order on Order Summary.
- * Version:           2.2.6
+ * Description:       Stable 2.2.7 - Stage 2 Step 4: Excel Order Export.
+ * Version:           2.2.7
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.2.6' );
+define( 'FISHOTEL_VERSION', '2.2.7' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -51,6 +51,7 @@ class FisHotel_Batch_Manager {
         add_action( 'admin_post_fishotel_mark_deposit_unpaid', [$this, 'mark_deposit_unpaid_handler'] );
         add_action( 'admin_post_fishotel_fully_delete_deposit', [$this, 'fully_delete_deposit_handler'] );
         add_action( 'admin_post_fishotel_reset_test_data', [$this, 'reset_test_data_handler'] );
+        add_action( 'admin_post_fishotel_export_order_excel', [$this, 'export_order_excel'] );
 
         add_action( 'wp_login', [$this, 'record_last_login'], 10, 2 );
 
