@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.2.5 - Stage 2 Step 2: Order Summary admin page.
- * Version:           2.2.5
+ * Description:       Stable 2.2.6 - Stage 2 Step 3: Admin padding order on Order Summary.
+ * Version:           2.2.6
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.2.5' );
+define( 'FISHOTEL_VERSION', '2.2.6' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -43,6 +43,7 @@ class FisHotel_Batch_Manager {
         add_action( 'admin_post_fishotel_delete_batch_item', [$this, 'delete_batch_item'] );
         add_action( 'admin_post_fishotel_add_batch',        [$this, 'add_batch'] );
         add_action( 'admin_post_fishotel_advance_stage',    [$this, 'advance_stage_handler'] );
+        add_action( 'admin_post_fishotel_admin_order',      [$this, 'handle_admin_order'] );
         add_action( 'admin_post_fishotel_cancel_request', [$this, 'admin_cancel_request'] );
         add_action( 'admin_post_fishotel_remove_single_fish', [$this, 'admin_remove_single_fish'] );
         add_action( 'admin_post_fishotel_adjust_wallet', [$this, 'admin_adjust_wallet'] );

@@ -616,7 +616,149 @@ trait FisHotel_Admin {
         </script>
         <?php
 
+        // ===== Add My Order section =====
+        if ( isset( $_GET['admin_order'] ) ) {
+            echo '<div class="notice notice-success is-dismissible" style="margin:16px 0;"><p>✅ Your order has been saved and stock reserved.</p></div>';
+        }
+
+        $batch_fish = get_posts( [
+            'post_type'      => 'fish_batch',
+            'numberposts'    => -1,
+            'post_status'    => 'any',
+            'meta_key'       => '_batch_name',
+            'meta_value'     => $selected,
+        ] );
+
+        usort( $batch_fish, function( $a, $b ) {
+            $ma  = get_post_meta( $a->ID, '_master_id', true );
+            $mb  = get_post_meta( $b->ID, '_master_id', true );
+            $sca = $ma ? (string) get_post_meta( $ma, '_scientific_name', true ) : '';
+            $scb = $mb ? (string) get_post_meta( $mb, '_scientific_name', true ) : '';
+            return strcasecmp( $sca, $scb );
+        } );
+
+        ?>
+        <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-top:28px;">
+            <h2 style="color:#e67e22;margin-top:0;font-size:1.2em;">🛒 Add My Order</h2>
+            <p style="color:#aaa;margin-top:0;font-size:13px;">Enter quantities for fish you want to include in your own importer order. Saves as an admin request alongside customer orders.</p>
+
+            <?php if ( empty( $batch_fish ) ) : ?>
+                <p style="color:#aaa;">No fish found in this batch.</p>
+            <?php else : ?>
+            <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>">
+                <?php wp_nonce_field( 'fishotel_admin_order_nonce' ); ?>
+                <input type="hidden" name="action" value="fishotel_admin_order">
+                <input type="hidden" name="batch_name" value="<?php echo esc_attr( $selected ); ?>">
+
+                <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+                    <thead>
+                        <tr style="background:#111;color:#b5a165;">
+                            <th style="padding:9px 12px;text-align:left;border-bottom:2px solid #444;">Fish Name</th>
+                            <th style="padding:9px 12px;text-align:left;border-bottom:2px solid #444;font-style:italic;">Scientific Name</th>
+                            <th style="padding:9px 12px;text-align:right;border-bottom:2px solid #444;">Price</th>
+                            <th style="padding:9px 12px;text-align:center;border-bottom:2px solid #444;">Stock</th>
+                            <th style="padding:9px 12px;text-align:center;border-bottom:2px solid #444;width:100px;">My Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $batch_fish as $bp ) :
+                            $master_id = get_post_meta( $bp->ID, '_master_id', true );
+                            if ( ! $master_id ) continue;
+                            $master   = get_post( $master_id );
+                            if ( ! $master ) continue;
+                            $sci_name = get_post_meta( $master_id, '_scientific_name', true );
+                            $price    = floatval( get_post_meta( $master_id, '_selling_price', true ) );
+                            $stock    = intval( get_post_meta( $bp->ID, '_stock', true ) );
+                        ?>
+                        <tr style="border-bottom:1px solid #2a2a2a;<?php echo $stock === 0 ? 'opacity:0.45;' : ''; ?>">
+                            <td style="padding:8px 12px;color:#fff;font-weight:600;"><?php echo esc_html( $master->post_title ); ?></td>
+                            <td style="padding:8px 12px;color:#aaa;font-style:italic;"><?php echo esc_html( $sci_name ); ?></td>
+                            <td style="padding:8px 12px;color:#e67e22;text-align:right;">$<?php echo number_format( $price, 2 ); ?></td>
+                            <td style="padding:8px 12px;text-align:center;color:<?php echo $stock > 0 ? '#27ae60' : '#e74c3c'; ?>;font-weight:700;"><?php echo $stock; ?></td>
+                            <td style="padding:8px 12px;text-align:center;">
+                                <input type="number" name="items[<?php echo $bp->ID; ?>]"
+                                    value="0" min="0" max="<?php echo $stock; ?>"
+                                    <?php echo $stock === 0 ? 'disabled' : ''; ?>
+                                    style="width:70px;padding:5px;text-align:center;background:#2a2a2a;color:#fff;border:1px solid #555;border-radius:4px;">
+                                <input type="hidden" name="prices[<?php echo $bp->ID; ?>]" value="<?php echo esc_attr( $price ); ?>">
+                                <input type="hidden" name="names[<?php echo $bp->ID; ?>]" value="<?php echo esc_attr( $master->post_title ); ?>">
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+
+                <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">💾 Save My Order</button>
+            </form>
+            <?php endif; ?>
+        </div>
+        <?php
+
         echo '</div>';
+    }
+
+    public function handle_admin_order() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_admin_order_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        $raw_items  = $_POST['items']  ?? [];
+        $raw_prices = $_POST['prices'] ?? [];
+        $raw_names  = $_POST['names']  ?? [];
+
+        if ( ! $batch_name ) wp_die( 'No batch specified.' );
+
+        $cart_items  = [];
+        $total       = 0.0;
+        $requested_at = current_time( 'mysql' );
+
+        foreach ( $raw_items as $batch_id => $qty ) {
+            $batch_id = intval( $batch_id );
+            $qty      = intval( $qty );
+            if ( $qty <= 0 || ! $batch_id ) continue;
+
+            $price     = floatval( $raw_prices[ $batch_id ] ?? 0 );
+            $fish_name = sanitize_text_field( $raw_names[ $batch_id ] ?? '' );
+            $stock     = intval( get_post_meta( $batch_id, '_stock', true ) );
+            $qty       = min( $qty, $stock ); // cap at available stock
+            if ( $qty <= 0 ) continue;
+
+            $cart_items[] = [
+                'batch_id'     => $batch_id,
+                'fish_name'    => $fish_name,
+                'qty'          => $qty,
+                'price'        => $price,
+                'requested_at' => $requested_at,
+            ];
+            $total += $price * $qty;
+
+            // Deduct stock
+            update_post_meta( $batch_id, '_stock', max( 0, $stock - $qty ) );
+        }
+
+        if ( empty( $cart_items ) ) {
+            wp_redirect( admin_url( 'admin.php?page=fishotel-order-summary&batch=' . urlencode( $batch_name ) ) );
+            exit;
+        }
+
+        $request_id = wp_insert_post( [
+            'post_type'   => 'fish_request',
+            'post_title'  => 'Admin Order #' . time() . ' - ' . $batch_name,
+            'post_status' => 'publish',
+        ] );
+
+        if ( $request_id ) {
+            update_post_meta( $request_id, '_customer_id',    get_current_user_id() );
+            update_post_meta( $request_id, '_batch_name',     $batch_name );
+            update_post_meta( $request_id, '_cart_items',     wp_json_encode( $cart_items ) );
+            update_post_meta( $request_id, '_total',          $total );
+            update_post_meta( $request_id, '_status',         'provisional' );
+            update_post_meta( $request_id, '_deposit_verified', 1 );
+            update_post_meta( $request_id, '_is_admin_order', true );
+        }
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-order-summary&batch=' . urlencode( $batch_name ) . '&admin_order=1' ) );
+        exit;
     }
 
     public function admin_adjust_wallet() {
