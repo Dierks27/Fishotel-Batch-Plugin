@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.1.9 - Added Import Master Prices CSV tool.
- * Version:           2.1.9
+ * Description:       Stable 2.2.0 - Moved Import Master Prices into Advanced Settings.
+ * Version:           2.2.0
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -1197,20 +1197,6 @@ class FisHotel_Batch_Manager {
                 </div>
             </div>
 
-            <!-- ===== ZONE 1b: Import Master Prices ===== -->
-            <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;margin-top:16px;">
-                <form method="post" enctype="multipart/form-data" action="<?php echo admin_url( 'admin-post.php' ); ?>">
-                    <?php wp_nonce_field( 'fishotel_import_prices_nonce' ); ?>
-                    <input type="hidden" name="action" value="fishotel_import_prices">
-                    <label style="display:block;font-weight:700;color:#fff;margin-bottom:10px;">💲 Import Master Prices</label>
-                    <p style="color:#aaa;margin:0 0 12px;font-size:13px;">CSV must have columns: <code style="background:#333;padding:2px 6px;border-radius:3px;">SCIENTIFIC NAME</code> and <code style="background:#333;padding:2px 6px;border-radius:3px;">PRICE</code>. Updates <code style="background:#333;padding:2px 6px;border-radius:3px;">_selling_price</code> on matching fish_master posts.</p>
-                    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
-                        <input type="file" name="prices_csv" accept=".csv" style="color:#ddd;">
-                        <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-size:14px;">Upload &amp; Apply Prices</button>
-                    </div>
-                </form>
-            </div>
-
             <!-- ===== ZONE 2: Batches Table + Save ===== -->
             <form method="post" action="" id="fishotel-save-all-form" style="margin-top:24px;">
                 <?php wp_nonce_field( 'fishotel_save_all_nonce' ); ?>
@@ -1290,6 +1276,20 @@ class FisHotel_Batch_Manager {
                             <tr>
                                 <th style="color:#ddd;">Admin Test Mode</th>
                                 <td><label style="color:#ddd;"><input type="checkbox" name="admin_test_mode" <?php checked( $admin_test_mode, 1 ); ?>> Bypass deposit check for admins</label></td>
+                            </tr>
+                            <tr>
+                                <th style="color:#ddd;vertical-align:top;padding-top:14px;">💲 Import Master Prices</th>
+                                <td>
+                                    <form method="post" enctype="multipart/form-data" action="<?php echo admin_url( 'admin-post.php' ); ?>">
+                                        <?php wp_nonce_field( 'fishotel_import_prices_nonce' ); ?>
+                                        <input type="hidden" name="action" value="fishotel_import_prices">
+                                        <p style="color:#aaa;margin:0 0 10px;font-size:13px;">CSV columns: <code style="background:#333;padding:2px 5px;border-radius:3px;">SCIENTIFIC NAME</code> &amp; <code style="background:#333;padding:2px 5px;border-radius:3px;">PRICE</code>. Updates <code style="background:#333;padding:2px 5px;border-radius:3px;">_selling_price</code> on matching fish_master posts.</p>
+                                        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+                                            <input type="file" name="prices_csv" accept=".csv" style="color:#ddd;">
+                                            <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:8px 20px;cursor:pointer;font-size:13px;">Upload &amp; Apply Prices</button>
+                                        </div>
+                                    </form>
+                                </td>
                             </tr>
                         </table>
                     </div>
