@@ -97,12 +97,40 @@ trait FisHotel_Shortcodes {
                 </div>
             </div>
 
+            <?php
+            // Load previously submitted requests for this user+batch so we can show them in the cart.
+            $prev_items = [];
+            $prev_total = 0.0;
+            if ( is_user_logged_in() ) {
+                $uid = get_current_user_id();
+                $existing_reqs = get_posts( [
+                    'post_type'   => 'fish_request',
+                    'numberposts' => -1,
+                    'post_status' => 'any',
+                    'meta_query'  => [
+                        'relation' => 'AND',
+                        [ 'key' => '_customer_id', 'value' => $uid,        'compare' => '=' ],
+                        [ 'key' => '_batch_name',  'value' => $batch_name, 'compare' => '=' ],
+                    ],
+                ] );
+                foreach ( $existing_reqs as $req ) {
+                    if ( get_post_meta( $req->ID, '_is_admin_order', true ) ) continue;
+                    $req_items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
+                    foreach ( $req_items as $ritem ) {
+                        $prev_items[] = $ritem;
+                        $prev_total  += (float) $ritem['price'] * (int) $ritem['qty'];
+                    }
+                }
+            }
+            ?>
+            <?php if ( is_user_logged_in() ) : ?>
             <div id="my-requests" style="margin-bottom:15px;border:1px solid #444;padding:20px;background:#1e1e1e;border-radius:8px;color:#fff;">
-                <h3 style="margin-top:0;color:#fff;">My Current Requests</h3>
+                <h3 style="margin-top:0;color:#fff;">MY CURRENT REQUESTS</h3>
                 <div id="request-list" style="min-height:40px;">No fish requested yet.</div>
                 <div id="cart-total" style="font-weight:700;color:#e67e22;margin:12px 0;font-size:1.2em;">Total: $0.00</div>
-                <button id="submit-requests" style="width:auto;padding:14px 40px;font-size:18px;font-weight:700;background:#e67e22;color:#000;border:none;border-radius:8px;cursor:pointer;margin-top:4px;display:block;margin-left:auto;margin-right:auto;">Review &amp; Submit My Requests</button>
+                <button id="submit-requests" style="width:auto;padding:14px 40px;font-size:18px;font-weight:700;background:#e67e22;color:#000;border:none;border-radius:8px;cursor:pointer;margin-top:4px;display:block;margin-left:auto;margin-right:auto;">Submit My Requests</button>
             </div>
+            <?php endif; ?>
 
             <style>
                 .fishotel-batch-title { word-break: break-word; overflow-wrap: break-word; font-size: clamp(1.2rem, 4vw, 2rem); }
@@ -227,8 +255,10 @@ trait FisHotel_Shortcodes {
                 </div>
 
                 <script>
-                    let cartTotal = 0;
-                    let cartItems = [];
+                    let prevItems  = <?php echo wp_json_encode( $prev_items ); ?>;
+                    let prevTotal  = <?php echo (float) $prev_total; ?>;
+                    let cartItems  = [];
+                    let cartTotal  = prevTotal;  // includes any already-submitted amounts
                     let currentUserHasHFUsername = <?php echo ( get_user_meta( get_current_user_id(), '_fishotel_humble_username', true ) !== '' ) ? 'true' : 'false'; ?>;
 
                     if (<?php echo is_user_logged_in() ? 'true' : 'false'; ?> && !currentUserHasHFUsername) {
@@ -312,22 +342,44 @@ trait FisHotel_Shortcodes {
                     function closeLoginModal() { document.getElementById('fishotel-login-modal').style.display = 'none'; }
 
                     function renderRequestList() {
-                        let list = document.getElementById("request-list");
-                        list.innerHTML = '';
-                        cartItems.forEach((item, index) => {
-                            const lineTotal = item.price * item.qty;
-                            list.innerHTML += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;" data-line-total="${lineTotal}" data-index="${index}">
-                                <span>${item.fish_name} × ${item.qty} = $${lineTotal.toFixed(2)}</span>
-                                <button onclick="removeItem(this)" title="Remove this item" style="background:none;border:none;color:#e74c3c;font-size:1.8em;cursor:pointer;padding:0 8px;">×</button>
-                            </div>`;
-                        });
-                        if (cartItems.length === 0) list.innerHTML = "No fish requested yet.";
+                        const list = document.getElementById("request-list");
+                        if (!list) return;
+                        let html = '';
+
+                        // Previously submitted requests — dimmed, no remove button.
+                        if (prevItems.length > 0) {
+                            html += '<div style="color:#888;font-size:0.82em;font-style:italic;margin:2px 0 6px;">Previously Requested</div>';
+                            prevItems.forEach(item => {
+                                const lt = (item.price * item.qty).toFixed(2);
+                                html += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2a2a2a;opacity:0.6;">
+                                    <span style="font-style:italic;color:#aaa;">${item.fish_name} × ${item.qty} = $${lt}</span>
+                                </div>`;
+                            });
+                        }
+
+                        // Current session new requests.
+                        if (cartItems.length > 0) {
+                            if (prevItems.length > 0) html += '<div style="color:#aaa;font-size:0.82em;margin:10px 0 4px;">New Requests</div>';
+                            cartItems.forEach((item, index) => {
+                                const lineTotal = item.price * item.qty;
+                                html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #444;" data-line-total="${lineTotal}" data-index="${index}">
+                                    <span>${item.fish_name} × ${item.qty} = $${lineTotal.toFixed(2)}</span>
+                                    <button onclick="removeItem(this)" title="Remove" style="background:none;border:none;color:#e74c3c;font-size:1.8em;cursor:pointer;padding:0 8px;">×</button>
+                                </div>`;
+                            });
+                        }
+
+                        if (prevItems.length === 0 && cartItems.length === 0) html = 'No fish requested yet.';
+                        list.innerHTML = html;
                         updateCartTotal();
                     }
 
                     function updateCartTotal() {
-                        document.getElementById("cart-total").innerHTML = `Total: $${cartTotal.toFixed(2)}`;
+                        const el = document.getElementById("cart-total");
+                        if (el) el.innerHTML = `Total: $${cartTotal.toFixed(2)}`;
                     }
+
+                    renderRequestList(); // show prev items immediately on load
 
                     document.querySelectorAll(".qty-minus").forEach(btn => {
                         btn.addEventListener("click", function() {
@@ -374,13 +426,16 @@ trait FisHotel_Shortcodes {
                                             ? btn.closest('tr').querySelector('.qty-input')
                                             : btn.closest('.fish-card') ? btn.closest('.fish-card').querySelector('.qty-input') : null;
                                         const qty = parseInt(qtyInput ? qtyInput.value : 1) || 1;
-                                        cartItems.push({
-                                            batch_id: batchId,
-                                            fish_name: fishName,
-                                            qty: qty,
-                                            price: price
-                                        });
-                                        cartTotal += price * qty;
+                                        const existingIdx = cartItems.findIndex(i => i.batch_id === batchId);
+                                        if (existingIdx >= 0) {
+                                            // Update qty on the existing line instead of adding a duplicate.
+                                            cartTotal -= cartItems[existingIdx].price * cartItems[existingIdx].qty;
+                                            cartItems[existingIdx].qty += qty;
+                                            cartTotal += cartItems[existingIdx].price * cartItems[existingIdx].qty;
+                                        } else {
+                                            cartItems.push({ batch_id: batchId, fish_name: fishName, qty: qty, price: price });
+                                            cartTotal += price * qty;
+                                        }
                                         renderRequestList();
 
                                         const originalText = btn.innerText;
@@ -477,7 +532,8 @@ trait FisHotel_Shortcodes {
                         });
                     })();
 
-                    document.getElementById("submit-requests").addEventListener("click", function() {
+                    const submitBtn = document.getElementById("submit-requests");
+                    if (submitBtn) submitBtn.addEventListener("click", function() {
                         if (cartItems.length === 0) {
                             alert("No requests to submit.");
                             return;
