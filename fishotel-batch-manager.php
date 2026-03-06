@@ -1087,6 +1087,10 @@ class FisHotel_Batch_Manager {
     }
 
     public function batch_settings_html() {
+        // Force a fresh GitHub update check every time this settings page loads.
+        delete_transient( 'fishotel_github_updater_version' );
+        delete_site_transient( 'update_plugins' );
+
         if ( isset( $_GET['updated'] ) ) echo '<div class="notice notice-success is-dismissible"><p>✅ All settings saved successfully!</p></div>';
         if ( isset( $_GET['error'] ) ) echo '<div class="notice notice-error is-dismissible"><p>❌ Invalid parameters. Please try again.</p></div>';
 
