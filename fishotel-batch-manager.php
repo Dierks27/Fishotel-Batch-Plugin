@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.2.2 - Added updater debug notice.
- * Version:           2.2.2
+ * Description:       Stable 2.2.3 - Stage 2 Step 1: Close Ordering.
+ * Version:           2.2.3
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.2.2' );
+define( 'FISHOTEL_VERSION', '2.2.3' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-helpers.php';
@@ -40,7 +40,8 @@ class FisHotel_Batch_Manager {
         add_action( 'admin_post_fishotel_process_mapping', [$this, 'process_mapping'] );
         add_action( 'admin_post_fishotel_create_product_from_master', [$this, 'create_product_from_master'] );
         add_action( 'admin_post_fishotel_delete_batch_item', [$this, 'delete_batch_item'] );
-        add_action( 'admin_post_fishotel_add_batch', [$this, 'add_batch'] );
+        add_action( 'admin_post_fishotel_add_batch',        [$this, 'add_batch'] );
+        add_action( 'admin_post_fishotel_close_ordering',   [$this, 'close_ordering_handler'] );
         add_action( 'admin_post_fishotel_cancel_request', [$this, 'admin_cancel_request'] );
         add_action( 'admin_post_fishotel_remove_single_fish', [$this, 'admin_remove_single_fish'] );
         add_action( 'admin_post_fishotel_adjust_wallet', [$this, 'admin_adjust_wallet'] );

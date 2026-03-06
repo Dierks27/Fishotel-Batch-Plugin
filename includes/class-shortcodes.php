@@ -512,6 +512,79 @@ trait FisHotel_Shortcodes {
             <?php
             return ob_get_clean();
         }
+
+        if ( $status === 'arrived' ) {
+            ?>
+            <div style="background:#1e1e1e;border-radius:12px;padding:40px 30px;max-width:700px;margin:0 auto;color:#fff;text-align:center;">
+                <h2 style="color:#e67e22;margin-top:0;font-size:clamp(1.3rem,4vw,1.8rem);">Ordering is now closed for <?php echo esc_html( $batch_name ); ?></h2>
+                <p style="color:#ccc;font-size:1.05em;margin-bottom:30px;">Thank you! We've received all requests and are placing the order now. Check back soon for arrival updates.</p>
+
+                <?php if ( is_user_logged_in() ) :
+                    $user_id  = get_current_user_id();
+                    $requests = get_posts( [
+                        'post_type'      => 'fish_request',
+                        'numberposts'    => -1,
+                        'post_status'    => 'any',
+                        'meta_query'     => [
+                            'relation' => 'AND',
+                            [ 'key' => '_customer_id', 'value' => $user_id,    'compare' => '=' ],
+                            [ 'key' => '_batch_name',  'value' => $batch_name, 'compare' => '=' ],
+                        ],
+                    ] );
+
+                    $all_items   = [];
+                    $grand_total = 0.0;
+                    foreach ( $requests as $req ) {
+                        $items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
+                        foreach ( $items as $item ) {
+                            $all_items[] = $item;
+                            $grand_total += $item['price'] * $item['qty'];
+                        }
+                    }
+                ?>
+
+                <?php if ( empty( $all_items ) ) : ?>
+                    <p style="color:#aaa;">You have no requests on file for this batch.</p>
+                <?php else : ?>
+                    <h3 style="color:#fff;text-align:left;margin-bottom:12px;">Your Requests</h3>
+                    <table style="width:100%;border-collapse:collapse;text-align:left;">
+                        <thead>
+                            <tr style="background:#333;color:#b5a165;">
+                                <th style="padding:10px 12px;">Fish</th>
+                                <th style="padding:10px 12px;text-align:center;">Qty</th>
+                                <th style="padding:10px 12px;text-align:right;">Price</th>
+                                <th style="padding:10px 12px;text-align:right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ( $all_items as $item ) :
+                                $line_total = $item['price'] * $item['qty'];
+                            ?>
+                            <tr style="border-bottom:1px solid #2a2a2a;">
+                                <td style="padding:9px 12px;color:#fff;"><?php echo esc_html( $item['fish_name'] ); ?></td>
+                                <td style="padding:9px 12px;text-align:center;color:#fff;"><?php echo intval( $item['qty'] ); ?></td>
+                                <td style="padding:9px 12px;text-align:right;color:#fff;">$<?php echo number_format( $item['price'], 2 ); ?></td>
+                                <td style="padding:9px 12px;text-align:right;color:#e67e22;">$<?php echo number_format( $line_total, 2 ); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr style="border-top:2px solid #444;">
+                                <td colspan="3" style="padding:12px;text-align:right;color:#fff;font-weight:700;">Grand Total:</td>
+                                <td style="padding:12px;text-align:right;color:#e67e22;font-weight:700;font-size:1.1em;">$<?php echo number_format( $grand_total, 2 ); ?></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                <?php endif; ?>
+
+                <?php else : ?>
+                    <p style="color:#aaa;">Please <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="color:#e67e22;">log in</a> to see your requests for this batch.</p>
+                <?php endif; ?>
+            </div>
+            <?php
+            return ob_get_clean();
+        }
+
         return '<p>Stage "' . esc_html( $status ) . '" is coming soon.</p>';
     }
 

@@ -205,6 +205,14 @@ trait FisHotel_Admin {
                                 <?php else : ?>
                                     <span style="color:#555;">—</span>
                                 <?php endif; ?>
+                                <?php if ( $current_status === 'open_ordering' ) : ?>
+                                    <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" style="display:inline;margin-left:4px;">
+                                        <?php wp_nonce_field( 'fishotel_close_ordering_nonce' ); ?>
+                                        <input type="hidden" name="action" value="fishotel_close_ordering">
+                                        <input type="hidden" name="batch_name" value="<?php echo esc_attr( $batch ); ?>">
+                                        <button type="submit" class="button button-small" style="background:#c0392b;color:#fff;border-color:#a93226;" onclick="return confirm('Close ordering for \'<?php echo esc_js( $batch ); ?>\'? This immediately sets the stage to Arrived.');">🔒 Close Ordering</button>
+                                    </form>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -1519,6 +1527,21 @@ trait FisHotel_Admin {
                 echo '<a href="' . esc_url( $create_url ) . '" class="button button-small">Create Woo Product</a>';
             }
         }
+    }
+
+    public function close_ordering_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_close_ordering_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        if ( ! $batch_name ) {
+            wp_die( 'No batch specified.' );
+        }
+        $statuses = get_option( 'fishotel_batch_statuses', [] );
+        $statuses[ $batch_name ] = 'arrived';
+        update_option( 'fishotel_batch_statuses', $statuses );
+        wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
+        exit;
     }
 
     public function add_batch() {
