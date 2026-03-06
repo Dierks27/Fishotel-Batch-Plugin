@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.3.1 - Cart improvements: guest hide, prev requests, dedup, rename.
- * Version:           2.3.1
+ * Description:       Stable 2.3.2 - Previously requested items: × remove button with AJAX handler.
+ * Version:           2.3.2
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.3.1' );
+define( 'FISHOTEL_VERSION', '2.3.2' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -109,6 +109,7 @@ class FisHotel_Batch_Manager {
         add_action( 'wp_ajax_nopriv_fishotel_save_hf_username', [$this, 'ajax_save_hf_username'] );
         add_action( 'wp_ajax_fishotel_check_balance', [$this, 'ajax_check_balance'] );
         add_action( 'wp_ajax_fishotel_get_order_details', [$this, 'ajax_get_order_details'] );
+        add_action( 'wp_ajax_fishotel_remove_request_item', [$this, 'ajax_remove_request_item'] );
         add_action( 'wp_ajax_fishotel_remove_from_order', [$this, 'ajax_remove_from_order'] );
 
         add_action( 'woocommerce_after_checkout_form', [$this, 'add_return_to_fish_button'] );

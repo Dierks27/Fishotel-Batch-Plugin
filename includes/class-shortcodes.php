@@ -117,6 +117,7 @@ trait FisHotel_Shortcodes {
                     if ( get_post_meta( $req->ID, '_is_admin_order', true ) ) continue;
                     $req_items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
                     foreach ( $req_items as $ritem ) {
+                        $ritem['request_id'] = $req->ID;
                         $prev_items[] = $ritem;
                         $prev_total  += (float) $ritem['price'] * (int) $ritem['qty'];
                     }
@@ -346,13 +347,15 @@ trait FisHotel_Shortcodes {
                         if (!list) return;
                         let html = '';
 
-                        // Previously submitted requests — dimmed, no remove button.
+                        // Previously submitted requests — dimmed, with × remove button.
                         if (prevItems.length > 0) {
                             html += '<div style="color:#888;font-size:0.82em;font-style:italic;margin:2px 0 6px;">Previously Requested</div>';
-                            prevItems.forEach(item => {
+                            prevItems.forEach((item, idx) => {
                                 const lt = (item.price * item.qty).toFixed(2);
-                                html += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2a2a2a;opacity:0.6;">
+                                const safeName = item.fish_name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+                                html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2a2a2a;opacity:0.7;">
                                     <span style="font-style:italic;color:#aaa;">${item.fish_name} × ${item.qty} = $${lt}</span>
+                                    <button onclick="removePrevItem(this,${idx},'${safeName}',${item.request_id},${item.batch_id},${item.price * item.qty})" title="Remove" style="background:none;border:none;color:#e74c3c;font-size:1.8em;cursor:pointer;padding:0 8px;">×</button>
                                 </div>`;
                             });
                         }
@@ -461,6 +464,40 @@ trait FisHotel_Shortcodes {
                         cartTotal -= lineTotal;
                         cartItems.splice(index, 1);
                         renderRequestList();
+                    };
+
+                    window.removePrevItem = function(btn, prevIdx, fishName, requestId, batchId, lineTotal) {
+                        if (!confirm('Remove ' + fishName + ' from your request? This cannot be undone.')) return;
+                        btn.disabled = true;
+                        btn.innerText = '…';
+                        fetch(fishotelAjax.ajaxurl, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                            body: new URLSearchParams({
+                                action: 'fishotel_remove_request_item',
+                                nonce: fishotelAjax.nonce,
+                                request_id: requestId,
+                                batch_id: batchId
+                            })
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                prevItems.splice(prevIdx, 1);
+                                cartTotal -= lineTotal;
+                                prevTotal -= lineTotal;
+                                renderRequestList();
+                            } else {
+                                alert(data.data && data.data.message ? data.data.message : 'Failed to remove item.');
+                                btn.disabled = false;
+                                btn.innerText = '×';
+                            }
+                        })
+                        .catch(() => {
+                            alert('Network error. Please try again.');
+                            btn.disabled = false;
+                            btn.innerText = '×';
+                        });
                     };
 
                     document.getElementById("mobile-sort").addEventListener("change", function() {

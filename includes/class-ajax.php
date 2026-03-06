@@ -151,6 +151,64 @@ trait FisHotel_Ajax {
         wp_send_json_success( [ 'batch_name' => $batch_name, 'html' => $html ] );
     }
 
+    public function ajax_remove_request_item() {
+        check_ajax_referer( 'fishotel_batch_ajax', 'nonce' );
+
+        $user_id = get_current_user_id();
+        if ( ! $user_id ) {
+            wp_send_json_error( [ 'message' => 'Not logged in.' ] );
+        }
+
+        $request_id = intval( $_POST['request_id'] );
+        $batch_id   = intval( $_POST['batch_id'] );
+
+        $request = get_post( $request_id );
+        if ( ! $request || get_post_meta( $request_id, '_customer_id', true ) != $user_id ) {
+            wp_send_json_error( [ 'message' => 'Invalid request.' ] );
+        }
+
+        $items     = json_decode( get_post_meta( $request_id, '_cart_items', true ), true ) ?: [];
+        $found_idx = -1;
+        foreach ( $items as $i => $it ) {
+            if ( intval( $it['batch_id'] ) === $batch_id ) { $found_idx = $i; break; }
+        }
+        if ( $found_idx === -1 ) {
+            wp_send_json_error( [ 'message' => 'Item not found.' ] );
+        }
+
+        $item = $items[$found_idx];
+        $qty  = intval( $item['qty'] );
+        if ( $batch_id ) {
+            $current = (float) get_post_meta( $batch_id, '_stock', true );
+            update_post_meta( $batch_id, '_stock', $current + $qty );
+        }
+        array_splice( $items, $found_idx, 1 );
+
+        $deposit_refunded = false;
+        if ( empty( $items ) ) {
+            $batch_name     = get_post_meta( $request_id, '_batch_name', true );
+            $deposit_amount = $this->get_deposit_amount( $batch_name );
+            $this->update_user_deposit_balance( $user_id, $deposit_amount );
+
+            $paid = $this->get_paid_deposits( $user_id );
+            $key  = sanitize_title( $batch_name );
+            if ( isset( $paid[$key] ) ) unset( $paid[$key] );
+            update_user_meta( $user_id, '_fishotel_paid_deposits', $paid );
+
+            wp_delete_post( $request_id, true );
+            $deposit_refunded = true;
+        } else {
+            update_post_meta( $request_id, '_cart_items', wp_json_encode( $items ) );
+            $new_total = array_reduce( $items, fn( $carry, $it ) => $carry + ( $it['price'] * $it['qty'] ), 0 );
+            update_post_meta( $request_id, '_total', $new_total );
+        }
+
+        wp_send_json_success( [
+            'message'          => 'Fish removed and stock restored.' . ( $deposit_refunded ? ' Deposit refunded to wallet.' : '' ),
+            'deposit_refunded' => $deposit_refunded,
+        ] );
+    }
+
     public function ajax_remove_from_order() {
         check_ajax_referer( 'fishotel_batch_ajax', 'nonce' );
         $request_id = intval( $_POST['request_id'] );
