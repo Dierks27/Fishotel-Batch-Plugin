@@ -667,13 +667,13 @@ trait FisHotel_Shortcodes {
 
             if ( $closed_date && $arrival_date ) {
                 $closed_ts  = strtotime( $closed_date );
-                $arrival_ts = strtotime( $arrival_date );
+                $arrival_ts = strtotime( $arrival_date . ' 12:00:00 America/Chicago' );
                 $now_ts     = time();
                 $total_hours = max( ( $arrival_ts - $closed_ts ) / 3600, 1 );
                 $elapsed_hrs = ( $now_ts - $closed_ts ) / 3600;
                 $days_until  = (int) ceil( ( $arrival_ts - $now_ts ) / 86400 );
 
-                if ( $days_until <= 0 ) {
+                if ( $arrival_ts <= $now_ts ) {
                     $arrived        = true;
                     $progress       = 1.0;
                     $quarantine_day = abs( $days_until ) + 1;
@@ -684,11 +684,11 @@ trait FisHotel_Shortcodes {
                 }
             } elseif ( $arrival_date ) {
                 // Has arrival date but no closed date — estimate with 14-day transit
-                $arrival_ts = strtotime( $arrival_date );
+                $arrival_ts = strtotime( $arrival_date . ' 12:00:00 America/Chicago' );
                 $now_ts     = time();
                 $days_until = (int) ceil( ( $arrival_ts - $now_ts ) / 86400 );
 
-                if ( $days_until <= 0 ) {
+                if ( $arrival_ts <= $now_ts ) {
                     $arrived        = true;
                     $progress       = 1.0;
                     $quarantine_day = abs( $days_until ) + 1;
