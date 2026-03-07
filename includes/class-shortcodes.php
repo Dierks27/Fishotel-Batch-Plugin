@@ -733,16 +733,12 @@ trait FisHotel_Shortcodes {
             <style>
                 .fh-transit-wrap { max-width: 960px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
                 .fh-hero-map {
-                    position: relative; width: 100%; height: 420px; background: #0d1f2d; border-radius: 12px; overflow: hidden;
+                    position: relative; width: 100%; background: #0d1f2d; border-radius: 12px; overflow: hidden;
                     border: 2px solid #333;
                 }
                 .fh-hero-map.fh-arrived { animation: fhPulseBorder 2s ease-in-out infinite; }
                 @keyframes fhPulseBorder { 0%,100%{ border-color:#333; } 50%{ border-color:#b5a165; } }
-                .fh-hero-map svg { width: 100%; height: 100%; }
-                /* CSS grain texture */
-                .fh-grain {
-                    position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0.08;
-                }
+                .fh-hero-map svg { width: 100%; height: auto; display: block; }
                 .fh-status-banner { text-align: center; padding: 32px 20px 28px; }
                 .fh-status-banner h2 {
                     font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(1.6rem, 4vw, 2.4rem);
@@ -758,27 +754,59 @@ trait FisHotel_Shortcodes {
                     text-transform: uppercase; letter-spacing: 0.06em; transform: rotate(-2deg);
                     color: #e67e22;
                 }
-                @media (max-width: 600px) {
-                    .fh-hero-map { height: 280px; }
-                }
             </style>
 
             <div class="fh-transit-wrap">
 
                 <!-- ===== SECTION 1: Hero Map ===== -->
                 <div class="fh-hero-map <?php echo $arrived ? 'fh-arrived' : ''; ?>">
-                    <!-- Grain overlay via SVG filter -->
-                    <svg class="fh-grain" xmlns="http://www.w3.org/2000/svg">
-                        <filter id="fhNoise">
-                            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
-                            <feColorMatrix type="saturate" values="0"/>
-                        </filter>
-                        <rect width="100%" height="100%" filter="url(#fhNoise)"/>
-                    </svg>
+                    <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <defs>
+                            <filter id="fhNoise"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+                        </defs>
 
-                    <svg viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute;top:0;left:0;">
-                        <!-- World map background image -->
-                        <image href="https://fishotel.com/wp-content/uploads/2026/03/fishotel-world-map.jpg" x="0" y="0" width="1000" height="500" preserveAspectRatio="xMidYMid slice"/>
+                        <!-- Ocean -->
+                        <rect x="0" y="0" width="1000" height="500" fill="#0d1f2d"/>
+
+                        <!-- Continents (simplified Natural Earth paths, equirectangular projection) -->
+                        <g fill="#2a4a3e" stroke="#b5a165" stroke-width="0.5" stroke-linejoin="round">
+                            <!-- North America -->
+                            <path d="M50,56 L36,75 78,92 133,100 153,117 161,144 175,161 203,189 233,206 250,211 278,225 258,194 278,181 278,164 289,150 300,136 322,122 353,114 333,97 306,81 264,50 181,50 111,61 Z"/>
+                            <!-- South America -->
+                            <path d="M300,222 L283,239 278,256 283,278 303,300 300,333 297,378 314,403 322,375 342,347 381,314 403,264 347,236 328,222 Z"/>
+                            <!-- Greenland -->
+                            <path d="M306,33 L389,19 444,39 375,83 361,81 347,56 Z"/>
+                            <!-- Eurasia (Europe + Russia + Central/East Asia) -->
+                            <path d="M475,139 L500,150 561,150 600,147 647,172 672,181 700,172 717,228 744,189 756,189 778,222 786,244 800,200 839,167 856,144 875,128 950,94 986,61 861,50 694,50 569,56 514,78 528,100 492,117 Z"/>
+                            <!-- British Isles -->
+                            <path d="M472,100 L481,94 489,89 497,103 492,111 478,108 Z"/>
+                            <!-- Iceland -->
+                            <path d="M439,67 L447,61 458,67 453,75 442,75 Z"/>
+                            <!-- Africa -->
+                            <path d="M472,153 L453,189 453,214 464,231 500,236 522,239 528,250 539,283 550,344 589,333 611,292 617,250 636,236 642,217 589,167 528,153 Z"/>
+                            <!-- Arabian Peninsula -->
+                            <path d="M600,153 L622,158 636,169 661,186 639,214 619,211 606,194 597,169 Z"/>
+                            <!-- India -->
+                            <path d="M672,167 L717,167 750,178 750,189 731,200 714,228 711,222 703,194 686,183 Z"/>
+                            <!-- Japan -->
+                            <path d="M878,128 L889,139 878,153 867,164 869,153 875,142 Z"/>
+                            <!-- Philippines -->
+                            <path d="M836,200 L842,211 850,233 844,228 839,217 833,208 Z"/>
+                            <!-- Borneo -->
+                            <path d="M803,236 L828,236 825,256 803,258 Z"/>
+                            <!-- Sumatra & Java -->
+                            <path d="M767,236 L781,244 797,253 814,261 819,272 811,269 792,264 775,247 Z"/>
+                            <!-- Papua New Guinea -->
+                            <path d="M867,258 L894,258 911,267 917,278 889,272 Z"/>
+                            <!-- Australia -->
+                            <path d="M853,289 L864,283 897,278 925,325 919,344 903,356 819,344 814,319 839,300 Z"/>
+                            <!-- New Zealand -->
+                            <path d="M981,347 L986,367 978,375 964,381 969,367 Z"/>
+                            <!-- Sri Lanka -->
+                            <path d="M717,225 L725,222 728,231 722,236 Z"/>
+                            <!-- Madagascar -->
+                            <path d="M636,283 L642,300 636,319 625,306 Z"/>
+                        </g>
 
                         <!-- Flight arc: gold dashed bezier -->
                         <path d="M<?php echo round($ox,1); ?>,<?php echo round($oy,1); ?> Q<?php echo round($cx,1); ?>,<?php echo round($cy,1); ?> <?php echo round($dx,1); ?>,<?php echo round($dy,1); ?>"
@@ -796,15 +824,14 @@ trait FisHotel_Shortcodes {
                             <text x="0" y="30" text-anchor="middle" fill="#fff" font-size="12" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
                         </g>
 
-                    </svg>
+                        <!-- Plane icon -->
+                        <g transform="translate(<?php echo round($plane_x,1); ?>,<?php echo round($plane_y,1); ?>) rotate(<?php echo round($angle + 90, 1); ?>)">
+                            <image href="https://fishotel.com/wp-content/uploads/2026/03/fishotel-plane.png" x="-31" y="-21" width="62" height="42"/>
+                        </g>
 
-                    <!-- Plane icon (HTML img positioned over SVG) -->
-                    <div style="position:absolute;left:<?php echo round( $plane_x / 10, 2 ); ?>%;top:<?php echo round( $plane_y / 5, 2 ); ?>%;transform:translate(-50%,-50%);pointer-events:none;">
-                        <img src="https://fishotel.com/wp-content/uploads/2026/03/fishotel-plane.png" alt="Plane"
-                             class="fh-plane-icon"
-                             style="width:60px;height:40px;display:block;
-                                    transform:rotate(<?php echo round( $angle + 90, 1 ); ?>deg);">
-                    </div>
+                        <!-- Grain texture overlay -->
+                        <rect x="0" y="0" width="1000" height="500" filter="url(#fhNoise)" opacity="0.08" pointer-events="none"/>
+                    </svg>
                 </div>
 
                 <!-- ===== SECTION 2: Status Banner ===== -->
