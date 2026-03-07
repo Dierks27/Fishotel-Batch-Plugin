@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.4.1 - Transit page hero map + status banner (orders_closed / in_transit stages); Origin Locations collapsible toggle.
- * Version:           2.4.1
+ * Description:       Stable 2.4.3 - Transit page hero map + status banner (orders_closed / in_transit stages); Origin Locations collapsible toggle.
+ * Version:           2.4.3
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.4.1' );
+define( 'FISHOTEL_VERSION', '2.4.3' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
