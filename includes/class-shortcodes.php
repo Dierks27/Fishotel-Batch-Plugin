@@ -641,12 +641,12 @@ trait FisHotel_Shortcodes {
 
             // Calibrated projection for the world-map JPG (has black padding bars).
             // Derived from two anchor points on the actual image content:
-            //   Minnesota (44.0, -94.0) → x:21%, y:32%  →  (210, 160)
-            //   Fiji     (-17.71, 178.07) → x:84%, y:60% →  (840, 300)
-            $x_scale  =  2.3156;
-            $x_offset =  427.66;
-            $y_scale  = -2.2687;
-            $y_offset =  259.82;
+            //   Minnesota (44.0, -94.0)   → SVG (210, 165)
+            //   Fiji     (-17.71, 178.07) → SVG (880, 310)
+            $x_scale  =  2.4626;
+            $x_offset =  441.48;
+            $y_scale  = -2.3497;
+            $y_offset =  268.39;
 
             $ox = $origin_lng * $x_scale + $x_offset;
             $oy = $origin_lat * $y_scale + $y_offset;
@@ -775,11 +775,9 @@ trait FisHotel_Shortcodes {
                               fill="#b5a165" font-size="13" font-family="Oswald, sans-serif" letter-spacing="1"
                               style="text-transform:uppercase;"><?php echo esc_html( strtoupper( $origin_name ) ); ?></text>
 
-                        <!-- Destination: FisHotel logo + label -->
-                        <g transform="translate(<?php echo round($dx,1); ?>,<?php echo round($dy,1); ?>)">
-                            <image href="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" x="-20" y="-20" width="40" height="40"/>
-                            <text x="0" y="30" text-anchor="middle" fill="#fff" font-size="12" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
-                        </g>
+                        <!-- Destination: FisHotel logo + label (hard-coded to Minnesota/upper midwest) -->
+                        <image href="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" x="200" y="155" width="40" height="40"/>
+                        <text x="210" y="195" text-anchor="middle" fill="#fff" font-size="12" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
                     </svg>
 
                     <!-- Plane icon (HTML img centered on bezier point) -->

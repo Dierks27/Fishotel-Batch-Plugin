@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.5.1 - Restore image map with calibrated 2-point projection.
- * Version:           2.5.1
+ * Description:       Stable 2.5.3 - Recalibrate map projection anchors, fix marker placement.
+ * Version:           2.5.3
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.5.1' );
+define( 'FISHOTEL_VERSION', '2.5.3' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
