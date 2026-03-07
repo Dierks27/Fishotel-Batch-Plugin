@@ -77,6 +77,8 @@ trait FisHotel_Admin {
         $batch_deposit_amounts = get_option( 'fishotel_batch_deposit_amounts', [] );
         $admin_test_mode = get_option( 'fishotel_admin_test_mode', 0 );
         $deposit_product_id = $this->get_deposit_product_id();
+        $arrival_dates = get_option( 'fishotel_batch_arrival_dates', [] );
+        $origin_locations = $this->get_origin_locations();
 
         if ( isset( $_POST['fishotel_save_all'] ) && check_admin_referer( 'fishotel_save_all_nonce' ) ) {
             update_option( 'fishotel_deposit_product_id', intval( $_POST['deposit_product_id'] ?? 31985 ) );
@@ -86,6 +88,7 @@ trait FisHotel_Admin {
             $new_assignments = [];
             $new_statuses = [];
             $new_deposit_amounts = [];
+            $new_arrival_dates = [];
             foreach ( $batches_array as $batch ) {
                 $key = sanitize_key( $batch );
                 $title_key = sanitize_title( $batch );
@@ -99,10 +102,17 @@ trait FisHotel_Admin {
                 if ( isset( $_POST['deposit_amount_' . $key] ) && (float) $_POST['deposit_amount_' . $key] > 0 ) {
                     $new_deposit_amounts[$title_key] = floatval( $_POST['deposit_amount_' . $key] );
                 }
+                if ( isset( $_POST['arrival_date_' . $key] ) ) {
+                    $date = sanitize_text_field( $_POST['arrival_date_' . $key] );
+                    if ( $date && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+                        $new_arrival_dates[ $batch ] = $date;
+                    }
+                }
             }
             update_option( 'fishotel_batch_page_assignments', $new_assignments );
             update_option( 'fishotel_batch_statuses', $new_statuses );
             update_option( 'fishotel_batch_deposit_amounts', $new_deposit_amounts );
+            update_option( 'fishotel_batch_arrival_dates', $new_arrival_dates );
 
             wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
             exit;
@@ -184,6 +194,7 @@ trait FisHotel_Admin {
                             <th>Current Stage</th>
                             <th>Public Page</th>
                             <th style="width:140px;">Deposit Amount</th>
+                            <th style="width:130px;">Arrival Date</th>
                             <th style="width:120px;">Actions</th>
                         </tr>
                     </thead>
@@ -194,6 +205,7 @@ trait FisHotel_Admin {
                             $current_page   = $assignments[$batch] ?? '';
                             $current_status = $statuses[$batch] ?? 'open_ordering';
                             $batch_deposit  = $batch_deposit_amounts[$title_key] ?? '';
+                            $arrival_date   = $arrival_dates[$batch] ?? '';
                             $view_url  = $current_page ? home_url( '/' . $current_page ) : '';
                             $embed_url = $current_page ? home_url( '/' . $current_page . '?embed=1' ) : '';
                         ?>
@@ -217,6 +229,10 @@ trait FisHotel_Admin {
                             <td>
                                 <input type="number" step="0.01" min="0" name="deposit_amount_<?php echo $key; ?>" value="<?php echo esc_attr( $batch_deposit ); ?>" placeholder="e.g. 25.00" style="width:90px;">
                                 <small style="display:block;color:#aaa;margin-top:3px;">USD (required)</small>
+                            </td>
+                            <td>
+                                <input type="date" name="arrival_date_<?php echo $key; ?>" value="<?php echo esc_attr( $arrival_date ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:120px;">
+                                <small style="display:block;color:#aaa;margin-top:3px;">Transit end date</small>
                             </td>
                             <td style="white-space:nowrap;padding:6px 10px;">
                                 <?php if ( $view_url ) : ?>
@@ -299,6 +315,64 @@ trait FisHotel_Admin {
                 <input type="hidden" name="next_stage" value="<?php echo esc_attr( $sa['next_stage'] ); ?>">
             </form>
             <?php endforeach; ?>
+
+            <!-- ===== ZONE 4: Origin Locations ===== -->
+            <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;margin-top:24px;">
+                <h3 style="color:#b5a165;margin-top:0;">🌍 Origin Locations</h3>
+                <p style="color:#aaa;font-size:13px;margin:0 0 16px;">Library of origin cities used by the transit-page plane animation. The batch name is scanned for any word matching a location name (case-insensitive) to auto-detect origin.</p>
+                <table class="widefat" style="border-radius:8px;overflow:hidden;margin-bottom:16px;">
+                    <thead>
+                        <tr>
+                            <th>Location Name</th>
+                            <th style="width:140px;">Latitude</th>
+                            <th style="width:140px;">Longitude</th>
+                            <th style="width:60px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $origin_locations as $i => $loc ) : ?>
+                        <tr>
+                            <td><strong style="color:#b5a165;"><?php echo esc_html( $loc['name'] ); ?></strong></td>
+                            <td style="color:#ccc;"><?php echo esc_html( $loc['lat'] ); ?></td>
+                            <td style="color:#ccc;"><?php echo esc_html( $loc['lng'] ); ?></td>
+                            <td>
+                                <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" style="display:inline;">
+                                    <?php wp_nonce_field( 'fishotel_delete_location_nonce' ); ?>
+                                    <input type="hidden" name="action" value="fishotel_delete_location">
+                                    <input type="hidden" name="location_index" value="<?php echo $i; ?>">
+                                    <button type="submit" onclick="return confirm('Delete <?php echo esc_js( $loc['name'] ); ?>?')"
+                                        style="background:#c0392b;color:#fff;border:none;border-radius:4px;padding:4px 12px;cursor:pointer;font-size:14px;font-weight:700;">×</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php if ( empty( $origin_locations ) ) : ?>
+                        <tr><td colspan="4" style="color:#888;font-style:italic;">No locations saved yet.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+                <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+                    <?php wp_nonce_field( 'fishotel_add_location_nonce' ); ?>
+                    <input type="hidden" name="action" value="fishotel_add_location">
+                    <div>
+                        <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Location Name</label>
+                        <input type="text" name="loc_name" placeholder="e.g. Fiji" required
+                            style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:8px 12px;border-radius:6px;width:180px;">
+                    </div>
+                    <div>
+                        <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Latitude</label>
+                        <input type="number" step="0.0001" name="loc_lat" placeholder="-17.7134" required
+                            style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:8px 12px;border-radius:6px;width:120px;">
+                    </div>
+                    <div>
+                        <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Longitude</label>
+                        <input type="number" step="0.0001" name="loc_lng" placeholder="178.0650" required
+                            style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:8px 12px;border-radius:6px;width:120px;">
+                    </div>
+                    <button type="submit"
+                        style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:9px 22px;cursor:pointer;font-size:14px;">Add Location</button>
+                </form>
+            </div>
 
         </div>
 
@@ -2318,6 +2392,59 @@ trait FisHotel_Admin {
         wp_delete_file( $tmp );
 
         return $data ?: '';
+    }
+
+    // ─── Origin Locations ────────────────────────────────────────────────────
+
+    /**
+     * Returns stored origin locations, seeding defaults on first install.
+     */
+    public function get_origin_locations(): array {
+        $stored = get_option( 'fishotel_origin_locations', null );
+        if ( $stored !== null ) {
+            return is_array( $stored ) ? $stored : [];
+        }
+        $defaults = [
+            [ 'name' => 'Fiji',             'lat' => -17.7134, 'lng' => 178.0650 ],
+            [ 'name' => 'Bali',             'lat' =>  -8.3405, 'lng' => 115.0920 ],
+            [ 'name' => 'Red Sea',          'lat' =>  27.2579, 'lng' =>  33.8116 ],
+            [ 'name' => 'Philippines',      'lat' =>  12.8797, 'lng' => 121.7740 ],
+            [ 'name' => 'Australia',        'lat' => -25.2744, 'lng' => 133.7751 ],
+            [ 'name' => 'Marshall Islands', 'lat' =>   7.1315, 'lng' => 171.1845 ],
+            [ 'name' => 'Sri Lanka',        'lat' =>   7.8731, 'lng' =>  80.7718 ],
+        ];
+        update_option( 'fishotel_origin_locations', $defaults );
+        return $defaults;
+    }
+
+    public function add_location_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_add_location_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+        $name = sanitize_text_field( $_POST['loc_name'] ?? '' );
+        $lat  = floatval( $_POST['loc_lat'] ?? 0 );
+        $lng  = floatval( $_POST['loc_lng'] ?? 0 );
+        if ( $name !== '' ) {
+            $locations   = $this->get_origin_locations();
+            $locations[] = [ 'name' => $name, 'lat' => $lat, 'lng' => $lng ];
+            update_option( 'fishotel_origin_locations', $locations );
+        }
+        wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
+        exit;
+    }
+
+    public function delete_location_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_delete_location_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+        $index     = intval( $_POST['location_index'] ?? -1 );
+        $locations = $this->get_origin_locations();
+        if ( isset( $locations[ $index ] ) ) {
+            array_splice( $locations, $index, 1 );
+            update_option( 'fishotel_origin_locations', $locations );
+        }
+        wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
+        exit;
     }
 
 }
