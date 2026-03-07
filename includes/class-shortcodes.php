@@ -753,34 +753,9 @@ trait FisHotel_Shortcodes {
                         <rect width="100%" height="100%" filter="url(#fhNoise)"/>
                     </svg>
 
-                    <svg viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;">
-                        <!-- Simplified continent shapes -->
-                        <g fill="#2a4a3e" stroke="none" opacity="0.6">
-                            <!-- North America -->
-                            <path d="M120,80 L180,60 L230,70 L260,100 L280,140 L270,180 L240,200 L210,230 L190,250 L160,240 L140,210 L120,180 L100,160 L90,130 L100,100 Z"/>
-                            <!-- Central America -->
-                            <path d="M190,250 L200,260 L210,280 L205,300 L195,310 L185,300 L180,280 L185,260 Z"/>
-                            <!-- South America -->
-                            <path d="M220,310 L250,290 L280,300 L310,330 L320,370 L310,410 L290,440 L260,460 L240,440 L230,400 L220,370 L210,340 Z"/>
-                            <!-- Europe -->
-                            <path d="M460,80 L480,70 L520,75 L540,90 L530,120 L510,140 L490,130 L470,120 L455,100 Z"/>
-                            <!-- Africa -->
-                            <path d="M470,180 L510,170 L550,190 L570,230 L580,280 L570,340 L550,380 L520,400 L490,380 L470,340 L460,290 L455,240 L460,200 Z"/>
-                            <!-- Asia -->
-                            <path d="M560,60 L620,50 L700,55 L760,70 L800,100 L810,140 L790,170 L750,190 L700,200 L660,190 L620,170 L580,150 L560,120 L550,90 Z"/>
-                            <!-- India -->
-                            <path d="M650,200 L680,210 L690,250 L670,290 L650,280 L640,250 L645,220 Z"/>
-                            <!-- Southeast Asia -->
-                            <path d="M750,200 L780,190 L800,210 L790,240 L770,250 L750,235 Z"/>
-                            <!-- Indonesia -->
-                            <path d="M740,280 L760,275 L780,280 L800,285 L810,290 L790,300 L770,295 L750,290 Z"/>
-                            <!-- Australia -->
-                            <path d="M780,340 L830,320 L880,330 L900,360 L890,400 L860,420 L820,410 L790,390 L780,360 Z"/>
-                            <!-- Greenland -->
-                            <path d="M310,40 L350,30 L380,40 L390,60 L370,80 L340,75 L320,60 Z"/>
-                            <!-- Japan -->
-                            <path d="M830,120 L840,100 L850,110 L845,135 L835,140 Z"/>
-                        </g>
+                    <svg viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute;top:0;left:0;">
+                        <!-- World map background image -->
+                        <image href="https://fishotel.com/wp-content/uploads/2026/03/fishotel-world-map.jpg" x="0" y="0" width="1000" height="500" preserveAspectRatio="xMidYMid slice"/>
 
                         <!-- Flight arc: gold dashed bezier -->
                         <path d="M<?php echo round($ox,1); ?>,<?php echo round($oy,1); ?> Q<?php echo round($cx,1); ?>,<?php echo round($cy,1); ?> <?php echo round($dx,1); ?>,<?php echo round($dy,1); ?>"
@@ -792,38 +767,22 @@ trait FisHotel_Shortcodes {
                               fill="#b5a165" font-size="13" font-family="Oswald, sans-serif" letter-spacing="1"
                               style="text-transform:uppercase;"><?php echo esc_html( strtoupper( $origin_name ) ); ?></text>
 
-                        <!-- Destination: hotel icon + label -->
+                        <!-- Destination: FisHotel logo + label -->
                         <g transform="translate(<?php echo round($dx,1); ?>,<?php echo round($dy,1); ?>)">
-                            <!-- Simple house/hotel icon -->
-                            <polygon points="0,-12 10,-4 10,6 -10,6 -10,-4" fill="#fff" opacity="0.9"/>
-                            <polygon points="0,-16 12,-6 -12,-6" fill="#fff" opacity="0.9"/>
-                            <rect x="-3" y="-1" width="6" height="7" fill="#1a1a1a"/>
-                            <text x="0" y="22" text-anchor="middle" fill="#fff" font-size="12" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
+                            <image href="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" x="-20" y="-20" width="40" height="40"/>
+                            <text x="0" y="30" text-anchor="middle" fill="#fff" font-size="12" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
                         </g>
 
-                        <!-- Retro propeller plane -->
-                        <g transform="translate(<?php echo round($plane_x,1); ?>,<?php echo round($plane_y,1); ?>) rotate(<?php echo round($angle,1); ?>)">
-                            <!-- Fuselage -->
-                            <ellipse cx="0" cy="0" rx="16" ry="5" fill="#b5a165" stroke="#8a7a40" stroke-width="0.8"/>
-                            <!-- Cockpit -->
-                            <ellipse cx="12" cy="-1" rx="5" ry="3" fill="#d4c27a" stroke="#8a7a40" stroke-width="0.5"/>
-                            <!-- Top wing -->
-                            <rect x="-6" y="-14" width="16" height="4" rx="1.5" fill="#b5a165" stroke="#8a7a40" stroke-width="0.6"/>
-                            <!-- Bottom wing -->
-                            <rect x="-6" y="6" width="16" height="4" rx="1.5" fill="#b5a165" stroke="#8a7a40" stroke-width="0.6"/>
-                            <!-- Wing struts -->
-                            <line x1="-2" y1="-10" x2="-2" y2="6" stroke="#8a7a40" stroke-width="0.7"/>
-                            <line x1="6" y1="-10" x2="6" y2="6" stroke="#8a7a40" stroke-width="0.7"/>
-                            <!-- Tail -->
-                            <polygon points="-16,-2 -16,-10 -10,-4" fill="#b5a165" stroke="#8a7a40" stroke-width="0.6"/>
-                            <polygon points="-16,2 -16,8 -10,4" fill="#b5a165" stroke="#8a7a40" stroke-width="0.6"/>
-                            <!-- Propeller -->
-                            <line x1="17" y1="-8" x2="17" y2="8" stroke="#fff" stroke-width="1.5" opacity="0.7"/>
-                            <circle cx="17" cy="0" r="1.5" fill="#fff"/>
-                            <!-- Nose -->
-                            <ellipse cx="16" cy="0" rx="2" ry="3.5" fill="#8a7a40"/>
-                        </g>
                     </svg>
+
+                    <!-- Plane icon (HTML img positioned over SVG) -->
+                    <img src="https://fishotel.com/wp-content/uploads/2026/03/fishotel-plane.png" alt="Plane"
+                         class="fh-plane-icon"
+                         style="position:absolute;width:60px;height:40px;
+                                left:<?php echo round( $plane_x / 10, 2 ); ?>%;
+                                top:<?php echo round( $plane_y / 5, 2 ); ?>%;
+                                transform:translate(-50%,-50%) rotate(<?php echo round( $angle + 90, 1 ); ?>deg);
+                                pointer-events:none;">
                 </div>
 
                 <!-- ===== SECTION 2: Status Banner ===== -->
