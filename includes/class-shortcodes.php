@@ -5,28 +5,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 trait FisHotel_Shortcodes {
 
-    public function maybe_override_transit_title() {
-        if ( is_admin() || ! is_singular() ) return;
-
-        $post = get_queried_object();
-        if ( ! $post || ! isset( $post->post_content ) ) return;
-
-        $has_shortcode = has_shortcode( $post->post_content, 'fishotel_batch' ) || is_page( 31845 );
-        if ( ! $has_shortcode ) return;
+    public function maybe_override_transit_title( $title ) {
+        if ( is_admin() || ! is_singular() ) return $title;
 
         $assignments = get_option( 'fishotel_batch_page_assignments', [] );
-        $statuses    = get_option( 'fishotel_batch_statuses', [] );
-        $page_slug   = $post->post_name;
-        $batch_name  = array_search( $page_slug, $assignments );
-        if ( ! $batch_name ) return;
+        if ( empty( $assignments ) ) return $title;
 
-        $status = $statuses[ $batch_name ] ?? 'open_ordering';
-        if ( ! in_array( $status, [ 'orders_closed', 'in_transit' ], true ) ) return;
+        $statuses   = get_option( 'fishotel_batch_statuses', [] );
+        $current_id = get_queried_object_id();
 
-        add_filter( 'document_title_parts', function( $title ) use ( $batch_name ) {
-            $title['title'] = $batch_name . ' – In Transit';
-            return $title;
-        } );
+        foreach ( $assignments as $batch_name => $page_slug ) {
+            $page = get_page_by_path( $page_slug );
+            if ( ! $page || $page->ID !== $current_id ) continue;
+
+            $status = $statuses[ $batch_name ] ?? 'open_ordering';
+            if ( in_array( $status, [ 'orders_closed', 'in_transit' ], true ) ) {
+                $title['title'] = $batch_name . ' – In Transit';
+            }
+            break;
+        }
+
+        return $title;
     }
 
     public function wallet_deposit_shortcode() {

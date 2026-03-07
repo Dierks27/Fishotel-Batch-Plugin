@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.10.1 - Reliable GitHub updater with force-check and cache busting.
- * Version:           2.10.1
+ * Description:       Stable 2.11 - Fixed document_title_parts as direct filter in constructor.
+ * Version:           2.11
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.10.1' );
+define( 'FISHOTEL_VERSION', '2.11' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -102,7 +102,7 @@ class FisHotel_Batch_Manager {
 
         add_action( 'admin_enqueue_scripts', [$this, 'enqueue_batch_orders_scripts'] );
 
-        add_action( 'template_redirect', [$this, 'maybe_override_transit_title'] );
+        add_filter( 'document_title_parts', [$this, 'maybe_override_transit_title'] );
         add_shortcode( 'fishotel_batch', [$this, 'batch_shortcode'] );
         add_shortcode( 'fishotel_wallet', [$this, 'wallet_shortcode'] );
 
