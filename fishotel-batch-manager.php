@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.37 - Arrival assumed noon CT for smooth hour-based plane progress.
- * Version:           2.37
+ * Description:       Stable 2.38 - Stage 3b arrival entry form with fill rate calculator and QT survival tracker.
+ * Version:           2.38
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.37' );
+define( 'FISHOTEL_VERSION', '2.38' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -153,6 +153,8 @@ class FisHotel_Batch_Manager {
         add_action( 'admin_post_fishotel_delete_batch',       [$this, 'delete_batch'] );
         add_action( 'admin_post_fishotel_add_location',       [$this, 'add_location_handler'] );
         add_action( 'admin_post_fishotel_delete_location',    [$this, 'delete_location_handler'] );
+        add_action( 'admin_post_fishotel_save_arrival_data',  [$this, 'save_arrival_data_handler'] );
+        add_action( 'admin_post_fishotel_log_survival_entry', [$this, 'log_survival_entry_handler'] );
 
         add_action( 'wp_login', [$this, 'record_last_login'], 10, 2 );
 

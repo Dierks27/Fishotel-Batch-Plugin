@@ -30,6 +30,7 @@ trait FisHotel_Admin {
         add_submenu_page( 'fishotel-batch-settings', 'Customer Wallets', 'Customer Wallets', 'manage_options', 'fishotel-wallets', [$this, 'wallets_html'] );
         add_submenu_page( 'fishotel-batch-settings', 'Order Summary', 'Order Summary', 'manage_options', 'fishotel-order-summary', [$this, 'order_summary_html'] );
         add_submenu_page( 'fishotel-batch-settings', 'Sync Quarantined Fish', 'Sync Quarantined Fish', 'manage_options', 'fishotel-sync', [$this, 'sync_page_html'] );
+        add_submenu_page( 'fishotel-batch-settings', 'Arrival Entry', 'Arrival Entry', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
     }
 
     public function register_settings() {
@@ -1319,6 +1320,7 @@ trait FisHotel_Admin {
             'fishotel-batch-settings',
             'fishotel-wallets',
             'fishotel-sync',
+            'fishotel-arrival-entry',
         ];
         $page = $_GET['page'] ?? '';
         $is_fishotel = in_array( $page, $fishotel_pages, true )
@@ -2630,6 +2632,266 @@ trait FisHotel_Admin {
             update_option( 'fishotel_origin_locations', $locations );
         }
         wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
+        exit;
+    }
+
+    // =========================================================================
+    // Stage 3b — Arrival Entry
+    // =========================================================================
+
+    public function arrival_entry_html() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
+
+        if ( isset( $_GET['updated'] ) )         echo '<div class="notice notice-success is-dismissible"><p>Arrival data saved.</p></div>';
+        if ( isset( $_GET['survival_logged'] ) )  echo '<div class="notice notice-success is-dismissible"><p>Survival log entry added.</p></div>';
+
+        $batches_str   = get_option( 'fishotel_batches', '' );
+        $batches_array = array_values( array_filter( array_map( 'trim', explode( "\n", $batches_str ) ) ) );
+        $statuses      = get_option( 'fishotel_batch_statuses', [] );
+        $arrived_plus  = [ 'arrived', 'graduation', 'verification', 'draft', 'invoicing' ];
+
+        $eligible = array_filter( $batches_array, function ( $b ) use ( $statuses, $arrived_plus ) {
+            return in_array( $statuses[ $b ] ?? '', $arrived_plus, true );
+        } );
+
+        $selected = isset( $_GET['batch'] )
+            ? sanitize_text_field( wp_unslash( $_GET['batch'] ) )
+            : ( ! empty( $eligible ) ? reset( $eligible ) : '' );
+
+        echo '<div class="wrap">';
+        echo '<h1>Arrival Entry</h1>';
+        echo '<p style="color:#aaa;">Record arrival quantities, DOA counts, and track quarantine survival for each species.</p>';
+
+        // Batch selector
+        echo '<form method="get" style="margin-bottom:20px;">';
+        echo '<input type="hidden" name="page" value="fishotel-arrival-entry">';
+        echo '<label style="font-weight:700;margin-right:10px;">Batch:</label>';
+        echo '<select name="batch" onchange="this.form.submit()" style="min-width:220px;padding:6px 10px;border-radius:4px;">';
+        if ( empty( $eligible ) ) {
+            echo '<option value="">-- No batches at arrived stage or later --</option>';
+        }
+        foreach ( $eligible as $b ) {
+            $stage_label = $this->get_valid_stages()[ $statuses[ $b ] ] ?? $statuses[ $b ];
+            echo '<option value="' . esc_attr( $b ) . '"' . selected( $selected, $b, false ) . '>' . esc_html( $b ) . ' (' . esc_html( $stage_label ) . ')</option>';
+        }
+        echo '</select></form>';
+
+        if ( empty( $selected ) ) {
+            echo '<p style="color:#aaa;">No batches at the arrived stage yet.</p></div>';
+            return;
+        }
+
+        // Load species for this batch
+        $batch_fish = get_posts( [
+            'post_type'   => 'fish_batch',
+            'numberposts' => -1,
+            'post_status' => 'any',
+            'meta_key'    => '_batch_name',
+            'meta_value'  => $selected,
+        ] );
+
+        usort( $batch_fish, function ( $a, $b ) {
+            $ma  = get_post_meta( $a->ID, '_master_id', true );
+            $mb  = get_post_meta( $b->ID, '_master_id', true );
+            $sca = $ma ? (string) get_post_meta( $ma, '_scientific_name', true ) : '';
+            $scb = $mb ? (string) get_post_meta( $mb, '_scientific_name', true ) : '';
+            return strcasecmp( $sca, $scb );
+        } );
+
+        if ( empty( $batch_fish ) ) {
+            echo '<p style="color:#aaa;">No species found for <strong>' . esc_html( $selected ) . '</strong>.</p></div>';
+            return;
+        }
+
+        // Aggregate customer demand per batch_id
+        $requests = get_posts( [
+            'post_type'   => 'fish_request',
+            'numberposts' => -1,
+            'post_status' => 'any',
+            'meta_key'    => '_batch_name',
+            'meta_value'  => $selected,
+        ] );
+
+        $demand = [];
+        foreach ( $requests as $req ) {
+            $items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
+            foreach ( $items as $item ) {
+                $bid = intval( $item['batch_id'] ?? 0 );
+                $qty = intval( $item['qty'] ?? 1 );
+                if ( $bid ) $demand[ $bid ] = ( $demand[ $bid ] ?? 0 ) + $qty;
+            }
+        }
+
+        // ── Arrival Data Form ──────────────────────────────────────────────
+        echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:28px;">';
+        echo '<h2 style="color:#e67e22;margin-top:0;font-size:1.2em;">Arrival Data</h2>';
+
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+        wp_nonce_field( 'fishotel_save_arrival_nonce' );
+        echo '<input type="hidden" name="action" value="fishotel_save_arrival_data">';
+        echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+
+        echo '<table style="width:100%;border-collapse:collapse;">';
+        echo '<thead><tr style="border-bottom:2px solid #444;text-align:left;">';
+        echo '<th style="padding:8px;color:#b5a165;">Common Name</th>';
+        echo '<th style="padding:8px;color:#b5a165;">Scientific Name</th>';
+        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Demand</th>';
+        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Qty Ordered</th>';
+        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Qty Received</th>';
+        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Qty DOA</th>';
+        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Fill Rate</th>';
+        echo '</tr></thead><tbody>';
+
+        foreach ( $batch_fish as $bp ) {
+            $master_id = get_post_meta( $bp->ID, '_master_id', true );
+            $common    = $bp->post_title;
+            $sci_name  = $master_id ? get_post_meta( $master_id, '_scientific_name', true ) : '';
+
+            $qty_ordered  = get_post_meta( $bp->ID, '_arrival_qty_ordered', true );
+            $qty_received = get_post_meta( $bp->ID, '_arrival_qty_received', true );
+            $qty_doa      = get_post_meta( $bp->ID, '_arrival_qty_doa', true );
+
+            $cust_demand = $demand[ $bp->ID ] ?? 0;
+            $available   = intval( $qty_received ) - intval( $qty_doa );
+            $fill_ok     = ( $cust_demand === 0 ) || ( $available >= $cust_demand );
+
+            echo '<tr class="fh-arrival-row" data-id="' . $bp->ID . '" data-demand="' . $cust_demand . '" style="border-bottom:1px solid #333;">';
+            echo '<td style="padding:8px;">' . esc_html( $common ) . '</td>';
+            echo '<td style="padding:8px;color:#aaa;font-style:italic;">' . esc_html( $sci_name ) . '</td>';
+            echo '<td style="padding:8px;text-align:center;">' . $cust_demand . '</td>';
+            echo '<td style="padding:8px;text-align:center;"><input type="number" name="items[' . $bp->ID . '][qty_ordered]" value="' . esc_attr( $qty_ordered ) . '" min="0" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
+            echo '<td style="padding:8px;text-align:center;"><input type="number" name="items[' . $bp->ID . '][qty_received]" value="' . esc_attr( $qty_received ) . '" min="0" class="fh-recv" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
+            echo '<td style="padding:8px;text-align:center;"><input type="number" name="items[' . $bp->ID . '][qty_doa]" value="' . esc_attr( $qty_doa ) . '" min="0" class="fh-doa" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
+
+            $dot_color = $fill_ok ? '#27ae60' : '#e74c3c';
+            $fill_text = $available . ' / ' . $cust_demand;
+            echo '<td style="padding:8px;text-align:center;" class="fh-fill-cell"><span class="fh-fill-dot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' . $dot_color . ';margin-right:6px;vertical-align:middle;"></span><span class="fh-fill-text" style="vertical-align:middle;">' . $fill_text . '</span></td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
+        echo '<div style="margin-top:16px;text-align:right;">';
+        echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Save Arrival Data</button>';
+        echo '</div></form></div>';
+
+        // ── Survival Tracker ───────────────────────────────────────────────
+        echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;">';
+        echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Quarantine Survival Tracker</h2>';
+        echo '<p style="color:#aaa;margin-top:0;font-size:13px;">Log daily live counts per species. Entries are append-only.</p>';
+
+        echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+        wp_nonce_field( 'fishotel_log_survival_nonce' );
+        echo '<input type="hidden" name="action" value="fishotel_log_survival_entry">';
+        echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+
+        echo '<table style="width:100%;border-collapse:collapse;">';
+        echo '<thead><tr style="border-bottom:2px solid #444;text-align:left;">';
+        echo '<th style="padding:8px;color:#b5a165;">Species</th>';
+        echo '<th style="padding:8px;color:#b5a165;">Recent Log</th>';
+        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Today\'s Count</th>';
+        echo '</tr></thead><tbody>';
+
+        foreach ( $batch_fish as $bp ) {
+            $log = get_post_meta( $bp->ID, '_qt_survival_log', true );
+            if ( ! is_array( $log ) ) $log = [];
+
+            // Show last 7 entries as badges
+            $recent = array_slice( $log, -7 );
+            $badges = '';
+            foreach ( $recent as $entry ) {
+                $d = date( 'M j', strtotime( $entry['date'] ) );
+                $badges .= '<span style="display:inline-block;background:#2a2a2a;border:1px solid #555;border-radius:4px;padding:2px 8px;margin:2px 4px;font-size:12px;">' . esc_html( $d ) . ': <strong>' . intval( $entry['count'] ) . '</strong></span>';
+            }
+            if ( empty( $badges ) ) $badges = '<span style="color:#666;">No entries yet</span>';
+
+            echo '<tr style="border-bottom:1px solid #333;">';
+            echo '<td style="padding:8px;">' . esc_html( $bp->post_title ) . '</td>';
+            echo '<td style="padding:8px;">' . $badges . '</td>';
+            echo '<td style="padding:8px;text-align:center;"><input type="number" name="survival[' . $bp->ID . ']" min="0" placeholder="—" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
+        echo '<div style="margin-top:16px;text-align:right;">';
+        echo '<button type="submit" style="background:#27ae60;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Log Today\'s Counts</button>';
+        echo '</div></form></div>';
+
+        echo '</div>'; // .wrap
+
+        // Inline JS for real-time fill rate updates
+        ?>
+        <script>
+        jQuery(function($){
+            $('.fh-arrival-row').on('input', '.fh-recv, .fh-doa', function(){
+                var row    = $(this).closest('.fh-arrival-row');
+                var demand = parseInt(row.data('demand')) || 0;
+                var recv   = parseInt(row.find('.fh-recv').val()) || 0;
+                var doa    = parseInt(row.find('.fh-doa').val()) || 0;
+                var avail  = recv - doa;
+                var ok     = (demand === 0) || (avail >= demand);
+                row.find('.fh-fill-dot').css('background', ok ? '#27ae60' : '#e74c3c');
+                row.find('.fh-fill-text').text(avail + ' / ' + demand);
+            });
+        });
+        </script>
+        <?php
+    }
+
+    public function save_arrival_data_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_save_arrival_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        if ( ! $batch_name ) wp_die( 'No batch specified.' );
+
+        $items = $_POST['items'] ?? [];
+
+        foreach ( $items as $batch_id => $data ) {
+            $batch_id = intval( $batch_id );
+            if ( ! $batch_id ) continue;
+
+            $post = get_post( $batch_id );
+            if ( ! $post || $post->post_type !== 'fish_batch' ) continue;
+            if ( get_post_meta( $batch_id, '_batch_name', true ) !== $batch_name ) continue;
+
+            update_post_meta( $batch_id, '_arrival_qty_ordered',  intval( $data['qty_ordered'] ?? 0 ) );
+            update_post_meta( $batch_id, '_arrival_qty_received', intval( $data['qty_received'] ?? 0 ) );
+            update_post_meta( $batch_id, '_arrival_qty_doa',      intval( $data['qty_doa'] ?? 0 ) );
+        }
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&updated=1' ) );
+        exit;
+    }
+
+    public function log_survival_entry_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_log_survival_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        if ( ! $batch_name ) wp_die( 'No batch specified.' );
+
+        $survival = $_POST['survival'] ?? [];
+        $today    = current_time( 'Y-m-d' );
+
+        foreach ( $survival as $batch_id => $count ) {
+            $batch_id = intval( $batch_id );
+            $count    = trim( $count );
+            if ( ! $batch_id || $count === '' ) continue;
+
+            $post = get_post( $batch_id );
+            if ( ! $post || $post->post_type !== 'fish_batch' ) continue;
+            if ( get_post_meta( $batch_id, '_batch_name', true ) !== $batch_name ) continue;
+
+            $log = get_post_meta( $batch_id, '_qt_survival_log', true );
+            if ( ! is_array( $log ) ) $log = [];
+
+            $log[] = [ 'date' => $today, 'count' => intval( $count ) ];
+            update_post_meta( $batch_id, '_qt_survival_log', $log );
+        }
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&survival_logged=1' ) );
         exit;
     }
 
