@@ -701,6 +701,15 @@ trait FisHotel_Shortcodes {
                 }
             }
 
+            // DEBUG: show progress calculation
+            echo '<!-- fh-debug: batch_name=' . esc_html( $batch_name )
+                . ', closed_date=' . esc_html( $closed_date )
+                . ', arrival_date=' . esc_html( $arrival_date )
+                . ', progress=' . round( $progress, 4 )
+                . ', elapsed=' . ( isset( $elapsed ) ? $elapsed : 'N/A' )
+                . ', total=' . ( isset( $total_days ) ? $total_days : 'N/A' )
+                . ' -->';
+
             // Plane position on quadratic bezier at t=$progress
             $t  = $progress;
             $t1 = 1 - $t;
