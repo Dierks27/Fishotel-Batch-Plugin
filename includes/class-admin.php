@@ -193,7 +193,6 @@ trait FisHotel_Admin {
             }
             .fh-icon-btn:hover::after { opacity:1; }
             </style>
-            <?php $stage_actions = $this->get_stage_actions(); ?>
             <form method="post" action="" id="fishotel-save-all-form" style="margin-top:24px;">
                 <?php wp_nonce_field( 'fishotel_save_all_nonce' ); ?>
                 <input type="hidden" name="fishotel_save_all" value="1">
@@ -241,15 +240,12 @@ trait FisHotel_Admin {
                             </td>
                             <td>
                                 <input type="number" step="0.01" min="0" name="deposit_amount_<?php echo $key; ?>" value="<?php echo esc_attr( $batch_deposit ); ?>" placeholder="e.g. 25.00" style="width:90px;">
-                                <small style="display:block;color:#aaa;margin-top:3px;">USD (required)</small>
                             </td>
                             <td>
                                 <input type="date" name="closed_date_<?php echo $key; ?>" value="<?php echo esc_attr( $closed_date ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:120px;">
-                                <small style="display:block;color:#aaa;margin-top:3px;">Orders closed</small>
                             </td>
                             <td>
                                 <input type="date" name="arrival_date_<?php echo $key; ?>" value="<?php echo esc_attr( $arrival_date ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:120px;">
-                                <small style="display:block;color:#aaa;margin-top:3px;">Transit end date</small>
                             </td>
                             <td style="white-space:nowrap;padding:6px 10px;">
                                 <?php if ( $view_url ) : ?>
@@ -257,13 +253,6 @@ trait FisHotel_Admin {
                                        class="fh-icon-btn" data-tip="View">👁</a>
                                     <button type="button" class="fh-icon-btn" data-tip="Copy Link"
                                             onclick="fhCopyLink(this,'<?php echo esc_js( $embed_url ); ?>')">📋</button>
-                                <?php endif; ?>
-                                <?php if ( isset( $stage_actions[ $current_status ] ) ) :
-                                    $sa = $stage_actions[ $current_status ];
-                                ?>
-                                    <button type="button" class="fh-icon-btn fh-red"
-                                            data-tip="<?php echo esc_attr( $sa['label'] ); ?>"
-                                            onclick="if(confirm('<?php echo esc_js( sprintf( $sa['confirm'], $batch ) ); ?>')) document.getElementById('fh-adv-<?php echo $key; ?>').submit()">🔒</button>
                                 <?php endif; ?>
                                 <?php
                                 $del_nonce  = wp_create_nonce( 'fishotel_delete_batch_' . sanitize_key( $batch ) );
@@ -319,19 +308,6 @@ trait FisHotel_Admin {
                     </div>
                 </div>
 
-            <?php foreach ( $batches_array as $batch ) :
-                $key    = sanitize_key( $batch );
-                $cur_st = $statuses[ $batch ] ?? 'open_ordering';
-                if ( ! isset( $stage_actions[ $cur_st ] ) ) continue;
-                $sa = $stage_actions[ $cur_st ];
-            ?>
-            <form id="fh-adv-<?php echo $key; ?>" method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" style="display:none;">
-                <?php wp_nonce_field( 'fishotel_advance_stage_nonce' ); ?>
-                <input type="hidden" name="action" value="fishotel_advance_stage">
-                <input type="hidden" name="batch_name" value="<?php echo esc_attr( $batch ); ?>">
-                <input type="hidden" name="next_stage" value="<?php echo esc_attr( $sa['next_stage'] ); ?>">
-            </form>
-            <?php endforeach; ?>
 
             <!-- ===== ZONE 4: Origin Locations ===== -->
             <div style="margin-top:8px;text-align:center;">
@@ -2161,7 +2137,6 @@ trait FisHotel_Admin {
         return [
             'open_ordering'  => 'Open Ordering',
             'orders_closed'  => 'Orders Closed',
-            'in_transit'     => 'In Transit',
             'arrived'        => 'Arrived',
             'graduation'     => 'Graduation',
             'verification'   => 'Verification',

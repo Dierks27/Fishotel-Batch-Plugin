@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.38 - Stage 3b arrival entry form with fill rate calculator and QT survival tracker.
- * Version:           2.38
+ * Description:       Stable 2.39 - Map pin nudged east, close button removed, field labels cleaned, stage dropdown trimmed.
+ * Version:           2.39
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.38' );
+define( 'FISHOTEL_VERSION', '2.39' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

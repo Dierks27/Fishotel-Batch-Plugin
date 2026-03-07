@@ -637,7 +637,7 @@ trait FisHotel_Shortcodes {
 
             // Destination: center-US
             $dest_lat = 39.8283;
-            $dest_lng = -98.5795;
+            $dest_lng = -95.5795;
 
             // Calibrated projection — viewBox matches image pixels (1280×720).
             // Anchor points clicked directly on the map image:
