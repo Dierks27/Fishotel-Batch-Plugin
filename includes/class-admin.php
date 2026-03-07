@@ -1999,12 +1999,14 @@ trait FisHotel_Admin {
      */
     private function get_valid_stages(): array {
         return [
-            'open_ordering' => 'Open Ordering',
-            'arrived'       => 'Arrived',
-            'graduation'    => 'Graduation',
-            'verification'  => 'Verification',
-            'draft'         => 'Draft',
-            'invoicing'     => 'Invoicing',
+            'open_ordering'  => 'Open Ordering',
+            'orders_closed'  => 'Orders Closed',
+            'in_transit'     => 'In Transit',
+            'arrived'        => 'Arrived',
+            'graduation'     => 'Graduation',
+            'verification'   => 'Verification',
+            'draft'          => 'Draft',
+            'invoicing'      => 'Invoicing',
         ];
     }
 

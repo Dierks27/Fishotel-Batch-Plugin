@@ -606,6 +606,249 @@ trait FisHotel_Shortcodes {
             return ob_get_clean();
         }
 
+        // ─── Stage 3: Transit page (orders_closed / in_transit) ────────────
+        if ( in_array( $status, [ 'orders_closed', 'in_transit' ], true ) ) {
+            $arrival_dates  = get_option( 'fishotel_batch_arrival_dates', [] );
+            $arrival_date   = $arrival_dates[ $batch_name ] ?? '';
+            $origin_locs    = $this->get_origin_locations();
+
+            // Detect origin from batch name
+            $origin_name = 'International Waters';
+            $origin_lat  = 0;
+            $origin_lng  = -160;
+            $batch_words = preg_split( '/[\s\-_]+/', $batch_name );
+            foreach ( $origin_locs as $loc ) {
+                foreach ( $batch_words as $word ) {
+                    if ( strcasecmp( trim( $word ), $loc['name'] ) === 0 ) {
+                        $origin_name = $loc['name'];
+                        $origin_lat  = (float) $loc['lat'];
+                        $origin_lng  = (float) $loc['lng'];
+                        break 2;
+                    }
+                }
+                // Also try multi-word location names as substring
+                if ( stripos( $batch_name, $loc['name'] ) !== false ) {
+                    $origin_name = $loc['name'];
+                    $origin_lat  = (float) $loc['lat'];
+                    $origin_lng  = (float) $loc['lng'];
+                    break;
+                }
+            }
+
+            // Destination: center-US
+            $dest_lat = 39.8283;
+            $dest_lng = -98.5795;
+
+            // Convert to equirectangular SVG coords (viewBox 0 0 1000 500)
+            $ox = ( $origin_lng + 180 ) * ( 1000 / 360 );
+            $oy = ( 90 - $origin_lat ) * ( 500 / 180 );
+            $dx = ( $dest_lng + 180 ) * ( 1000 / 360 );
+            $dy = ( 90 - $dest_lat ) * ( 500 / 180 );
+
+            // Bezier control point: midpoint shifted 150px upward
+            $cx = ( $ox + $dx ) / 2;
+            $cy = ( ( $oy + $dy ) / 2 ) - 150;
+
+            // Flight progress
+            $progress    = 0.5; // default if no arrival date
+            $arrived     = false;
+            $days_left   = null;
+            $quarantine_day = null;
+
+            if ( $arrival_date ) {
+                $arrival_ts = strtotime( $arrival_date );
+                $now_ts     = time();
+                // Estimate closing date: assume ordering closed when stage changed
+                // Use a rough 14-day transit as fallback total
+                $total_days = 14;
+                $days_until = (int) ceil( ( $arrival_ts - $now_ts ) / 86400 );
+
+                if ( $days_until <= 0 ) {
+                    // Arrived
+                    $arrived        = true;
+                    $progress       = 1.0;
+                    $quarantine_day = abs( $days_until ) + 1;
+                    if ( $quarantine_day > 14 ) $quarantine_day = 14;
+                } else {
+                    // In transit — estimate progress from remaining days
+                    $elapsed  = max( $total_days - $days_until, 0 );
+                    $progress = min( max( $elapsed / $total_days, 0.05 ), 0.95 );
+                    $days_left = $days_until;
+                }
+            }
+
+            // Plane position on quadratic bezier at t=$progress
+            $t  = $progress;
+            $t1 = 1 - $t;
+            $plane_x = $t1 * $t1 * $ox + 2 * $t1 * $t * $cx + $t * $t * $dx;
+            $plane_y = $t1 * $t1 * $oy + 2 * $t1 * $t * $cy + $t * $t * $dy;
+
+            // Tangent angle for plane rotation
+            $tan_x = 2 * $t1 * ( $cx - $ox ) + 2 * $t * ( $dx - $cx );
+            $tan_y = 2 * $t1 * ( $cy - $oy ) + 2 * $t * ( $dy - $cy );
+            $angle = rad2deg( atan2( $tan_y, $tan_x ) );
+
+            // Badge logic
+            if ( $arrived ) {
+                $badge_text  = 'QUARANTINE IN PROGRESS — DAY ' . intval( $quarantine_day ) . ' OF 14';
+                $badge_color = '#e67e22';
+            } elseif ( ! $arrival_date ) {
+                $badge_text  = 'DEPARTURE CONFIRMED';
+                $badge_color = '#e67e22';
+            } elseif ( $days_left === 0 ) {
+                $badge_text  = 'ARRIVING TODAY!!';
+                $badge_color = '#e67e22';
+            } elseif ( $days_left === 1 ) {
+                $badge_text  = 'ARRIVING TOMORROW!';
+                $badge_color = '#e67e22';
+            } else {
+                $badge_text  = 'ARRIVING IN ' . intval( $days_left ) . ' DAYS';
+                $badge_color = '#e67e22';
+            }
+            ?>
+            <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+            <style>
+                .fh-transit-wrap { max-width: 960px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+                .fh-hero-map {
+                    position: relative; width: 100%; height: 420px; background: #1a1a1a; border-radius: 12px; overflow: hidden;
+                    border: 2px solid #333;
+                }
+                .fh-hero-map.fh-arrived { animation: fhPulseBorder 2s ease-in-out infinite; }
+                @keyframes fhPulseBorder { 0%,100%{ border-color:#333; } 50%{ border-color:#b5a165; } }
+                .fh-hero-map svg { width: 100%; height: 100%; }
+                /* CSS grain texture */
+                .fh-grain {
+                    position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0.08;
+                }
+                .fh-status-banner { text-align: center; padding: 32px 20px 28px; }
+                .fh-status-banner h2 {
+                    font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(1.6rem, 4vw, 2.4rem);
+                    text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 10px 0;
+                }
+                .fh-status-banner .fh-subline {
+                    color: #b5a165; font-size: clamp(0.85rem, 2vw, 1.05rem); margin: 0 0 20px 0;
+                    font-family: 'Oswald', sans-serif; font-weight: 400;
+                }
+                .fh-stamp {
+                    display: inline-block; border: 2px solid #e67e22; border-radius: 4px; padding: 8px 22px;
+                    font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(0.95rem, 2.5vw, 1.3rem);
+                    text-transform: uppercase; letter-spacing: 0.06em; transform: rotate(-2deg);
+                    color: #e67e22;
+                }
+                @media (max-width: 600px) {
+                    .fh-hero-map { height: 280px; }
+                }
+            </style>
+
+            <div class="fh-transit-wrap">
+
+                <!-- ===== SECTION 1: Hero Map ===== -->
+                <div class="fh-hero-map <?php echo $arrived ? 'fh-arrived' : ''; ?>">
+                    <!-- Grain overlay via SVG filter -->
+                    <svg class="fh-grain" xmlns="http://www.w3.org/2000/svg">
+                        <filter id="fhNoise">
+                            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+                            <feColorMatrix type="saturate" values="0"/>
+                        </filter>
+                        <rect width="100%" height="100%" filter="url(#fhNoise)"/>
+                    </svg>
+
+                    <svg viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;">
+                        <!-- Simplified continent shapes -->
+                        <g fill="#2a4a3e" stroke="none" opacity="0.6">
+                            <!-- North America -->
+                            <path d="M120,80 L180,60 L230,70 L260,100 L280,140 L270,180 L240,200 L210,230 L190,250 L160,240 L140,210 L120,180 L100,160 L90,130 L100,100 Z"/>
+                            <!-- Central America -->
+                            <path d="M190,250 L200,260 L210,280 L205,300 L195,310 L185,300 L180,280 L185,260 Z"/>
+                            <!-- South America -->
+                            <path d="M220,310 L250,290 L280,300 L310,330 L320,370 L310,410 L290,440 L260,460 L240,440 L230,400 L220,370 L210,340 Z"/>
+                            <!-- Europe -->
+                            <path d="M460,80 L480,70 L520,75 L540,90 L530,120 L510,140 L490,130 L470,120 L455,100 Z"/>
+                            <!-- Africa -->
+                            <path d="M470,180 L510,170 L550,190 L570,230 L580,280 L570,340 L550,380 L520,400 L490,380 L470,340 L460,290 L455,240 L460,200 Z"/>
+                            <!-- Asia -->
+                            <path d="M560,60 L620,50 L700,55 L760,70 L800,100 L810,140 L790,170 L750,190 L700,200 L660,190 L620,170 L580,150 L560,120 L550,90 Z"/>
+                            <!-- India -->
+                            <path d="M650,200 L680,210 L690,250 L670,290 L650,280 L640,250 L645,220 Z"/>
+                            <!-- Southeast Asia -->
+                            <path d="M750,200 L780,190 L800,210 L790,240 L770,250 L750,235 Z"/>
+                            <!-- Indonesia -->
+                            <path d="M740,280 L760,275 L780,280 L800,285 L810,290 L790,300 L770,295 L750,290 Z"/>
+                            <!-- Australia -->
+                            <path d="M780,340 L830,320 L880,330 L900,360 L890,400 L860,420 L820,410 L790,390 L780,360 Z"/>
+                            <!-- Greenland -->
+                            <path d="M310,40 L350,30 L380,40 L390,60 L370,80 L340,75 L320,60 Z"/>
+                            <!-- Japan -->
+                            <path d="M830,120 L840,100 L850,110 L845,135 L835,140 Z"/>
+                        </g>
+
+                        <!-- Flight arc: gold dashed bezier -->
+                        <path d="M<?php echo round($ox,1); ?>,<?php echo round($oy,1); ?> Q<?php echo round($cx,1); ?>,<?php echo round($cy,1); ?> <?php echo round($dx,1); ?>,<?php echo round($dy,1); ?>"
+                              fill="none" stroke="#b5a165" stroke-width="2" stroke-dasharray="8,6" opacity="0.7"/>
+
+                        <!-- Origin: gold circle + label -->
+                        <circle cx="<?php echo round($ox,1); ?>" cy="<?php echo round($oy,1); ?>" r="6" fill="#b5a165"/>
+                        <text x="<?php echo round($ox,1); ?>" y="<?php echo round($oy,1) + 22; ?>" text-anchor="middle"
+                              fill="#b5a165" font-size="13" font-family="Oswald, sans-serif" letter-spacing="1"
+                              style="text-transform:uppercase;"><?php echo esc_html( strtoupper( $origin_name ) ); ?></text>
+
+                        <!-- Destination: hotel icon + label -->
+                        <g transform="translate(<?php echo round($dx,1); ?>,<?php echo round($dy,1); ?>)">
+                            <!-- Simple house/hotel icon -->
+                            <polygon points="0,-12 10,-4 10,6 -10,6 -10,-4" fill="#fff" opacity="0.9"/>
+                            <polygon points="0,-16 12,-6 -12,-6" fill="#fff" opacity="0.9"/>
+                            <rect x="-3" y="-1" width="6" height="7" fill="#1a1a1a"/>
+                            <text x="0" y="22" text-anchor="middle" fill="#fff" font-size="12" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
+                        </g>
+
+                        <!-- Retro propeller plane -->
+                        <g transform="translate(<?php echo round($plane_x,1); ?>,<?php echo round($plane_y,1); ?>) rotate(<?php echo round($angle,1); ?>)">
+                            <!-- Fuselage -->
+                            <ellipse cx="0" cy="0" rx="16" ry="5" fill="#b5a165" stroke="#8a7a40" stroke-width="0.8"/>
+                            <!-- Cockpit -->
+                            <ellipse cx="12" cy="-1" rx="5" ry="3" fill="#d4c27a" stroke="#8a7a40" stroke-width="0.5"/>
+                            <!-- Top wing -->
+                            <rect x="-6" y="-14" width="16" height="4" rx="1.5" fill="#b5a165" stroke="#8a7a40" stroke-width="0.6"/>
+                            <!-- Bottom wing -->
+                            <rect x="-6" y="6" width="16" height="4" rx="1.5" fill="#b5a165" stroke="#8a7a40" stroke-width="0.6"/>
+                            <!-- Wing struts -->
+                            <line x1="-2" y1="-10" x2="-2" y2="6" stroke="#8a7a40" stroke-width="0.7"/>
+                            <line x1="6" y1="-10" x2="6" y2="6" stroke="#8a7a40" stroke-width="0.7"/>
+                            <!-- Tail -->
+                            <polygon points="-16,-2 -16,-10 -10,-4" fill="#b5a165" stroke="#8a7a40" stroke-width="0.6"/>
+                            <polygon points="-16,2 -16,8 -10,4" fill="#b5a165" stroke="#8a7a40" stroke-width="0.6"/>
+                            <!-- Propeller -->
+                            <line x1="17" y1="-8" x2="17" y2="8" stroke="#fff" stroke-width="1.5" opacity="0.7"/>
+                            <circle cx="17" cy="0" r="1.5" fill="#fff"/>
+                            <!-- Nose -->
+                            <ellipse cx="16" cy="0" rx="2" ry="3.5" fill="#8a7a40"/>
+                        </g>
+                    </svg>
+                </div>
+
+                <!-- ===== SECTION 2: Status Banner ===== -->
+                <div class="fh-status-banner">
+                    <?php if ( $arrived ) : ?>
+                        <h2 style="color:#e67e22;">&#x1F6EC; YOUR FISH HAVE LANDED!</h2>
+                    <?php else : ?>
+                        <h2 style="color:#e67e22;">&#9992; YOUR FISH ARE ON THEIR WAY!</h2>
+                    <?php endif; ?>
+
+                    <p class="fh-subline">
+                        <?php echo esc_html( $batch_name ); ?>
+                        <?php if ( $arrival_date ) : ?>
+                            &middot; Arriving <?php echo esc_html( date( 'M j, Y', strtotime( $arrival_date ) ) ); ?>
+                        <?php endif; ?>
+                    </p>
+
+                    <div class="fh-stamp"><?php echo esc_html( $badge_text ); ?></div>
+                </div>
+
+            </div>
+            <?php
+            return ob_get_clean();
+        }
+
         // Read-only closed batch view for all non-open_ordering stages.
         $my_items = [];
         $my_total = 0.0;
