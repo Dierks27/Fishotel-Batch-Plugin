@@ -729,6 +729,33 @@ trait FisHotel_Shortcodes {
                 $badge_text  = 'ARRIVING IN ' . intval( $days_left ) . ' DAYS';
                 $badge_color = '#e67e22';
             }
+
+            // ─── Boarding pass data ─────────────────────────────────────
+            $bp_items     = [];
+            $bp_total     = 0.0;
+            $bp_logged_in = is_user_logged_in();
+            if ( $bp_logged_in ) {
+                $bp_uid  = get_current_user_id();
+                $bp_reqs = get_posts( [
+                    'post_type'   => 'fish_request',
+                    'numberposts' => -1,
+                    'post_status' => 'any',
+                    'meta_query'  => [
+                        'relation' => 'AND',
+                        [ 'key' => '_customer_id', 'value' => $bp_uid,      'compare' => '=' ],
+                        [ 'key' => '_batch_name',  'value' => $batch_name,  'compare' => '=' ],
+                    ],
+                ] );
+                foreach ( $bp_reqs as $req ) {
+                    if ( get_post_meta( $req->ID, '_is_admin_order', true ) ) continue;
+                    $req_items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
+                    foreach ( $req_items as $item ) {
+                        $bp_items[] = $item;
+                        $bp_total  += (float) $item['price'] * (int) $item['qty'];
+                    }
+                }
+            }
+            $bp_deposit = $this->get_deposit_amount( $batch_name );
             ?>
             <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
             <style>
@@ -754,6 +781,57 @@ trait FisHotel_Shortcodes {
                     font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(0.95rem, 2.5vw, 1.3rem);
                     text-transform: uppercase; letter-spacing: 0.06em; transform: rotate(-2deg);
                     color: #e67e22;
+                }
+                /* ── Boarding Pass ── */
+                .fh-bp-wrap { position: relative; margin-top: 28px; }
+                .fh-boarding-pass {
+                    display: flex; background: #0c161f; border: 2px dashed #b5a165; border-radius: 10px;
+                    font-family: 'Oswald', sans-serif; color: #fff; overflow: hidden;
+                }
+                .fh-bp-left {
+                    flex: 0 0 22%; padding: 24px 20px; display: flex; flex-direction: column; gap: 10px;
+                    border-right: 2px dashed #b5a165;
+                }
+                .fh-bp-left img { width: 56px; height: 56px; margin-bottom: 4px; }
+                .fh-bp-label { font-size: 0.65rem; color: #b5a165; text-transform: uppercase; letter-spacing: 0.1em; margin: 0; }
+                .fh-bp-value { font-size: 0.95rem; font-weight: 600; margin: 0 0 6px 0; }
+                .fh-bp-center { flex: 1; padding: 20px; overflow-x: auto; }
+                .fh-bp-center table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+                .fh-bp-center th {
+                    text-align: left; color: #b5a165; font-weight: 400; font-size: 0.7rem; text-transform: uppercase;
+                    letter-spacing: 0.08em; padding: 4px 8px 8px; border-bottom: 1px solid #333;
+                }
+                .fh-bp-center td { padding: 6px 8px; border-bottom: 1px solid #1a1a1a; }
+                .fh-bp-center .fh-bp-subtotal td { border-top: 1px solid #b5a165; font-weight: 700; color: #b5a165; padding-top: 10px; }
+                .fh-bp-stub {
+                    flex: 0 0 20%; padding: 20px 16px; display: flex; flex-direction: column; align-items: center;
+                    justify-content: center; gap: 12px; text-align: center;
+                    border-left: 2px dashed #b5a165;
+                    background-image: repeating-linear-gradient(180deg, transparent, transparent 8px, #0c161f 8px, #0c161f 10px);
+                    background-size: 4px 10px; background-position: left; background-repeat: repeat-y;
+                }
+                .fh-bp-stub-title {
+                    writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg);
+                    font-size: 1.1rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+                    color: #b5a165; position: absolute; left: 8px; top: 50%; transform: rotate(180deg) translateX(50%);
+                }
+                .fh-bp-deposit-stamp {
+                    display: inline-block; border: 2px solid #e67e22; border-radius: 4px; padding: 6px 14px;
+                    font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;
+                    transform: rotate(-15deg); color: #e67e22;
+                }
+                .fh-bp-ghost { filter: blur(5px); pointer-events: none; user-select: none; }
+                .fh-bp-login-overlay {
+                    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+                    background: rgba(12,22,31,0.7); border-radius: 10px; z-index: 2;
+                    font-family: 'Oswald', sans-serif; font-size: 1.2rem; color: #b5a165;
+                    text-transform: uppercase; letter-spacing: 0.08em;
+                }
+                @media (max-width: 700px) {
+                    .fh-boarding-pass { flex-direction: column; }
+                    .fh-bp-left, .fh-bp-stub { flex: none; border-right: none; border-left: none; border-bottom: 2px dashed #b5a165; padding: 16px; }
+                    .fh-bp-stub { border-bottom: none; border-top: 2px dashed #b5a165; flex-direction: row; flex-wrap: wrap; }
+                    .fh-bp-stub-title { writing-mode: horizontal-tb; position: static; transform: none; }
                 }
             </style>
 
@@ -804,6 +882,82 @@ trait FisHotel_Shortcodes {
                     </p>
 
                     <div class="fh-stamp"><?php echo esc_html( $badge_text ); ?></div>
+                </div>
+
+                <!-- ===== SECTION 3: Boarding Pass ===== -->
+                <div class="fh-bp-wrap">
+                    <?php if ( ! $bp_logged_in ) : ?>
+                        <div class="fh-bp-login-overlay">Log in to view your boarding pass</div>
+                    <?php endif; ?>
+                    <div class="fh-boarding-pass <?php echo ! $bp_logged_in ? 'fh-bp-ghost' : ''; ?>">
+                        <!-- LEFT: Flight info -->
+                        <div class="fh-bp-left">
+                            <img src="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" alt="FisHotel">
+                            <div>
+                                <p class="fh-bp-label">Passenger</p>
+                                <p class="fh-bp-value"><?php echo $bp_logged_in ? esc_html( wp_get_current_user()->display_name ) : 'Guest'; ?></p>
+                            </div>
+                            <div>
+                                <p class="fh-bp-label">Flight</p>
+                                <p class="fh-bp-value"><?php echo esc_html( $batch_name ); ?></p>
+                            </div>
+                            <div>
+                                <p class="fh-bp-label">From</p>
+                                <p class="fh-bp-value"><?php echo esc_html( strtoupper( $origin_name ) ); ?></p>
+                            </div>
+                            <div>
+                                <p class="fh-bp-label">To</p>
+                                <p class="fh-bp-value">CHAMPLIN, MN</p>
+                            </div>
+                        </div>
+
+                        <!-- CENTER: Fish manifest -->
+                        <div class="fh-bp-center">
+                            <table>
+                                <thead><tr>
+                                    <th>Common Name</th><th>Qty</th><th>Unit Price</th><th>Total</th>
+                                </tr></thead>
+                                <tbody>
+                                <?php if ( ! empty( $bp_items ) ) : ?>
+                                    <?php foreach ( $bp_items as $fi ) :
+                                        $fi_qty   = (int) $fi['qty'];
+                                        $fi_price = (float) $fi['price'];
+                                        $fi_total = $fi_qty * $fi_price;
+                                    ?>
+                                    <tr>
+                                        <td><?php echo esc_html( $fi['fish_name'] ); ?></td>
+                                        <td><?php echo $fi_qty; ?></td>
+                                        <td>$<?php echo number_format( $fi_price, 2 ); ?></td>
+                                        <td>$<?php echo number_format( $fi_total, 2 ); ?></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                    <tr class="fh-bp-subtotal">
+                                        <td colspan="3" style="text-align:right;">Subtotal</td>
+                                        <td>$<?php echo number_format( $bp_total, 2 ); ?></td>
+                                    </tr>
+                                <?php else : ?>
+                                    <tr><td colspan="4" style="color:#666;text-align:center;padding:20px 0;">No fish on this flight</td></tr>
+                                <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- RIGHT STUB -->
+                        <div class="fh-bp-stub" style="position:relative;">
+                            <span class="fh-bp-stub-title">Boarding Pass</span>
+                            <div>
+                                <p class="fh-bp-label">Deposit</p>
+                                <p class="fh-bp-value">$<?php echo number_format( $bp_deposit, 2 ); ?></p>
+                            </div>
+                            <div class="fh-bp-deposit-stamp">&check; Deposit Paid</div>
+                            <?php if ( $arrival_date ) : ?>
+                            <div>
+                                <p class="fh-bp-label">Arrival</p>
+                                <p class="fh-bp-value"><?php echo esc_html( date( 'M j, Y', strtotime( $arrival_date ) ) ); ?></p>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
 
             </div>
