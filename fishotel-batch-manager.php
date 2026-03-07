@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.5.8 - ViewBox 1280x720 matches image pixels, zero crop/offset.
- * Version:           2.5.8
+ * Description:       Stable 2.5.9 - Refined projection constants and marker positions.
+ * Version:           2.5.9
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.5.8' );
+define( 'FISHOTEL_VERSION', '2.5.9' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
