@@ -2786,6 +2786,42 @@ trait FisHotel_Admin {
         echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Save Arrival Data</button>';
         echo '</div></form></div>';
 
+        // ── HF Post Generator ──────────────────────────────────────────────
+        $hf_arrival_dates = get_option( 'fishotel_batch_arrival_dates', [] );
+        $hf_arrival_date  = $hf_arrival_dates[ $selected ] ?? '';
+        $hf_arrival_fmt   = $hf_arrival_date ? date( 'F j, Y', strtotime( $hf_arrival_date ) ) : 'TBD';
+        $hf_qt_end        = $hf_arrival_date ? date( 'F j, Y', strtotime( $hf_arrival_date . ' +14 days' ) ) : 'TBD';
+
+        $hf_total_ordered  = 0;
+        $hf_total_received = 0;
+        $hf_total_doa      = 0;
+        $hf_lines          = [];
+
+        foreach ( $batch_fish as $bp ) {
+            $recv = intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) );
+            $doa  = intval( get_post_meta( $bp->ID, '_arrival_qty_doa', true ) );
+            $ord  = intval( get_post_meta( $bp->ID, '_arrival_qty_ordered', true ) );
+            $hf_total_ordered  += $ord;
+            $hf_total_received += $recv;
+            $hf_total_doa      += $doa;
+
+            $cust_demand = $demand[ $bp->ID ] ?? 0;
+            $available   = $recv - $doa;
+            $fill_label  = ( $cust_demand === 0 ) ? 'no demand' : ( $available >= $cust_demand ? 'filled' : 'short' );
+            $hf_lines[]  = '[*] ' . $bp->post_title . ' — Received: ' . $recv . ', DOA: ' . $doa . ' (' . $fill_label . ')';
+        }
+
+        $hf_post  = '[b]' . esc_html( $selected ) . ' — Arrival Report (' . $hf_arrival_fmt . ')[/b]' . "\n\n";
+        $hf_post .= 'Total ordered: ' . $hf_total_ordered . ' | Received: ' . $hf_total_received . ' | DOA: ' . $hf_total_doa . "\n\n";
+        $hf_post .= '[list]' . "\n" . implode( "\n", $hf_lines ) . "\n" . '[/list]' . "\n\n";
+        $hf_post .= 'Quarantine ends: [b]' . $hf_qt_end . '[/b]';
+
+        echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:28px;">';
+        echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">HF Arrival Summary</h2>';
+        echo '<button type="button" id="fh-gen-hf" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;margin-bottom:12px;" onclick="document.getElementById(\'fh-hf-output\').style.display=\'block\';this.style.display=\'none\';">Generate HF Post</button>';
+        echo '<textarea id="fh-hf-output" readonly style="display:none;width:100%;min-height:200px;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:6px;padding:12px;font-family:monospace;font-size:13px;resize:vertical;" onclick="this.select()">' . esc_textarea( $hf_post ) . '</textarea>';
+        echo '</div>';
+
         // ── Survival Tracker ───────────────────────────────────────────────
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;">';
         echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Quarantine Survival Tracker</h2>';
