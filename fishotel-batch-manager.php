@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.20 - Stage-aware H1, tab title, and breadcrumb for all batch stages.
- * Version:           2.20
+ * Description:       Stable 2.21 - Fix destination pin logo/label spacing on transit map.
+ * Version:           2.21
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.20' );
+define( 'FISHOTEL_VERSION', '2.21' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

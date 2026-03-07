@@ -948,7 +948,7 @@ trait FisHotel_Shortcodes {
 
                         <!-- Destination: FisHotel logo + label (hard-coded to Minnesota) -->
                         <image href="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" x="260" y="280" width="40" height="40"/>
-                        <text x="270" y="318" text-anchor="middle" fill="#fff" font-size="13" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
+                        <text x="270" y="330" text-anchor="middle" fill="#fff" font-size="13" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
                     </svg>
 
                     <!-- Plane icon (HTML img centered on bezier point) -->
