@@ -1297,7 +1297,7 @@ trait FisHotel_Admin {
                 $fish_post = get_post( $batch_id );
                 $cart_items[] = [
                     'batch_id'     => $batch_id,
-                    'fish_name'    => $fish_post ? $fish_post->post_title : 'Unknown',
+                    'fish_name'    => $fish_post ? preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $fish_post->post_title ) : 'Unknown',
                     'qty'          => max( 1, intval( $row['qty'] ?? 1 ) ),
                     'price'        => floatval( $row['price'] ?? 0 ),
                     'requested_at' => current_time( 'mysql' ),

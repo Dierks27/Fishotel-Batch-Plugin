@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.6.3 - Editable fish_request admin meta box and test request generator.
- * Version:           2.6.3
+ * Description:       Stable 2.6.4 - Strip batch suffix from fish names in cart items.
+ * Version:           2.6.4
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.6.3' );
+define( 'FISHOTEL_VERSION', '2.6.4' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

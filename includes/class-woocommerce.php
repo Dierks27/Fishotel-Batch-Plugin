@@ -114,7 +114,7 @@ trait FisHotel_WooCommerce {
                 $qty   = rand( 1, 3 );
                 $cart_items[] = [
                     'batch_id'     => $bf->ID,
-                    'fish_name'    => $bf->post_title,
+                    'fish_name'    => preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bf->post_title ),
                     'qty'          => $qty,
                     'price'        => $price,
                     'requested_at' => current_time( 'mysql' ),
