@@ -5,18 +5,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 trait FisHotel_Shortcodes {
 
-    public function maybe_override_transit_title( $title ) {
-        $assignments = get_option( 'fishotel_batch_page_assignments', [] );
-        $statuses    = get_option( 'fishotel_batch_statuses', [] );
-        $obj         = get_queried_object();
-        $slug        = $obj->post_name ?? '';
-        $batch       = array_search( $slug, $assignments, true );
-        if ( $batch && in_array( $statuses[ $batch ] ?? '', [ 'orders_closed', 'in_transit', 'arrived' ], true ) ) {
-            $title['title'] = $batch . ' – In Transit';
-        }
-        return $title;
-    }
-
     public function wallet_deposit_shortcode() {
         if ( ! is_user_logged_in() ) return '<p>Please <a href="' . wp_login_url( get_permalink() ) . '">log in</a> to deposit funds.</p>';
         $user_id = get_current_user_id();

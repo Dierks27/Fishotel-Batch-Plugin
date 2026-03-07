@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.15 - Clean title filter, removed debug, aggressive updater cache busting.
- * Version:           2.15
+ * Description:       Stable 2.16 - Bare file-scope document_title_parts filter.
+ * Version:           2.16
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.15' );
+define( 'FISHOTEL_VERSION', '2.16' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -21,6 +21,19 @@ require_once FISHOTEL_PLUGIN_DIR . 'includes/class-woocommerce.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-shortcodes.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-admin.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-updater.php';
+
+add_filter( 'document_title_parts', function( $title ) {
+    if ( is_admin() ) return $title;
+    $obj = get_queried_object();
+    if ( ! $obj || ! isset( $obj->post_name ) ) return $title;
+    $assignments = get_option( 'fishotel_batch_page_assignments', [] );
+    $statuses    = get_option( 'fishotel_batch_statuses', [] );
+    $batch       = array_search( $obj->post_name, $assignments, true );
+    if ( $batch && in_array( $statuses[ $batch ] ?? '', [ 'orders_closed', 'in_transit', 'arrived' ], true ) ) {
+        $title['title'] = $batch . ' – In Transit';
+    }
+    return $title;
+} );
 
 class FisHotel_Batch_Manager {
 
@@ -102,7 +115,6 @@ class FisHotel_Batch_Manager {
 
         add_action( 'admin_enqueue_scripts', [$this, 'enqueue_batch_orders_scripts'] );
 
-        add_filter( 'document_title_parts', [$this, 'maybe_override_transit_title'] );
         add_shortcode( 'fishotel_batch', [$this, 'batch_shortcode'] );
         add_shortcode( 'fishotel_wallet', [$this, 'wallet_shortcode'] );
 
