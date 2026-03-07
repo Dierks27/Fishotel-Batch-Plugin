@@ -640,40 +640,63 @@ trait FisHotel_Shortcodes {
             $dest_lng = -98.5795;
 
             // Convert to equirectangular SVG coords (viewBox 0 0 1000 500)
-            $ox = ( $origin_lng + 180 ) * ( 1000 / 360 );
-            $oy = ( 90 - $origin_lat ) * ( 500 / 180 );
-            $dx = ( $dest_lng + 180 ) * ( 1000 / 360 );
-            $dy = ( 90 - $dest_lat ) * ( 500 / 180 );
+            // Bezier runs RIGHT (origin) → LEFT (destination) so plane flies right-to-left.
+            $origin_sx = ( $origin_lng + 180 ) * ( 1000 / 360 );
+            $origin_sy = ( 90 - $origin_lat ) * ( 500 / 180 );
+            $dest_sx   = ( $dest_lng + 180 ) * ( 1000 / 360 );
+            $dest_sy   = ( 90 - $dest_lat ) * ( 500 / 180 );
+
+            // Bezier start = origin (right), end = destination (left)
+            $ox = $origin_sx;  // origin marker position
+            $oy = $origin_sy;
+            $dx = $dest_sx;    // destination marker position
+            $dy = $dest_sy;
 
             // Bezier control point: midpoint shifted 150px upward
             $cx = ( $ox + $dx ) / 2;
             $cy = ( ( $oy + $dy ) / 2 ) - 150;
 
-            // Flight progress
-            $progress    = 0.5; // default if no arrival date
-            $arrived     = false;
-            $days_left   = null;
+            // Flight progress: days_elapsed / total_days
+            $closed_dates   = get_option( 'fishotel_batch_closed_dates', [] );
+            $closed_date    = $closed_dates[ $batch_name ] ?? '';
+            $progress       = 0.05; // default: just departed
+            $arrived        = false;
+            $days_left      = null;
             $quarantine_day = null;
 
-            if ( $arrival_date ) {
+            if ( $closed_date && $arrival_date ) {
+                $closed_ts  = strtotime( $closed_date );
                 $arrival_ts = strtotime( $arrival_date );
                 $now_ts     = time();
-                // Estimate closing date: assume ordering closed when stage changed
-                // Use a rough 14-day transit as fallback total
-                $total_days = 14;
+                $total_days = max( (int) round( ( $arrival_ts - $closed_ts ) / 86400 ), 1 );
+                $elapsed    = (int) round( ( $now_ts - $closed_ts ) / 86400 );
                 $days_until = (int) ceil( ( $arrival_ts - $now_ts ) / 86400 );
 
                 if ( $days_until <= 0 ) {
-                    // Arrived
                     $arrived        = true;
                     $progress       = 1.0;
                     $quarantine_day = abs( $days_until ) + 1;
                     if ( $quarantine_day > 14 ) $quarantine_day = 14;
                 } else {
-                    // In transit — estimate progress from remaining days
-                    $elapsed  = max( $total_days - $days_until, 0 );
-                    $progress = min( max( $elapsed / $total_days, 0.05 ), 0.95 );
+                    $progress  = min( max( $elapsed / $total_days, 0.02 ), 0.98 );
                     $days_left = $days_until;
+                }
+            } elseif ( $arrival_date ) {
+                // Has arrival date but no closed date — estimate with 14-day transit
+                $arrival_ts = strtotime( $arrival_date );
+                $now_ts     = time();
+                $days_until = (int) ceil( ( $arrival_ts - $now_ts ) / 86400 );
+
+                if ( $days_until <= 0 ) {
+                    $arrived        = true;
+                    $progress       = 1.0;
+                    $quarantine_day = abs( $days_until ) + 1;
+                    if ( $quarantine_day > 14 ) $quarantine_day = 14;
+                } else {
+                    $total_days = 14;
+                    $elapsed    = max( $total_days - $days_until, 0 );
+                    $progress   = min( max( $elapsed / $total_days, 0.02 ), 0.98 );
+                    $days_left  = $days_until;
                 }
             }
 

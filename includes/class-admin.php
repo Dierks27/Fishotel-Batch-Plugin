@@ -2049,6 +2049,16 @@ trait FisHotel_Admin {
         $statuses = get_option( 'fishotel_batch_statuses', [] );
         $statuses[ $batch_name ] = $next_stage;
         update_option( 'fishotel_batch_statuses', $statuses );
+
+        // Record the date when ordering closes (used for transit progress calculation).
+        if ( $next_stage === 'orders_closed' ) {
+            $closed_dates = get_option( 'fishotel_batch_closed_dates', [] );
+            if ( empty( $closed_dates[ $batch_name ] ) ) {
+                $closed_dates[ $batch_name ] = current_time( 'Y-m-d' );
+                update_option( 'fishotel_batch_closed_dates', $closed_dates );
+            }
+        }
+
         wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
         exit;
     }
@@ -2085,6 +2095,10 @@ trait FisHotel_Admin {
         $statuses = get_option( 'fishotel_batch_statuses', [] );
         unset( $statuses[ $batch_name ] );
         update_option( 'fishotel_batch_statuses', $statuses );
+
+        $closed_dates = get_option( 'fishotel_batch_closed_dates', [] );
+        unset( $closed_dates[ $batch_name ] );
+        update_option( 'fishotel_batch_closed_dates', $closed_dates );
 
         $assignments = get_option( 'fishotel_batch_page_assignments', [] );
         unset( $assignments[ $batch_name ] );
