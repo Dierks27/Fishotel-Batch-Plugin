@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.5.4 - Nudge FisHotel marker and Fiji anchor, recalibrate projection.
- * Version:           2.5.4
+ * Description:       Stable 2.5.6 - Precisely measured calibration anchors from map clicks.
+ * Version:           2.5.6
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.5.4' );
+define( 'FISHOTEL_VERSION', '2.5.6' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

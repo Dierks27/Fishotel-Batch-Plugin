@@ -641,12 +641,12 @@ trait FisHotel_Shortcodes {
 
             // Calibrated projection for the world-map JPG (has black padding bars).
             // Derived from two anchor points on the actual image content:
-            //   Minnesota (44.0, -94.0)   → SVG (215, 175)
-            //   Fiji     (-17.71, 178.07) → SVG (905, 328)
-            $x_scale  =  2.5362;
-            $x_offset =  453.40;
-            $y_scale  = -2.4793;
-            $y_offset =  284.09;
+            //   Minnesota (44.0, -94.0)   → SVG (220, 200)
+            //   Fiji     (-17.71, 178.07) → SVG (966, 367)
+            $x_scale  =  2.4904;
+            $x_offset =  454.17;
+            $y_scale  = -2.2284;
+            $y_offset =  249.62;
 
             $ox = $origin_lng * $x_scale + $x_offset;
             $oy = $origin_lat * $y_scale + $y_offset;
@@ -776,8 +776,8 @@ trait FisHotel_Shortcodes {
                               style="text-transform:uppercase;"><?php echo esc_html( strtoupper( $origin_name ) ); ?></text>
 
                         <!-- Destination: FisHotel logo + label (hard-coded to Minnesota/upper midwest) -->
-                        <image href="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" x="215" y="175" width="40" height="40"/>
-                        <text x="225" y="215" text-anchor="middle" fill="#fff" font-size="12" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
+                        <image href="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" x="220" y="190" width="40" height="40"/>
+                        <text x="230" y="230" text-anchor="middle" fill="#fff" font-size="12" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
                     </svg>
 
                     <!-- Plane icon (HTML img centered on bezier point) -->
