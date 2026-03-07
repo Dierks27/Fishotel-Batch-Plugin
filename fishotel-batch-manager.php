@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.24 - Navigation lights on plane (red/green blinking wingtip lights) and white glow replacing gold.
- * Version:           2.24
+ * Description:       Stable 2.25 - Nav lights small with realistic glow effect, repositioned to wingtips.
+ * Version:           2.25
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.24' );
+define( 'FISHOTEL_VERSION', '2.25' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
