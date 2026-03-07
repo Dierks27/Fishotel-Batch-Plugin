@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.40 - Origin location selected per-batch via dropdown instead of parsed from batch name.
- * Version:           2.40
+ * Description:       Stable 2.41 - Batch table decluttered with expandable detail rows.
+ * Version:           2.41
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.40' );
+define( 'FISHOTEL_VERSION', '2.41' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

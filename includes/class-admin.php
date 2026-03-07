@@ -210,10 +210,6 @@ trait FisHotel_Admin {
                             <th>Batch Name</th>
                             <th>Origin</th>
                             <th>Current Stage</th>
-                            <th>Public Page</th>
-                            <th style="width:140px;">Deposit Amount</th>
-                            <th style="width:130px;">Closed Date</th>
-                            <th style="width:130px;">Arrival Date</th>
                             <th style="width:120px;">Actions</th>
                         </tr>
                     </thead>
@@ -231,7 +227,11 @@ trait FisHotel_Admin {
                             $embed_url = $current_page ? home_url( '/' . $current_page . '?embed=1' ) : '';
                         ?>
                         <tr>
-                            <td><strong style="color:#b5a165;"><?php echo esc_html( $batch ); ?></strong></td>
+                            <td>
+                                <strong style="color:#b5a165;cursor:pointer;" onclick="fhToggleDetail('<?php echo $key; ?>')">
+                                    <span id="fh-chev-<?php echo $key; ?>" style="display:inline-block;transition:transform .2s;font-size:11px;margin-right:4px;">&#9654;</span><?php echo esc_html( $batch ); ?>
+                                </strong>
+                            </td>
                             <td>
                                 <select name="origin_<?php echo $key; ?>" style="width:100%;">
                                     <option value="">— Select —</option>
@@ -247,23 +247,6 @@ trait FisHotel_Admin {
                                     <?php endforeach; ?>
                                 </select>
                             </td>
-                            <td>
-                                <select name="assign_<?php echo $key; ?>" style="width:100%;">
-                                    <option value="">— Not assigned —</option>
-                                    <?php foreach ( $pages as $page ) : ?>
-                                        <option value="<?php echo esc_attr( $page->post_name ); ?>" <?php selected( $current_page, $page->post_name ); ?>><?php echo esc_html( $page->post_title ); ?> (<?php echo esc_html( $page->post_name ); ?>)</option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </td>
-                            <td>
-                                <input type="number" step="0.01" min="0" name="deposit_amount_<?php echo $key; ?>" value="<?php echo esc_attr( $batch_deposit ); ?>" placeholder="e.g. 25.00" style="width:90px;">
-                            </td>
-                            <td>
-                                <input type="date" name="closed_date_<?php echo $key; ?>" value="<?php echo esc_attr( $closed_date ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:120px;">
-                            </td>
-                            <td>
-                                <input type="date" name="arrival_date_<?php echo $key; ?>" value="<?php echo esc_attr( $arrival_date ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:120px;">
-                            </td>
                             <td style="white-space:nowrap;padding:6px 10px;">
                                 <?php if ( $view_url ) : ?>
                                     <a href="<?php echo esc_url( $view_url ); ?>" target="_blank"
@@ -278,6 +261,33 @@ trait FisHotel_Admin {
                                 <a href="<?php echo esc_url( $delete_url ); ?>"
                                    class="fh-icon-btn fh-red" data-tip="Delete"
                                    onclick="return confirm('Delete batch <?php echo esc_js( $batch ); ?>? This cannot be undone.')">🗑</a>
+                            </td>
+                        </tr>
+                        <tr id="fh-detail-<?php echo $key; ?>" style="display:none;">
+                            <td colspan="4" style="padding:12px 16px;background:#1a1a1a;border-top:1px dashed #444;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;max-width:600px;">
+                                    <div>
+                                        <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Public Page</label>
+                                        <select name="assign_<?php echo $key; ?>" style="width:100%;padding:5px 8px;border-radius:4px;">
+                                            <option value="">— Not assigned —</option>
+                                            <?php foreach ( $pages as $page ) : ?>
+                                                <option value="<?php echo esc_attr( $page->post_name ); ?>" <?php selected( $current_page, $page->post_name ); ?>><?php echo esc_html( $page->post_title ); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Deposit Amount</label>
+                                        <input type="number" step="0.01" min="0" name="deposit_amount_<?php echo $key; ?>" value="<?php echo esc_attr( $batch_deposit ); ?>" placeholder="e.g. 25.00" style="width:90px;padding:5px 8px;border-radius:4px;">
+                                    </div>
+                                    <div>
+                                        <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Closed Date</label>
+                                        <input type="date" name="closed_date_<?php echo $key; ?>" value="<?php echo esc_attr( $closed_date ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:140px;">
+                                    </div>
+                                    <div>
+                                        <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Arrival Date</label>
+                                        <input type="date" name="arrival_date_<?php echo $key; ?>" value="<?php echo esc_attr( $arrival_date ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:140px;">
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -389,6 +399,17 @@ trait FisHotel_Admin {
         </div>
 
         <script>
+        function fhToggleDetail(key) {
+            var row = document.getElementById('fh-detail-' + key);
+            var chev = document.getElementById('fh-chev-' + key);
+            if (row.style.display === 'none') {
+                row.style.display = 'table-row';
+                chev.style.transform = 'rotate(90deg)';
+            } else {
+                row.style.display = 'none';
+                chev.style.transform = '';
+            }
+        }
         function fhCopyLink(btn, url) {
             navigator.clipboard.writeText(url).then(function() {
                 var orig = btn.getAttribute('data-tip');
