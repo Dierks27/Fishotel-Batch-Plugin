@@ -608,6 +608,12 @@ trait FisHotel_Shortcodes {
 
         // ─── Stage 3: Transit page (orders_closed / in_transit) ────────────
         if ( in_array( $status, [ 'orders_closed', 'in_transit' ], true ) ) {
+            $transit_batch_name = $batch_name;
+            add_filter( 'document_title_parts', function( $title ) use ( $transit_batch_name ) {
+                $title['title'] = $transit_batch_name . ' – In Transit';
+                return $title;
+            } );
+
             $arrival_dates  = get_option( 'fishotel_batch_arrival_dates', [] );
             $arrival_date   = $arrival_dates[ $batch_name ] ?? '';
             $origin_locs    = $this->get_origin_locations();
@@ -896,14 +902,34 @@ trait FisHotel_Shortcodes {
                 .fh-bp-ghost { filter: blur(5px); pointer-events: none; user-select: none; }
                 .fh-bp-login-overlay {
                     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-                    background: rgba(12,22,31,0.7); border-radius: 10px; z-index: 2;
-                    font-family: 'Oswald', sans-serif; font-size: 1.2rem; color: #b5a165;
-                    text-transform: uppercase; letter-spacing: 0.08em;
+                    flex-direction: column; gap: 0;
+                    background: rgba(12,22,31,0.82); border-radius: 10px; z-index: 2;
                 }
+                .fh-bp-login-link {
+                    display: flex; flex-direction: column; align-items: center; gap: 8px;
+                    font-family: 'Oswald', sans-serif; font-size: 1.1rem; color: #b5a165;
+                    text-transform: uppercase; letter-spacing: 0.08em;
+                    text-decoration: none; transition: color 0.2s;
+                }
+                .fh-bp-login-link:hover { color: #e67e22; }
+                .fh-bp-lock { font-size: 2rem; display: block; }
                 @media (max-width: 700px) {
                     .fh-boarding-pass { flex-direction: column; }
-                    .fh-bp-left, .fh-bp-stub { flex: none; border-right: none; border-left: none; border-bottom: 2px dashed #b5a165; padding: 16px; }
-                    .fh-bp-stub { border-bottom: none; border-top: 2px dashed #b5a165; flex-direction: row; flex-wrap: wrap; }
+                    .fh-bp-left {
+                        flex: none; border-right: none; border-bottom: 2px dashed #b5a165;
+                        flex-direction: row; padding: 12px 14px; gap: 0; align-items: center;
+                    }
+                    .fh-bp-brand {
+                        flex: 0 0 35%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                    }
+                    .fh-bp-brand img { width: 40px; height: 40px; margin-bottom: 2px; }
+                    .fh-bp-brand .fh-bp-airline-name { font-size: 7px; margin: 0; }
+                    .fh-bp-details {
+                        flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px;
+                    }
+                    .fh-bp-details .fh-bp-label { font-size: 9px; margin: 0; }
+                    .fh-bp-details .fh-bp-value { font-size: 12px; margin: 0 0 2px 0; }
+                    .fh-bp-stub { flex: none; border-left: none; border-bottom: none; border-top: 2px dashed #b5a165; padding: 12px 16px; flex-direction: row; flex-wrap: wrap; }
                     .fh-bp-stub-title { writing-mode: horizontal-tb; position: static; transform: none; }
                 }
             </style>
@@ -993,28 +1019,37 @@ trait FisHotel_Shortcodes {
                 <!-- ===== SECTION 3: Boarding Pass ===== -->
                 <div class="fh-bp-wrap">
                     <?php if ( ! $bp_logged_in ) : ?>
-                        <div class="fh-bp-login-overlay">Log in to view your boarding pass</div>
+                        <div class="fh-bp-login-overlay">
+                            <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="fh-bp-login-link">
+                                <span class="fh-bp-lock">&#x1F512;</span>
+                                Log in to see your boarding pass
+                            </a>
+                        </div>
                     <?php endif; ?>
                     <div class="fh-boarding-pass <?php echo ! $bp_logged_in ? 'fh-bp-ghost' : ''; ?>">
                         <!-- LEFT: Flight info -->
                         <div class="fh-bp-left">
-                            <img src="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" alt="FisHotel">
-                            <p class="fh-bp-airline-name">THE FISHOTEL</p>
-                            <div>
-                                <p class="fh-bp-label">Passenger</p>
-                                <p class="fh-bp-value"><?php echo $bp_logged_in ? esc_html( wp_get_current_user()->display_name ) : 'Guest'; ?></p>
+                            <div class="fh-bp-brand">
+                                <img src="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" alt="FisHotel">
+                                <p class="fh-bp-airline-name">THE FISHOTEL</p>
                             </div>
-                            <div>
-                                <p class="fh-bp-label">Flight</p>
-                                <p class="fh-bp-value"><?php echo esc_html( $batch_name ); ?></p>
-                            </div>
-                            <div>
-                                <p class="fh-bp-label">From</p>
-                                <p class="fh-bp-value"><?php echo esc_html( strtoupper( $origin_name ) ); ?></p>
-                            </div>
-                            <div>
-                                <p class="fh-bp-label">To</p>
-                                <p class="fh-bp-value">CHAMPLIN, MN</p>
+                            <div class="fh-bp-details">
+                                <div>
+                                    <p class="fh-bp-label">Passenger</p>
+                                    <p class="fh-bp-value"><?php echo $bp_logged_in ? esc_html( wp_get_current_user()->display_name ) : 'Guest'; ?></p>
+                                </div>
+                                <div>
+                                    <p class="fh-bp-label">Flight</p>
+                                    <p class="fh-bp-value"><?php echo esc_html( $batch_name ); ?></p>
+                                </div>
+                                <div>
+                                    <p class="fh-bp-label">From</p>
+                                    <p class="fh-bp-value"><?php echo esc_html( strtoupper( $origin_name ) ); ?></p>
+                                </div>
+                                <div>
+                                    <p class="fh-bp-label">To</p>
+                                    <p class="fh-bp-value">CHAMPLIN, MN</p>
+                                </div>
                             </div>
                         </div>
 

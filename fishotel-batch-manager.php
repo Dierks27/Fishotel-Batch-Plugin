@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.8 - Editable request meta box, test generator, distinct test customers, batch suffix stripping.
- * Version:           2.8
+ * Description:       Stable 2.9 - Transit page title, guest boarding pass overlay, mobile boarding pass compact header.
+ * Version:           2.9
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.8' );
+define( 'FISHOTEL_VERSION', '2.9' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
