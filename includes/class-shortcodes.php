@@ -781,7 +781,7 @@ trait FisHotel_Shortcodes {
                          style="position:absolute;width:60px;height:40px;
                                 left:<?php echo round( $plane_x / 10, 2 ); ?>%;
                                 top:<?php echo round( $plane_y / 5, 2 ); ?>%;
-                                transform:translate(-50%,-50%) rotate(<?php echo round( $angle - 90, 1 ); ?>deg);
+                                transform:translate(-50%,-50%) rotate(<?php echo round( $angle + 90, 1 ); ?>deg);
                                 pointer-events:none;">
                 </div>
 

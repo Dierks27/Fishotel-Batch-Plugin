@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.4.5 - Fix plane orientation to face left along flight path.
- * Version:           2.4.5
+ * Description:       Stable 2.4.6 - Fix plane orientation to face right along flight path.
+ * Version:           2.4.6
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.4.5' );
+define( 'FISHOTEL_VERSION', '2.4.6' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
