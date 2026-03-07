@@ -938,24 +938,32 @@ trait FisHotel_Shortcodes {
 
                         <!-- Flight arc: gold dashed bezier -->
                         <path d="M<?php echo round($ox,1); ?>,<?php echo round($oy,1); ?> Q<?php echo round($cx,1); ?>,<?php echo round($cy,1); ?> <?php echo round($dx,1); ?>,<?php echo round($dy,1); ?>"
-                              fill="none" stroke="#b5a165" stroke-width="2" stroke-dasharray="8,6" opacity="0.7"/>
+                              fill="none" stroke="#d4bc7e" stroke-width="3" stroke-dasharray="8,6" opacity="0.8"/>
 
                         <!-- Origin: gold circle + label -->
-                        <circle cx="<?php echo round($ox,1); ?>" cy="<?php echo round($oy,1); ?>" r="6" fill="#b5a165"/>
-                        <text x="<?php echo round($ox,1); ?>" y="<?php echo round($oy,1) + 22; ?>" text-anchor="middle"
-                              fill="#b5a165" font-size="13" font-family="Oswald, sans-serif" letter-spacing="1"
+                        <circle cx="<?php echo round($ox,1); ?>" cy="<?php echo round($oy,1); ?>" r="8" fill="#b5a165"/>
+                        <text x="<?php echo round($ox,1); ?>" y="<?php echo round($oy,1) + 24; ?>" text-anchor="middle"
+                              fill="#b5a165" font-size="16" font-family="Oswald, sans-serif" font-weight="700" letter-spacing="1"
                               style="text-transform:uppercase;"><?php echo esc_html( strtoupper( $origin_name ) ); ?></text>
 
                         <!-- Destination: FisHotel logo + label (hard-coded to Minnesota) -->
                         <image href="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" x="260" y="280" width="40" height="40"/>
-                        <text x="270" y="330" text-anchor="middle" fill="#fff" font-size="13" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
+                        <text x="280" y="330" text-anchor="middle" fill="#fff" font-size="13" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
+
+                        <!-- Plane drop shadow filter -->
+                        <defs>
+                            <filter id="fh-plane-shadow" x="-30%" y="-30%" width="160%" height="160%">
+                                <feDropShadow dx="0" dy="0" stdDeviation="2" flood-color="#000" flood-opacity="0.8"/>
+                            </filter>
+                        </defs>
                     </svg>
 
                     <!-- Plane icon (HTML img centered on bezier point) -->
                     <div style="position:absolute;left:<?php echo round( $plane_x / 12.8, 2 ); ?>%;top:<?php echo round( $plane_y / 7.2, 2 ); ?>%;transform:translate(-50%,-50%);pointer-events:none;">
                         <img src="https://fishotel.com/wp-content/uploads/2026/03/fishotel-plane.png" alt="Plane"
                              style="width:60px;height:40px;display:block;
-                                    transform:rotate(<?php echo round( $angle + 90, 1 ); ?>deg);">
+                                    transform:rotate(<?php echo round( $angle + 90, 1 ); ?>deg);
+                                    filter:drop-shadow(0 0 3px rgba(0,0,0,0.8));">
                     </div>
                 </div>
 
