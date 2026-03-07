@@ -738,4 +738,131 @@ trait FisHotel_Shortcodes {
         return ob_get_clean();
     }
 
+    public function wallet_shortcode() {
+        $product_id    = (int) get_option( 'fishotel_deposit_product_id', 31985 );
+        $product       = function_exists( 'wc_get_product' ) ? wc_get_product( $product_id ) : null;
+        $product_price = ( $product && (float) $product->get_price() > 0 ) ? (float) $product->get_price() : 1;
+        $is_logged_in  = is_user_logged_in();
+        $balance       = $is_logged_in ? $this->get_user_deposit_balance( get_current_user_id() ) : 0;
+        $login_url     = wp_login_url( get_permalink() );
+
+        ob_start();
+        ?>
+        <div class="fhw-wallet" style="max-width:560px;margin:40px auto;color:#fff;font-family:inherit;">
+
+            <!-- Balance panel -->
+            <div style="background:#1e1e1e;border:1px solid #333;border-radius:12px;padding:32px 28px;text-align:center;margin-bottom:20px;box-shadow:0 6px 24px rgba(0,0,0,0.5);">
+                <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#888;margin-bottom:12px;">Your Current Wallet Balance</div>
+                <?php if ( $is_logged_in ) : ?>
+                    <div style="font-size:56px;font-weight:700;color:#b5a165;line-height:1;">$<?php echo number_format( $balance, 2 ); ?></div>
+                <?php else : ?>
+                    <div style="font-size:17px;color:#aaa;margin-top:4px;"><a href="<?php echo esc_url( $login_url ); ?>" style="color:#b5a165;text-decoration:underline;">Log in</a> to view your balance.</div>
+                <?php endif; ?>
+            </div>
+
+            <!-- How it works -->
+            <div style="background:#1e1e1e;border:1px solid #333;border-radius:12px;padding:24px 28px;margin-bottom:20px;">
+                <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#888;margin-bottom:14px;">How It Works</div>
+                <ul style="margin:0;padding:0;list-style:none;">
+                    <li style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;color:#ccc;font-size:15px;"><span style="color:#b5a165;flex-shrink:0;">●</span>Your wallet holds your deposit for each batch</li>
+                    <li style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;color:#ccc;font-size:15px;"><span style="color:#b5a165;flex-shrink:0;">●</span>A minimum deposit is required to participate (amount varies per batch)</li>
+                    <li style="display:flex;align-items:flex-start;gap:10px;color:#ccc;font-size:15px;"><span style="color:#b5a165;flex-shrink:0;">●</span>Your deposit is credited against your final invoice</li>
+                </ul>
+            </div>
+
+            <!-- Top-up selector -->
+            <div style="background:#1e1e1e;border:1px solid #333;border-radius:12px;padding:28px;box-shadow:0 6px 24px rgba(0,0,0,0.5);">
+                <?php if ( $is_logged_in ) : ?>
+                    <div style="font-size:12px;text-transform:uppercase;letter-spacing:2px;color:#888;margin-bottom:18px;">Add Funds</div>
+
+                    <!-- Preset buttons -->
+                    <div style="display:flex;gap:10px;margin-bottom:16px;">
+                        <?php foreach ( [ 25, 50, 100, 200 ] as $preset ) : ?>
+                            <button type="button" class="fhw-preset" data-amount="<?php echo $preset; ?>"
+                                style="flex:1;padding:14px 0;font-size:16px;font-weight:700;background:transparent;border:2px solid #b5a165;color:#b5a165;border-radius:8px;cursor:pointer;">
+                                $<?php echo $preset; ?>
+                            </button>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <!-- Custom amount -->
+                    <div style="margin-bottom:20px;">
+                        <input type="number" id="fhw-custom" min="1" step="1" placeholder="Custom amount ($)"
+                            style="width:100%;box-sizing:border-box;padding:13px 16px;font-size:16px;background:#2a2a2a;border:2px solid #444;border-radius:8px;color:#fff;outline:none;">
+                    </div>
+
+                    <!-- CTA -->
+                    <a id="fhw-cta" href="#"
+                        style="display:block;text-align:center;padding:18px;font-size:18px;font-weight:700;background:#e67e22;color:#000;border-radius:10px;text-decoration:none;">
+                        Add to Wallet &rarr;
+                    </a>
+                    <p id="fhw-error" style="display:none;color:#e74c3c;text-align:center;margin:10px 0 0;font-size:14px;">Please select or enter an amount.</p>
+
+                <?php else : ?>
+                    <div style="text-align:center;padding:10px 0;">
+                        <p style="color:#aaa;margin:0 0 18px;font-size:16px;">You must be logged in to add funds.</p>
+                        <a href="<?php echo esc_url( $login_url ); ?>"
+                            style="display:inline-block;padding:14px 40px;font-size:16px;font-weight:700;background:#e67e22;color:#000;border-radius:8px;text-decoration:none;">
+                            Log in to Add Funds
+                        </a>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+        </div>
+        <?php if ( $is_logged_in ) : ?>
+        <style>
+        .fhw-preset.fhw-selected { background:#b5a165 !important; color:#000 !important; }
+        .fhw-preset:hover { background:rgba(181,161,101,0.15) !important; }
+        #fhw-cta:hover { background:#d35400 !important; }
+        #fhw-custom:focus { border-color:#b5a165 !important; }
+        </style>
+        <script>
+        (function() {
+            var productId    = <?php echo (int) $product_id; ?>;
+            var productPrice = <?php echo json_encode( $product_price ); ?>;
+            var baseUrl      = '/?add-to-cart=' + productId + '&quantity=';
+            var selected     = 0;
+            var presets      = document.querySelectorAll('.fhw-preset');
+            var custom       = document.getElementById('fhw-custom');
+            var cta          = document.getElementById('fhw-cta');
+            var error        = document.getElementById('fhw-error');
+
+            function clearPresets() {
+                presets.forEach(function(b) { b.classList.remove('fhw-selected'); });
+            }
+
+            presets.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    clearPresets();
+                    this.classList.add('fhw-selected');
+                    selected = parseInt(this.dataset.amount, 10);
+                    custom.value = '';
+                    error.style.display = 'none';
+                });
+            });
+
+            custom.addEventListener('input', function() {
+                clearPresets();
+                selected = 0;
+                error.style.display = 'none';
+            });
+
+            cta.addEventListener('click', function(e) {
+                e.preventDefault();
+                var amount = selected || parseFloat(custom.value);
+                if ( !amount || amount <= 0 ) {
+                    error.style.display = 'block';
+                    return;
+                }
+                var qty = Math.max(1, Math.round(amount / productPrice));
+                window.location.href = baseUrl + qty;
+            });
+        })();
+        </script>
+        <?php endif; ?>
+        <?php
+        return ob_get_clean();
+    }
+
 }

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.3.5 - Fix: nested Import Master Prices form moved outside save-all form to prevent nonce collision; open_ordering freely settable via dropdown.
- * Version:           2.3.5
+ * Description:       Stable 2.3.6 - New [fishotel_wallet] shortcode: balance panel, how-it-works, preset top-up buttons linking to WooCommerce checkout.
+ * Version:           2.3.6
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.3.5' );
+define( 'FISHOTEL_VERSION', '2.3.6' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -99,6 +99,7 @@ class FisHotel_Batch_Manager {
         add_action( 'admin_enqueue_scripts', [$this, 'enqueue_batch_orders_scripts'] );
 
         add_shortcode( 'fishotel_batch', [$this, 'batch_shortcode'] );
+        add_shortcode( 'fishotel_wallet', [$this, 'wallet_shortcode'] );
 
         // Secure AJAX with nonces
         add_action( 'wp_ajax_fishotel_submit_requests', [$this, 'ajax_submit_requests'] );
