@@ -250,6 +250,8 @@ trait FisHotel_Admin {
                     <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:8px;padding:16px 60px;font-size:18px;cursor:pointer;">💾 Save All Settings</button>
                 </p>
 
+            </form>
+
                 <!-- ===== ZONE 3: Advanced Settings ===== -->
                 <div style="margin-top:8px;padding-bottom:40px;text-align:center;">
                     <button type="button" id="fishotel-advanced-toggle" style="background:none;border:none;color:#aaa;font-size:0.85em;cursor:pointer;text-decoration:underline;padding:6px 0;">⚙️ Advanced Settings ▾</button>
@@ -258,13 +260,13 @@ trait FisHotel_Admin {
                             <tr>
                                 <th style="color:#ddd;">Wallet Deposit Product ID</th>
                                 <td>
-                                    <input type="number" name="deposit_product_id" value="<?php echo esc_attr( $deposit_product_id ); ?>" style="width:120px;">
+                                    <input type="number" name="deposit_product_id" form="fishotel-save-all-form" value="<?php echo esc_attr( $deposit_product_id ); ?>" style="width:120px;">
                                     <small style="display:block;margin-top:5px;color:#aaa;">(Your product #31985 — change only if you recreate it)</small>
                                 </td>
                             </tr>
                             <tr>
                                 <th style="color:#ddd;">Admin Test Mode</th>
-                                <td><label style="color:#ddd;"><input type="checkbox" name="admin_test_mode" <?php checked( $admin_test_mode, 1 ); ?>> Bypass deposit check for admins</label></td>
+                                <td><label style="color:#ddd;"><input type="checkbox" name="admin_test_mode" form="fishotel-save-all-form" <?php checked( $admin_test_mode, 1 ); ?>> Bypass deposit check for admins</label></td>
                             </tr>
                             <tr>
                                 <th style="color:#ddd;vertical-align:top;padding-top:14px;">💲 Import Master Prices</th>
@@ -283,8 +285,6 @@ trait FisHotel_Admin {
                         </table>
                     </div>
                 </div>
-
-            </form>
 
             <?php foreach ( $batches_array as $batch ) :
                 $key    = sanitize_key( $batch );

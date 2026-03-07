@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.3.4 - Closed batch view: header, my requests, full species summary table.
- * Version:           2.3.4
+ * Description:       Stable 2.3.5 - Fix: nested Import Master Prices form moved outside save-all form to prevent nonce collision; open_ordering freely settable via dropdown.
+ * Version:           2.3.5
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.3.4' );
+define( 'FISHOTEL_VERSION', '2.3.5' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
