@@ -657,7 +657,7 @@ trait FisHotel_Shortcodes {
             $cx = ( $ox + $dx ) / 2;
             $cy = ( ( $oy + $dy ) / 2 ) - 216;
 
-            // Flight progress: days_elapsed / total_days
+            // Flight progress: hours_elapsed / total_hours for smooth real-time movement
             $closed_dates   = get_option( 'fishotel_batch_closed_dates', [] );
             $closed_date    = $closed_dates[ $batch_name ] ?? '';
             $progress       = 0.05; // default: just departed
@@ -669,9 +669,9 @@ trait FisHotel_Shortcodes {
                 $closed_ts  = strtotime( $closed_date );
                 $arrival_ts = strtotime( $arrival_date );
                 $now_ts     = time();
-                $total_days = max( (int) round( ( $arrival_ts - $closed_ts ) / 86400 ), 1 );
-                $elapsed    = (int) floor( ( $now_ts - $closed_ts ) / 86400 );
-                $days_until = (int) ceil( ( $arrival_ts - $now_ts ) / 86400 );
+                $total_hours = max( ( $arrival_ts - $closed_ts ) / 3600, 1 );
+                $elapsed_hrs = ( $now_ts - $closed_ts ) / 3600;
+                $days_until  = (int) ceil( ( $arrival_ts - $now_ts ) / 86400 );
 
                 if ( $days_until <= 0 ) {
                     $arrived        = true;
@@ -679,7 +679,7 @@ trait FisHotel_Shortcodes {
                     $quarantine_day = abs( $days_until ) + 1;
                     if ( $quarantine_day > 14 ) $quarantine_day = 14;
                 } else {
-                    $progress  = min( max( $elapsed / $total_days, 0.02 ), 0.98 );
+                    $progress  = min( max( $elapsed_hrs / $total_hours, 0.02 ), 0.98 );
                     $days_left = $days_until;
                 }
             } elseif ( $arrival_date ) {
@@ -694,10 +694,10 @@ trait FisHotel_Shortcodes {
                     $quarantine_day = abs( $days_until ) + 1;
                     if ( $quarantine_day > 14 ) $quarantine_day = 14;
                 } else {
-                    $total_days = 14;
-                    $elapsed    = max( $total_days - $days_until, 0 );
-                    $progress   = min( max( $elapsed / $total_days, 0.02 ), 0.98 );
-                    $days_left  = $days_until;
+                    $total_hours = 14 * 24;
+                    $elapsed_hrs = max( $total_hours - ( $days_until * 24 ), 0 );
+                    $progress    = min( max( $elapsed_hrs / $total_hours, 0.02 ), 0.98 );
+                    $days_left   = $days_until;
                 }
             }
 
