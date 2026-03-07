@@ -22,8 +22,7 @@ trait FisHotel_Admin {
     }
 
     public function add_admin_menu() {
-        $fish_svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path fill="white" d="M2 10 Q7 3 13 6 L17 2 L14 10 L17 18 L13 14 Q7 17 2 10 Z"/></svg>';
-        $fish_icon = 'data:image/svg+xml;base64,' . base64_encode( $fish_svg );
+        $fish_icon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmgiIHZpZXdCb3g9IjAgMCAxMDAgNjAiPjxwYXRoIGZpbGw9IiNhN2FhYWQiIGQ9Ik02NSAzMEMxMCAzMCAwIDU1IDAgNTVzMzAtMTUgMzUtMzBDMTAgMjUgMCAxMCAwIDVjMCAwIDMwIDIwIDM1IDE1IDAtMTAgMjAtMjAgNDAtMjAgMjAgMCAzNSAxNSAzNSAzMCAwIDE1LTE1IDMwLTM1IDMwLTIwIDAtNDAtMTAtNDAtMjB6Ii8+PGVsbGlwc2UgZmlsbD0iIzIzMjgzMyIgY3g9Ijc4IiBjeT0iMjciIHJ4PSIzIiByeT0iMyIvPjwvc3ZnPg==';
         add_menu_page( 'FisHotel Batch Manager', 'FisHotel Batch', 'manage_options', 'fishotel-batch-settings', [$this, 'batch_settings_html'], $fish_icon, 56 );
         add_submenu_page( 'fishotel-batch-settings', 'Master Fish Library', 'Master Fish Library', 'manage_options', 'edit.php?post_type=fish_master' );
         add_submenu_page( 'fishotel-batch-settings', 'Batch Requests', 'Batch Requests', 'manage_options', 'fishotel-batch-orders', [$this, 'batch_orders_html'] );
