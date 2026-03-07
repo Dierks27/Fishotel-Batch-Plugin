@@ -639,18 +639,19 @@ trait FisHotel_Shortcodes {
             $dest_lat = 39.8283;
             $dest_lng = -98.5795;
 
-            // Convert to equirectangular SVG coords (viewBox 0 0 1000 500)
-            // Bezier runs RIGHT (origin) → LEFT (destination) so plane flies right-to-left.
-            $origin_sx = ( $origin_lng + 180 ) * ( 1000 / 360 );
-            $origin_sy = ( 90 - $origin_lat ) * ( 500 / 180 );
-            $dest_sx   = ( $dest_lng + 180 ) * ( 1000 / 360 );
-            $dest_sy   = ( 90 - $dest_lat ) * ( 500 / 180 );
+            // Calibrated projection for the world-map JPG (has black padding bars).
+            // Derived from two anchor points on the actual image content:
+            //   Minnesota (44.0, -94.0) → x:21%, y:32%  →  (210, 160)
+            //   Fiji     (-17.71, 178.07) → x:84%, y:60% →  (840, 300)
+            $x_scale  =  2.3156;
+            $x_offset =  427.66;
+            $y_scale  = -2.2687;
+            $y_offset =  259.82;
 
-            // Bezier start = origin (right), end = destination (left)
-            $ox = $origin_sx;  // origin marker position
-            $oy = $origin_sy;
-            $dx = $dest_sx;    // destination marker position
-            $dy = $dest_sy;
+            $ox = $origin_lng * $x_scale + $x_offset;
+            $oy = $origin_lat * $y_scale + $y_offset;
+            $dx = $dest_lng   * $x_scale + $x_offset;
+            $dy = $dest_lat   * $y_scale + $y_offset;
 
             // Bezier control point: midpoint shifted 150px upward
             $cx = ( $ox + $dx ) / 2;
@@ -733,7 +734,7 @@ trait FisHotel_Shortcodes {
             <style>
                 .fh-transit-wrap { max-width: 960px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
                 .fh-hero-map {
-                    position: relative; width: 100%; background: #0d1f2d; border-radius: 12px; overflow: hidden;
+                    position: relative; width: 100%; background: #0c161f; border-radius: 12px; overflow: hidden;
                     border: 2px solid #333;
                 }
                 .fh-hero-map.fh-arrived { animation: fhPulseBorder 2s ease-in-out infinite; }
@@ -761,52 +762,8 @@ trait FisHotel_Shortcodes {
                 <!-- ===== SECTION 1: Hero Map ===== -->
                 <div class="fh-hero-map <?php echo $arrived ? 'fh-arrived' : ''; ?>">
                     <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                        <defs>
-                            <filter id="fhNoise"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
-                        </defs>
-
-                        <!-- Ocean -->
-                        <rect x="0" y="0" width="1000" height="500" fill="#0d1f2d"/>
-
-                        <!-- Continents (simplified Natural Earth paths, equirectangular projection) -->
-                        <g fill="#2a4a3e" stroke="#b5a165" stroke-width="0.5" stroke-linejoin="round">
-                            <!-- North America -->
-                            <path d="M50,56 L36,75 78,92 133,100 153,117 161,144 175,161 203,189 233,206 250,211 278,225 258,194 278,181 278,164 289,150 300,136 322,122 353,114 333,97 306,81 264,50 181,50 111,61 Z"/>
-                            <!-- South America -->
-                            <path d="M300,222 L283,239 278,256 283,278 303,300 300,333 297,378 314,403 322,375 342,347 381,314 403,264 347,236 328,222 Z"/>
-                            <!-- Greenland -->
-                            <path d="M306,33 L389,19 444,39 375,83 361,81 347,56 Z"/>
-                            <!-- Eurasia (Europe + Russia + Central/East Asia) -->
-                            <path d="M475,139 L500,150 561,150 600,147 647,172 672,181 700,172 717,228 744,189 756,189 778,222 786,244 800,200 839,167 856,144 875,128 950,94 986,61 861,50 694,50 569,56 514,78 528,100 492,117 Z"/>
-                            <!-- British Isles -->
-                            <path d="M472,100 L481,94 489,89 497,103 492,111 478,108 Z"/>
-                            <!-- Iceland -->
-                            <path d="M439,67 L447,61 458,67 453,75 442,75 Z"/>
-                            <!-- Africa -->
-                            <path d="M472,153 L453,189 453,214 464,231 500,236 522,239 528,250 539,283 550,344 589,333 611,292 617,250 636,236 642,217 589,167 528,153 Z"/>
-                            <!-- Arabian Peninsula -->
-                            <path d="M600,153 L622,158 636,169 661,186 639,214 619,211 606,194 597,169 Z"/>
-                            <!-- India -->
-                            <path d="M672,167 L717,167 750,178 750,189 731,200 714,228 711,222 703,194 686,183 Z"/>
-                            <!-- Japan -->
-                            <path d="M878,128 L889,139 878,153 867,164 869,153 875,142 Z"/>
-                            <!-- Philippines -->
-                            <path d="M836,200 L842,211 850,233 844,228 839,217 833,208 Z"/>
-                            <!-- Borneo -->
-                            <path d="M803,236 L828,236 825,256 803,258 Z"/>
-                            <!-- Sumatra & Java -->
-                            <path d="M767,236 L781,244 797,253 814,261 819,272 811,269 792,264 775,247 Z"/>
-                            <!-- Papua New Guinea -->
-                            <path d="M867,258 L894,258 911,267 917,278 889,272 Z"/>
-                            <!-- Australia -->
-                            <path d="M853,289 L864,283 897,278 925,325 919,344 903,356 819,344 814,319 839,300 Z"/>
-                            <!-- New Zealand -->
-                            <path d="M981,347 L986,367 978,375 964,381 969,367 Z"/>
-                            <!-- Sri Lanka -->
-                            <path d="M717,225 L725,222 728,231 722,236 Z"/>
-                            <!-- Madagascar -->
-                            <path d="M636,283 L642,300 636,319 625,306 Z"/>
-                        </g>
+                        <!-- World map background image -->
+                        <image href="https://fishotel.com/wp-content/uploads/2026/03/fishotel-world-map.jpg" x="0" y="0" width="1000" height="500" preserveAspectRatio="xMidYMid slice"/>
 
                         <!-- Flight arc: gold dashed bezier -->
                         <path d="M<?php echo round($ox,1); ?>,<?php echo round($oy,1); ?> Q<?php echo round($cx,1); ?>,<?php echo round($cy,1); ?> <?php echo round($dx,1); ?>,<?php echo round($dy,1); ?>"
@@ -823,15 +780,14 @@ trait FisHotel_Shortcodes {
                             <image href="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" x="-20" y="-20" width="40" height="40"/>
                             <text x="0" y="30" text-anchor="middle" fill="#fff" font-size="12" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
                         </g>
-
-                        <!-- Plane icon -->
-                        <g transform="translate(<?php echo round($plane_x,1); ?>,<?php echo round($plane_y,1); ?>) rotate(<?php echo round($angle + 90, 1); ?>)">
-                            <image href="https://fishotel.com/wp-content/uploads/2026/03/fishotel-plane.png" x="-31" y="-21" width="62" height="42"/>
-                        </g>
-
-                        <!-- Grain texture overlay -->
-                        <rect x="0" y="0" width="1000" height="500" filter="url(#fhNoise)" opacity="0.08" pointer-events="none"/>
                     </svg>
+
+                    <!-- Plane icon (HTML img centered on bezier point) -->
+                    <div style="position:absolute;left:<?php echo round( $plane_x / 10, 2 ); ?>%;top:<?php echo round( $plane_y / 5, 2 ); ?>%;transform:translate(-50%,-50%);pointer-events:none;">
+                        <img src="https://fishotel.com/wp-content/uploads/2026/03/fishotel-plane.png" alt="Plane"
+                             style="width:60px;height:40px;display:block;
+                                    transform:rotate(<?php echo round( $angle + 90, 1 ); ?>deg);">
+                    </div>
                 </div>
 
                 <!-- ===== SECTION 2: Status Banner ===== -->
