@@ -789,26 +789,39 @@ trait FisHotel_Shortcodes {
                     font-family: 'Oswald', sans-serif; color: #fff; overflow: hidden;
                 }
                 .fh-bp-left {
-                    flex: 0 0 22%; padding: 24px 20px; display: flex; flex-direction: column; gap: 10px;
-                    border-right: 2px dashed #b5a165;
+                    flex: 0 0 18%; padding: 16px 14px; display: flex; flex-direction: column; gap: 10px;
+                    border-right: 2px dashed #b5a165; background: #111d28;
                 }
                 .fh-bp-left img { width: 56px; height: 56px; margin-bottom: 4px; }
-                .fh-bp-label { font-size: 0.65rem; color: #b5a165; text-transform: uppercase; letter-spacing: 0.1em; margin: 0; }
-                .fh-bp-value { font-size: 0.95rem; font-weight: 600; margin: 0 0 6px 0; }
+                .fh-bp-airline-name {
+                    font-family: 'Oswald', sans-serif; font-size: 9px; color: #b5a165; text-transform: uppercase;
+                    letter-spacing: 0.18em; margin: -2px 0 6px 0; font-weight: 600;
+                }
+                .fh-bp-label { font-size: 12px; color: #b5a165; text-transform: uppercase; letter-spacing: 0.1em; margin: 0; }
+                .fh-bp-value { font-size: 17px; font-weight: 700; margin: 0 0 6px 0; }
                 .fh-bp-center { flex: 1; padding: 20px; overflow-x: auto; }
                 .fh-bp-center table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+                .fh-bp-center thead tr { background: rgba(181,161,101,0.15); }
                 .fh-bp-center th {
-                    text-align: left; color: #b5a165; font-weight: 400; font-size: 0.7rem; text-transform: uppercase;
+                    text-align: left; color: #b5a165; font-weight: 400; font-size: 11px; text-transform: uppercase;
                     letter-spacing: 0.08em; padding: 4px 8px 8px; border-bottom: 1px solid #333;
                 }
                 .fh-bp-center td { padding: 6px 8px; border-bottom: 1px solid #1a1a1a; }
                 .fh-bp-center .fh-bp-subtotal td { border-top: 1px solid #b5a165; font-weight: 700; color: #b5a165; padding-top: 10px; }
                 .fh-bp-stub {
                     flex: 0 0 20%; padding: 20px 16px; display: flex; flex-direction: column; align-items: center;
-                    justify-content: center; gap: 12px; text-align: center;
+                    justify-content: center; gap: 12px; text-align: center; position: relative;
                     border-left: 2px dashed #b5a165;
                     background-image: repeating-linear-gradient(180deg, transparent, transparent 8px, #0c161f 8px, #0c161f 10px);
                     background-size: 4px 10px; background-position: left; background-repeat: repeat-y;
+                }
+                .fh-bp-scissors {
+                    position: absolute; top: -2px; left: -10px; font-size: 16px; color: #b5a165;
+                    z-index: 1; line-height: 1;
+                }
+                .fh-bp-gate {
+                    font-family: 'Oswald', sans-serif; font-size: 10px; color: #b5a165;
+                    text-transform: uppercase; letter-spacing: 0.1em; margin-top: -4px;
                 }
                 .fh-bp-stub-title {
                     writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg);
@@ -820,6 +833,12 @@ trait FisHotel_Shortcodes {
                     font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;
                     transform: rotate(-15deg); color: #e67e22;
                 }
+                .fh-boarding-pass::after {
+                    content: ''; position: absolute; inset: 0; border-radius: 10px;
+                    filter: url(#fh-paper-grain); background: rgba(255,255,255,0.04);
+                    pointer-events: none; z-index: 1; mix-blend-mode: overlay;
+                }
+                .fh-boarding-pass { position: relative; }
                 .fh-bp-ghost { filter: blur(5px); pointer-events: none; user-select: none; }
                 .fh-bp-login-overlay {
                     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -884,6 +903,14 @@ trait FisHotel_Shortcodes {
                     <div class="fh-stamp"><?php echo esc_html( $badge_text ); ?></div>
                 </div>
 
+                <!-- SVG noise filter for aged paper texture -->
+                <svg width="0" height="0" style="position:absolute;">
+                    <filter id="fh-paper-grain">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+                        <feColorMatrix type="saturate" values="0"/>
+                    </filter>
+                </svg>
+
                 <!-- ===== SECTION 3: Boarding Pass ===== -->
                 <div class="fh-bp-wrap">
                     <?php if ( ! $bp_logged_in ) : ?>
@@ -893,6 +920,7 @@ trait FisHotel_Shortcodes {
                         <!-- LEFT: Flight info -->
                         <div class="fh-bp-left">
                             <img src="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" alt="FisHotel">
+                            <p class="fh-bp-airline-name">THE FISHOTEL</p>
                             <div>
                                 <p class="fh-bp-label">Passenger</p>
                                 <p class="fh-bp-value"><?php echo $bp_logged_in ? esc_html( wp_get_current_user()->display_name ) : 'Guest'; ?></p>
@@ -943,13 +971,15 @@ trait FisHotel_Shortcodes {
                         </div>
 
                         <!-- RIGHT STUB -->
-                        <div class="fh-bp-stub" style="position:relative;">
+                        <div class="fh-bp-stub">
+                            <span class="fh-bp-scissors">&#9986;</span>
                             <span class="fh-bp-stub-title">Boarding Pass</span>
                             <div>
                                 <p class="fh-bp-label">Deposit</p>
                                 <p class="fh-bp-value">$<?php echo number_format( $bp_deposit, 2 ); ?></p>
                             </div>
                             <div class="fh-bp-deposit-stamp">&check; Deposit Paid</div>
+                            <p class="fh-bp-gate">GATE: QT-1</p>
                             <?php if ( $arrival_date ) : ?>
                             <div>
                                 <p class="fh-bp-label">Arrival</p>

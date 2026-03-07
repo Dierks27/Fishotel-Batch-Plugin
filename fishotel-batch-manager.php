@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.6.0 - Vintage airline boarding pass for fish in transit.
- * Version:           2.6.0
+ * Description:       Stable 2.6.1 - Polished boarding pass with paper texture and improved legibility.
+ * Version:           2.6.1
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.6.0' );
+define( 'FISHOTEL_VERSION', '2.6.1' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
