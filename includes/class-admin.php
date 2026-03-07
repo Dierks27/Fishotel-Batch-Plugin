@@ -78,6 +78,7 @@ trait FisHotel_Admin {
         $admin_test_mode = get_option( 'fishotel_admin_test_mode', 0 );
         $deposit_product_id = $this->get_deposit_product_id();
         $arrival_dates = get_option( 'fishotel_batch_arrival_dates', [] );
+        $closed_dates  = get_option( 'fishotel_batch_closed_dates', [] );
         $origin_locations = $this->get_origin_locations();
 
         if ( isset( $_POST['fishotel_save_all'] ) && check_admin_referer( 'fishotel_save_all_nonce' ) ) {
@@ -89,6 +90,7 @@ trait FisHotel_Admin {
             $new_statuses = [];
             $new_deposit_amounts = [];
             $new_arrival_dates = [];
+            $new_closed_dates  = [];
             foreach ( $batches_array as $batch ) {
                 $key = sanitize_key( $batch );
                 $title_key = sanitize_title( $batch );
@@ -108,11 +110,18 @@ trait FisHotel_Admin {
                         $new_arrival_dates[ $batch ] = $date;
                     }
                 }
+                if ( isset( $_POST['closed_date_' . $key] ) ) {
+                    $date = sanitize_text_field( $_POST['closed_date_' . $key] );
+                    if ( $date && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+                        $new_closed_dates[ $batch ] = $date;
+                    }
+                }
             }
             update_option( 'fishotel_batch_page_assignments', $new_assignments );
             update_option( 'fishotel_batch_statuses', $new_statuses );
             update_option( 'fishotel_batch_deposit_amounts', $new_deposit_amounts );
             update_option( 'fishotel_batch_arrival_dates', $new_arrival_dates );
+            update_option( 'fishotel_batch_closed_dates', $new_closed_dates );
 
             wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
             exit;
@@ -194,6 +203,7 @@ trait FisHotel_Admin {
                             <th>Current Stage</th>
                             <th>Public Page</th>
                             <th style="width:140px;">Deposit Amount</th>
+                            <th style="width:130px;">Closed Date</th>
                             <th style="width:130px;">Arrival Date</th>
                             <th style="width:120px;">Actions</th>
                         </tr>
@@ -206,6 +216,7 @@ trait FisHotel_Admin {
                             $current_status = $statuses[$batch] ?? 'open_ordering';
                             $batch_deposit  = $batch_deposit_amounts[$title_key] ?? '';
                             $arrival_date   = $arrival_dates[$batch] ?? '';
+                            $closed_date    = $closed_dates[$batch] ?? '';
                             $view_url  = $current_page ? home_url( '/' . $current_page ) : '';
                             $embed_url = $current_page ? home_url( '/' . $current_page . '?embed=1' ) : '';
                         ?>
@@ -229,6 +240,10 @@ trait FisHotel_Admin {
                             <td>
                                 <input type="number" step="0.01" min="0" name="deposit_amount_<?php echo $key; ?>" value="<?php echo esc_attr( $batch_deposit ); ?>" placeholder="e.g. 25.00" style="width:90px;">
                                 <small style="display:block;color:#aaa;margin-top:3px;">USD (required)</small>
+                            </td>
+                            <td>
+                                <input type="date" name="closed_date_<?php echo $key; ?>" value="<?php echo esc_attr( $closed_date ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:120px;">
+                                <small style="display:block;color:#aaa;margin-top:3px;">Orders closed</small>
                             </td>
                             <td>
                                 <input type="date" name="arrival_date_<?php echo $key; ?>" value="<?php echo esc_attr( $arrival_date ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:120px;">

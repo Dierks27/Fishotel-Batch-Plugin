@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.4.7 - Transit map: right-to-left flight path, elapsed-day progress.
- * Version:           2.4.7
+ * Description:       Stable 2.4.8 - Add Closed Date field to batch settings table.
+ * Version:           2.4.8
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.4.7' );
+define( 'FISHOTEL_VERSION', '2.4.8' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
