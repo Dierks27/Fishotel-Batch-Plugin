@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.18 - Dynamic H1 and breadcrumb override on transit pages.
- * Version:           2.18
+ * Description:       Stable 2.19 - Removed emoji from transit H1 heading.
+ * Version:           2.19
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.18' );
+define( 'FISHOTEL_VERSION', '2.19' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -72,7 +72,7 @@ add_action( 'wp_footer', function() {
     $batch = fishotel_get_transit_batch();
     if ( ! $batch ) return;
     $origin = strtoupper( preg_split( '/[\s\-]/', $batch )[0] ?? $batch );
-    $heading = '🐠 ' . $origin . ' · IN TRANSIT';
+    $heading = $origin . ' · IN TRANSIT';
     ?>
     <script>
     (function(){
