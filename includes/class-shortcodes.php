@@ -961,9 +961,9 @@ trait FisHotel_Shortcodes {
                     <!-- Plane icon (HTML img centered on bezier point) -->
                     <div style="position:absolute;left:<?php echo round( $plane_x / 12.8, 2 ); ?>%;top:<?php echo round( $plane_y / 7.2, 2 ); ?>%;transform:translate(-50%,-50%);pointer-events:none;">
                         <img src="https://fishotel.com/wp-content/uploads/2026/03/fishotel-plane.png" alt="Plane"
-                             style="width:60px;height:40px;display:block;
+                             style="width:75px;height:50px;display:block;
                                     transform:rotate(<?php echo round( $angle + 90, 1 ); ?>deg);
-                                    filter:drop-shadow(0 0 3px rgba(0,0,0,0.8));">
+                                    filter:drop-shadow(0 0 4px rgba(212,188,126,0.9));">
                     </div>
                 </div>
 
