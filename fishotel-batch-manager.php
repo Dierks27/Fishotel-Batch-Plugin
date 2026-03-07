@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.6.2 - Flight manifest departure board on transit page.
- * Version:           2.6.2
+ * Description:       Stable 2.6.3 - Editable fish_request admin meta box and test request generator.
+ * Version:           2.6.3
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.6.2' );
+define( 'FISHOTEL_VERSION', '2.6.3' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -51,6 +51,7 @@ class FisHotel_Batch_Manager {
         add_action( 'admin_post_fishotel_mark_deposit_unpaid', [$this, 'mark_deposit_unpaid_handler'] );
         add_action( 'admin_post_fishotel_fully_delete_deposit', [$this, 'fully_delete_deposit_handler'] );
         add_action( 'admin_post_fishotel_reset_test_data', [$this, 'reset_test_data_handler'] );
+        add_action( 'admin_post_fishotel_create_test_requests', [$this, 'create_test_requests_handler'] );
         add_action( 'admin_post_fishotel_export_order_excel', [$this, 'export_order_excel'] );
         add_action( 'admin_post_fishotel_delete_batch',       [$this, 'delete_batch'] );
         add_action( 'admin_post_fishotel_add_location',       [$this, 'add_location_handler'] );
@@ -91,6 +92,7 @@ class FisHotel_Batch_Manager {
         add_action( 'add_meta_boxes_fish_master', [$this, 'add_batch_items_metabox'] );
         add_action( 'add_meta_boxes_fish_request', [$this, 'add_request_view_metabox'] );
         add_action( 'save_post_fish_master', [$this, 'save_fish_meta'] );
+        add_action( 'save_post_fish_request', [$this, 'save_fish_request_meta'] );
 
         add_action( 'updated_post_meta', [$this, 'sync_price_master_to_woo'], 10, 4 );
         add_action( 'updated_post_meta', [$this, 'sync_price_woo_to_master'], 10, 4 );

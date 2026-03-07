@@ -74,6 +74,75 @@ trait FisHotel_WooCommerce {
         exit;
     }
 
+    public function create_test_requests_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_create_test_requests' ) ) wp_die( 'Security check failed.' );
+
+        $batch_statuses = get_option( 'fishotel_batch_statuses', [] );
+        $transit_batch  = '';
+        foreach ( $batch_statuses as $name => $stage ) {
+            if ( $stage === 'in_transit' ) { $transit_batch = $name; break; }
+        }
+        if ( ! $transit_batch ) {
+            foreach ( $batch_statuses as $name => $stage ) {
+                if ( in_array( $stage, [ 'arrived', 'orders_closed' ], true ) ) { $transit_batch = $name; break; }
+            }
+        }
+        if ( ! $transit_batch ) {
+            $transit_batch = get_option( 'fishotel_current_batch', '' );
+        }
+        if ( ! $transit_batch ) {
+            wp_die( 'No active batch found. Create a batch first.' );
+        }
+
+        $batch_fish = get_posts( [ 'post_type' => 'fish_batch', 'meta_key' => '_batch_name', 'meta_value' => $transit_batch, 'numberposts' => -1 ] );
+        if ( count( $batch_fish ) < 2 ) {
+            wp_die( 'Need at least 2 batch fish in "' . esc_html( $transit_batch ) . '" to create test requests.' );
+        }
+
+        $fake_names = [ 'TestUser_Alpha', 'TestUser_Bravo', 'TestUser_Charlie' ];
+        $created = 0;
+
+        for ( $i = 0; $i < 3; $i++ ) {
+            shuffle( $batch_fish );
+            $pick_count = min( rand( 2, 4 ), count( $batch_fish ) );
+            $cart_items = [];
+            $total = 0;
+
+            for ( $j = 0; $j < $pick_count; $j++ ) {
+                $bf    = $batch_fish[ $j ];
+                $price = round( rand( 800, 4500 ) / 100, 2 );
+                $qty   = rand( 1, 3 );
+                $cart_items[] = [
+                    'batch_id'     => $bf->ID,
+                    'fish_name'    => $bf->post_title,
+                    'qty'          => $qty,
+                    'price'        => $price,
+                    'requested_at' => current_time( 'mysql' ),
+                ];
+                $total += $price * $qty;
+            }
+
+            $request_id = wp_insert_post( [
+                'post_type'   => 'fish_request',
+                'post_title'  => $fake_names[ $i ] . ' — ' . $transit_batch,
+                'post_status' => 'publish',
+            ] );
+
+            if ( $request_id ) {
+                update_post_meta( $request_id, '_customer_id',   get_current_user_id() );
+                update_post_meta( $request_id, '_batch_name',    $transit_batch );
+                update_post_meta( $request_id, '_cart_items',    wp_json_encode( $cart_items ) );
+                update_post_meta( $request_id, '_total',         $total );
+                update_post_meta( $request_id, '_status',        'provisional' );
+                update_post_meta( $request_id, '_is_admin_order', 0 );
+                $created++;
+            }
+        }
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-batch-orders&updated=1&test_created=' . $created ) );
+        exit;
+    }
+
     public function force_deposit_purchasable( $purchasable, $product ) {
         if ( $product->get_id() === $this->get_deposit_product_id() ) return true;
         return $purchasable;

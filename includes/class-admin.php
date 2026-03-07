@@ -1061,10 +1061,15 @@ trait FisHotel_Admin {
                 <div class="fishotel-danger-body" id="fishotel-danger-body">
                     <p style="color:#e74c3c;font-weight:700;margin-top:0;">Destructive actions — cannot be undone.</p>
                     <p class="page-description">Clears ALL wallet balances, deposit flags, and deletes ALL fish requests for every user. Use only during testing.</p>
-                    <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>">
+                    <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" style="display:inline-block;margin-right:12px;">
                         <input type="hidden" name="action" value="fishotel_reset_test_data">
                         <?php wp_nonce_field( 'fishotel_reset_test_data' ); ?>
                         <button type="submit" style="background:#e74c3c;color:#fff;font-weight:700;padding:10px 24px;border:none;border-radius:6px;cursor:pointer;font-size:14px;" onclick="return confirm('RESET ALL wallet balances, deposit flags, and fish requests for every user? This cannot be undone.');">🔄 Reset Test Data</button>
+                    </form>
+                    <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" style="display:inline-block;">
+                        <input type="hidden" name="action" value="fishotel_create_test_requests">
+                        <?php wp_nonce_field( 'fishotel_create_test_requests' ); ?>
+                        <button type="submit" style="background:#8e44ad;color:#fff;font-weight:700;padding:10px 24px;border:none;border-radius:6px;cursor:pointer;font-size:14px;" onclick="return confirm('Create 3 fake test requests for the active transit batch?');">🧪 Create Test Requests</button>
                     </form>
                 </div>
             </div>
@@ -1149,25 +1154,161 @@ trait FisHotel_Admin {
     }
 
     public function render_request_view_metabox( $post ) {
-        $items = get_post_meta( $post->ID, '_cart_items', true );
-        if ( ! $items || $items === '[]' ) {
-            echo '<p>No active fish in this request (deposit was paid).</p>';
-            return;
+        wp_nonce_field( 'fish_request_meta_nonce', 'fish_request_meta_nonce' );
+
+        $batch_name     = get_post_meta( $post->ID, '_batch_name', true );
+        $customer_id    = get_post_meta( $post->ID, '_customer_id', true );
+        $hf_username    = $customer_id ? get_user_meta( $customer_id, '_fishotel_humble_username', true ) : '';
+        $deposit_paid   = (bool) get_post_meta( $post->ID, '_deposit_paid', true );
+        $is_admin_order = (bool) get_post_meta( $post->ID, '_is_admin_order', true );
+        $items_raw      = get_post_meta( $post->ID, '_cart_items', true );
+        $items          = $items_raw ? json_decode( $items_raw, true ) : [];
+        if ( ! is_array( $items ) ) $items = [];
+
+        $batches_str   = get_option( 'fishotel_batches', '' );
+        $batches_array = array_filter( array_map( 'trim', explode( "\n", $batches_str ) ) );
+
+        $all_batch_fish = get_posts( [ 'post_type' => 'fish_batch', 'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC' ] );
+        $batch_fish_options = [];
+        foreach ( $all_batch_fish as $bf ) {
+            $bf_batch = get_post_meta( $bf->ID, '_batch_name', true );
+            $batch_fish_options[] = [ 'id' => $bf->ID, 'title' => $bf->post_title, 'batch' => $bf_batch ];
         }
-        $items = json_decode( $items, true );
-        $customer_id = get_post_meta( $post->ID, '_customer_id', true );
-        $customer = $customer_id ? get_user_by( 'id', $customer_id ) : null;
-        $customer_name = $customer ? $customer->display_name : 'Guest';
-        $humble_username = $customer ? get_user_meta( $customer_id, '_fishotel_humble_username', true ) : '';
-        echo '<p><strong>Customer:</strong> ' . esc_html( $customer_name ) . '</p>';
-        echo '<p><strong>Humble.Fish Username:</strong> ' . esc_html( $humble_username ?: 'Not set' ) . '</p>';
-        echo '<table class="widefat fixed striped"><thead><tr><th>Fish Name</th><th>Qty</th><th>Price</th><th>Line Total</th><th>Action</th></tr></thead><tbody>';
-        foreach ( $items as $index => $item ) {
-            $line_total = $item['price'] * $item['qty'];
-            $remove_url = wp_nonce_url( admin_url( 'admin-post.php?action=fishotel_remove_single_fish&request_id=' . $post->ID . '&fish_index=' . $index ), 'remove_single_fish' );
-            echo '<tr><td>' . esc_html( $item['fish_name'] ) . '</td><td>' . esc_html( $item['qty'] ) . '</td><td>$' . number_format( $item['price'], 2 ) . '</td><td>$' . number_format( $line_total, 2 ) . '</td><td><a href="' . esc_url( $remove_url ) . '" class="button button-small button-link-delete" onclick="return confirm(\'Remove this fish and restore stock?\');">Remove Fish</a></td></tr>';
+        ?>
+        <table class="form-table">
+            <tr>
+                <th><label for="fhr_batch_name">Batch</label></th>
+                <td>
+                    <select name="fhr_batch_name" id="fhr_batch_name" style="width:300px;">
+                        <option value="">— Select Batch —</option>
+                        <?php foreach ( $batches_array as $b ) : ?>
+                            <option value="<?php echo esc_attr( $b ); ?>" <?php selected( $batch_name, $b ); ?>><?php echo esc_html( $b ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="fhr_customer_id">Customer</label></th>
+                <td>
+                    <?php
+                    $customer = $customer_id ? get_user_by( 'id', $customer_id ) : null;
+                    $customer_label = $customer ? $customer->display_name . ' (#' . $customer_id . ')' : '';
+                    ?>
+                    <input type="number" name="fhr_customer_id" id="fhr_customer_id" value="<?php echo esc_attr( $customer_id ); ?>" style="width:120px;">
+                    <span class="description"><?php echo esc_html( $customer_label ); ?></span>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="fhr_hf_username">HF Username</label></th>
+                <td><input type="text" name="fhr_hf_username" id="fhr_hf_username" value="<?php echo esc_attr( $hf_username ); ?>" style="width:300px;"></td>
+            </tr>
+            <tr>
+                <th><label for="fhr_deposit_paid">Deposit Paid</label></th>
+                <td><input type="checkbox" name="fhr_deposit_paid" id="fhr_deposit_paid" value="1" <?php checked( $deposit_paid ); ?>></td>
+            </tr>
+            <tr>
+                <th><label for="fhr_is_admin_order">Is Admin Order</label></th>
+                <td><input type="checkbox" name="fhr_is_admin_order" id="fhr_is_admin_order" value="1" <?php checked( $is_admin_order ); ?>></td>
+            </tr>
+        </table>
+
+        <h4 style="margin-top:20px;">Cart Items</h4>
+        <table class="widefat fixed striped" id="fhr-cart-items-table">
+            <thead><tr><th style="width:40%;">Batch Fish</th><th style="width:15%;">Qty</th><th style="width:20%;">Price</th><th style="width:15%;">Line Total</th><th style="width:10%;"></th></tr></thead>
+            <tbody>
+                <?php if ( ! empty( $items ) ) : foreach ( $items as $i => $item ) : ?>
+                    <tr>
+                        <td>
+                            <select name="fhr_cart[<?php echo $i; ?>][batch_id]" style="width:100%;">
+                                <option value="">— Select —</option>
+                                <?php foreach ( $batch_fish_options as $opt ) : ?>
+                                    <option value="<?php echo $opt['id']; ?>" <?php selected( $item['batch_id'] ?? '', $opt['id'] ); ?>><?php echo esc_html( $opt['title'] . ' (' . $opt['batch'] . ')' ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                        <td><input type="number" name="fhr_cart[<?php echo $i; ?>][qty]" value="<?php echo esc_attr( $item['qty'] ?? 1 ); ?>" min="1" step="1" style="width:80px;"></td>
+                        <td><input type="number" name="fhr_cart[<?php echo $i; ?>][price]" value="<?php echo esc_attr( $item['price'] ?? 0 ); ?>" min="0" step="0.01" style="width:100px;"></td>
+                        <td class="fhr-line-total">$<?php echo number_format( ( $item['price'] ?? 0 ) * ( $item['qty'] ?? 0 ), 2 ); ?></td>
+                        <td><button type="button" class="button button-small fhr-remove-row" title="Remove">✕</button></td>
+                    </tr>
+                <?php endforeach; endif; ?>
+            </tbody>
+        </table>
+        <p><button type="button" class="button" id="fhr-add-row">+ Add Row</button></p>
+
+        <script>
+        jQuery(document).ready(function($) {
+            var batchFishOptions = <?php echo wp_json_encode( $batch_fish_options ); ?>;
+            var rowIndex = <?php echo count( $items ); ?>;
+
+            $('#fhr-add-row').on('click', function() {
+                var opts = '<option value="">— Select —</option>';
+                $.each(batchFishOptions, function(_, o) {
+                    opts += '<option value="' + o.id + '">' + $('<span>').text(o.title + ' (' + o.batch + ')').html() + '</option>';
+                });
+                var row = '<tr>'
+                    + '<td><select name="fhr_cart[' + rowIndex + '][batch_id]" style="width:100%;">' + opts + '</select></td>'
+                    + '<td><input type="number" name="fhr_cart[' + rowIndex + '][qty]" value="1" min="1" step="1" style="width:80px;"></td>'
+                    + '<td><input type="number" name="fhr_cart[' + rowIndex + '][price]" value="0" min="0" step="0.01" style="width:100px;"></td>'
+                    + '<td class="fhr-line-total">$0.00</td>'
+                    + '<td><button type="button" class="button button-small fhr-remove-row" title="Remove">✕</button></td>'
+                    + '</tr>';
+                $('#fhr-cart-items-table tbody').append(row);
+                rowIndex++;
+            });
+
+            $(document).on('click', '.fhr-remove-row', function() {
+                $(this).closest('tr').remove();
+            });
+
+            $(document).on('input', '#fhr-cart-items-table input[type="number"]', function() {
+                var $row = $(this).closest('tr');
+                var qty = parseFloat($row.find('input[name*="[qty]"]').val()) || 0;
+                var price = parseFloat($row.find('input[name*="[price]"]').val()) || 0;
+                $row.find('.fhr-line-total').text('$' + (qty * price).toFixed(2));
+            });
+        });
+        </script>
+        <?php
+    }
+
+    public function save_fish_request_meta( $post_id ) {
+        if ( ! isset( $_POST['fish_request_meta_nonce'] ) || ! wp_verify_nonce( $_POST['fish_request_meta_nonce'], 'fish_request_meta_nonce' ) ) return;
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
+        if ( ! current_user_can( 'manage_options' ) ) return;
+
+        update_post_meta( $post_id, '_batch_name', sanitize_text_field( $_POST['fhr_batch_name'] ?? '' ) );
+
+        $customer_id = intval( $_POST['fhr_customer_id'] ?? 0 );
+        update_post_meta( $post_id, '_customer_id', $customer_id );
+
+        if ( $customer_id && ! empty( $_POST['fhr_hf_username'] ) ) {
+            update_user_meta( $customer_id, '_fishotel_humble_username', sanitize_text_field( $_POST['fhr_hf_username'] ) );
         }
-        echo '</tbody></table>';
+
+        update_post_meta( $post_id, '_deposit_paid', ! empty( $_POST['fhr_deposit_paid'] ) ? 1 : 0 );
+        update_post_meta( $post_id, '_is_admin_order', ! empty( $_POST['fhr_is_admin_order'] ) ? 1 : 0 );
+
+        $cart_items = [];
+        if ( ! empty( $_POST['fhr_cart'] ) && is_array( $_POST['fhr_cart'] ) ) {
+            foreach ( $_POST['fhr_cart'] as $row ) {
+                $batch_id = intval( $row['batch_id'] ?? 0 );
+                if ( ! $batch_id ) continue;
+                $fish_post = get_post( $batch_id );
+                $cart_items[] = [
+                    'batch_id'     => $batch_id,
+                    'fish_name'    => $fish_post ? $fish_post->post_title : 'Unknown',
+                    'qty'          => max( 1, intval( $row['qty'] ?? 1 ) ),
+                    'price'        => floatval( $row['price'] ?? 0 ),
+                    'requested_at' => current_time( 'mysql' ),
+                ];
+            }
+        }
+        update_post_meta( $post_id, '_cart_items', wp_json_encode( $cart_items ) );
+
+        $total = 0;
+        foreach ( $cart_items as $ci ) $total += $ci['price'] * $ci['qty'];
+        update_post_meta( $post_id, '_total', $total );
     }
 
     public function enqueue_batch_orders_scripts( $hook ) {
