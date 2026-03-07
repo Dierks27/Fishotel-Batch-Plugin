@@ -733,7 +733,7 @@ trait FisHotel_Shortcodes {
             <style>
                 .fh-transit-wrap { max-width: 960px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
                 .fh-hero-map {
-                    position: relative; width: 100%; height: 420px; background: #1a1a1a; border-radius: 12px; overflow: hidden;
+                    position: relative; width: 100%; height: 420px; background: #0d1f2d; border-radius: 12px; overflow: hidden;
                     border: 2px solid #333;
                 }
                 .fh-hero-map.fh-arrived { animation: fhPulseBorder 2s ease-in-out infinite; }
@@ -799,13 +799,12 @@ trait FisHotel_Shortcodes {
                     </svg>
 
                     <!-- Plane icon (HTML img positioned over SVG) -->
-                    <img src="https://fishotel.com/wp-content/uploads/2026/03/fishotel-plane.png" alt="Plane"
-                         class="fh-plane-icon"
-                         style="position:absolute;width:60px;height:40px;
-                                left:<?php echo round( $plane_x / 10, 2 ); ?>%;
-                                top:<?php echo round( $plane_y / 5, 2 ); ?>%;
-                                transform:translate(-50%,-50%) rotate(<?php echo round( $angle + 90, 1 ); ?>deg);
-                                pointer-events:none;">
+                    <div style="position:absolute;left:<?php echo round( $plane_x / 10, 2 ); ?>%;top:<?php echo round( $plane_y / 5, 2 ); ?>%;transform:translate(-50%,-50%);pointer-events:none;">
+                        <img src="https://fishotel.com/wp-content/uploads/2026/03/fishotel-plane.png" alt="Plane"
+                             class="fh-plane-icon"
+                             style="width:60px;height:40px;display:block;
+                                    transform:rotate(<?php echo round( $angle + 90, 1 ); ?>deg);">
+                    </div>
                 </div>
 
                 <!-- ===== SECTION 2: Status Banner ===== -->
