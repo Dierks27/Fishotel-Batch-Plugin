@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.9 - Transit page title, guest boarding pass overlay, mobile boarding pass compact header.
- * Version:           2.9
+ * Description:       Stable 2.10 - Early document_title_parts filter for transit page title.
+ * Version:           2.10
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.9' );
+define( 'FISHOTEL_VERSION', '2.10' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -102,6 +102,7 @@ class FisHotel_Batch_Manager {
 
         add_action( 'admin_enqueue_scripts', [$this, 'enqueue_batch_orders_scripts'] );
 
+        add_action( 'template_redirect', [$this, 'maybe_override_transit_title'] );
         add_shortcode( 'fishotel_batch', [$this, 'batch_shortcode'] );
         add_shortcode( 'fishotel_wallet', [$this, 'wallet_shortcode'] );
 
