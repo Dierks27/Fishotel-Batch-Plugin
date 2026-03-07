@@ -82,6 +82,7 @@ trait FisHotel_Admin {
         $arrival_dates = get_option( 'fishotel_batch_arrival_dates', [] );
         $closed_dates  = get_option( 'fishotel_batch_closed_dates', [] );
         $origin_locations = $this->get_origin_locations();
+        $batch_origins = get_option( 'fishotel_batch_origins', [] );
 
         if ( isset( $_POST['fishotel_save_all'] ) && check_admin_referer( 'fishotel_save_all_nonce' ) ) {
             update_option( 'fishotel_deposit_product_id', intval( $_POST['deposit_product_id'] ?? 31985 ) );
@@ -93,6 +94,7 @@ trait FisHotel_Admin {
             $new_deposit_amounts = [];
             $new_arrival_dates = [];
             $new_closed_dates  = [];
+            $new_origins = [];
             foreach ( $batches_array as $batch ) {
                 $key = sanitize_key( $batch );
                 $title_key = sanitize_title( $batch );
@@ -118,12 +120,17 @@ trait FisHotel_Admin {
                         $new_closed_dates[ $batch ] = $date;
                     }
                 }
+                if ( isset( $_POST['origin_' . $key] ) ) {
+                    $origin = sanitize_text_field( $_POST['origin_' . $key] );
+                    if ( $origin !== '' ) $new_origins[ $batch ] = $origin;
+                }
             }
             update_option( 'fishotel_batch_page_assignments', $new_assignments );
             update_option( 'fishotel_batch_statuses', $new_statuses );
             update_option( 'fishotel_batch_deposit_amounts', $new_deposit_amounts );
             update_option( 'fishotel_batch_arrival_dates', $new_arrival_dates );
             update_option( 'fishotel_batch_closed_dates', $new_closed_dates );
+            update_option( 'fishotel_batch_origins', $new_origins );
 
             wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
             exit;
@@ -201,6 +208,7 @@ trait FisHotel_Admin {
                     <thead>
                         <tr>
                             <th>Batch Name</th>
+                            <th>Origin</th>
                             <th>Current Stage</th>
                             <th>Public Page</th>
                             <th style="width:140px;">Deposit Amount</th>
@@ -218,11 +226,20 @@ trait FisHotel_Admin {
                             $batch_deposit  = $batch_deposit_amounts[$title_key] ?? '';
                             $arrival_date   = $arrival_dates[$batch] ?? '';
                             $closed_date    = $closed_dates[$batch] ?? '';
+                            $current_origin = $batch_origins[$batch] ?? '';
                             $view_url  = $current_page ? home_url( '/' . $current_page ) : '';
                             $embed_url = $current_page ? home_url( '/' . $current_page . '?embed=1' ) : '';
                         ?>
                         <tr>
                             <td><strong style="color:#b5a165;"><?php echo esc_html( $batch ); ?></strong></td>
+                            <td>
+                                <select name="origin_<?php echo $key; ?>" style="width:100%;">
+                                    <option value="">— Select —</option>
+                                    <?php foreach ( $origin_locations as $loc ) : ?>
+                                        <option value="<?php echo esc_attr( $loc['name'] ); ?>" <?php selected( $current_origin, $loc['name'] ); ?>><?php echo esc_html( $loc['name'] ); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
                             <td>
                                 <select name="status_<?php echo $key; ?>" style="width:100%;">
                                     <?php foreach ( $stage_options as $value => $label ) : ?>

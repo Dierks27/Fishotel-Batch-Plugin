@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.39 - Map pin nudged east, close button removed, field labels cleaned, stage dropdown trimmed.
- * Version:           2.39
+ * Description:       Stable 2.40 - Origin location selected per-batch via dropdown instead of parsed from batch name.
+ * Version:           2.40
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.39' );
+define( 'FISHOTEL_VERSION', '2.40' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

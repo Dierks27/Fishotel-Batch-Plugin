@@ -611,27 +611,21 @@ trait FisHotel_Shortcodes {
             $arrival_dates  = get_option( 'fishotel_batch_arrival_dates', [] );
             $arrival_date   = $arrival_dates[ $batch_name ] ?? '';
             $origin_locs    = $this->get_origin_locations();
+            $batch_origins  = get_option( 'fishotel_batch_origins', [] );
 
-            // Detect origin from batch name
+            // Look up origin from per-batch dropdown selection
             $origin_name = 'International Waters';
             $origin_lat  = 0;
             $origin_lng  = -160;
-            $batch_words = preg_split( '/[\s\-_]+/', $batch_name );
-            foreach ( $origin_locs as $loc ) {
-                foreach ( $batch_words as $word ) {
-                    if ( strcasecmp( trim( $word ), $loc['name'] ) === 0 ) {
+            $selected_origin = $batch_origins[ $batch_name ] ?? '';
+            if ( $selected_origin ) {
+                foreach ( $origin_locs as $loc ) {
+                    if ( $loc['name'] === $selected_origin ) {
                         $origin_name = $loc['name'];
                         $origin_lat  = (float) $loc['lat'];
                         $origin_lng  = (float) $loc['lng'];
-                        break 2;
+                        break;
                     }
-                }
-                // Also try multi-word location names as substring
-                if ( stripos( $batch_name, $loc['name'] ) !== false ) {
-                    $origin_name = $loc['name'];
-                    $origin_lat  = (float) $loc['lat'];
-                    $origin_lng  = (float) $loc['lng'];
-                    break;
                 }
             }
 
