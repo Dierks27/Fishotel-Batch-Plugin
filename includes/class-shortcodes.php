@@ -11,18 +11,26 @@ trait FisHotel_Shortcodes {
         $assignments = get_option( 'fishotel_batch_page_assignments', [] );
         if ( empty( $assignments ) ) return $title;
 
-        $statuses   = get_option( 'fishotel_batch_statuses', [] );
-        $current_id = get_queried_object_id();
+        $post = get_queried_object();
+        if ( ! $post || empty( $post->post_name ) ) return $title;
 
-        foreach ( $assignments as $batch_name => $page_slug ) {
-            $page = get_page_by_path( $page_slug );
-            if ( ! $page || $page->ID !== $current_id ) continue;
+        $current_slug = $post->post_name;
+        $batch_name   = array_search( $current_slug, $assignments );
 
-            $status = $statuses[ $batch_name ] ?? 'open_ordering';
-            if ( in_array( $status, [ 'orders_closed', 'in_transit' ], true ) ) {
-                $title['title'] = $batch_name . ' – In Transit';
-            }
-            break;
+        // Debug — remove after confirming it works
+        error_log( '[FisHotel Title Debug] page_id=' . ( $post->ID ?? 'null' )
+            . ' slug=' . $current_slug
+            . ' batch_match=' . ( $batch_name ?: 'none' )
+            . ' assignments=' . wp_json_encode( $assignments )
+            . ' statuses=' . wp_json_encode( get_option( 'fishotel_batch_statuses', [] ) ) );
+
+        if ( ! $batch_name ) return $title;
+
+        $statuses = get_option( 'fishotel_batch_statuses', [] );
+        $status   = $statuses[ $batch_name ] ?? 'open_ordering';
+
+        if ( in_array( $status, [ 'orders_closed', 'in_transit', 'arrived' ], true ) ) {
+            $title['title'] = $batch_name . ' – In Transit';
         }
 
         return $title;
