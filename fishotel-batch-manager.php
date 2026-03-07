@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.17 - Transit title override for Rank Math, Yoast, and core.
- * Version:           2.17
+ * Description:       Stable 2.18 - Dynamic H1 and breadcrumb override on transit pages.
+ * Version:           2.18
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.17' );
+define( 'FISHOTEL_VERSION', '2.18' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -23,7 +23,7 @@ require_once FISHOTEL_PLUGIN_DIR . 'includes/class-admin.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-updater.php';
 
 // Transit page title override — helper shared by all title filters
-function fishotel_get_transit_title() {
+function fishotel_get_transit_batch() {
     if ( is_admin() ) return false;
     $obj = get_queried_object();
     if ( ! $obj || ! isset( $obj->post_name ) ) return false;
@@ -31,9 +31,13 @@ function fishotel_get_transit_title() {
     $statuses    = get_option( 'fishotel_batch_statuses', [] );
     $batch       = array_search( $obj->post_name, $assignments, true );
     if ( $batch && in_array( $statuses[ $batch ] ?? '', [ 'orders_closed', 'in_transit', 'arrived' ], true ) ) {
-        return $batch . ' – In Transit';
+        return $batch;
     }
     return false;
+}
+function fishotel_get_transit_title() {
+    $batch = fishotel_get_transit_batch();
+    return $batch ? $batch . ' – In Transit' : false;
 }
 
 // WordPress core <title>
@@ -61,6 +65,34 @@ add_filter( 'wpseo_title', function( $title ) {
 add_filter( 'wpseo_opengraph_title', function( $title ) {
     $t = fishotel_get_transit_title();
     return $t ? $t . ' | The FisHotel' : $title;
+} );
+
+// Replace Elementor H1 and breadcrumb on transit pages via JS
+add_action( 'wp_footer', function() {
+    $batch = fishotel_get_transit_batch();
+    if ( ! $batch ) return;
+    $origin = strtoupper( preg_split( '/[\s\-]/', $batch )[0] ?? $batch );
+    $heading = '🐠 ' . $origin . ' · IN TRANSIT';
+    ?>
+    <script>
+    (function(){
+        var h = <?php echo wp_json_encode( $heading ); ?>;
+        var h1 = document.querySelector('h1');
+        if (h1) h1.textContent = h;
+        var bc = document.querySelector('.rank-math-breadcrumb, .breadcrumb, .yoast-breadcrumb, .elementor-breadcrumb');
+        if (bc) {
+            var last = bc.querySelector('span.last, span:last-child, a:last-child');
+            if (last) last.textContent = h;
+            var links = bc.querySelectorAll('a');
+            for (var i = 0; i < links.length; i++) {
+                if (links[i].textContent.trim() === 'Live Fish List') {
+                    links[i].textContent = h;
+                }
+            }
+        }
+    })();
+    </script>
+    <?php
 } );
 
 class FisHotel_Batch_Manager {
