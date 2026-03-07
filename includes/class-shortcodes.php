@@ -756,6 +756,33 @@ trait FisHotel_Shortcodes {
                 }
             }
             $bp_deposit = $this->get_deposit_amount( $batch_name );
+
+            // ─── Flight manifest data (all customer requests aggregated) ───
+            $manifest_reqs = get_posts( [
+                'post_type'   => 'fish_request',
+                'numberposts' => -1,
+                'post_status' => 'any',
+                'meta_query'  => [ [ 'key' => '_batch_name', 'value' => $batch_name, 'compare' => '=' ] ],
+            ] );
+            $manifest_species = [];
+            foreach ( $manifest_reqs as $mreq ) {
+                if ( get_post_meta( $mreq->ID, '_is_admin_order', true ) ) continue;
+                $mreq_items = json_decode( get_post_meta( $mreq->ID, '_cart_items', true ), true ) ?: [];
+                foreach ( $mreq_items as $mitem ) {
+                    $mbid = intval( $mitem['batch_id'] );
+                    if ( ! isset( $manifest_species[ $mbid ] ) ) {
+                        $m_master_id = get_post_meta( $mbid, '_master_id', true );
+                        $manifest_species[ $mbid ] = [
+                            'fish_name'       => $mitem['fish_name'],
+                            'scientific_name' => $m_master_id ? (string) get_post_meta( $m_master_id, '_scientific_name', true ) : '',
+                            'total_qty'       => 0,
+                        ];
+                    }
+                    $manifest_species[ $mbid ]['total_qty'] += intval( $mitem['qty'] );
+                }
+            }
+            usort( $manifest_species, fn( $a, $b ) => strcasecmp( $a['fish_name'], $b['fish_name'] ) );
+            $manifest_total_fish = array_sum( array_column( $manifest_species, 'total_qty' ) );
             ?>
             <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
             <style>
@@ -781,6 +808,33 @@ trait FisHotel_Shortcodes {
                     font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(0.95rem, 2.5vw, 1.3rem);
                     text-transform: uppercase; letter-spacing: 0.06em; transform: rotate(-2deg);
                     color: #e67e22;
+                }
+                /* ── Flight Manifest ── */
+                .fh-manifest {
+                    margin-top: 28px; background: #0c161f; border: 2px solid #b5a165; border-radius: 10px;
+                    font-family: 'Oswald', sans-serif; color: #fff; overflow: hidden;
+                }
+                .fh-manifest-header {
+                    padding: 16px 24px; border-top: 1px solid #b5a165; border-bottom: 1px solid #b5a165;
+                    font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(0.95rem, 2.5vw, 1.2rem);
+                    text-transform: uppercase; letter-spacing: 0.12em; color: #b5a165;
+                }
+                .fh-manifest table { width: 100%; border-collapse: collapse; }
+                .fh-manifest thead tr { background: rgba(181,161,101,0.15); }
+                .fh-manifest th {
+                    text-align: left; color: #b5a165; font-weight: 400; font-size: 11px;
+                    text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 16px;
+                }
+                .fh-manifest th:last-child { text-align: center; }
+                .fh-manifest td { padding: 8px 16px; font-size: 14px; color: #fff; }
+                .fh-manifest td:last-child { text-align: center; }
+                .fh-manifest tbody tr:nth-child(odd) { background: #0c161f; }
+                .fh-manifest tbody tr:nth-child(even) { background: #0f1e2d; }
+                .fh-manifest-sci { font-style: italic; color: #8a9bae; }
+                .fh-manifest-total td {
+                    padding: 12px 16px; border-top: 1px solid #b5a165;
+                    color: #b5a165; font-weight: 700; font-size: 13px;
+                    text-transform: uppercase; letter-spacing: 0.06em;
                 }
                 /* ── Boarding Pass ── */
                 .fh-bp-wrap { position: relative; margin-top: 28px; }
@@ -902,6 +956,31 @@ trait FisHotel_Shortcodes {
 
                     <div class="fh-stamp"><?php echo esc_html( $badge_text ); ?></div>
                 </div>
+
+                <!-- ===== SECTION 3: Flight Manifest ===== -->
+                <?php if ( ! empty( $manifest_species ) ) : ?>
+                <div class="fh-manifest">
+                    <div class="fh-manifest-header">&#9992; Flight Manifest</div>
+                    <table>
+                        <thead><tr>
+                            <th>Common Name</th><th>Scientific Name</th><th>Qty</th>
+                        </tr></thead>
+                        <tbody>
+                        <?php foreach ( $manifest_species as $ms ) : ?>
+                            <tr>
+                                <td><?php echo esc_html( $ms['fish_name'] ); ?></td>
+                                <td class="fh-manifest-sci"><?php echo esc_html( $ms['scientific_name'] ); ?></td>
+                                <td><?php echo intval( $ms['total_qty'] ); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                            <tr class="fh-manifest-total">
+                                <td colspan="2" style="text-align:right;">Total Passengers: <?php echo intval( $manifest_total_fish ); ?> Fish</td>
+                                <td style="text-align:center;"><?php echo intval( $manifest_total_fish ); ?></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
 
                 <!-- SVG noise filter for aged paper texture -->
                 <svg width="0" height="0" style="position:absolute;">
