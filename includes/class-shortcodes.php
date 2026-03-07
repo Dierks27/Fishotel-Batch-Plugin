@@ -639,23 +639,23 @@ trait FisHotel_Shortcodes {
             $dest_lat = 39.8283;
             $dest_lng = -98.5795;
 
-            // Calibrated projection for the world-map JPG (has black padding bars).
-            // Derived from two anchor points on the actual image content:
-            //   Minnesota (44.0, -94.0)   → SVG (220, 200)
-            //   Fiji     (-17.71, 178.07) → SVG (966, 367)
-            $x_scale  =  2.4904;
-            $x_offset =  454.17;
-            $y_scale  = -2.2284;
-            $y_offset =  249.62;
+            // Calibrated projection — viewBox matches image pixels (1280×720).
+            // Anchor points clicked directly on the map image:
+            //   Minnesota (44.0, -94.0)   → SVG (281, 278)
+            //   Fiji     (-17.71, 178.07) → SVG (1237, 528)
+            $x_scale  =  3.516;
+            $x_offset =  611.5;
+            $y_scale  = -4.052;
+            $y_offset =  456.3;
 
             $ox = $origin_lng * $x_scale + $x_offset;
             $oy = $origin_lat * $y_scale + $y_offset;
             $dx = $dest_lng   * $x_scale + $x_offset;
             $dy = $dest_lat   * $y_scale + $y_offset;
 
-            // Bezier control point: midpoint shifted 150px upward
+            // Bezier control point: midpoint shifted 216px upward (150 × 720/500)
             $cx = ( $ox + $dx ) / 2;
-            $cy = ( ( $oy + $dy ) / 2 ) - 150;
+            $cy = ( ( $oy + $dy ) / 2 ) - 216;
 
             // Flight progress: days_elapsed / total_days
             $closed_dates   = get_option( 'fishotel_batch_closed_dates', [] );
@@ -761,9 +761,9 @@ trait FisHotel_Shortcodes {
 
                 <!-- ===== SECTION 1: Hero Map ===== -->
                 <div class="fh-hero-map <?php echo $arrived ? 'fh-arrived' : ''; ?>">
-                    <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                        <!-- World map background image -->
-                        <image href="https://fishotel.com/wp-content/uploads/2026/03/fishotel-world-map.jpg" x="0" y="0" width="1000" height="500" preserveAspectRatio="xMidYMid slice"/>
+                    <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <!-- World map background image (1280×720 = 1 SVG unit per pixel, no crop/offset) -->
+                        <image href="https://fishotel.com/wp-content/uploads/2026/03/fishotel-world-map.jpg" x="0" y="0" width="1280" height="720"/>
 
                         <!-- Flight arc: gold dashed bezier -->
                         <path d="M<?php echo round($ox,1); ?>,<?php echo round($oy,1); ?> Q<?php echo round($cx,1); ?>,<?php echo round($cy,1); ?> <?php echo round($dx,1); ?>,<?php echo round($dy,1); ?>"
@@ -775,13 +775,13 @@ trait FisHotel_Shortcodes {
                               fill="#b5a165" font-size="13" font-family="Oswald, sans-serif" letter-spacing="1"
                               style="text-transform:uppercase;"><?php echo esc_html( strtoupper( $origin_name ) ); ?></text>
 
-                        <!-- Destination: FisHotel logo + label (hard-coded to Minnesota/upper midwest) -->
-                        <image href="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" x="220" y="190" width="40" height="40"/>
-                        <text x="230" y="230" text-anchor="middle" fill="#fff" font-size="12" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
+                        <!-- Destination: FisHotel logo + label (hard-coded to Minnesota) -->
+                        <image href="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" x="281" y="278" width="40" height="40"/>
+                        <text x="291" y="318" text-anchor="middle" fill="#fff" font-size="13" font-family="Oswald, sans-serif" letter-spacing="1" opacity="0.9">FISHOTEL</text>
                     </svg>
 
                     <!-- Plane icon (HTML img centered on bezier point) -->
-                    <div style="position:absolute;left:<?php echo round( $plane_x / 10, 2 ); ?>%;top:<?php echo round( $plane_y / 5, 2 ); ?>%;transform:translate(-50%,-50%);pointer-events:none;">
+                    <div style="position:absolute;left:<?php echo round( $plane_x / 12.8, 2 ); ?>%;top:<?php echo round( $plane_y / 7.2, 2 ); ?>%;transform:translate(-50%,-50%);pointer-events:none;">
                         <img src="https://fishotel.com/wp-content/uploads/2026/03/fishotel-plane.png" alt="Plane"
                              style="width:60px;height:40px;display:block;
                                     transform:rotate(<?php echo round( $angle + 90, 1 ); ?>deg);">
