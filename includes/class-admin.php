@@ -638,7 +638,7 @@ trait FisHotel_Admin {
         foreach ( $requests as $req ) {
             $customer_id   = (int) get_post_meta( $req->ID, '_customer_id', true );
             $customer_data = get_userdata( $customer_id );
-            $customer_name = $customer_data ? ( $customer_data->display_name ?: $customer_data->user_login ) : 'User #' . $customer_id;
+            $customer_name = get_post_meta( $req->ID, '_customer_name', true ) ?: ( $customer_data ? ( $customer_data->display_name ?: $customer_data->user_login ) : 'User #' . $customer_id );
 
             $items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
             foreach ( $items as $item ) {
@@ -959,7 +959,8 @@ trait FisHotel_Admin {
         foreach ( $requests as $req ) {
             $customer_id = get_post_meta( $req->ID, '_customer_id', true );
             $batch_name = get_post_meta( $req->ID, '_batch_name', true );
-            $key = $customer_id . '|' . sanitize_title( $batch_name );
+            $custom_name = get_post_meta( $req->ID, '_customer_name', true );
+            $key = ( $custom_name ?: $customer_id ) . '|' . sanitize_title( $batch_name );
             if ( ! isset( $seen[$key] ) ) {
                 $seen[$key] = true;
                 $cart_items = get_post_meta( $req->ID, '_cart_items', true );
@@ -1003,8 +1004,8 @@ trait FisHotel_Admin {
                             $req = $row['post'];
                             $customer_id = $row['user_id'];
                             $customer = $customer_id ? get_user_by( 'id', $customer_id ) : null;
-                            $customer_name = $customer ? $customer->display_name : 'Guest';
-                            $humble_username = $customer ? get_user_meta( $customer_id, '_fishotel_humble_username', true ) : '';
+                            $customer_name = get_post_meta( $req->ID, '_customer_name', true ) ?: ( $customer ? $customer->display_name : 'Guest' );
+                            $humble_username = get_post_meta( $req->ID, '_hf_username', true ) ?: ( $customer ? get_user_meta( $customer_id, '_fishotel_humble_username', true ) : '' );
                             $batch_name = $row['batch_name'];
                             $total = $row['total'];
                             $cancel_url = wp_nonce_url( admin_url( 'admin-post.php?action=fishotel_cancel_request&request_id=' . $req->ID ), 'cancel_request' );

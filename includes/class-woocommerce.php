@@ -99,7 +99,11 @@ trait FisHotel_WooCommerce {
             wp_die( 'Need at least 2 batch fish in "' . esc_html( $transit_batch ) . '" to create test requests.' );
         }
 
-        $fake_names = [ 'TestUser_Alpha', 'TestUser_Bravo', 'TestUser_Charlie' ];
+        $fake_users = [
+            [ 'name' => 'TestUser_Alpha',   'hf' => 'AlphaReef' ],
+            [ 'name' => 'TestUser_Bravo',   'hf' => 'BravoTank' ],
+            [ 'name' => 'TestUser_Charlie', 'hf' => 'CharlieMarine' ],
+        ];
         $created = 0;
 
         for ( $i = 0; $i < 3; $i++ ) {
@@ -124,16 +128,18 @@ trait FisHotel_WooCommerce {
 
             $request_id = wp_insert_post( [
                 'post_type'   => 'fish_request',
-                'post_title'  => $fake_names[ $i ] . ' — ' . $transit_batch,
+                'post_title'  => $fake_users[ $i ]['name'] . ' — ' . $transit_batch,
                 'post_status' => 'publish',
             ] );
 
             if ( $request_id ) {
-                update_post_meta( $request_id, '_customer_id',   get_current_user_id() );
-                update_post_meta( $request_id, '_batch_name',    $transit_batch );
-                update_post_meta( $request_id, '_cart_items',    wp_json_encode( $cart_items ) );
-                update_post_meta( $request_id, '_total',         $total );
-                update_post_meta( $request_id, '_status',        'provisional' );
+                update_post_meta( $request_id, '_customer_id',    1 );
+                update_post_meta( $request_id, '_customer_name',  $fake_users[ $i ]['name'] );
+                update_post_meta( $request_id, '_hf_username',    $fake_users[ $i ]['hf'] );
+                update_post_meta( $request_id, '_batch_name',     $transit_batch );
+                update_post_meta( $request_id, '_cart_items',     wp_json_encode( $cart_items ) );
+                update_post_meta( $request_id, '_total',          $total );
+                update_post_meta( $request_id, '_status',         'provisional' );
                 update_post_meta( $request_id, '_is_admin_order', 0 );
                 $created++;
             }
