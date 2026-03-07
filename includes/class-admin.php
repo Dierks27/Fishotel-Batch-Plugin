@@ -51,6 +51,13 @@ trait FisHotel_Admin {
                 : '<div class="notice notice-info is-dismissible"><p>🔄 GitHub version: <strong>' . esc_html( $v ) . '</strong> — Installed: <strong>' . FISHOTEL_VERSION . '</strong></p></div>';
         }
 
+        // Temporary debug dump — remove after fixing title filter
+        echo '<div class="notice notice-warning" style="padding:12px;"><strong>DEBUG — Option dumps:</strong>';
+        echo '<p>fishotel_batches:</p><pre>' . esc_html( print_r( get_option( 'fishotel_batches' ), true ) ) . '</pre>';
+        echo '<p>fishotel_batch_page_assignments:</p><pre>' . esc_html( print_r( get_option( 'fishotel_batch_page_assignments' ), true ) ) . '</pre>';
+        echo '<p>fishotel_batch_statuses:</p><pre>' . esc_html( print_r( get_option( 'fishotel_batch_statuses' ), true ) ) . '</pre>';
+        echo '</div>';
+
         $price_import_result = get_transient( 'fishotel_price_import_result_' . get_current_user_id() );
         if ( $price_import_result ) {
             delete_transient( 'fishotel_price_import_result_' . get_current_user_id() );
