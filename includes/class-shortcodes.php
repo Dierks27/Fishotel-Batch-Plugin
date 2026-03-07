@@ -6,35 +6,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 trait FisHotel_Shortcodes {
 
     public function maybe_override_transit_title( $title ) {
-        // Debug — remove after confirming it works
-        $is_admin    = is_admin();
-        $is_singular = is_singular();
-        $qo          = get_queried_object();
-        $qo_id       = get_queried_object_id();
-        $qo_slug     = ( $qo && isset( $qo->post_name ) ) ? $qo->post_name : 'NO_SLUG';
         $assignments = get_option( 'fishotel_batch_page_assignments', [] );
         $statuses    = get_option( 'fishotel_batch_statuses', [] );
-
-        error_log( '[FisHotel Title Debug] is_admin=' . var_export( $is_admin, true )
-            . ' is_singular=' . var_export( $is_singular, true )
-            . ' qo_class=' . ( $qo ? get_class( $qo ) : 'NULL' )
-            . ' qo_id=' . $qo_id
-            . ' qo_slug=' . $qo_slug
-            . ' assignments=' . wp_json_encode( $assignments )
-            . ' statuses=' . wp_json_encode( $statuses ) );
-
-        if ( $is_admin ) return $title;
-
-        if ( empty( $assignments ) || ! $qo || empty( $qo->post_name ) ) return $title;
-
-        $batch_name = array_search( $qo->post_name, $assignments );
-        if ( ! $batch_name ) return $title;
-
-        $status = $statuses[ $batch_name ] ?? 'open_ordering';
-        if ( in_array( $status, [ 'orders_closed', 'in_transit', 'arrived' ], true ) ) {
-            $title['title'] = $batch_name . ' – In Transit';
+        $obj         = get_queried_object();
+        $slug        = $obj->post_name ?? '';
+        $batch       = array_search( $slug, $assignments, true );
+        if ( $batch && in_array( $statuses[ $batch ] ?? '', [ 'orders_closed', 'in_transit', 'arrived' ], true ) ) {
+            $title['title'] = $batch . ' – In Transit';
         }
-
         return $title;
     }
 

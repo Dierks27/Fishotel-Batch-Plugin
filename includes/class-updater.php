@@ -39,13 +39,19 @@ class FisHotel_GitHub_Updater {
             }
         }
 
+        // Delete stale transient before fetching
+        delete_transient( $this->transient_key );
+
         // Cache-bust GitHub's CDN with a timestamp param
-        $url = $this->github_raw_url . '?t=' . time();
+        $url = $this->github_raw_url . '?nocache=' . time();
 
         $response = wp_remote_get( $url, [
             'timeout'    => 10,
             'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . get_bloginfo( 'url' ),
-            'headers'    => [ 'Cache-Control' => 'no-cache' ],
+            'headers'    => [
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma'        => 'no-cache',
+            ],
         ] );
 
         if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
