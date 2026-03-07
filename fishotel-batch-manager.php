@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.19 - Removed emoji from transit H1 heading.
- * Version:           2.19
+ * Description:       Stable 2.20 - Stage-aware H1, tab title, and breadcrumb for all batch stages.
+ * Version:           2.20
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.19' );
+define( 'FISHOTEL_VERSION', '2.20' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -22,7 +22,19 @@ require_once FISHOTEL_PLUGIN_DIR . 'includes/class-shortcodes.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-admin.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-updater.php';
 
-// Transit page title override — helper shared by all title filters
+// Stage-aware title helpers — shared by all title/heading filters
+function fishotel_stage_label_map() {
+    return [
+        'orders_closed' => 'In Transit',
+        'in_transit'     => 'In Transit',
+        'arrived'        => 'In Quarantine',
+        'graduation'     => 'Graduation Day',
+        'verification'   => 'Choose Your Fish',
+        'draft'          => 'Draft Day',
+        'invoicing'      => 'Invoicing',
+    ];
+}
+
 function fishotel_get_transit_batch() {
     if ( is_admin() ) return false;
     $obj = get_queried_object();
@@ -30,14 +42,25 @@ function fishotel_get_transit_batch() {
     $assignments = get_option( 'fishotel_batch_page_assignments', [] );
     $statuses    = get_option( 'fishotel_batch_statuses', [] );
     $batch       = array_search( $obj->post_name, $assignments, true );
-    if ( $batch && in_array( $statuses[ $batch ] ?? '', [ 'orders_closed', 'in_transit', 'arrived' ], true ) ) {
+    $labels      = fishotel_stage_label_map();
+    if ( $batch && isset( $labels[ $statuses[ $batch ] ?? '' ] ) ) {
         return $batch;
     }
     return false;
 }
+
+function fishotel_get_batch_stage_label() {
+    $batch = fishotel_get_transit_batch();
+    if ( ! $batch ) return false;
+    $statuses = get_option( 'fishotel_batch_statuses', [] );
+    $labels   = fishotel_stage_label_map();
+    return $labels[ $statuses[ $batch ] ?? '' ] ?? false;
+}
+
 function fishotel_get_transit_title() {
     $batch = fishotel_get_transit_batch();
-    return $batch ? $batch . ' – In Transit' : false;
+    $label = fishotel_get_batch_stage_label();
+    return ( $batch && $label ) ? $batch . ' – ' . $label : false;
 }
 
 // WordPress core <title>
@@ -67,12 +90,13 @@ add_filter( 'wpseo_opengraph_title', function( $title ) {
     return $t ? $t . ' | The FisHotel' : $title;
 } );
 
-// Replace Elementor H1 and breadcrumb on transit pages via JS
+// Replace Elementor H1 and breadcrumb on batch pages via JS
 add_action( 'wp_footer', function() {
     $batch = fishotel_get_transit_batch();
-    if ( ! $batch ) return;
-    $origin = strtoupper( preg_split( '/[\s\-]/', $batch )[0] ?? $batch );
-    $heading = $origin . ' · IN TRANSIT';
+    $label = fishotel_get_batch_stage_label();
+    if ( ! $batch || ! $label ) return;
+    $origin  = strtoupper( preg_split( '/[\s\-]/', $batch )[0] ?? $batch );
+    $heading = $origin . ' · ' . strtoupper( $label );
     ?>
     <script>
     (function(){
