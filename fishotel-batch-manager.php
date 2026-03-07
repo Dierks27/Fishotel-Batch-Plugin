@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.30 - Nav lights correctly positioned at left/right wingtips of unrotated image.
- * Version:           2.30
+ * Description:       Stable 2.31 - Nav lights at trig-calculated wingtip positions for -72deg rotation.
+ * Version:           2.31
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.30' );
+define( 'FISHOTEL_VERSION', '2.31' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
