@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.26 - Nav lights on correct wingtips (top/bottom), strong black outline on plane.
- * Version:           2.26
+ * Description:       Stable 2.27 - Nav lights on correct left/right wingtips, wider plane outline.
+ * Version:           2.27
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.26' );
+define( 'FISHOTEL_VERSION', '2.27' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
