@@ -938,15 +938,15 @@ trait FisHotel_Shortcodes {
                 .fh-nav-red {
                     background: #ff4444;
                     box-shadow: 0 0 3px 2px rgba(255,40,40,0.8), 0 0 6px 3px rgba(255,0,0,0.4);
-                    top: 58px;
-                    left: 21px;
+                    top: 23px;
+                    left: -2px;
                     animation-delay: 0s;
                 }
                 .fh-nav-green {
                     background: #44ff66;
                     box-shadow: 0 0 3px 2px rgba(40,255,80,0.8), 0 0 6px 3px rgba(0,255,50,0.4);
-                    top: -14px;
-                    left: 44px;
+                    top: 23px;
+                    left: 73px;
                     animation-delay: 0.6s;
                 }
                 @keyframes fh-blink {
