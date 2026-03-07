@@ -670,7 +670,7 @@ trait FisHotel_Shortcodes {
                 $arrival_ts = strtotime( $arrival_date );
                 $now_ts     = time();
                 $total_days = max( (int) round( ( $arrival_ts - $closed_ts ) / 86400 ), 1 );
-                $elapsed    = (int) round( ( $now_ts - $closed_ts ) / 86400 );
+                $elapsed    = (int) floor( ( $now_ts - $closed_ts ) / 86400 );
                 $days_until = (int) ceil( ( $arrival_ts - $now_ts ) / 86400 );
 
                 if ( $days_until <= 0 ) {
@@ -700,15 +700,6 @@ trait FisHotel_Shortcodes {
                     $days_left  = $days_until;
                 }
             }
-
-            // DEBUG: show progress calculation
-            echo '<!-- fh-debug: batch_name=' . esc_html( $batch_name )
-                . ', closed_date=' . esc_html( $closed_date )
-                . ', arrival_date=' . esc_html( $arrival_date )
-                . ', progress=' . round( $progress, 4 )
-                . ', elapsed=' . ( isset( $elapsed ) ? $elapsed : 'N/A' )
-                . ', total=' . ( isset( $total_days ) ? $total_days : 'N/A' )
-                . ' -->';
 
             // Plane position on quadratic bezier at t=$progress
             $t  = $progress;
