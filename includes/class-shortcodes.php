@@ -926,6 +926,34 @@ trait FisHotel_Shortcodes {
                     .fh-bp-stub { flex: none; border-left: none; border-bottom: none; border-top: 2px dashed #b5a165; padding: 12px 16px; flex-direction: row; flex-wrap: wrap; }
                     .fh-bp-stub-title { writing-mode: horizontal-tb; position: static; transform: none; }
                 }
+
+                /* Navigation lights on plane */
+                .fh-nav-light {
+                    position: absolute;
+                    width: 5px;
+                    height: 5px;
+                    border-radius: 50%;
+                    animation: fh-blink 1.2s infinite;
+                }
+                .fh-nav-red {
+                    background: #ff3333;
+                    box-shadow: 0 0 4px #ff0000;
+                    top: 28px;
+                    left: 4px;
+                    animation-delay: 0s;
+                }
+                .fh-nav-green {
+                    background: #33ff66;
+                    box-shadow: 0 0 4px #00ff44;
+                    top: 28px;
+                    left: 68px;
+                    animation-delay: 0.6s;
+                }
+                @keyframes fh-blink {
+                    0%, 45%  { opacity: 1; }
+                    50%, 95% { opacity: 0; }
+                    100%     { opacity: 1; }
+                }
             </style>
 
             <div class="fh-transit-wrap">
@@ -960,10 +988,13 @@ trait FisHotel_Shortcodes {
 
                     <!-- Plane icon (HTML img centered on bezier point) -->
                     <div style="position:absolute;left:<?php echo round( $plane_x / 12.8, 2 ); ?>%;top:<?php echo round( $plane_y / 7.2, 2 ); ?>%;transform:translate(-50%,-50%);pointer-events:none;">
-                        <img src="https://fishotel.com/wp-content/uploads/2026/03/fishotel-plane.png" alt="Plane"
-                             style="width:75px;height:50px;display:block;
-                                    transform:rotate(<?php echo round( $angle + 90, 1 ); ?>deg);
-                                    filter:drop-shadow(0 0 4px rgba(212,188,126,0.9));">
+                        <div style="position:relative;transform:rotate(<?php echo round( $angle + 90, 1 ); ?>deg);">
+                            <img src="https://fishotel.com/wp-content/uploads/2026/03/fishotel-plane.png" alt="Plane"
+                                 style="width:75px;height:50px;display:block;
+                                        filter:drop-shadow(0 0 5px rgba(255,255,255,0.95));">
+                            <span class="fh-nav-light fh-nav-red"></span>
+                            <span class="fh-nav-light fh-nav-green"></span>
+                        </div>
                     </div>
                 </div>
 
