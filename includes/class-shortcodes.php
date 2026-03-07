@@ -938,14 +938,14 @@ trait FisHotel_Shortcodes {
                 .fh-nav-red {
                     background: #ff4444;
                     box-shadow: 0 0 3px 2px rgba(255,40,40,0.8), 0 0 6px 3px rgba(255,0,0,0.4);
-                    top: 2px;
+                    top: 0px;
                     left: 34px;
                     animation-delay: 0s;
                 }
                 .fh-nav-green {
                     background: #44ff66;
                     box-shadow: 0 0 3px 2px rgba(40,255,80,0.8), 0 0 6px 3px rgba(0,255,50,0.4);
-                    top: 42px;
+                    top: 44px;
                     left: 34px;
                     animation-delay: 0.6s;
                 }
@@ -991,7 +991,7 @@ trait FisHotel_Shortcodes {
                         <div style="position:relative;transform:rotate(<?php echo round( $angle + 90, 1 ); ?>deg);">
                             <img src="https://fishotel.com/wp-content/uploads/2026/03/fishotel-plane.png" alt="Plane"
                                  style="width:75px;height:50px;display:block;
-                                        filter:drop-shadow(0 0 5px rgba(255,255,255,0.95));">
+                                        filter:drop-shadow(0 0 3px rgba(0,0,0,1)) drop-shadow(0 0 6px rgba(0,0,0,1));">
                             <span class="fh-nav-light fh-nav-red"></span>
                             <span class="fh-nav-light fh-nav-green"></span>
                         </div>
