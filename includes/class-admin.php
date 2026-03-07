@@ -317,8 +317,9 @@ trait FisHotel_Admin {
             <?php endforeach; ?>
 
             <!-- ===== ZONE 4: Origin Locations ===== -->
-            <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;margin-top:24px;">
-                <h3 style="color:#b5a165;margin-top:0;">🌍 Origin Locations</h3>
+            <div style="margin-top:8px;text-align:center;">
+                <button type="button" id="fishotel-origins-toggle" style="background:none;border:none;color:#aaa;font-size:0.85em;cursor:pointer;text-decoration:underline;padding:6px 0;">🌍 Origin Locations ▾</button>
+            <div id="fishotel-origins-body" style="display:none;margin-top:12px;background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;text-align:left;">
                 <p style="color:#aaa;font-size:13px;margin:0 0 16px;">Library of origin cities used by the transit-page plane animation. The batch name is scanned for any word matching a location name (case-insensitive) to auto-detect origin.</p>
                 <table class="widefat" style="border-radius:8px;overflow:hidden;margin-bottom:16px;">
                     <thead>
@@ -373,6 +374,7 @@ trait FisHotel_Admin {
                         style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:9px 22px;cursor:pointer;font-size:14px;">Add Location</button>
                 </form>
             </div>
+            </div>
 
         </div>
 
@@ -397,6 +399,16 @@ trait FisHotel_Admin {
             } else {
                 body.style.display = 'none';
                 this.textContent = '⚙️ Advanced Settings ▾';
+            }
+        });
+        document.getElementById('fishotel-origins-toggle').addEventListener('click', function() {
+            var body = document.getElementById('fishotel-origins-body');
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                this.textContent = '🌍 Origin Locations ▴';
+            } else {
+                body.style.display = 'none';
+                this.textContent = '🌍 Origin Locations ▾';
             }
         });
         </script>

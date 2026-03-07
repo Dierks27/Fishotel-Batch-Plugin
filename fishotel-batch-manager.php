@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.4.0 - Arrival Date field per batch; Origin Locations manager (admin) with 7 defaults; groundwork for transit page.
- * Version:           2.4.0
+ * Description:       Stable 2.4.2 - Origin Locations collapsible toggle; Arrival Date field per batch; Origin Locations manager (admin) with 7 defaults; groundwork for transit page.
+ * Version:           2.4.2
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.4.0' );
+define( 'FISHOTEL_VERSION', '2.4.2' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
