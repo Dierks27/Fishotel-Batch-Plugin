@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.16 - Bare file-scope document_title_parts filter.
- * Version:           2.16
+ * Description:       Stable 2.17 - Transit title override for Rank Math, Yoast, and core.
+ * Version:           2.17
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.16' );
+define( 'FISHOTEL_VERSION', '2.17' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -22,17 +22,45 @@ require_once FISHOTEL_PLUGIN_DIR . 'includes/class-shortcodes.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-admin.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-updater.php';
 
-add_filter( 'document_title_parts', function( $title ) {
-    if ( is_admin() ) return $title;
+// Transit page title override — helper shared by all title filters
+function fishotel_get_transit_title() {
+    if ( is_admin() ) return false;
     $obj = get_queried_object();
-    if ( ! $obj || ! isset( $obj->post_name ) ) return $title;
+    if ( ! $obj || ! isset( $obj->post_name ) ) return false;
     $assignments = get_option( 'fishotel_batch_page_assignments', [] );
     $statuses    = get_option( 'fishotel_batch_statuses', [] );
     $batch       = array_search( $obj->post_name, $assignments, true );
     if ( $batch && in_array( $statuses[ $batch ] ?? '', [ 'orders_closed', 'in_transit', 'arrived' ], true ) ) {
-        $title['title'] = $batch . ' – In Transit';
+        return $batch . ' – In Transit';
     }
+    return false;
+}
+
+// WordPress core <title>
+add_filter( 'document_title_parts', function( $title ) {
+    $t = fishotel_get_transit_title();
+    if ( $t ) $title['title'] = $t;
     return $title;
+} );
+
+// Rank Math
+add_filter( 'rank_math/frontend/title', function( $title ) {
+    $t = fishotel_get_transit_title();
+    return $t ? $t . ' | The FisHotel' : $title;
+} );
+add_filter( 'rank_math/frontend/og/title', function( $title ) {
+    $t = fishotel_get_transit_title();
+    return $t ? $t . ' | The FisHotel' : $title;
+} );
+
+// Yoast SEO
+add_filter( 'wpseo_title', function( $title ) {
+    $t = fishotel_get_transit_title();
+    return $t ? $t . ' | The FisHotel' : $title;
+} );
+add_filter( 'wpseo_opengraph_title', function( $title ) {
+    $t = fishotel_get_transit_title();
+    return $t ? $t . ' | The FisHotel' : $title;
 } );
 
 class FisHotel_Batch_Manager {
