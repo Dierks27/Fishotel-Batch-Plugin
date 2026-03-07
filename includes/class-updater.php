@@ -16,7 +16,7 @@ class FisHotel_GitHub_Updater {
     private $github_zip_url = 'https://github.com/Dierks27/Fishotel-Batch-Plugin/archive/refs/heads/main.zip';
     private $github_repo    = 'Dierks27/Fishotel-Batch-Plugin';
     private $transient_key  = 'fishotel_github_updater_version';
-    private $cache_hours    = 12;
+    private $cache_seconds  = 3600; // 1 hour
 
     public function __construct( $plugin_file ) {
         $this->plugin_file = $plugin_file;
@@ -24,21 +24,28 @@ class FisHotel_GitHub_Updater {
         add_filter( 'pre_set_site_transient_update_plugins', [ $this, 'check_for_update' ] );
         add_filter( 'plugins_api',                           [ $this, 'plugin_info' ], 10, 3 );
         add_filter( 'upgrader_source_selection',             [ $this, 'fix_folder_name' ], 10, 4 );
+        add_action( 'admin_init',                            [ $this, 'handle_force_check' ] );
     }
 
     /**
      * Fetch the version string from the raw GitHub file.
-     * Results are cached for $cache_hours to avoid hammering GitHub.
+     * Cached to avoid hammering GitHub on every page load.
      */
-    private function get_remote_version() {
-        $cached = get_transient( $this->transient_key );
-        if ( $cached !== false ) {
-            return $cached;
+    private function get_remote_version( $force = false ) {
+        if ( ! $force ) {
+            $cached = get_transient( $this->transient_key );
+            if ( $cached !== false ) {
+                return $cached;
+            }
         }
 
-        $response = wp_remote_get( $this->github_raw_url, [
+        // Cache-bust GitHub's CDN with a timestamp param
+        $url = $this->github_raw_url . '?t=' . time();
+
+        $response = wp_remote_get( $url, [
             'timeout'    => 10,
             'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . get_bloginfo( 'url' ),
+            'headers'    => [ 'Cache-Control' => 'no-cache' ],
         ] );
 
         if ( is_wp_error( $response ) || wp_remote_retrieve_response_code( $response ) !== 200 ) {
@@ -50,7 +57,7 @@ class FisHotel_GitHub_Updater {
         // Parse "Version: X.X.X" from the plugin header block.
         if ( preg_match( '/^\s*\*\s*Version:\s*([\d.]+)/m', $body, $matches ) ) {
             $version = trim( $matches[1] );
-            set_transient( $this->transient_key, $version, $this->cache_hours * HOUR_IN_SECONDS );
+            set_transient( $this->transient_key, $version, $this->cache_seconds );
             return $version;
         }
 
@@ -86,6 +93,31 @@ class FisHotel_GitHub_Updater {
         }
 
         return $transient;
+    }
+
+    /**
+     * ?fishotel_force_update_check=1 on any admin page clears all caches
+     * and forces WordPress to re-check for plugin updates immediately.
+     */
+    public function handle_force_check() {
+        if ( empty( $_GET['fishotel_force_update_check'] ) || ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        // Nuke our version cache
+        delete_transient( $this->transient_key );
+
+        // Force-fetch the latest version from GitHub (bypass cache)
+        $remote = $this->get_remote_version( true );
+
+        // Nuke WordPress's plugin update cache so it re-runs check_for_update
+        delete_site_transient( 'update_plugins' );
+
+        // Redirect back clean with a result message
+        $redirect = remove_query_arg( 'fishotel_force_update_check' );
+        $redirect = add_query_arg( 'fishotel_update_checked', $remote ?: 'error', $redirect );
+        wp_safe_redirect( $redirect );
+        exit;
     }
 
     /**

@@ -42,13 +42,14 @@ trait FisHotel_Admin {
     }
 
     public function batch_settings_html() {
-        // Force a fresh GitHub update check every time this settings page loads.
-        delete_transient( 'fishotel_github_updater_version' );
-        delete_site_transient( 'update_plugins' );
-        wp_update_plugins();
-
         if ( isset( $_GET['updated'] ) ) echo '<div class="notice notice-success is-dismissible"><p>✅ All settings saved successfully!</p></div>';
         if ( isset( $_GET['error'] ) ) echo '<div class="notice notice-error is-dismissible"><p>❌ Invalid parameters. Please try again.</p></div>';
+        if ( isset( $_GET['fishotel_update_checked'] ) ) {
+            $v = sanitize_text_field( $_GET['fishotel_update_checked'] );
+            echo $v === 'error'
+                ? '<div class="notice notice-error is-dismissible"><p>❌ Could not reach GitHub to check for updates.</p></div>'
+                : '<div class="notice notice-info is-dismissible"><p>🔄 GitHub version: <strong>' . esc_html( $v ) . '</strong> — Installed: <strong>' . FISHOTEL_VERSION . '</strong></p></div>';
+        }
 
         $price_import_result = get_transient( 'fishotel_price_import_result_' . get_current_user_id() );
         if ( $price_import_result ) {
@@ -132,7 +133,7 @@ trait FisHotel_Admin {
         ?>
         <div class="wrap fishotel-admin">
             <h1>FisHotel Batch Manager</h1>
-            <p class="page-description">Complete backend control for fishotel.com batch system</p>
+            <p class="page-description">Complete backend control for fishotel.com batch system &nbsp;·&nbsp; v<?php echo FISHOTEL_VERSION; ?> &nbsp;·&nbsp; <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-batch-settings&fishotel_force_update_check=1' ) ); ?>" style="color:#b5a165;">🔄 Check for updates</a></p>
 
             <!-- ===== ZONE 1: Import Card ===== -->
             <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;margin-top:24px;">
