@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.55 - Solari board: label width, COLS recalc, message chunking, green status light, tile color variance.
- * Version:           2.55
+ * Description:       Stable 2.56 - Solari board tile overflow fix, message chunking, label width, color variance.
+ * Version:           2.56
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.55' );
+define( 'FISHOTEL_VERSION', '2.56' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

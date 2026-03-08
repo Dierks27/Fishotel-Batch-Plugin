@@ -677,12 +677,22 @@ trait FisHotel_Shortcodes {
                         var board = document.getElementById('fh-board');
                         if (!board) return;
 
+                        // Defer init to next animation frame so CSS layout is fully resolved
+                        requestAnimationFrame(function() {
+
                         // Dynamically calculate COLS from actual tile zone width
                         var tileZone = board.querySelector('.fh-board-tiles');
                         var TILE_W = window.innerWidth <= 600 ? 20 : 32;
                         var zoneWidth = tileZone ? tileZone.offsetWidth : 640;
-                        var COLS = Math.floor(zoneWidth / TILE_W);
+                        // Subtract padding (6px each side on desktop, 4px on mobile)
+                        var zonePad = window.innerWidth <= 600 ? 8 : 12;
+                        var usable = zoneWidth - zonePad;
+                        var COLS = Math.floor(usable / TILE_W);
                         if (COLS < 8) COLS = 8; // safety floor
+
+                        // Lock each tile zone to exactly COLS * TILE_W + padding so overflow is impossible
+                        var allZones = board.querySelectorAll('.fh-board-tiles');
+                        allZones.forEach(function(z) { z.style.maxWidth = (COLS * TILE_W + zonePad) + 'px'; });
 
                         // Pad text to exactly COLS characters
                         function padText(text) {
@@ -788,6 +798,8 @@ trait FisHotel_Shortcodes {
                                 }, 4000);
                             }
                         }
+
+                        }); // end requestAnimationFrame
                     })();
 
                     function showLoginModal(batchId, price, fishName) {
