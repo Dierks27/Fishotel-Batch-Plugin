@@ -128,9 +128,18 @@ trait FisHotel_Shortcodes {
             $bp_deposit     = $this->get_deposit_amount( $batch_name );
             ?>
 
+            <style>
+                #fishotel-login-modal input:-webkit-autofill,
+                #fishotel-login-modal input:-webkit-autofill:hover,
+                #fishotel-login-modal input:-webkit-autofill:focus {
+                    -webkit-box-shadow: 0 0 0 1000px #071420 inset !important;
+                    -webkit-text-fill-color: #e8dcc0 !important;
+                    caret-color: #e8dcc0;
+                }
+            </style>
             <!-- ===== Login Modal — GATE ACCESS REQUIRED ===== -->
-            <div id="fishotel-login-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(7,22,40,0.92);z-index:9999;align-items:center;justify-content:center;">
-                <div style="background:linear-gradient(165deg,#0d2a4a 0%,#0a2040 50%,#071628 100%);border:1px solid rgba(181,161,101,0.4);border-radius:3px;box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 0 1px rgba(181,161,101,0.1);padding:36px 40px 32px;width:400px;max-width:92%;color:#fff;position:relative;overflow:hidden;">
+            <div id="fishotel-login-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(4,12,22,0.95);z-index:9999;align-items:center;justify-content:center;">
+                <div style="background:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E&quot;),linear-gradient(165deg,#071420 0%,#060f1a 50%,#040c15 100%);background-size:150px 150px,cover;border:1px solid rgba(181,161,101,0.4);border-radius:3px;box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 0 1px rgba(181,161,101,0.1);padding:36px 40px 32px;width:400px;max-width:92%;color:#fff;position:relative;overflow:hidden;">
                     <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#b5a165 20%,#d4bc7e 50%,#b5a165 80%,transparent);"></div>
                     <h3 style="margin:0 0 24px;font-family:'Special Elite',monospace;font-size:13px;letter-spacing:0.3em;color:#d4bc7e;text-transform:uppercase;text-align:center;">Gate Access Required</h3>
                     <form id="fishotel-login-form">
