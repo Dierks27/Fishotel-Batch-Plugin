@@ -490,12 +490,7 @@ trait FisHotel_Shortcodes {
                     position:relative;
                     padding:0 12px 12px;
                 }
-                /* Wood grain texture overlay */
-                .fh-manifest-card::before {
-                    content:''; position:absolute; inset:0; border-radius:6px;
-                    filter:url(#fh-wood-grain); background:rgba(0,0,0,0.08);
-                    pointer-events:none; z-index:0; mix-blend-mode:overlay;
-                }
+                /* Wood grain — applied as background-image directly, no ::before needed */
 
                 /* ── Clipboard top bar — no top wood visible ── */
                 .fh-clipboard-bar {
@@ -506,7 +501,7 @@ trait FisHotel_Shortcodes {
 
                 /* ── Metal binder clip — 3D multi-layer ── */
                 .fh-clipboard-clip {
-                    position:absolute; top:-14px; left:50%; transform:translateX(-50%); z-index:5;
+                    position:absolute; top:0; left:50%; transform:translate(-50%, -50%); z-index:5;
                     width:80px;
                 }
                 /* Clip arch / spring piece */
@@ -866,7 +861,6 @@ trait FisHotel_Shortcodes {
                 <!-- ===== Departure Manifest ===== -->
                 <svg width="0" height="0" style="position:absolute;pointer-events:none;">
                     <filter id="fh-wood-grain"><feTurbulence type="fractalNoise" baseFrequency="0.03 0.9" numOctaves="5" seed="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
-                    <filter id="fh-manifest-grain"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
                 </svg>
                 <div class="fh-manifest-card">
                     <div class="fh-clipboard-bar">
@@ -880,6 +874,7 @@ trait FisHotel_Shortcodes {
                         </div>
                     </div>
                     <div class="fh-clipboard-paper">
+                    <svg width="0" height="0" style="position:absolute;pointer-events:none;"><filter id="fh-manifest-grain"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter></svg>
                     <div class="fh-manifest-header">
                         <div class="fh-punch-hole fh-punch-hole-left"></div>
                         <div class="fh-punch-hole fh-punch-hole-right"></div>
