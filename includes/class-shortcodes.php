@@ -381,11 +381,14 @@ trait FisHotel_Shortcodes {
                     width:100%; border-collapse:collapse; font-size:13px; margin-bottom:6px;
                     font-family:'Special Elite',monospace;
                 }
-                .fh-bp-open-fish-table thead tr { background:transparent !important; border-top:1.5px solid #3d2b1f; }
-                .fh-bp-open-fish-table th {
-                    text-align:left; color:#5a4a3a; font-weight:400; font-size:9px;
+                .fh-bp-open-fish-table thead tr { background:transparent !important; }
+                .fh-bp-open-fish-table th,
+                .fh-bp-open-inner .fh-bp-open-body .fh-bp-open-fish-table thead th {
+                    text-align:left; color:#5a4a3a !important; font-weight:400; font-size:9px;
                     text-transform:uppercase; letter-spacing:2px; padding:5px 10px;
-                    border-bottom:1.5px solid #3d2b1f; background:transparent !important;
+                    border-top:1.5px solid #3d2b1f !important;
+                    border-bottom:1.5px solid #3d2b1f !important;
+                    background:transparent !important;
                     font-family:'Special Elite',monospace;
                 }
                 .fh-bp-open-fish-table th:nth-child(3),

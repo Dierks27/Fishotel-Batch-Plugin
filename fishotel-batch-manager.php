@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.79 - Boarding pass: ruled table headers, itinerary label, stamp submit button, red deposit stamp, typewriter rows.
- * Version:           2.79
+ * Description:       Stable v2.80 - Boarding pass: force th color/border visibility over dark theme, verify stamp submit button.
+ * Version:           2.80
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.79' );
+define( 'FISHOTEL_VERSION', '2.80' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
