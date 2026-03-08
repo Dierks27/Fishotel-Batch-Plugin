@@ -478,21 +478,48 @@ trait FisHotel_Shortcodes {
                     font-family:'Special Elite',monospace;
                 }
 
-                /* Logged-out ghost / overlay */
-                .fh-bp-open-ghost { filter:blur(5px); pointer-events:none; user-select:none; }
-                .fh-bp-open-login-overlay {
-                    position:absolute; inset:0; display:flex; align-items:center;
-                    justify-content:center; flex-direction:column; gap:0;
-                    background:rgba(242,234,216,0.82); border-radius:2px; z-index:2;
+                /* Ticket sleeve (logged-out) */
+                .fh-ticket-sleeve {
+                    font-family:"Special Elite",monospace;
+                    background:linear-gradient(165deg,#0d2a4a 0%,#0a2040 50%,#071628 100%);
+                    display:flex; flex-direction:column;
+                    min-height:420px; overflow:hidden; position:relative;
                 }
-                .fh-bp-open-login-link {
-                    display:flex; flex-direction:column; align-items:center; gap:8px;
-                    font-family:'Special Elite',monospace; font-size:1rem; color:#1a1a2e;
-                    text-transform:uppercase; letter-spacing:0.08em;
-                    text-decoration:none; transition:color 0.2s;
+                .fh-ticket-sleeve::before {
+                    content:''; position:absolute; inset:0; pointer-events:none;
+                    background:repeating-linear-gradient(-55deg,rgba(181,161,101,0.04) 0px,rgba(181,161,101,0.04) 1px,transparent 1px,transparent 10px);
                 }
-                .fh-bp-open-login-link:hover { color:#8b1a1a; }
-                .fh-bp-open-lock { font-size:2rem; display:block; }
+                .fh-ticket-sleeve::after {
+                    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+                    background:linear-gradient(90deg,transparent,#b5a165 20%,#d4bc7e 50%,#b5a165 80%,transparent);
+                }
+                .fh-ts-flight-no { position:absolute; top:14px; right:20px; font-size:11px; letter-spacing:0.18em; color:rgba(212,188,126,0.65); }
+                .fh-ts-top { padding:20px 24px 12px; text-align:center; }
+                .fh-ts-top-label { font-size:10px; letter-spacing:0.3em; color:rgba(212,188,126,0.8); text-transform:uppercase; }
+                .fh-ts-rule { height:1px; margin:0 20px; background:linear-gradient(90deg,transparent,#b5a165 15%,#d4bc7e 50%,#b5a165 85%,transparent); }
+                .fh-ts-stripe { background:linear-gradient(180deg,#f5f0e8 0%,#ede8dc 100%); padding:18px 40px 16px; text-align:center; border-top:2px solid #d4bc7e; border-bottom:2px solid #d4bc7e; position:relative; }
+                .fh-ts-stripe::before { content:'\2726'; position:absolute; left:18px; top:50%; transform:translateY(-50%); font-size:12px; color:#b5a165; }
+                .fh-ts-stripe::after  { content:'\2726'; position:absolute; right:18px; top:50%; transform:translateY(-50%); font-size:12px; color:#b5a165; }
+                .fh-ts-name { font-size:28px; letter-spacing:0.18em; color:#0a2040; text-transform:uppercase; line-height:1; }
+                .fh-ts-name-sub { font-size:11px; letter-spacing:0.28em; color:#8a6f2e; text-transform:uppercase; margin-top:6px; font-weight:bold; }
+                .fh-ts-body { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px 24px; gap:4px; }
+                .fh-ts-issued-by { font-size:9px; letter-spacing:0.28em; color:rgba(212,188,126,0.6); text-transform:uppercase; }
+                .fh-ts-issuer { font-size:13px; letter-spacing:0.18em; color:#d4bc7e; text-transform:uppercase; font-weight:bold; }
+                .fh-ts-tagline { font-size:10px; letter-spacing:0.14em; color:rgba(212,188,126,0.75); text-transform:uppercase; font-style:italic; }
+                .fh-ts-divider { width:140px; height:1px; margin:4px auto; background:linear-gradient(90deg,transparent,rgba(181,161,101,0.5),transparent); }
+                .fh-ts-login {
+                    display:inline-block; padding:12px 34px; margin-top:2px;
+                    border:1.5px solid #d4bc7e; color:#f0e0a0;
+                    font-family:"Special Elite",monospace;
+                    font-size:12px; letter-spacing:0.22em;
+                    text-transform:uppercase; text-decoration:none;
+                    background:rgba(181,161,101,0.22);
+                    box-shadow:0 0 18px rgba(181,161,101,0.15),inset 0 1px 0 rgba(255,255,255,0.08);
+                }
+                .fh-ts-login::before, .fh-ts-login::after { content:'\2726'; font-size:8px; color:#b5a165; margin:0 8px; vertical-align:middle; }
+                .fh-ts-login:hover { background:rgba(181,161,101,0.32); color:#fff8e0; text-decoration:none; }
+                .fh-ts-fine { font-size:8.5px; letter-spacing:0.1em; color:rgba(212,188,126,0.5); text-align:center; text-transform:uppercase; line-height:1.8; margin-top:6px; padding:0 16px; }
+                .fh-ts-bottom-rule { height:3px; background:linear-gradient(90deg,transparent,#b5a165 20%,#d4bc7e 50%,#b5a165 80%,transparent); }
 
                 /* Boarding pass mobile */
                 @media (max-width:700px) {
@@ -815,14 +842,31 @@ trait FisHotel_Shortcodes {
                 <div class="fh-bp-open" id="my-requests">
                     <svg width="0" height="0" style="position:absolute;pointer-events:none;"><filter id="fh-paper-grain"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter></svg>
                     <?php if ( ! is_user_logged_in() ) : ?>
-                    <div class="fh-bp-open-login-overlay">
-                        <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="fh-bp-open-login-link">
-                            <span class="fh-bp-open-lock">&#x1F512;</span>
-                            LOG IN TO SEE YOUR BOARDING PASS
-                        </a>
+                    <div class="fh-ticket-sleeve">
+                        <div class="fh-ts-flight-no"><?php echo esc_html( $flight_number ); ?></div>
+                        <div class="fh-ts-top">
+                            <div class="fh-ts-top-label">&#x2708; &nbsp; Passenger Ticket &amp; Boarding Pass &nbsp; &#x2708;</div>
+                        </div>
+                        <div class="fh-ts-rule"></div>
+                        <div class="fh-ts-stripe">
+                            <div class="fh-ts-name">The FisHotel</div>
+                            <div class="fh-ts-name-sub">International &middot; Quarantine Service</div>
+                        </div>
+                        <div class="fh-ts-body">
+                            <div class="fh-ts-issued-by">Issued by</div>
+                            <div class="fh-ts-issuer">FisHotel World Airways, Inc.</div>
+                            <div class="fh-ts-tagline">World's Most Experienced Fish Hotel</div>
+                            <div class="fh-ts-divider"></div>
+                            <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="fh-ts-login">Log In to See Your Boarding Pass</a>
+                            <div class="fh-ts-fine">
+                                Each passenger should carefully examine this ticket.<br>
+                                This ticket shall not be valid without a verified deposit on file.
+                            </div>
+                        </div>
+                        <div class="fh-ts-bottom-rule"></div>
                     </div>
-                    <?php endif; ?>
-                    <div class="fh-bp-open-inner<?php echo ! is_user_logged_in() ? ' fh-bp-open-ghost' : ''; ?>">
+                    <?php else : ?>
+                    <div class="fh-bp-open-inner">
                         <div class="fh-bp-open-left">
                             <div class="fh-bp-open-header">
                                 <span class="fh-bp-open-header-title">BOARDING PASS</span>
@@ -863,6 +907,7 @@ trait FisHotel_Shortcodes {
                             <span class="fh-bp-open-vertical">Boarding Pass</span>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- ===== Departure Manifest ===== -->
@@ -1766,6 +1811,15 @@ trait FisHotel_Shortcodes {
                 $badge_color = '#e67e22';
             }
 
+            // Generate flight number for this batch
+            $origin_code   = strtoupper( substr( preg_replace( '/[^a-zA-Z]/', '', $origin_name ), 0, 2 ) );
+            preg_match_all( '/\d+/', $batch_name, $dmatches );
+            $route_num = '';
+            foreach ( $dmatches[0] as $d ) $route_num .= $d;
+            $route_num = substr( $route_num, 0, 4 );
+            if ( ! $route_num ) $route_num = '001';
+            $flight_number = 'FHI-' . $origin_code . $route_num;
+
             // ─── Boarding pass data ─────────────────────────────────────
             $bp_items     = [];
             $bp_total     = 0.0;
@@ -1929,20 +1983,47 @@ trait FisHotel_Shortcodes {
                     pointer-events: none; z-index: 1; mix-blend-mode: overlay;
                 }
                 .fh-boarding-pass { position: relative; }
-                .fh-bp-ghost { filter: blur(5px); pointer-events: none; user-select: none; }
-                .fh-bp-login-overlay {
-                    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-                    flex-direction: column; gap: 0;
-                    background: rgba(12,22,31,0.82); border-radius: 10px; z-index: 2;
+                .fh-ticket-sleeve {
+                    font-family: "Special Elite", monospace;
+                    background: linear-gradient(165deg, #0d2a4a 0%, #0a2040 50%, #071628 100%);
+                    display: flex; flex-direction: column;
+                    min-height: 420px; overflow: hidden; position: relative;
                 }
-                .fh-bp-login-link {
-                    display: flex; flex-direction: column; align-items: center; gap: 8px;
-                    font-family: 'Oswald', sans-serif; font-size: 1.1rem; color: #b5a165;
-                    text-transform: uppercase; letter-spacing: 0.08em;
-                    text-decoration: none; transition: color 0.2s;
+                .fh-ticket-sleeve::before {
+                    content: ''; position: absolute; inset: 0; pointer-events: none;
+                    background: repeating-linear-gradient(-55deg, rgba(181,161,101,0.04) 0px, rgba(181,161,101,0.04) 1px, transparent 1px, transparent 10px);
                 }
-                .fh-bp-login-link:hover { color: #e67e22; }
-                .fh-bp-lock { font-size: 2rem; display: block; }
+                .fh-ticket-sleeve::after {
+                    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+                    background: linear-gradient(90deg, transparent, #b5a165 20%, #d4bc7e 50%, #b5a165 80%, transparent);
+                }
+                .fh-ts-flight-no { position: absolute; top: 14px; right: 20px; font-size: 11px; letter-spacing: 0.18em; color: rgba(212,188,126,0.65); }
+                .fh-ts-top { padding: 20px 24px 12px; text-align: center; }
+                .fh-ts-top-label { font-size: 10px; letter-spacing: 0.3em; color: rgba(212,188,126,0.8); text-transform: uppercase; }
+                .fh-ts-rule { height: 1px; margin: 0 20px; background: linear-gradient(90deg, transparent, #b5a165 15%, #d4bc7e 50%, #b5a165 85%, transparent); }
+                .fh-ts-stripe { background: linear-gradient(180deg, #f5f0e8 0%, #ede8dc 100%); padding: 18px 40px 16px; text-align: center; border-top: 2px solid #d4bc7e; border-bottom: 2px solid #d4bc7e; position: relative; }
+                .fh-ts-stripe::before { content: '\2726'; position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #b5a165; }
+                .fh-ts-stripe::after  { content: '\2726'; position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #b5a165; }
+                .fh-ts-name { font-size: 28px; letter-spacing: 0.18em; color: #0a2040; text-transform: uppercase; line-height: 1; }
+                .fh-ts-name-sub { font-size: 11px; letter-spacing: 0.28em; color: #8a6f2e; text-transform: uppercase; margin-top: 6px; font-weight: bold; }
+                .fh-ts-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 24px; gap: 4px; }
+                .fh-ts-issued-by { font-size: 9px; letter-spacing: 0.28em; color: rgba(212,188,126,0.6); text-transform: uppercase; }
+                .fh-ts-issuer { font-size: 13px; letter-spacing: 0.18em; color: #d4bc7e; text-transform: uppercase; font-weight: bold; }
+                .fh-ts-tagline { font-size: 10px; letter-spacing: 0.14em; color: rgba(212,188,126,0.75); text-transform: uppercase; font-style: italic; }
+                .fh-ts-divider { width: 140px; height: 1px; margin: 4px auto; background: linear-gradient(90deg, transparent, rgba(181,161,101,0.5), transparent); }
+                .fh-ts-login {
+                    display: inline-block; padding: 12px 34px; margin-top: 2px;
+                    border: 1.5px solid #d4bc7e; color: #f0e0a0;
+                    font-family: "Special Elite", monospace;
+                    font-size: 12px; letter-spacing: 0.22em;
+                    text-transform: uppercase; text-decoration: none;
+                    background: rgba(181,161,101,0.22);
+                    box-shadow: 0 0 18px rgba(181,161,101,0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+                }
+                .fh-ts-login::before, .fh-ts-login::after { content: '\2726'; font-size: 8px; color: #b5a165; margin: 0 8px; vertical-align: middle; }
+                .fh-ts-login:hover { background: rgba(181,161,101,0.32); color: #fff8e0; text-decoration: none; }
+                .fh-ts-fine { font-size: 8.5px; letter-spacing: 0.1em; color: rgba(212,188,126,0.5); text-align: center; text-transform: uppercase; line-height: 1.8; margin-top: 6px; padding: 0 16px; }
+                .fh-ts-bottom-rule { height: 3px; background: linear-gradient(90deg, transparent, #b5a165 20%, #d4bc7e 50%, #b5a165 80%, transparent); }
                 @media (max-width: 700px) {
                     .fh-boarding-pass { flex-direction: column; }
                     .fh-bp-left {
@@ -2088,14 +2169,31 @@ trait FisHotel_Shortcodes {
                 <!-- ===== SECTION 3: Boarding Pass ===== -->
                 <div class="fh-bp-wrap">
                     <?php if ( ! $bp_logged_in ) : ?>
-                        <div class="fh-bp-login-overlay">
-                            <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="fh-bp-login-link">
-                                <span class="fh-bp-lock">&#x1F512;</span>
-                                Log in to see your boarding pass
-                            </a>
+                    <div class="fh-ticket-sleeve">
+                        <div class="fh-ts-flight-no"><?php echo esc_html( $flight_number ); ?></div>
+                        <div class="fh-ts-top">
+                            <div class="fh-ts-top-label">&#x2708; &nbsp; Passenger Ticket &amp; Boarding Pass &nbsp; &#x2708;</div>
                         </div>
-                    <?php endif; ?>
-                    <div class="fh-boarding-pass <?php echo ! $bp_logged_in ? 'fh-bp-ghost' : ''; ?>">
+                        <div class="fh-ts-rule"></div>
+                        <div class="fh-ts-stripe">
+                            <div class="fh-ts-name">The FisHotel</div>
+                            <div class="fh-ts-name-sub">International &middot; Quarantine Service</div>
+                        </div>
+                        <div class="fh-ts-body">
+                            <div class="fh-ts-issued-by">Issued by</div>
+                            <div class="fh-ts-issuer">FisHotel World Airways, Inc.</div>
+                            <div class="fh-ts-tagline">World's Most Experienced Fish Hotel</div>
+                            <div class="fh-ts-divider"></div>
+                            <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="fh-ts-login">Log In to See Your Boarding Pass</a>
+                            <div class="fh-ts-fine">
+                                Each passenger should carefully examine this ticket.<br>
+                                This ticket shall not be valid without a verified deposit on file.
+                            </div>
+                        </div>
+                        <div class="fh-ts-bottom-rule"></div>
+                    </div>
+                    <?php else : ?>
+                    <div class="fh-boarding-pass">
                         <!-- LEFT: Flight info -->
                         <div class="fh-bp-left">
                             <div class="fh-bp-brand">
@@ -2171,6 +2269,7 @@ trait FisHotel_Shortcodes {
                             <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
 
             </div>
