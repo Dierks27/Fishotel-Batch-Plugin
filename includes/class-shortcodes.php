@@ -79,10 +79,11 @@ trait FisHotel_Shortcodes {
             $ticker_msgs = get_option( 'fishotel_ticker_messages', [] );
             if ( empty( $ticker_msgs ) ) {
                 $ticker_msgs = [
-                    'FIRST COME · FIRST SERVED',
-                    '{species} SPECIES AVAILABLE',
-                    '{stock} TOTAL STOCK',
+                    'THANK YOU FOR FLYING FISHOTEL',
+                    'ALL FISH QUARANTINE INSPECTED',
+                    '{species} SPECIES THIS BATCH',
                     'DEPOSIT REQUIRED TO REQUEST',
+                    'FIRST COME FIRST SERVED',
                 ];
             }
             $ticker_resolved = [];
@@ -212,7 +213,7 @@ trait FisHotel_Shortcodes {
                 }
                 /* ── Split-Flap Tiles — Aged ── */
                 .fh-flap {
-                    width:38px; height:48px; min-width:38px;
+                    width:34px; height:48px; min-width:34px;
                     background:linear-gradient(to bottom, #1c1c1c 49%, #0a0a0a 49%, #0a0a0a 51%, #1c1c1c 51%);
                     border-radius:2px;
                     box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 3px 0 #0a0806, 0 2px 6px rgba(0,0,0,0.9);
@@ -234,7 +235,7 @@ trait FisHotel_Shortcodes {
                 @media (max-width:600px) {
                     .fh-board-label { width:90px; min-width:90px; padding:6px 8px 6px 10px; font-size:0.5rem; }
                     .fh-board-tiles { padding:4px 6px; gap:1px; }
-                    .fh-flap { width:22px; height:30px; min-width:22px; font-size:16px; }
+                    .fh-flap { width:20px; height:30px; min-width:20px; font-size:16px; }
                     .fh-flap-space { width:10px; min-width:10px; }
                 }
 
@@ -606,21 +607,14 @@ trait FisHotel_Shortcodes {
                     // ── Solari Departure Board ──
                     (function() {
                         var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789·,.- ';
-                        var COLS = 28;
                         var board = document.getElementById('fh-board');
                         if (!board) return;
 
-                        function padText(text) {
-                            text = (text || '').substring(0, COLS);
-                            while (text.length < COLS) text += ' ';
-                            return text;
-                        }
-
-                        // Build exactly COLS tiles for a row
+                        // Build tiles for actual characters only — no trailing padding
                         function buildTiles(container, text) {
-                            text = padText(text);
+                            text = text || '';
                             container.innerHTML = '';
-                            for (var i = 0; i < COLS; i++) {
+                            for (var i = 0; i < text.length; i++) {
                                 var c = text[i];
                                 var flap = document.createElement('div');
                                 flap.className = c === ' ' ? 'fh-flap fh-flap-space' : 'fh-flap';
@@ -629,9 +623,9 @@ trait FisHotel_Shortcodes {
                             }
                         }
 
-                        // Animate tiles from blank → final text, staggered left-to-right
+                        // Animate tiles staggered left-to-right
                         function animateRow(container, text) {
-                            text = padText(text);
+                            text = text || '';
                             var flaps = container.querySelectorAll('.fh-flap');
                             flaps.forEach(function(flap, i) {
                                 var finalChar = text[i] || ' ';

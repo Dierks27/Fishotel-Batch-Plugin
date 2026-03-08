@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.51 - Solari board grit and aging pass. Row overflow fix. H1 restored.
- * Version:           2.51
+ * Description:       Stable 2.52 - Solari board: variable row width, tile size fix, notice messages.
+ * Version:           2.52
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.51' );
+define( 'FISHOTEL_VERSION', '2.52' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
