@@ -355,27 +355,29 @@ trait FisHotel_Shortcodes {
                 .fh-bp-open-left { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
                 .fh-bp-open-header {
                     display:flex; justify-content:space-between; align-items:center;
-                    padding:8px 20px; background:#1a1a2e; height:32px; box-sizing:border-box;
+                    padding:8px 20px; background:#1a3a6b; height:32px; box-sizing:border-box;
+                    border-bottom:2px solid #d4bc7e;
                 }
                 .fh-bp-open-header-title {
                     font-size:0.75rem; font-weight:700; text-transform:uppercase;
-                    letter-spacing:0.14em; color:#d4bc7e;
+                    letter-spacing:0.14em; color:#f2ead8;
                     font-family:'Special Elite',monospace;
                 }
                 .fh-bp-open-header-flight {
-                    font-size:0.75rem; font-weight:400; color:#8a9bae;
+                    font-size:0.75rem; font-weight:400; color:#d4bc7e;
                     letter-spacing:0.1em; font-family:'Special Elite',monospace;
                 }
-                .fh-bp-open-body { padding:16px 20px; flex:1; }
+                .fh-bp-open-body { padding:16px 20px; flex:1; border-top:3px solid #d4bc7e; }
                 /* Combined passenger + route line */
                 .fh-bp-open-passenger-line {
                     font-family:'Special Elite',monospace; font-size:13px; color:#0a0805;
-                    margin:0 0 12px; padding-bottom:10px;
+                    margin:0 0 12px; padding:8px 10px 10px;
                     border-bottom:2px solid #1a1a2e; line-height:1.5;
                     text-transform:uppercase; letter-spacing:0.04em;
+                    background:rgba(181,161,101,0.08);
                 }
                 .fh-bp-open-passenger-line .fh-bp-pax-label {
-                    font-size:9px; color:#5a4a3a; letter-spacing:0.1em; margin-right:6px;
+                    font-size:10px; color:#3d2b1f; letter-spacing:0.1em; margin-right:6px;
                 }
                 .fh-bp-open-fish-table {
                     width:100%; border-collapse:collapse; font-size:13px; margin-bottom:6px;
@@ -384,12 +386,16 @@ trait FisHotel_Shortcodes {
                 .fh-bp-open-fish-table thead tr { background:transparent !important; }
                 .fh-bp-open-fish-table th,
                 .fh-bp-open-inner .fh-bp-open-body .fh-bp-open-fish-table thead th {
-                    text-align:left; color:#5a4a3a !important; font-weight:400; font-size:9px;
-                    text-transform:uppercase; letter-spacing:2px; padding:5px 10px;
+                    text-align:left; color:#1a1209 !important; font-weight:400; font-size:15px;
+                    text-transform:none; letter-spacing:0; padding:5px 10px;
                     border-top:1.5px solid #3d2b1f !important;
                     border-bottom:1.5px solid #3d2b1f !important;
                     background:transparent !important;
-                    font-family:'Special Elite',monospace;
+                    font-family:'Klee One',cursive;
+                }
+                .fh-bp-hw-header {
+                    display:inline-block; font-family:'Klee One',cursive;
+                    font-size:15px; color:#1a1209; font-weight:400;
                 }
                 .fh-bp-open-fish-table th:nth-child(3),
                 .fh-bp-open-fish-table th:nth-child(4) { text-align:right; }
@@ -406,9 +412,12 @@ trait FisHotel_Shortcodes {
                 .fh-bp-open-fish-table td:last-child { text-align:center; }
                 .fh-bp-open-fish-table tbody tr:nth-child(odd) { background:#f2ead8; }
                 .fh-bp-open-fish-table tbody tr:nth-child(even) { background:#ebe0c4; }
-                .fh-bp-open-inner .fh-bp-open-fish-table tbody td { background:transparent !important; color:#0a0805 !important; }
-                .fh-bp-open-inner .fh-bp-open-fish-table tbody tr:nth-child(odd) td { background:#f2ead8 !important; }
-                .fh-bp-open-inner .fh-bp-open-fish-table tbody tr:nth-child(even) td { background:#ebe0c4 !important; }
+                .fh-bp-open-inner .fh-bp-open-fish-table tbody td,
+                .fh-bp-open-inner table.fh-bp-open-fish-table tbody tr td { background:transparent !important; color:#0a0805 !important; }
+                .fh-bp-open-inner .fh-bp-open-fish-table tbody tr:nth-child(odd) td,
+                .fh-bp-open-inner table.fh-bp-open-fish-table tbody tr:nth-child(odd) td { background:#f2ead8 !important; }
+                .fh-bp-open-inner .fh-bp-open-fish-table tbody tr:nth-child(even) td,
+                .fh-bp-open-inner table.fh-bp-open-fish-table tbody tr:nth-child(even) td { background:#ebe0c4 !important; }
                 .fh-bp-open-fish-table .fh-bp-prev-row { /* same style as new items */ }
                 .fh-bp-open-fish-table .fh-bp-remove-btn {
                     background:none; border:none; color:#8b1a1a; font-size:11px;
@@ -448,7 +457,7 @@ trait FisHotel_Shortcodes {
                     transform:translateX(-50%);
                 }
                 .fh-bp-open-stub-label {
-                    font-size:9px; color:#5a4a3a; text-transform:uppercase;
+                    font-size:10px; color:#3d2b1f; text-transform:uppercase;
                     letter-spacing:0.1em; margin:0; font-weight:400;
                     font-family:'Special Elite',monospace;
                 }
@@ -616,10 +625,12 @@ trait FisHotel_Shortcodes {
                 }
                 .fishotel-open-table tbody tr:nth-child(odd) { background:#f2ead8; }
                 .fishotel-open-table tbody tr:nth-child(even) { background:#ebe0c4; }
-                /* Override dark theme td backgrounds so tr colors show through */
+                /* Override dark theme td backgrounds and text colors */
                 .fishotel-open-table tbody td { background:transparent !important; }
                 .fishotel-open-table tbody tr:nth-child(odd) td { background:transparent !important; }
                 .fishotel-open-table tbody tr:nth-child(even) td { background:transparent !important; }
+                .fh-clipboard-paper .fishotel-open-table tbody td:nth-child(2) { color:#1a1209 !important; }
+                .fh-clipboard-paper .fishotel-open-table tbody td:nth-child(5) { color:#2a1f14 !important; }
 
                 /* ── Stock Colors — typed ink, no dots ── */
                 .fh-stock-green { color:#0a0805; font-weight:700; }
@@ -1245,9 +1256,14 @@ trait FisHotel_Shortcodes {
 
                         let html = '';
                         if (prevItems.length > 0) {
-                            html += '<div style="color:#5a4a3a;font-size:9px;text-transform:uppercase;letter-spacing:3px;margin:0 0 4px;font-family:Special Elite,monospace;font-weight:400;">Passenger Itinerary</div><div style="border-bottom:1px solid rgba(61,43,31,0.3);margin-bottom:6px;"></div>';
+                            html += '<div style="color:#3d2b1f;font-size:11px;text-transform:uppercase;letter-spacing:3px;margin:0 0 4px;font-family:Special Elite,monospace;font-weight:400;">Passenger Itinerary</div><div style="border-bottom:1px solid rgba(61,43,31,0.3);margin-bottom:6px;"></div>';
                         }
-                        html += '<table class="fh-bp-open-fish-table"><thead><tr><th>Common Name</th><th>Qty</th><th>Unit Price</th><th>Total</th><th></th></tr></thead><tbody>';
+                        html += '<table class="fh-bp-open-fish-table"><thead><tr>'
+                            + '<th><span class="fh-bp-hw-header" style="transform:rotate(-3deg)">Common Name</span></th>'
+                            + '<th><span class="fh-bp-hw-header" style="transform:rotate(2deg)">Qty</span></th>'
+                            + '<th><span class="fh-bp-hw-header" style="transform:rotate(-1deg)">Unit Price</span></th>'
+                            + '<th><span class="fh-bp-hw-header" style="transform:rotate(3deg)">Total</span></th>'
+                            + '<th></th></tr></thead><tbody>';
 
                         // Previously submitted requests
                         prevItems.forEach((item, idx) => {
@@ -1259,7 +1275,7 @@ trait FisHotel_Shortcodes {
 
                         // Current session new requests
                         if (cartItems.length > 0 && prevItems.length > 0) {
-                            html += `<tr><td colspan="5" style="padding:6px 8px 2px;color:#5a4a3a;font-size:9px;text-transform:uppercase;letter-spacing:3px;border:none;font-family:Special Elite,monospace;font-weight:400;">New Requests</td></tr>`;
+                            html += `<tr><td colspan="5" style="padding:6px 8px 2px;color:#3d2b1f;font-size:11px;text-transform:uppercase;letter-spacing:3px;border:none;font-family:Special Elite,monospace;font-weight:400;">New Requests</td></tr>`;
                         }
                         cartItems.forEach((item, index) => {
                             const lineTotal = item.price * item.qty;
