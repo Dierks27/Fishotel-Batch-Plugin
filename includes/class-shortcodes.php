@@ -710,6 +710,13 @@ trait FisHotel_Shortcodes {
                 .fh-clipboard-paper .fishotel-open-table .qty-input {
                     color:transparent !important; caret-color:transparent !important;
                 }
+                .qty-input:-webkit-autofill,
+                .qty-input:-webkit-autofill:hover,
+                .qty-input:-webkit-autofill:focus {
+                    -webkit-box-shadow: 0 0 0 1000px #ecdfc3 inset !important;
+                    -webkit-text-fill-color: rgba(0,0,0,0) !important;
+                    caret-color: transparent;
+                }
                 /* Handwritten overlay on qty input */
                 .fh-hw-input-val {
                     position:absolute; top:50%; left:50%;
