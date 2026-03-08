@@ -556,6 +556,13 @@ trait FisHotel_Shortcodes {
                     filter:url(#fh-manifest-grain); background:rgba(180,165,130,0.06);
                     pointer-events:none; z-index:1; mix-blend-mode:multiply;
                 }
+                /* Page curl — bottom-right corner */
+                .fh-clipboard-paper::after {
+                    content:''; position:absolute; bottom:0; right:0;
+                    width:24px; height:24px; z-index:4; pointer-events:none;
+                    background:linear-gradient(225deg, #3d2b1f 0%, #3d2b1f 38%, #d8cdb8 42%, #e8dece 58%, #f2ead8 100%);
+                    box-shadow:-2px -2px 4px rgba(0,0,0,0.12);
+                }
 
                 /* ── Manifest header — official government form ── */
                 .fh-manifest-header {
@@ -600,7 +607,7 @@ trait FisHotel_Shortcodes {
                 .fishotel-open-table { width:100%; border-collapse:collapse; table-layout:fixed; }
                 .fishotel-open-table thead tr { background:transparent; }
                 .fishotel-open-table th {
-                    text-align:left; color:#1a1a2e; font-family:'Special Elite',monospace;
+                    text-align:left; color:#0d0a05; font-family:'Special Elite',monospace;
                     font-weight:700; font-size:11px; text-transform:uppercase;
                     letter-spacing:0.06em; padding:10px 10px;
                     border-bottom:2px solid rgba(0,0,0,0.25);
@@ -612,13 +619,13 @@ trait FisHotel_Shortcodes {
                 .fishotel-open-table th[data-sort].sort-desc::after { content:" \25BC"; font-size:0.7em; }
                 .fishotel-open-table td {
                     padding:10px 10px; font-family:'Special Elite',monospace;
-                    font-size:13px; color:#1a1a2e;
+                    font-size:13px; color:#1a1209;
                     height:44px; box-sizing:border-box;
                     border-bottom:1px solid rgba(0,0,0,0.12);
                 }
                 /* Row number column */
                 .fishotel-open-table .fh-row-num {
-                    width:32px; text-align:center; color:#a09080;
+                    width:32px; text-align:center; color:#8a7a6a;
                     font-size:11px; font-family:'Special Elite',monospace;
                     padding:10px 4px; position:relative;
                 }
@@ -626,7 +633,7 @@ trait FisHotel_Shortcodes {
                     white-space:normal; word-wrap:break-word; overflow-wrap:break-word;
                 }
                 .fishotel-open-table td:nth-child(3) {
-                    color:#5a4a3a !important; font-style:italic;
+                    color:#3d2b1f !important; font-style:italic;
                 }
                 .fishotel-open-table tbody tr:nth-child(odd) { background:#f2ead8; }
                 .fishotel-open-table tbody tr:nth-child(even) { background:#ebe0c4; }
@@ -635,16 +642,14 @@ trait FisHotel_Shortcodes {
                 .fishotel-open-table tbody tr:nth-child(odd) td { background:transparent !important; }
                 .fishotel-open-table tbody tr:nth-child(even) td { background:transparent !important; }
 
-                /* ── Stock Colors ── */
-                .fh-stock-green { color:#2d8a2d; font-weight:700; }
-                .fh-stock-orange { color:#c06010; font-weight:700; }
-                .fh-stock-red { color:#cc2222; font-weight:700; }
-                .fh-stock-dot {
-                    display:inline-block; width:8px; height:8px; border-radius:50%;
-                    margin-right:6px; vertical-align:middle;
+                /* ── Stock Colors — typed ink, no dots ── */
+                .fh-stock-green { color:#1a1209; font-weight:700; }
+                .fh-stock-orange { color:#1a1209; font-weight:700; }
+                .fh-stock-red { color:#1a1209; font-weight:700; }
+                .fh-stock-low::after {
+                    content:'*'; font-family:'Special Elite',monospace;
+                    color:#3d2b1f; margin-left:1px;
                 }
-                .fh-stock-dot-green { background:#2d8a2d; }
-                .fh-stock-dot-orange { background:#c06010; }
                 .fh-row-closed { opacity:0.5; }
 
                 /* ── Size Badge ── */
@@ -687,13 +692,21 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-req-btn:hover { background:#f5dede; border-color:#6b1010; color:#6b1010; }
 
-                /* ── Green checkmark — handwritten annotation ── */
+                /* ── Green checkmark — handwritten annotation in common name cell ── */
                 .fh-in-cart-check {
                     font-family:'Caveat',cursive; font-size:22px; color:#2d6a2d;
-                    display:inline-block; transform:rotate(-8deg);
-                    line-height:1; vertical-align:middle;
-                    font-weight:700; position:absolute; left:2px; top:50%;
-                    margin-top:-11px;
+                    display:inline-block;
+                    line-height:1; font-weight:700;
+                    position:absolute; left:-2px; top:50%;
+                    margin-top:-12px; z-index:3;
+                    /* rotation set per-row via inline style */
+                }
+                /* ── Handwritten qty in # column when in cart ── */
+                .fh-hw-qty {
+                    font-family:'Caveat',cursive; font-size:16px; color:#1a4d1a;
+                    display:block; line-height:1; font-weight:700;
+                    margin-top:2px;
+                    /* rotation set per-row via inline style */
                 }
 
                 /* ── CLOSED stamp — red rubber stamp diagonal ── */
@@ -910,13 +923,13 @@ trait FisHotel_Shortcodes {
                     <div class="fh-scroll-wrap">
                         <table class="fishotel-open-table">
                             <thead><tr>
-                                <th style="width:32px;text-align:center;">#</th>
-                                <th data-sort="common" style="width:26%;">Common Name</th>
-                                <th data-sort="sci" style="width:20%;">Scientific Name</th>
-                                <th style="text-align:center;width:6%;">Size</th>
+                                <th style="width:4%;text-align:center;">#</th>
+                                <th data-sort="common" style="width:24%;">Common Name</th>
+                                <th data-sort="sci" style="width:28%;">Scientific Name</th>
+                                <th style="text-align:center;width:5%;">Size</th>
                                 <th style="text-align:right;width:10%;" data-sort="price">Avg Price</th>
-                                <th style="text-align:center;width:8%;" data-sort="stock">Stock</th>
-                                <th style="text-align:center;width:24%;">Action</th>
+                                <th style="text-align:center;width:7%;" data-sort="stock">Stock</th>
+                                <th style="text-align:center;width:22%;">Action</th>
                             </tr></thead><tbody>
                             <?php $row_num = 0; foreach ( $batch_posts as $bp ) {
                                 $master_id = get_post_meta( $bp->ID, '_master_id', true );
@@ -931,17 +944,16 @@ trait FisHotel_Shortcodes {
                                 $title_to_check = $master->post_title . ' ' . $bp->post_title;
                                 if ( preg_match( '/\((SM|MED|Lrg|XL|Nano|Tiny)\)/i', $title_to_check, $matches ) ) $size = strtoupper( $matches[1] );
                                 $stock_class = $stock > 10 ? 'fh-stock-green' : ( $stock > 0 ? 'fh-stock-orange' : 'fh-stock-red' );
-                                $dot_class   = $stock > 10 ? 'fh-stock-dot-green' : ( $stock > 0 ? 'fh-stock-dot-orange' : '' );
+                                $low_class   = ( $stock > 0 && $stock <= 5 ) ? ' fh-stock-low' : '';
                                 $row_class   = $stock == 0 ? ' class="fh-row-closed"' : '';
-                                echo '<tr' . $row_class . ' data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '">';
+                                echo '<tr' . $row_class . ' data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '" data-rownum="' . $row_num . '">';
                                 echo '<td class="fh-row-num">' . $row_num . '</td>';
-                                echo '<td style="font-weight:600;">' . esc_html( $master->post_title ) . '</td>';
+                                echo '<td class="fh-common-cell" style="position:relative;">' . esc_html( $master->post_title ) . '</td>';
                                 echo '<td>' . esc_html( $sci_name ) . '</td>';
                                 echo '<td style="text-align:center;">' . ( $size ? '<span class="fh-size-badge">' . esc_html( $size ) . '</span>' : '' ) . '</td>';
                                 echo '<td style="text-align:right;">' . number_format( $price, 2 ) . '</td>';
-                                echo '<td style="text-align:center;" class="' . $stock_class . '">';
-                                if ( $dot_class ) echo '<span class="fh-stock-dot ' . $dot_class . '"></span>';
-                                echo intval( $stock ) . '</td>';
+                                echo '<td style="text-align:center;" class="' . $stock_class . $low_class . '">';
+                                echo '<span>' . intval( $stock ) . '</span></td>';
                                 echo '<td style="text-align:center;white-space:nowrap;">';
                                 if ( $stock > 0 ) {
                                     echo '<div class="fh-qty-wrap">';
@@ -973,7 +985,7 @@ trait FisHotel_Shortcodes {
                             $title_to_check = $master->post_title . ' ' . $bp->post_title;
                             if ( preg_match( '/\((SM|MED|Lrg|XL|Nano|Tiny)\)/i', $title_to_check, $matches ) ) $size = strtoupper( $matches[1] );
                             $stock_class = $stock > 10 ? 'fh-stock-green' : ( $stock > 0 ? 'fh-stock-orange' : 'fh-stock-red' );
-                            $dot_class   = $stock > 10 ? 'fh-stock-dot-green' : ( $stock > 0 ? 'fh-stock-dot-orange' : '' );
+                            $low_class_m = ( $stock > 0 && $stock <= 5 ) ? ' fh-stock-low' : '';
                             $card_class  = 'fish-card' . ( $stock == 0 ? ' fh-row-closed' : '' );
                             echo '<div class="' . $card_class . '" data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '">';
                             echo '<h4>' . esc_html( $master->post_title ) . '</h4>';
@@ -981,8 +993,7 @@ trait FisHotel_Shortcodes {
                             echo '<div style="margin:10px 0;">';
                             if ( $size ) echo '<span class="fh-size-badge" style="margin-right:8px;">' . esc_html( $size ) . '</span>';
                             echo '<span class="price">$' . number_format( $price, 2 ) . '</span>';
-                            echo ' <span class="stock ' . $stock_class . '">';
-                            if ( $dot_class ) echo '<span class="fh-stock-dot ' . $dot_class . '"></span>';
+                            echo ' <span class="stock ' . $stock_class . $low_class_m . '">';
                             echo 'Stock: ' . intval( $stock ) . '</span>';
                             echo '</div>';
                             if ( $stock > 0 ) {
@@ -1300,20 +1311,44 @@ trait FisHotel_Shortcodes {
                         prevItems.forEach(i => requestedIds.add(String(i.batch_id)));
                         cartItems.forEach(i => requestedIds.add(String(i.batch_id)));
 
-                        // Desktop table rows — checkmark goes in the row-number cell
+                        // Collect qty per batch_id for handwritten annotation
+                        const qtyMap = {};
+                        prevItems.forEach(i => { qtyMap[String(i.batch_id)] = (qtyMap[String(i.batch_id)] || 0) + parseInt(i.qty); });
+                        cartItems.forEach(i => { qtyMap[String(i.batch_id)] = (qtyMap[String(i.batch_id)] || 0) + parseInt(i.qty); });
+
+                        // Desktop table rows — checkmark in common name cell, qty in # cell
                         document.querySelectorAll('.fishotel-open-table .add-to-request').forEach(btn => {
                             const batchId = btn.getAttribute('data-batch-id');
                             const tr = btn.closest('tr');
-                            const numCell = tr ? tr.querySelector('.fh-row-num') : null;
-                            if (!numCell) return;
-                            // Remove any existing checkmark first
-                            const existing = numCell.querySelector('.fh-in-cart-check');
-                            if (existing) existing.remove();
+                            if (!tr) return;
+                            const commonCell = tr.querySelector('.fh-common-cell');
+                            const numCell = tr.querySelector('.fh-row-num');
+                            // Remove existing annotations
+                            if (commonCell) { const ex = commonCell.querySelector('.fh-in-cart-check'); if (ex) ex.remove(); }
+                            if (numCell) { const ex = numCell.querySelector('.fh-hw-qty'); if (ex) ex.remove(); }
                             if (requestedIds.has(batchId)) {
-                                const chk = document.createElement('span');
-                                chk.className = 'fh-in-cart-check';
-                                chk.textContent = '\u2713';
-                                numCell.appendChild(chk);
+                                const rowNum = parseInt(tr.getAttribute('data-rownum')) || 1;
+                                // Pseudo-random rotation from row number: range -15 to +5
+                                const rot = -15 + ((rowNum * 7) % 21);
+                                // Slight position jitter: odd rows left, even rows right
+                                const nudge = (rowNum % 2 === 1) ? -2 : 1;
+                                if (commonCell) {
+                                    const chk = document.createElement('span');
+                                    chk.className = 'fh-in-cart-check';
+                                    chk.textContent = '\u2713';
+                                    chk.style.transform = 'rotate(' + rot + 'deg)';
+                                    chk.style.left = nudge + 'px';
+                                    commonCell.appendChild(chk);
+                                }
+                                // Handwritten qty in # column
+                                const qty = qtyMap[batchId] || 0;
+                                if (numCell && qty > 0) {
+                                    const hw = document.createElement('span');
+                                    hw.className = 'fh-hw-qty';
+                                    hw.textContent = 'x' + qty;
+                                    hw.style.transform = 'rotate(' + (rot > 0 ? -3 : 3) + 'deg)';
+                                    numCell.appendChild(hw);
+                                }
                             }
                         });
                         // Mobile cards
