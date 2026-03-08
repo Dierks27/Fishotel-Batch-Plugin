@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.59 - Header glow, flight number, gate close time, ticker shuffle.
- * Version:           2.59
+ * Description:       Stable 2.60 - Footer DEPARTURES/ARRIVALS lit/unlit state.
+ * Version:           2.60
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.59' );
+define( 'FISHOTEL_VERSION', '2.60' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

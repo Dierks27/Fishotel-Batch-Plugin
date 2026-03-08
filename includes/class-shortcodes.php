@@ -247,6 +247,18 @@ trait FisHotel_Shortcodes {
                 .fh-board-footer-right {
                     font-size:13px; letter-spacing:0.14em; color:#8a7a50;
                 }
+                .fh-footer-lit {
+                    color:#d4bc7e;
+                    text-shadow:0 0 8px rgba(212,188,126,0.6), 0 0 20px rgba(181,161,101,0.3);
+                }
+                .fh-footer-unlit {
+                    color:#2a2a2a;
+                    text-shadow:none;
+                }
+                .fh-footer-sep {
+                    color:#5a4e34;
+                    text-shadow:none;
+                }
                 .fh-board-row {
                     display:flex;
                     border-bottom:1px solid #0d0d0d;
@@ -538,7 +550,7 @@ trait FisHotel_Shortcodes {
                     <div class="fh-board-row"><div class="fh-board-label">Boarding</div><div class="fh-board-tiles" data-fh-text="FIRST COME FIRST SERVED"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Notice</div><div class="fh-board-tiles" id="fh-notice-row" data-fh-text="<?php echo esc_attr( $ticker_resolved[0] ?? '' ); ?>"></div></div>
                     <div class="fh-board-footer">
-                        <div class="fh-board-footer-left">ARRIVALS &middot; DEPARTURES</div>
+                        <div class="fh-board-footer-left"><span class="fh-footer-unlit">ARRIVALS</span> <span class="fh-footer-sep">&middot;</span> <span class="fh-footer-lit">DEPARTURES</span></div>
                         <div class="fh-board-footer-right">SOLARI DI UDINE</div>
                     </div>
                 </div>
