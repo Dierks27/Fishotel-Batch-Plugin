@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.75 - Force transparent input, force header background, overlay centering, bigger margin qty.
- * Version:           2.75
+ * Description:       Stable v2.76 - Blank form line for untouched qty spinners, fh-qty-touched state.
+ * Version:           2.76
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.75' );
+define( 'FISHOTEL_VERSION', '2.76' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

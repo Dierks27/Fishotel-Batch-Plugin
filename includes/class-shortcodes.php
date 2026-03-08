@@ -709,7 +709,7 @@ trait FisHotel_Shortcodes {
                 }
                 /* Blank form line placeholder */
                 .fh-hw-input-val.fh-hw-blank {
-                    font-family:'Special Elite',monospace; font-size:14px; color:#c8b99a;
+                    font-family:'Special Elite',monospace; font-size:18px; color:#c8b99a;
                     letter-spacing:2px;
                 }
 
@@ -964,7 +964,11 @@ trait FisHotel_Shortcodes {
                                 <th style="text-align:center;width:7%;" data-sort="stock">Stock</th>
                                 <th style="text-align:center;width:22%;">Action</th>
                             </tr></thead><tbody>
-                            <?php $row_num = 0; foreach ( $batch_posts as $bp ) {
+                            <?php
+                            // Build set of batch IDs already in customer's cart
+                            $in_cart_ids = [];
+                            foreach ( $prev_items as $pi ) { $in_cart_ids[ $pi['batch_id'] ] = true; }
+                            $row_num = 0; foreach ( $batch_posts as $bp ) {
                                 $master_id = get_post_meta( $bp->ID, '_master_id', true );
                                 if ( ! $master_id ) continue;
                                 $master = get_post( $master_id );
@@ -988,11 +992,13 @@ trait FisHotel_Shortcodes {
                                 echo '<span>' . intval( $stock ) . '</span></td>';
                                 echo '<td style="text-align:center;white-space:nowrap;">';
                                 if ( $stock > 0 ) {
-                                    echo '<div class="fh-qty-wrap" data-idx="' . $row_num . '">';
+                                    $is_in_cart = isset( $in_cart_ids[ $bp->ID ] );
+                                    $touched_class = $is_in_cart ? ' fh-qty-touched' : '';
+                                    echo '<div class="fh-qty-wrap' . $touched_class . '" data-idx="' . $row_num . '">';
                                     echo '<button class="qty-minus">&#x2212;</button>';
                                     echo '<input type="number" min="1" value="1" class="qty-input">';
                                     echo '<button class="qty-plus">+</button>';
-                                    echo '<span class="fh-hw-input-val">1</span>';
+                                    echo '<span class="fh-hw-input-val fh-hw-blank">____</span>';
                                     echo '</div>';
                                     echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $master->post_title ) . '">Request</button>';
                                 } else {
@@ -1416,17 +1422,20 @@ trait FisHotel_Shortcodes {
                         if (!wrap) return;
                         const overlay = wrap.querySelector('.fh-hw-input-val');
                         if (!overlay) return;
+                        const touched = wrap.classList.contains('fh-qty-touched');
                         const val = parseInt(input.value) || 0;
-                        const idx = parseInt(wrap.getAttribute('data-idx')) || 1;
-                        const rot = ((idx * 61 + 7) % 14) - 7;
-                        if (val > 0) {
-                            overlay.textContent = val;
-                            overlay.className = 'fh-hw-input-val';
-                            overlay.style.transform = 'translate(-50%,-50%) rotate(' + rot + 'deg)';
-                        } else {
+                        if (!touched || val <= 0) {
+                            // Blank form line — untouched or empty
                             overlay.textContent = '____';
                             overlay.className = 'fh-hw-input-val fh-hw-blank';
                             overlay.style.transform = 'translate(-50%,-50%)';
+                        } else {
+                            // Handwritten number
+                            const idx = parseInt(wrap.getAttribute('data-idx')) || 1;
+                            const rot = ((idx * 61 + 7) % 14) - 7;
+                            overlay.textContent = val;
+                            overlay.className = 'fh-hw-input-val';
+                            overlay.style.transform = 'translate(-50%,-50%) rotate(' + rot + 'deg)';
                         }
                     }
 
@@ -1438,6 +1447,7 @@ trait FisHotel_Shortcodes {
                             const input = this.nextElementSibling;
                             let val = parseInt(input.value) || 1;
                             if (val > 1) input.value = val - 1;
+                            this.closest('.fh-qty-wrap').classList.add('fh-qty-touched');
                             updateQtyDisplay(input);
                         });
                     });
@@ -1446,12 +1456,16 @@ trait FisHotel_Shortcodes {
                             const input = this.previousElementSibling;
                             let val = parseInt(input.value) || 1;
                             input.value = val + 1;
+                            this.closest('.fh-qty-wrap').classList.add('fh-qty-touched');
                             updateQtyDisplay(input);
                         });
                     });
                     // Direct input typing
                     document.querySelectorAll('.fh-qty-wrap .qty-input').forEach(inp => {
-                        inp.addEventListener('input', function() { updateQtyDisplay(this); });
+                        inp.addEventListener('input', function() {
+                            this.closest('.fh-qty-wrap').classList.add('fh-qty-touched');
+                            updateQtyDisplay(this);
+                        });
                     });
 
                     document.querySelectorAll(".add-to-request").forEach(btn => {
