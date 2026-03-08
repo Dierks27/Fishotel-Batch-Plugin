@@ -480,40 +480,77 @@ trait FisHotel_Shortcodes {
                     .fh-bp-open-route { flex-wrap:wrap; gap:8px; }
                 }
 
-                /* ── Departure Manifest Card ── */
+                /* ── Departure Manifest — Clipboard ── */
                 .fh-manifest-card {
-                    background:#0c161f; border:2px solid #b5a165; border-radius:10px;
-                    overflow:hidden; margin-bottom:24px;
+                    background:linear-gradient(160deg, #a07828 0%, #8B6914 40%, #7a5c10 100%);
+                    border:none; border-radius:12px;
+                    overflow:visible; margin-bottom:24px;
+                    box-shadow:0 8px 32px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.25);
+                    position:relative; padding:0 12px 14px;
+                }
+                .fh-clipboard-bar {
+                    background:linear-gradient(to bottom, #6b4f0e, #5a4210, #6b4f0e);
+                    height:26px; border-radius:12px 12px 0 0; margin:0 -12px;
+                    position:relative; z-index:2;
+                    box-shadow:0 3px 6px rgba(0,0,0,0.3);
+                }
+                .fh-clipboard-clip {
+                    position:absolute; top:-8px; left:50%; transform:translateX(-50%); z-index:5;
+                }
+                .fh-clipboard-clip-body {
+                    width:60px; height:20px;
+                    background:linear-gradient(to bottom, #d8dde2 0%, #c8cdd0 30%, #9aa0a6 70%, #b0b5ba 100%);
+                    border-radius:4px 4px 1px 1px; margin:0 auto;
+                    box-shadow:0 2px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(0,0,0,0.15);
+                }
+                .fh-clipboard-clip-grip {
+                    width:42px; height:12px; margin:0 auto;
+                    background:linear-gradient(to bottom, #a8adb2, #9aa0a6, #b8bdc2);
+                    border-radius:0 0 4px 4px;
+                    box-shadow:0 3px 5px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+                }
+                .fh-clipboard-paper {
+                    background:#f5f0e8; margin-top:8px; border-radius:2px;
+                    position:relative;
+                    box-shadow:inset 0 3px 8px rgba(0,0,0,0.06), inset 0 -4px 8px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.15);
+                    overflow:hidden;
+                }
+                .fh-clipboard-paper::after {
+                    content:''; position:absolute; inset:0;
+                    filter:url(#fh-manifest-grain); background:rgba(0,0,0,0.03);
+                    pointer-events:none; z-index:1; mix-blend-mode:multiply;
                 }
                 .fh-manifest-header {
-                    padding:16px 24px; background:#111d28;
-                    border-bottom:1px solid rgba(181,161,101,0.3);
+                    padding:20px 24px 16px; background:transparent;
+                    border-bottom:1px solid rgba(0,0,0,0.1);
+                    position:relative; z-index:2;
                 }
                 .fh-manifest-title {
                     font-family:'Oswald',sans-serif; font-weight:700;
                     font-size:clamp(0.9rem,2.5vw,1.15rem); text-transform:uppercase;
-                    letter-spacing:0.12em; color:#b5a165;
+                    letter-spacing:0.12em; color:#1a1a2e;
                 }
                 .fh-manifest-subtitle {
                     font-family:'Oswald',sans-serif; font-weight:400;
-                    font-size:0.75rem; color:#5a6a7a; margin-top:4px;
+                    font-size:0.75rem; color:#5a4a3a; margin-top:4px;
                     letter-spacing:0.1em; text-transform:uppercase;
                 }
 
                 /* ── Desktop Table ── */
                 .fh-scroll-wrap {
                     overflow-x:auto; width:100%; box-sizing:border-box;
-                    scrollbar-width:thin; scrollbar-color:#b5a165 #0c161f;
+                    scrollbar-width:thin; scrollbar-color:#8B6914 #ede8dc;
+                    position:relative; z-index:2;
                 }
-                .fh-scroll-wrap::-webkit-scrollbar { height:8px; background:#0c161f; }
-                .fh-scroll-wrap::-webkit-scrollbar-thumb { background:#b5a165; border-radius:4px; }
+                .fh-scroll-wrap::-webkit-scrollbar { height:8px; background:#ede8dc; }
+                .fh-scroll-wrap::-webkit-scrollbar-thumb { background:#8B6914; border-radius:4px; }
 
                 .fishotel-open-table { width:100%; border-collapse:collapse; table-layout:fixed; }
                 .fishotel-open-table thead tr { background:rgba(181,161,101,0.15); }
                 .fishotel-open-table th {
-                    text-align:left; color:#b5a165; font-family:'Oswald',sans-serif;
-                    font-weight:400; font-size:11px; text-transform:uppercase;
-                    letter-spacing:0.08em; padding:10px 14px; border-bottom:1px solid #b5a165;
+                    text-align:left; color:#1a1a2e; font-family:'Oswald',sans-serif;
+                    font-weight:600; font-size:11px; text-transform:uppercase;
+                    letter-spacing:0.08em; padding:10px 14px; border-bottom:1px solid rgba(0,0,0,0.15);
                 }
                 .fishotel-open-table th[data-sort] { cursor:pointer; }
                 .fishotel-open-table th[data-sort]:hover { color:#e67e22; }
@@ -521,14 +558,15 @@ trait FisHotel_Shortcodes {
                 .fishotel-open-table th[data-sort].sort-desc::after { content:" \25BC"; font-size:0.7em; }
                 .fishotel-open-table td {
                     padding:10px 14px; font-family:'Oswald',sans-serif;
-                    font-size:14px; color:#fff;
+                    font-size:14px; color:#1a1a2e;
                 }
                 .fishotel-open-table td:nth-child(1),
                 .fishotel-open-table td:nth-child(2) {
                     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
                 }
-                .fishotel-open-table tbody tr:nth-child(odd) { background:#0c161f; }
-                .fishotel-open-table tbody tr:nth-child(even) { background:#0f1e2d; }
+                .fishotel-open-table td:nth-child(2) { color:#5a4a3a !important; }
+                .fishotel-open-table tbody tr:nth-child(odd) { background:#f5f0e8; }
+                .fishotel-open-table tbody tr:nth-child(even) { background:#ede8dc; }
 
                 /* ── Stock Colors ── */
                 .fh-stock-green { color:#44ff66; font-weight:700; }
@@ -544,7 +582,7 @@ trait FisHotel_Shortcodes {
 
                 /* ── Size Badge ── */
                 .fh-size-badge {
-                    background:rgba(181,161,101,0.2); color:#b5a165;
+                    background:rgba(139,105,20,0.15); color:#5a4a3a;
                     padding:2px 8px; border-radius:3px; font-size:0.78em;
                     font-family:'Oswald',sans-serif; letter-spacing:0.06em;
                 }
@@ -552,18 +590,18 @@ trait FisHotel_Shortcodes {
                 /* ── Qty Spinner (table) ── */
                 .fh-qty-wrap {
                     display:inline-flex; align-items:center;
-                    background:#0f1e2d; border:1px solid #b5a165; border-radius:4px;
+                    background:#ede8dc; border:1px solid rgba(0,0,0,0.2); border-radius:4px;
                     overflow:hidden;
                 }
                 .fh-qty-wrap .qty-minus,
                 .fh-qty-wrap .qty-plus {
-                    background:none; border:none; color:#b5a165; padding:4px 8px;
+                    background:none; border:none; color:#5a4a3a; padding:4px 8px;
                     cursor:pointer; font-size:14px; font-family:'Oswald',sans-serif;
                 }
                 .fh-qty-wrap .qty-minus:hover,
                 .fh-qty-wrap .qty-plus:hover { color:#e67e22; }
                 .fh-qty-wrap .qty-input {
-                    width:42px; text-align:center; background:#0c161f; color:#fff;
+                    width:42px; text-align:center; background:#f5f0e8; color:#1a1a2e;
                     border:none; padding:4px 0; font-family:'Oswald',sans-serif; font-size:14px;
                 }
 
@@ -587,28 +625,29 @@ trait FisHotel_Shortcodes {
                 /* ── Mobile Controls ── */
                 .fh-mobile-controls {
                     display:none; margin-bottom:16px; gap:10px; flex-wrap:wrap;
+                    position:relative; z-index:2;
                 }
                 .fh-mobile-controls select {
                     padding:10px 14px; font-size:0.95em; font-family:'Oswald',sans-serif;
-                    border:1px solid #b5a165; border-radius:4px; background:#0c161f;
-                    color:#b5a165; flex:1; min-width:150px;
+                    border:1px solid rgba(0,0,0,0.15); border-radius:4px; background:#f5f0e8;
+                    color:#1a1a2e; flex:1; min-width:150px;
                     text-transform:uppercase; letter-spacing:0.04em;
                 }
                 .fh-mobile-controls input {
                     padding:10px 14px; font-size:0.95em; font-family:'Oswald',sans-serif;
-                    border:1px solid #b5a165; border-radius:4px; background:#0c161f;
-                    color:#fff; flex:1; min-width:180px; width:auto;
+                    border:1px solid rgba(0,0,0,0.15); border-radius:4px; background:#f5f0e8;
+                    color:#1a1a2e; flex:1; min-width:180px; width:auto;
                 }
-                .fh-mobile-controls input::placeholder { color:#5a6a7a; }
+                .fh-mobile-controls input::placeholder { color:#8a7a6a; }
 
                 /* ── Mobile Cards ── */
-                .fish-cards { display:grid; gap:16px; }
+                .fish-cards { display:grid; gap:16px; position:relative; z-index:2; }
                 .fish-card {
-                    background:#0c161f; border:1px solid #b5a165; border-radius:8px;
+                    background:#fff; border:1px solid rgba(0,0,0,0.1); border-radius:8px;
                     padding:18px; font-family:'Oswald',sans-serif;
                 }
-                .fish-card h4 { margin:0 0 4px; color:#fff; font-weight:700; font-size:1.05rem; }
-                .fish-card .sci { font-style:italic; color:#8a9bae; margin-bottom:10px; font-size:0.9rem; }
+                .fish-card h4 { margin:0 0 4px; color:#1a1a2e; font-weight:700; font-size:1.05rem; }
+                .fish-card .sci { font-style:italic; color:#5a4a3a; margin-bottom:10px; font-size:0.9rem; }
                 .fish-card .price { font-size:1.15em; color:#e67e22; font-weight:700; }
                 .fish-card .stock { font-weight:700; }
                 .fish-card .action { margin-top:14px; display:flex; align-items:center; gap:10px; }
@@ -618,8 +657,9 @@ trait FisHotel_Shortcodes {
                     text-align:center; padding:14px;
                     font-family:'Oswald',sans-serif; font-weight:700;
                     font-size:clamp(0.7rem,1.8vw,0.85rem); text-transform:uppercase;
-                    letter-spacing:0.14em; color:#b5a165;
-                    border-top:1px solid rgba(181,161,101,0.3);
+                    letter-spacing:0.14em; color:#5a4a3a;
+                    border-top:1px solid rgba(0,0,0,0.1);
+                    position:relative; z-index:2;
                 }
 
                 /* ── Responsive ── */
@@ -636,6 +676,10 @@ trait FisHotel_Shortcodes {
                 @media (max-width:600px) {
                     .fish-cards { grid-template-columns:1fr; }
                     #submit-requests { width:100% !important; padding:16px !important; }
+                    .fh-manifest-card { padding:0 4px 8px; border-radius:8px; }
+                    .fh-clipboard-bar { border-radius:8px 8px 0 0; margin:0 -4px; }
+                    .fh-clipboard-paper { margin-top:6px; }
+                    .fh-manifest-header { padding:16px 16px 12px; }
                 }
             </style>
 
@@ -730,6 +774,14 @@ trait FisHotel_Shortcodes {
 
                 <!-- ===== Departure Manifest ===== -->
                 <div class="fh-manifest-card">
+                    <div class="fh-clipboard-bar">
+                        <div class="fh-clipboard-clip">
+                            <div class="fh-clipboard-clip-body"></div>
+                            <div class="fh-clipboard-clip-grip"></div>
+                        </div>
+                    </div>
+                    <div class="fh-clipboard-paper">
+                        <svg width="0" height="0" style="position:absolute;pointer-events:none;"><filter id="fh-manifest-grain"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter></svg>
                     <div class="fh-manifest-header">
                         <div class="fh-manifest-title">&#x2708; Departure Manifest &mdash; Flight <?php echo esc_html( $flight_number ); ?></div>
                         <div class="fh-manifest-subtitle"><?php echo intval( $total_species ); ?> Species &middot; <?php echo intval( $total_stock ); ?> Total Stock &middot; Gate QT-1</div>
@@ -841,6 +893,7 @@ trait FisHotel_Shortcodes {
 
                     <!-- FCFS Strip -->
                     <div class="fh-gate-fcfs">First Come &middot; First Served</div>
+                    </div><!-- .fh-clipboard-paper -->
                 </div>
 
             </div><!-- .fh-gate-wrap -->
