@@ -228,8 +228,8 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-board-row:last-child { border-bottom:none; box-shadow:none; }
                 .fh-board-label {
-                    width:120px; min-width:120px; background:#111;
-                    padding:4px 12px 4px 16px; display:flex; align-items:center; justify-content:flex-end;
+                    width:130px; min-width:130px; box-sizing:border-box; background:#111;
+                    padding:4px 10px 4px 12px; display:flex; align-items:center; justify-content:flex-end;
                     font-family:'Oswald',sans-serif; font-weight:700; font-size:clamp(0.55rem,1.4vw,0.72rem);
                     text-transform:uppercase; letter-spacing:0.12em; color:#8a7a50;
                     border-right:1px solid #1a1a10;

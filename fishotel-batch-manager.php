@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.57 - Solari board: per-tile color variance via JS hash, no repeating patterns.
- * Version:           2.57
+ * Description:       Stable 2.58 - Solari label width corrected for 24-tile grid.
+ * Version:           2.58
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.57' );
+define( 'FISHOTEL_VERSION', '2.58' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
