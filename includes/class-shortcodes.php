@@ -167,52 +167,69 @@ trait FisHotel_Shortcodes {
                     font-family:'Oswald',sans-serif; color:#fff;
                 }
 
-                /* ── Solari Departure Board ── */
+                /* ── Solari Departure Board — Aged ── */
                 .fh-board {
                     width:100%; box-sizing:border-box;
-                    background:#0a0a0a; border-radius:8px;
-                    box-shadow:0 0 40px rgba(0,0,0,0.8);
+                    background:#0a0a0a; border-radius:6px;
+                    border:6px solid #1a1410;
+                    box-shadow:0 0 0 2px #0a0806, 0 8px 40px rgba(0,0,0,0.9), inset 0 0 60px rgba(0,0,0,0.4);
                     overflow:hidden; margin-bottom:24px;
+                    position:relative;
+                }
+                /* Film-grain noise overlay */
+                .fh-board::before {
+                    content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
+                    opacity:0.03; mix-blend-mode:overlay;
+                    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
                 }
                 .fh-board-header {
-                    background:#111; padding:10px 20px; text-align:center;
+                    background:linear-gradient(to bottom, #161410, #111);
+                    padding:10px 20px; text-align:center;
                     font-family:'Oswald',sans-serif; font-weight:700; font-size:clamp(0.6rem,1.6vw,0.8rem);
-                    text-transform:uppercase; letter-spacing:0.18em; color:#b5a165;
+                    text-transform:uppercase; letter-spacing:0.18em; color:#8a7a50;
+                    border-bottom:1px solid #2a2520;
+                    position:relative; z-index:2;
                 }
+                .fh-board-header-icon { opacity:0.7; }
                 .fh-board-row {
-                    display:flex; border-bottom:1px solid #1a1a1a;
+                    display:flex;
+                    border-bottom:1px solid #0d0d0d;
+                    box-shadow:inset 0 1px 0 #252520;
+                    position:relative; z-index:2;
                 }
-                .fh-board-row:last-child { border-bottom:none; }
+                .fh-board-row:last-child { border-bottom:none; box-shadow:none; }
                 .fh-board-label {
                     width:160px; min-width:160px; background:#111;
                     padding:8px 16px 8px 20px; display:flex; align-items:center; justify-content:flex-end;
                     font-family:'Oswald',sans-serif; font-weight:700; font-size:clamp(0.55rem,1.4vw,0.72rem);
-                    text-transform:uppercase; letter-spacing:0.12em; color:#b5a165;
-                    border-right:1px solid #1a1a1a;
+                    text-transform:uppercase; letter-spacing:0.12em; color:#8a7a50;
+                    border-right:1px solid #1a1a10;
                 }
                 .fh-board-tiles {
                     flex:1; display:flex; align-items:center; gap:2px;
                     padding:6px 10px; flex-wrap:nowrap; overflow:hidden;
                     background:#0a0a0a;
                 }
-                /* ── Split-Flap Tiles ── */
+                /* ── Split-Flap Tiles — Aged ── */
                 .fh-flap {
                     width:38px; height:48px; min-width:38px;
-                    background:#1a1a1a; border-radius:3px;
-                    box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 6px rgba(0,0,0,0.9);
+                    background:linear-gradient(to bottom, #1c1c1c 49%, #0a0a0a 49%, #0a0a0a 51%, #1c1c1c 51%);
+                    border-radius:2px;
+                    box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 3px 0 #0a0806, 0 2px 6px rgba(0,0,0,0.9);
                     display:flex; align-items:center; justify-content:center;
                     font-family:'Courier New',monospace; font-weight:700;
-                    font-size:26px; color:#d4bc7e;
+                    font-size:26px; color:#c8a84b; letter-spacing:-0.5px;
                     text-transform:uppercase; position:relative;
+                    opacity:0.92;
                 }
-                .fh-flap::after {
-                    content:''; position:absolute; left:2px; right:2px; top:50%;
-                    height:0; border-bottom:1px solid rgba(0,0,0,0.7);
+                .fh-flap:nth-child(odd) {
+                    background:linear-gradient(to bottom, #181818 49%, #0a0a0a 49%, #0a0a0a 51%, #181818 51%);
                 }
+                .fh-flap:nth-child(7n) { color:#d4bc7e; }
+                .fh-flap::after { display:none; }
                 .fh-flap-space {
-                    background:transparent; box-shadow:none; width:16px; min-width:16px;
+                    background:transparent; box-shadow:none; width:16px; min-width:16px; opacity:1;
                 }
-                .fh-flap-space::after { display:none; }
 
                 @media (max-width:600px) {
                     .fh-board-label { width:90px; min-width:90px; padding:6px 8px 6px 10px; font-size:0.5rem; }
@@ -425,7 +442,7 @@ trait FisHotel_Shortcodes {
 
                 <!-- ===== Solari Departure Board ===== -->
                 <div class="fh-board" id="fh-board">
-                    <div class="fh-board-header">&#x2708; FISHOTEL INTERNATIONAL &middot; FHI &middot; GATE OPEN</div>
+                    <div class="fh-board-header"><span class="fh-board-header-icon">&#x2708;</span> FISHOTEL INTERNATIONAL &middot; FHI &middot; GATE OPEN</div>
                     <div class="fh-board-row"><div class="fh-board-label">Airport</div><div class="fh-board-tiles" data-fh-text="FISHOTEL INTERNATIONAL"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Destination</div><div class="fh-board-tiles" data-fh-text="CHAMPLIN, MN"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Flight</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( strtoupper( $batch_name ) ); ?>"></div></div>
@@ -589,13 +606,21 @@ trait FisHotel_Shortcodes {
                     // ── Solari Departure Board ──
                     (function() {
                         var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789·,.- ';
+                        var COLS = 28;
                         var board = document.getElementById('fh-board');
                         if (!board) return;
 
-                        // Build tiles for every data-fh-text row
+                        function padText(text) {
+                            text = (text || '').substring(0, COLS);
+                            while (text.length < COLS) text += ' ';
+                            return text;
+                        }
+
+                        // Build exactly COLS tiles for a row
                         function buildTiles(container, text) {
+                            text = padText(text);
                             container.innerHTML = '';
-                            for (var i = 0; i < text.length; i++) {
+                            for (var i = 0; i < COLS; i++) {
                                 var c = text[i];
                                 var flap = document.createElement('div');
                                 flap.className = c === ' ' ? 'fh-flap fh-flap-space' : 'fh-flap';
@@ -606,6 +631,7 @@ trait FisHotel_Shortcodes {
 
                         // Animate tiles from blank → final text, staggered left-to-right
                         function animateRow(container, text) {
+                            text = padText(text);
                             var flaps = container.querySelectorAll('.fh-flap');
                             flaps.forEach(function(flap, i) {
                                 var finalChar = text[i] || ' ';
