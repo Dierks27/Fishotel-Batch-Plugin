@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.63 - Noise filter scoping, scissors alignment, table overflow fix.
- * Version:           2.63
+ * Description:       Stable 2.64 - Action column ellipsis fix, SVG filter scoped inside boarding pass.
+ * Version:           2.64
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.63' );
+define( 'FISHOTEL_VERSION', '2.64' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

@@ -522,6 +522,9 @@ trait FisHotel_Shortcodes {
                 .fishotel-open-table td {
                     padding:10px 14px; font-family:'Oswald',sans-serif;
                     font-size:14px; color:#fff;
+                }
+                .fishotel-open-table td:nth-child(1),
+                .fishotel-open-table td:nth-child(2) {
                     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
                 }
                 .fishotel-open-table tbody tr:nth-child(odd) { background:#0c161f; }
@@ -660,8 +663,8 @@ trait FisHotel_Shortcodes {
                 </div>
 
                 <!-- ===== Boarding Pass ===== -->
-                <svg width="0" height="0" style="position:absolute;"><filter id="fh-paper-grain"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter></svg>
                 <div class="fh-bp-open" id="my-requests">
+                    <svg width="0" height="0" style="position:absolute;pointer-events:none;"><filter id="fh-paper-grain"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter></svg>
                     <?php if ( ! is_user_logged_in() ) : ?>
                     <div class="fh-bp-open-login-overlay">
                         <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="fh-bp-open-login-link">
