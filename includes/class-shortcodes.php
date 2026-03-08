@@ -1229,7 +1229,7 @@ trait FisHotel_Shortcodes {
             <div class="fh-arrival-wrap">
 
                 <div class="fh-arrival-hero">
-                    <h2>🐠 Your Fish Are Here!</h2>
+                    <h2>Your Fish Are Here!</h2>
                     <p><?php echo esc_html( $batch_name ); ?> — Arrived <?php echo esc_html( $arrival_fmt ); ?></p>
                 </div>
 
@@ -1337,7 +1337,7 @@ trait FisHotel_Shortcodes {
 
                 <?php if ( $qt_end_fmt ) : ?>
                 <div class="fh-arrival-qt">
-                    🔬 Quarantine ends <strong><?php echo esc_html( $qt_end_fmt ); ?></strong>
+                    Quarantine ends <strong><?php echo esc_html( $qt_end_fmt ); ?></strong>
                 </div>
                 <?php endif; ?>
 
