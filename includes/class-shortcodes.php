@@ -94,7 +94,33 @@ trait FisHotel_Shortcodes {
             }
             $closed_dates   = get_option( 'fishotel_batch_closed_dates', [] );
             $closed_raw     = $closed_dates[ $batch_name ] ?? '';
-            $gate_closes_display = $closed_raw ? strtoupper( date( 'M j, Y', strtotime( $closed_raw ) ) ) : 'TBD';
+            $closed_times   = get_option( 'fishotel_batch_closed_times', [] );
+            $closed_time    = $closed_times[ $batch_name ] ?? '23:59';
+            if ( $closed_raw ) {
+                $date_part = strtoupper( date( 'M j', strtotime( $closed_raw ) ) );
+                $hour = intval( substr( $closed_time, 0, 2 ) );
+                $min  = substr( $closed_time, 3, 2 );
+                if ( $hour === 0 )       $time_part = '12:' . $min . 'AM';
+                elseif ( $hour < 12 )    $time_part = $hour . ':' . $min . 'AM';
+                elseif ( $hour === 12 )  $time_part = '12:' . $min . 'PM';
+                else                     $time_part = ( $hour - 12 ) . ':' . $min . 'PM';
+                if ( $min === '00' ) $time_part = str_replace( ':00', '', $time_part );
+                $gate_closes_display = $date_part . ' · ' . $time_part;
+            } else {
+                $gate_closes_display = 'TBD';
+            }
+
+            // Generate flight number: FHI + origin code + date digits
+            $batch_origin  = get_option( 'fishotel_batch_origins', [] );
+            $origin_name   = $batch_origin[ $batch_name ] ?? $batch_name;
+            $origin_code   = strtoupper( substr( preg_replace( '/[^a-zA-Z]/', '', $origin_name ), 0, 2 ) );
+            // Extract digits from batch name for route number (month+day)
+            preg_match_all( '/\d+/', $batch_name, $dmatches );
+            $route_num = '';
+            foreach ( $dmatches[0] as $d ) $route_num .= $d;
+            $route_num = substr( $route_num, 0, 4 ); // cap at 4 digits
+            if ( ! $route_num ) $route_num = '001';
+            $flight_number = 'FHI-' . $origin_code . $route_num;
             ?>
 
             <!-- ===== Login Modal — GATE ACCESS REQUIRED ===== -->
@@ -200,6 +226,7 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-board-header-left {
                     font-size:22px; letter-spacing:0.08em; color:#f0e8d0;
+                    text-shadow:0 0 8px rgba(212,188,126,0.6), 0 0 20px rgba(181,161,101,0.3);
                     display:flex; align-items:center; gap:8px;
                 }
                 .fh-board-header-icon { opacity:0.7; font-size:20px; }
@@ -503,12 +530,12 @@ trait FisHotel_Shortcodes {
                     </div>
                     <div class="fh-board-row"><div class="fh-board-label">Airport</div><div class="fh-board-tiles" data-fh-text="FISHOTEL INTL"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Destination</div><div class="fh-board-tiles" data-fh-text="CHAMPLIN, MN"></div></div>
-                    <div class="fh-board-row"><div class="fh-board-label">Flight</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( strtoupper( $batch_name ) ); ?>"></div></div>
+                    <div class="fh-board-row"><div class="fh-board-label">Flight</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( $flight_number ); ?>"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Status</div><div class="fh-board-tiles" data-fh-text="NOW BOARDING"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Gate Closes</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( $gate_closes_display ); ?>"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Species</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( $total_species . ' SPECIES AVAILABLE' ); ?>"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Stock</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( intval( $total_stock ) . ' TOTAL STOCK' ); ?>"></div></div>
-                    <div class="fh-board-row"><div class="fh-board-label">Boarding</div><div class="fh-board-tiles" data-fh-text="FCFS OPEN TO ALL"></div></div>
+                    <div class="fh-board-row"><div class="fh-board-label">Boarding</div><div class="fh-board-tiles" data-fh-text="FIRST COME FIRST SERVED"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Notice</div><div class="fh-board-tiles" id="fh-notice-row" data-fh-text="<?php echo esc_attr( $ticker_resolved[0] ?? '' ); ?>"></div></div>
                     <div class="fh-board-footer">
                         <div class="fh-board-footer-left">ARRIVALS &middot; DEPARTURES</div>
@@ -785,10 +812,18 @@ trait FisHotel_Shortcodes {
                         });
 
                         // NOTICE row — cycles through ticker messages with chunking
+                        // Shuffle message order on load so repeat visitors see varied sequence
                         var noticeMsgs = <?php echo wp_json_encode( $ticker_resolved ); ?>;
                         var noticeRow = document.getElementById('fh-notice-row');
                         if (noticeRow && noticeMsgs.length > 0) {
-                            // Pre-chunk all messages into a flat display queue
+                            // Fisher-Yates shuffle at message level (chunks stay together)
+                            for (var i = noticeMsgs.length - 1; i > 0; i--) {
+                                var j = Math.floor(Math.random() * (i + 1));
+                                var tmp = noticeMsgs[i];
+                                noticeMsgs[i] = noticeMsgs[j];
+                                noticeMsgs[j] = tmp;
+                            }
+                            // Pre-chunk shuffled messages into a flat display queue
                             var displayQueue = [];
                             for (var m = 0; m < noticeMsgs.length; m++) {
                                 var chunks = chunkMessage(noticeMsgs[m]);

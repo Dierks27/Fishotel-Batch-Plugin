@@ -80,6 +80,7 @@ trait FisHotel_Admin {
         $deposit_product_id = $this->get_deposit_product_id();
         $arrival_dates = get_option( 'fishotel_batch_arrival_dates', [] );
         $closed_dates  = get_option( 'fishotel_batch_closed_dates', [] );
+        $closed_times  = get_option( 'fishotel_batch_closed_times', [] );
         $origin_locations = $this->get_origin_locations();
         $batch_origins = get_option( 'fishotel_batch_origins', [] );
 
@@ -93,6 +94,7 @@ trait FisHotel_Admin {
             $new_deposit_amounts = [];
             $new_arrival_dates = [];
             $new_closed_dates  = [];
+            $new_closed_times  = [];
             $new_origins = [];
             foreach ( $batches_array as $batch ) {
                 $key = sanitize_key( $batch );
@@ -119,6 +121,12 @@ trait FisHotel_Admin {
                         $new_closed_dates[ $batch ] = $date;
                     }
                 }
+                if ( isset( $_POST['closed_time_' . $key] ) ) {
+                    $time = sanitize_text_field( $_POST['closed_time_' . $key] );
+                    if ( $time && preg_match( '/^\d{2}:\d{2}$/', $time ) ) {
+                        $new_closed_times[ $batch ] = $time;
+                    }
+                }
                 if ( isset( $_POST['origin_' . $key] ) ) {
                     $origin = sanitize_text_field( $_POST['origin_' . $key] );
                     if ( $origin !== '' ) $new_origins[ $batch ] = $origin;
@@ -129,6 +137,7 @@ trait FisHotel_Admin {
             update_option( 'fishotel_batch_deposit_amounts', $new_deposit_amounts );
             update_option( 'fishotel_batch_arrival_dates', $new_arrival_dates );
             update_option( 'fishotel_batch_closed_dates', $new_closed_dates );
+            update_option( 'fishotel_batch_closed_times', $new_closed_times );
             update_option( 'fishotel_batch_origins', $new_origins );
 
             wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
@@ -221,6 +230,7 @@ trait FisHotel_Admin {
                             $batch_deposit  = $batch_deposit_amounts[$title_key] ?? '';
                             $arrival_date   = $arrival_dates[$batch] ?? '';
                             $closed_date    = $closed_dates[$batch] ?? '';
+                            $closed_time_val = $closed_times[$batch] ?? '23:59';
                             $current_origin = $batch_origins[$batch] ?? '';
                             $view_url  = $current_page ? home_url( '/' . $current_page ) : '';
                             $embed_url = $current_page ? home_url( '/' . $current_page . '?embed=1' ) : '';
@@ -281,6 +291,10 @@ trait FisHotel_Admin {
                                     <div>
                                         <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Closed Date</label>
                                         <input type="date" name="closed_date_<?php echo $key; ?>" value="<?php echo esc_attr( $closed_date ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:140px;">
+                                    </div>
+                                    <div>
+                                        <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Close Time</label>
+                                        <input type="time" name="closed_time_<?php echo $key; ?>" value="<?php echo esc_attr( $closed_time_val ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:100px;">
                                     </div>
                                     <div>
                                         <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Arrival Date</label>
