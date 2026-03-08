@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.74 - Blank margin column, felt-tip qty annotations, handwritten spinner overlay, max ink density.
- * Version:           2.74
+ * Description:       Stable v2.75 - Force transparent input, force header background, overlay centering, bigger margin qty.
+ * Version:           2.75
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.74' );
+define( 'FISHOTEL_VERSION', '2.75' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

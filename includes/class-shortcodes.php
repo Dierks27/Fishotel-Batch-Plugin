@@ -606,6 +606,9 @@ trait FisHotel_Shortcodes {
 
                 .fishotel-open-table { width:100%; border-collapse:collapse; table-layout:fixed; }
                 .fishotel-open-table thead tr { background:#f2ead8; }
+                .fh-clipboard-paper .fishotel-open-table thead th {
+                    background:#f2ead8 !important; color:#0a0805 !important;
+                }
                 .fishotel-open-table th {
                     text-align:left; color:#0a0805; font-family:'Special Elite',monospace;
                     font-weight:700; font-size:11px; text-transform:uppercase;
@@ -687,11 +690,14 @@ trait FisHotel_Shortcodes {
                 .fh-qty-wrap .qty-minus:hover,
                 .fh-qty-wrap .qty-plus:hover { color:#0a0805; }
                 .fh-qty-wrap .qty-input {
-                    width:38px; text-align:center; background:#f8f3e8; color:transparent;
+                    width:38px; text-align:center; background:#f8f3e8;
                     border:none; border-left:1px solid rgba(0,0,0,0.12);
                     border-right:1px solid rgba(0,0,0,0.12);
                     padding:4px 0; font-family:'Special Elite',monospace; font-size:14px;
                     position:relative; z-index:1;
+                }
+                .fh-clipboard-paper .fishotel-open-table .qty-input {
+                    color:transparent !important; caret-color:transparent !important;
                 }
                 /* Handwritten overlay on qty input */
                 .fh-hw-input-val {
@@ -731,7 +737,7 @@ trait FisHotel_Shortcodes {
                 .fh-common-cell { position:relative; }
                 /* ── Handwritten qty in # margin — felt-tip pen annotation ── */
                 .fh-hw-qty {
-                    font-family:'Caveat',cursive; font-size:26px; color:#1a4d1a;
+                    font-family:'Caveat',cursive; font-size:30px; color:#1a4d1a;
                     line-height:1; font-weight:700;
                     position:absolute; z-index:3;
                     /* top, left, rotation set per-row via inline style */
