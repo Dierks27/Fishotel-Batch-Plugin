@@ -128,7 +128,7 @@ trait FisHotel_Ajax {
         check_ajax_referer( 'fishotel_batch_ajax', 'nonce' );
         $request_id = intval( $_POST['request_id'] );
         $request = get_post( $request_id );
-        if ( ! $request || get_post_meta( $request_id, '_customer_id', true ) != get_current_user_id() ) {
+        if ( ! $request || (int) get_post_meta( $request_id, '_customer_id', true ) !== get_current_user_id() ) {
             wp_send_json_error( [ 'message' => 'Invalid request.' ] );
         }
 
@@ -163,7 +163,7 @@ trait FisHotel_Ajax {
         $batch_id   = intval( $_POST['batch_id'] );
 
         $request = get_post( $request_id );
-        if ( ! $request || get_post_meta( $request_id, '_customer_id', true ) != $user_id ) {
+        if ( ! $request || (int) get_post_meta( $request_id, '_customer_id', true ) !== $user_id ) {
             wp_send_json_error( [ 'message' => 'Invalid request.' ] );
         }
 
@@ -215,7 +215,7 @@ trait FisHotel_Ajax {
         $fish_index = intval( $_POST['fish_index'] );
 
         $request = get_post( $request_id );
-        if ( ! $request || get_post_meta( $request_id, '_customer_id', true ) != get_current_user_id() ) {
+        if ( ! $request || (int) get_post_meta( $request_id, '_customer_id', true ) !== get_current_user_id() ) {
             wp_send_json_error( [ 'message' => 'Invalid request.' ] );
         }
 

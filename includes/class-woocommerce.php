@@ -80,7 +80,7 @@ trait FisHotel_WooCommerce {
         $batch_statuses = get_option( 'fishotel_batch_statuses', [] );
         $transit_batch  = '';
         foreach ( $batch_statuses as $name => $stage ) {
-            if ( $stage === 'in_transit' ) { $transit_batch = $name; break; }
+            if ( $stage === 'orders_closed' ) { $transit_batch = $name; break; }
         }
         if ( ! $transit_batch ) {
             foreach ( $batch_statuses as $name => $stage ) {
@@ -155,7 +155,7 @@ trait FisHotel_WooCommerce {
     }
 
     public function force_deposit_order_item_name( $name, $item, $order ) {
-        if ( $item->get_product_id() == $this->get_deposit_product_id() ) return 'Wallet Refill';
+        if ( $item->get_product_id() === $this->get_deposit_product_id() ) return 'Wallet Refill';
         return $name;
     }
 
@@ -247,7 +247,7 @@ trait FisHotel_WooCommerce {
             $order = wc_get_order( $order_id );
             if ( $order ) {
                 foreach ( $order->get_items() as $item ) {
-                    if ( $item->get_product_id() == $this->get_deposit_product_id() || stripos( $item->get_name(), 'Wallet Refill' ) !== false ) {
+                    if ( $item->get_product_id() === $this->get_deposit_product_id() || stripos( $item->get_name(), 'Wallet Refill' ) !== false ) {
                         $has_deposit = true;
                         break;
                     }
@@ -277,7 +277,7 @@ trait FisHotel_WooCommerce {
         $amount = 0;
         $deposit_product_id = $this->get_deposit_product_id();
         foreach ( $order->get_items() as $item ) {
-            if ( $item->get_product_id() == $deposit_product_id || stripos( $item->get_name(), 'Wallet Refill' ) !== false ) $amount += (float) $item->get_total();
+            if ( $item->get_product_id() === $deposit_product_id || stripos( $item->get_name(), 'Wallet Refill' ) !== false ) $amount += (float) $item->get_total();
         }
         if ( $amount > 0 ) {
             update_post_meta( $order_id, '_fishotel_wallet_credited', 1 );

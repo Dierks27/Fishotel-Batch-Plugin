@@ -925,7 +925,7 @@ trait FisHotel_Shortcodes {
                                 if ( preg_match( '/\((SM|MED|Lrg|XL|Nano|Tiny)\)/i', $title_to_check, $matches ) ) $size = strtoupper( $matches[1] );
                                 $stock_class = $stock > 10 ? 'fh-stock-green' : ( $stock > 0 ? 'fh-stock-orange' : 'fh-stock-red' );
                                 $low_class   = ( $stock > 0 && $stock <= 5 ) ? ' fh-stock-low' : '';
-                                $row_class   = $stock == 0 ? ' class="fh-row-closed"' : '';
+                                $row_class   = $stock <= 0 ? ' class="fh-row-closed"' : '';
                                 echo '<tr' . $row_class . ' data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '" data-rownum="' . $row_num . '">';
                                 echo '<td class="fh-row-num"></td>';
                                 echo '<td class="fh-common-cell">' . esc_html( $master->post_title ) . ( $size ? ' <span class="fh-size-inline">' . esc_html( $size ) . '</span>' : '' ) . '</td>';
@@ -968,7 +968,7 @@ trait FisHotel_Shortcodes {
                             if ( preg_match( '/\((SM|MED|Lrg|XL|Nano|Tiny)\)/i', $title_to_check, $matches ) ) $size = strtoupper( $matches[1] );
                             $stock_class = $stock > 10 ? 'fh-stock-green' : ( $stock > 0 ? 'fh-stock-orange' : 'fh-stock-red' );
                             $low_class_m = ( $stock > 0 && $stock <= 5 ) ? ' fh-stock-low' : '';
-                            $card_class  = 'fish-card' . ( $stock == 0 ? ' fh-row-closed' : '' );
+                            $card_class  = 'fish-card' . ( $stock <= 0 ? ' fh-row-closed' : '' );
                             echo '<div class="' . $card_class . '" data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '">';
                             echo '<h4>' . esc_html( $master->post_title ) . '</h4>';
                             echo '<div class="sci">' . esc_html( $sci_name ) . '</div>';
@@ -1648,8 +1648,8 @@ trait FisHotel_Shortcodes {
             return ob_get_clean();
         }
 
-        // ─── Stage 3: Transit page (orders_closed / in_transit) ────────────
-        if ( in_array( $status, [ 'orders_closed', 'in_transit' ], true ) ) {
+        // ─── Stage 3: Transit page (orders_closed) ────────────────────────
+        if ( $status === 'orders_closed' ) {
             $arrival_dates  = get_option( 'fishotel_batch_arrival_dates', [] );
             $arrival_date   = $arrival_dates[ $batch_name ] ?? '';
             $origin_locs    = $this->get_origin_locations();

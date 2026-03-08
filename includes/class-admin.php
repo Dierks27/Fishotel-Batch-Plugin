@@ -1004,7 +1004,7 @@ trait FisHotel_Admin {
         $user_id = intval( $_POST['user_id'] );
         $amount = floatval( $_POST['amount'] );
         $reason = sanitize_text_field( $_POST['reason'] );
-        if ( $user_id && $amount != 0 ) {
+        if ( $user_id && $amount !== 0.0 ) {
             $this->update_user_deposit_balance( $user_id, $amount );
             $history = get_user_meta( $user_id, '_fishotel_wallet_history', true );
             if ( ! is_array( $history ) ) $history = [];
@@ -2262,13 +2262,6 @@ trait FisHotel_Admin {
                 'style'      => 'background:#c0392b;color:#fff;border-color:#a93226;',
                 'confirm'    => "Close ordering for '%s'? This immediately sets the stage to Arrived.",
             ],
-            // Future transitions — uncomment and expand as stages are built:
-            // 'arrived' => [
-            //     'next_stage' => 'next_stage_key',
-            //     'label'      => '🚀 Advance Stage',
-            //     'style'      => 'background:#2980b9;color:#fff;border-color:#1a6a9a;',
-            //     'confirm'    => "Advance '%s' to the next stage?",
-            // ],
         ];
     }
 

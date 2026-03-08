@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.85 - Boarding pass: per-character handwriting wobble on fish table td cells.
- * Version:           2.85
+ * Description:       Stable v2.86 - Deep clean: strict comparisons, remove legacy in_transit stage, dead code removal.
+ * Version:           2.86
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.85' );
+define( 'FISHOTEL_VERSION', '2.86' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -27,7 +27,6 @@ function fishotel_stage_label_map() {
     return [
         'open_ordering'  => 'Now Boarding',
         'orders_closed' => 'In Transit',
-        'in_transit'     => 'In Transit',
         'arrived'        => 'In Quarantine',
         'graduation'     => 'Graduation Day',
         'verification'   => 'Choose Your Fish',
