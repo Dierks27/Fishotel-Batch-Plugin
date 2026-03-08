@@ -629,11 +629,20 @@ trait FisHotel_Shortcodes {
                     font-size:11px; font-family:'Special Elite',monospace;
                     padding:10px 4px; position:relative;
                 }
+                /* Common Name — allow wrapping */
                 .fishotel-open-table td:nth-child(2) {
                     white-space:normal; word-wrap:break-word; overflow-wrap:break-word;
+                    position:relative;
                 }
+                /* Scientific Name — smaller, nowrap */
                 .fishotel-open-table td:nth-child(3) {
-                    color:#3d2b1f !important; font-style:italic;
+                    color:#3d2b1f !important; font-style:italic; font-size:12px;
+                    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+                }
+                /* Inline size badge after common name */
+                .fh-size-inline {
+                    font-size:10px; color:#8a7a6a; font-family:'Special Elite',monospace;
+                    margin-left:5px; letter-spacing:0.03em;
                 }
                 .fishotel-open-table tbody tr:nth-child(odd) { background:#f2ead8; }
                 .fishotel-open-table tbody tr:nth-child(even) { background:#ebe0c4; }
@@ -652,7 +661,7 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-row-closed { opacity:0.5; }
 
-                /* ── Size Badge ── */
+                /* ── Size Badge (mobile cards only) ── */
                 .fh-size-badge {
                     background:rgba(0,0,0,0.06); color:#5a4a3a;
                     padding:2px 8px; border-radius:0; font-size:0.78em;
@@ -697,15 +706,16 @@ trait FisHotel_Shortcodes {
                     font-family:'Caveat',cursive; font-size:22px; color:#2d6a2d;
                     display:inline-block;
                     line-height:1; font-weight:700;
-                    position:absolute; left:-2px; top:50%;
-                    margin-top:-12px; z-index:3;
-                    /* rotation set per-row via inline style */
+                    position:absolute; left:-2px; z-index:3;
+                    /* rotation and top set per-row via inline style */
                 }
+                /* Ensure common name cell anchors absolutely-positioned children */
+                .fh-common-cell { position:relative; }
                 /* ── Handwritten qty in # column when in cart ── */
                 .fh-hw-qty {
-                    font-family:'Caveat',cursive; font-size:16px; color:#1a4d1a;
-                    display:block; line-height:1; font-weight:700;
-                    margin-top:2px;
+                    font-family:'Caveat',cursive; font-size:14px; color:#1a4d1a;
+                    line-height:1; font-weight:700;
+                    position:absolute; bottom:2px; left:2px;
                     /* rotation set per-row via inline style */
                 }
 
@@ -924,9 +934,8 @@ trait FisHotel_Shortcodes {
                         <table class="fishotel-open-table">
                             <thead><tr>
                                 <th style="width:4%;text-align:center;">#</th>
-                                <th data-sort="common" style="width:24%;">Common Name</th>
-                                <th data-sort="sci" style="width:28%;">Scientific Name</th>
-                                <th style="text-align:center;width:5%;">Size</th>
+                                <th data-sort="common" style="width:33%;">Common Name</th>
+                                <th data-sort="sci" style="width:24%;">Scientific Name</th>
                                 <th style="text-align:right;width:10%;" data-sort="price">Avg Price</th>
                                 <th style="text-align:center;width:7%;" data-sort="stock">Stock</th>
                                 <th style="text-align:center;width:22%;">Action</th>
@@ -948,9 +957,8 @@ trait FisHotel_Shortcodes {
                                 $row_class   = $stock == 0 ? ' class="fh-row-closed"' : '';
                                 echo '<tr' . $row_class . ' data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '" data-rownum="' . $row_num . '">';
                                 echo '<td class="fh-row-num">' . $row_num . '</td>';
-                                echo '<td class="fh-common-cell" style="position:relative;">' . esc_html( $master->post_title ) . '</td>';
+                                echo '<td class="fh-common-cell">' . esc_html( $master->post_title ) . ( $size ? ' <span class="fh-size-inline">' . esc_html( $size ) . '</span>' : '' ) . '</td>';
                                 echo '<td>' . esc_html( $sci_name ) . '</td>';
-                                echo '<td style="text-align:center;">' . ( $size ? '<span class="fh-size-badge">' . esc_html( $size ) . '</span>' : '' ) . '</td>';
                                 echo '<td style="text-align:right;">' . number_format( $price, 2 ) . '</td>';
                                 echo '<td style="text-align:center;" class="' . $stock_class . $low_class . '">';
                                 echo '<span>' . intval( $stock ) . '</span></td>';
@@ -1328,15 +1336,18 @@ trait FisHotel_Shortcodes {
                             if (numCell) { const ex = numCell.querySelector('.fh-hw-qty'); if (ex) ex.remove(); }
                             if (requestedIds.has(batchId)) {
                                 const rowNum = parseInt(tr.getAttribute('data-rownum')) || 1;
-                                // Pseudo-random rotation from row number: range -15 to +5
-                                const rot = -15 + ((rowNum * 7) % 21);
-                                // Slight position jitter: odd rows left, even rows right
+                                // Wide rotation range -20 to +10 using larger multiplier
+                                const rot = ((rowNum * 137 + 23) % 31) - 20;
+                                // Vertical jitter: 4-16px from top of cell
+                                const topPx = 4 + ((rowNum * 47) % 12);
+                                // Horizontal jitter
                                 const nudge = (rowNum % 2 === 1) ? -2 : 1;
                                 if (commonCell) {
                                     const chk = document.createElement('span');
                                     chk.className = 'fh-in-cart-check';
                                     chk.textContent = '\u2713';
                                     chk.style.transform = 'rotate(' + rot + 'deg)';
+                                    chk.style.top = topPx + 'px';
                                     chk.style.left = nudge + 'px';
                                     commonCell.appendChild(chk);
                                 }

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.70 - Column widths, typed stock, random checkmarks, handwritten qty, darker ink, page curl.
- * Version:           2.70
+ * Description:       Stable v2.71 - Rebalanced columns, remove Size column, sci name nowrap, abs-positioned qty/checkmark, wider rotation, inline size badge.
+ * Version:           2.71
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.70' );
+define( 'FISHOTEL_VERSION', '2.71' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
