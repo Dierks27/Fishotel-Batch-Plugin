@@ -78,6 +78,21 @@ trait FisHotel_Shortcodes {
                 $total_species++;
                 $total_stock += floatval( get_post_meta( $bp->ID, '_stock', true ) );
             }
+            $ticker_msgs = get_option( 'fishotel_ticker_messages', [] );
+            if ( empty( $ticker_msgs ) ) {
+                $ticker_msgs = [
+                    'FIRST COME · FIRST SERVED',
+                    '{species} SPECIES AVAILABLE',
+                    '{stock} TOTAL STOCK',
+                    'DEPOSIT REQUIRED TO REQUEST',
+                ];
+            }
+            $ticker_resolved = [];
+            foreach ( $ticker_msgs as $msg ) {
+                $msg = str_replace( [ '{species}', '{stock}' ], [ $total_species, intval( $total_stock ) ], $msg );
+                $msg = strtoupper( substr( $msg, 0, 40 ) );
+                $ticker_resolved[] = $msg;
+            }
             ?>
 
             <!-- ===== Login Modal — GATE ACCESS REQUIRED ===== -->
@@ -173,33 +188,42 @@ trait FisHotel_Shortcodes {
                     letter-spacing:0.08em; transform:rotate(-2deg); color:#27ae60;
                 }
 
-                /* ── Ticker Strip ── */
-                .fh-gate-ticker {
-                    background:#0a1018; border:1px solid #b5a165; border-radius:6px;
-                    padding:10px 0; margin-bottom:24px; overflow:hidden;
-                    position:relative;
+                /* ── Solari Split-Flap Board ── */
+                .fh-solari {
+                    width:100%; box-sizing:border-box; overflow:hidden;
+                    background:#0a0a0a; border:1px solid #b5a165; border-radius:6px;
+                    padding:14px 12px; margin-bottom:24px;
+                    display:flex; justify-content:center; align-items:center;
+                    min-height:48px;
                 }
-                .fh-gate-ticker-inner {
-                    display:flex; white-space:nowrap;
-                    animation: fh-ticker-scroll 18s linear infinite;
+                .fh-solari-row {
+                    display:flex; gap:3px; justify-content:center; flex-wrap:nowrap;
                 }
-                .fh-gate-ticker-inner span {
-                    font-family:'Oswald',sans-serif; font-weight:400; font-size:0.85rem;
-                    text-transform:uppercase; letter-spacing:0.12em; color:#b5a165;
-                    padding:0 40px;
+                .fh-flap {
+                    width:clamp(16px,2.4vw,22px); height:clamp(24px,3.2vw,32px);
+                    background:#1a1a1a; border-radius:2px;
+                    box-shadow:inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 4px rgba(0,0,0,0.8);
+                    display:flex; align-items:center; justify-content:center;
+                    font-family:'Courier New',monospace; font-weight:700;
+                    font-size:clamp(11px,1.8vw,16px); color:#d4bc7e;
+                    text-transform:uppercase; position:relative;
+                    overflow:hidden; perspective:80px;
                 }
-                @keyframes fh-ticker-scroll {
-                    0% { transform: translateX(0); }
-                    100% { transform: translateX(-50%); }
+                .fh-flap-space { background:transparent; box-shadow:none; width:clamp(8px,1.2vw,12px); }
+                @keyframes fh-flip {
+                    0% { transform:rotateX(0deg); opacity:1; }
+                    40% { transform:rotateX(-90deg); opacity:0.6; }
+                    60% { transform:rotateX(90deg); opacity:0.6; }
+                    100% { transform:rotateX(0deg); opacity:1; }
                 }
 
                 /* ── Stats Block ── */
                 .fh-gate-stats {
-                    display:flex; gap:16px; margin-bottom:24px; justify-content:center;
+                    display:flex; flex-wrap:nowrap; gap:16px; margin-bottom:24px; justify-content:center;
                 }
                 .fh-gate-stat {
                     background:#0c161f; border:2px solid #b5a165; border-radius:8px;
-                    padding:16px 28px; text-align:center; flex:1; max-width:200px;
+                    padding:16px 28px; text-align:center; flex:1; min-width:0; max-width:200px;
                 }
                 .fh-gate-stat .fh-stat-num {
                     font-family:'Oswald',sans-serif; font-weight:700;
@@ -285,7 +309,8 @@ trait FisHotel_Shortcodes {
 
                 /* ── Desktop Table ── */
                 .fh-scroll-wrap {
-                    overflow-x:auto; scrollbar-width:thin; scrollbar-color:#b5a165 #0c161f;
+                    overflow-x:auto; width:100%; box-sizing:border-box;
+                    scrollbar-width:thin; scrollbar-color:#b5a165 #0c161f;
                 }
                 .fh-scroll-wrap::-webkit-scrollbar { height:8px; background:#0c161f; }
                 .fh-scroll-wrap::-webkit-scrollbar-thumb { background:#b5a165; border-radius:4px; }
@@ -406,8 +431,6 @@ trait FisHotel_Shortcodes {
                 @media (max-width:600px) {
                     .fish-cards { grid-template-columns:1fr; }
                     #submit-requests { width:100% !important; padding:16px !important; }
-                    .fh-gate-stats { flex-direction:column; align-items:center; }
-                    .fh-gate-stat { max-width:100%; width:100%; }
                 }
             </style>
 
@@ -420,18 +443,9 @@ trait FisHotel_Shortcodes {
                     <div class="fh-gate-stamp">Open for Requests</div>
                 </div>
 
-                <!-- ===== Departure Board Ticker ===== -->
-                <div class="fh-gate-ticker">
-                    <div class="fh-gate-ticker-inner">
-                        <span>First Come &middot; First Served</span>
-                        <span><?php echo esc_html( $total_species ); ?> Species Available</span>
-                        <span><?php echo esc_html( $total_stock ); ?> Total Stock</span>
-                        <span>Deposit Required to Request</span>
-                        <span>First Come &middot; First Served</span>
-                        <span><?php echo esc_html( $total_species ); ?> Species Available</span>
-                        <span><?php echo esc_html( $total_stock ); ?> Total Stock</span>
-                        <span>Deposit Required to Request</span>
-                    </div>
+                <!-- ===== Solari Split-Flap Board ===== -->
+                <div class="fh-solari" id="fh-solari-board">
+                    <div class="fh-solari-row" id="fh-solari-row"></div>
                 </div>
 
                 <!-- ===== Stats Block ===== -->
@@ -602,6 +616,78 @@ trait FisHotel_Shortcodes {
                         if (h1) {
                             h1.textContent = (origin ? origin.toUpperCase() + ' \u00B7 ' : '') + 'NOW BOARDING';
                         }
+                    })();
+
+                    // ── Solari Split-Flap Board ──
+                    (function() {
+                        var solariMsgs = <?php echo wp_json_encode( $ticker_resolved ); ?>;
+                        var maxLen = 40;
+                        var row = document.getElementById('fh-solari-row');
+                        if (!row || !solariMsgs.length) return;
+
+                        var currentIdx = 0;
+                        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789·-!? ';
+
+                        function padMsg(msg) {
+                            msg = msg.substring(0, maxLen);
+                            var pad = Math.floor((maxLen - msg.length) / 2);
+                            return ' '.repeat(pad) + msg + ' '.repeat(maxLen - pad - msg.length);
+                        }
+
+                        // Build initial flap tiles
+                        var padded = padMsg(solariMsgs[0]);
+                        row.innerHTML = '';
+                        for (var i = 0; i < maxLen; i++) {
+                            var flap = document.createElement('div');
+                            flap.className = padded[i] === ' ' ? 'fh-flap fh-flap-space' : 'fh-flap';
+                            flap.textContent = padded[i] === ' ' ? '' : padded[i];
+                            flap.setAttribute('data-idx', i);
+                            row.appendChild(flap);
+                        }
+
+                        function flipTo(msg) {
+                            var target = padMsg(msg);
+                            var flaps = row.querySelectorAll('.fh-flap');
+                            flaps.forEach(function(flap, i) {
+                                var finalChar = target[i];
+                                var isSpace = finalChar === ' ';
+
+                                // Remove old classes
+                                flap.className = isSpace ? 'fh-flap fh-flap-space' : 'fh-flap';
+
+                                if (flap.textContent === finalChar || (isSpace && flap.textContent === '')) return;
+
+                                // Staggered flip animation
+                                var delay = i * 35;
+                                var flipCount = 4 + Math.floor(Math.random() * 4);
+                                var step = 0;
+                                var interval;
+
+                                setTimeout(function() {
+                                    flap.style.animation = 'fh-flip 0.12s ease-in-out';
+                                    interval = setInterval(function() {
+                                        step++;
+                                        if (step >= flipCount) {
+                                            clearInterval(interval);
+                                            flap.textContent = isSpace ? '' : finalChar;
+                                            flap.className = isSpace ? 'fh-flap fh-flap-space' : 'fh-flap';
+                                            flap.style.animation = '';
+                                            return;
+                                        }
+                                        flap.textContent = chars[Math.floor(Math.random() * chars.length)];
+                                        flap.style.animation = 'none';
+                                        flap.offsetHeight; // reflow
+                                        flap.style.animation = 'fh-flip 0.12s ease-in-out';
+                                    }, 100);
+                                }, delay);
+                            });
+                        }
+
+                        // Auto-advance every 4 seconds
+                        setInterval(function() {
+                            currentIdx = (currentIdx + 1) % solariMsgs.length;
+                            flipTo(solariMsgs[currentIdx]);
+                        }, 4000);
                     })();
 
                     function showLoginModal(batchId, price, fishName) {

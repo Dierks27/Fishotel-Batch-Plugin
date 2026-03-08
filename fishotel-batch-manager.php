@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.48 - Stage 1 open_ordering PanAm Gate theme overhaul.
- * Version:           2.48
+ * Description:       Stable 2.49 - Stage 1 layout fixes + Solari split-flap ticker + admin ticker editor.
+ * Version:           2.49
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.48' );
+define( 'FISHOTEL_VERSION', '2.49' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -154,6 +154,7 @@ class FisHotel_Batch_Manager {
         add_action( 'admin_post_fishotel_delete_batch',       [$this, 'delete_batch'] );
         add_action( 'admin_post_fishotel_add_location',       [$this, 'add_location_handler'] );
         add_action( 'admin_post_fishotel_delete_location',    [$this, 'delete_location_handler'] );
+        add_action( 'admin_post_fishotel_save_ticker',        [$this, 'save_ticker_handler'] );
         add_action( 'admin_post_fishotel_save_arrival_data',  [$this, 'save_arrival_data_handler'] );
         add_action( 'admin_post_fishotel_log_survival_entry', [$this, 'log_survival_entry_handler'] );
 

@@ -335,6 +335,40 @@ trait FisHotel_Admin {
                 </div>
 
 
+            <!-- ===== ZONE 3b: Ticker Messages ===== -->
+            <div style="margin-top:8px;text-align:center;">
+                <button type="button" id="fishotel-ticker-toggle" style="background:none;border:none;color:#aaa;font-size:0.85em;cursor:pointer;text-decoration:underline;padding:6px 0;">📟 Ticker Messages ▾</button>
+                <div id="fishotel-ticker-body" style="display:none;margin-top:12px;background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;text-align:left;">
+                    <p style="color:#aaa;font-size:13px;margin:0 0 16px;">Messages rotate on the split-flap board on the live fish list. Use <code style="background:#333;padding:2px 5px;border-radius:3px;">{species}</code> and <code style="background:#333;padding:2px 5px;border-radius:3px;">{stock}</code> as tokens for live counts. Keep messages under 40 characters.</p>
+                    <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" id="fishotel-ticker-form">
+                        <?php wp_nonce_field( 'fishotel_save_ticker_nonce' ); ?>
+                        <input type="hidden" name="action" value="fishotel_save_ticker">
+                        <div id="fishotel-ticker-list">
+                            <?php
+                            $ticker_msgs = get_option( 'fishotel_ticker_messages', [] );
+                            if ( empty( $ticker_msgs ) ) {
+                                $ticker_msgs = [
+                                    'FIRST COME · FIRST SERVED',
+                                    '{species} SPECIES AVAILABLE',
+                                    '{stock} TOTAL STOCK',
+                                    'DEPOSIT REQUIRED TO REQUEST',
+                                ];
+                            }
+                            foreach ( $ticker_msgs as $idx => $msg ) : ?>
+                            <div class="fh-ticker-row" style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+                                <input type="text" name="ticker_msg[]" value="<?php echo esc_attr( $msg ); ?>" maxlength="40" style="flex:1;background:#2a2a2a;border:1px solid #555;color:#fff;padding:8px 12px;border-radius:6px;font-size:14px;font-family:'Courier New',monospace;">
+                                <button type="button" onclick="this.parentNode.remove()" style="background:#c0392b;color:#fff;border:none;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:13px;font-weight:700;">Remove</button>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">
+                            <button type="button" id="fishotel-ticker-add" style="background:#333;color:#b5a165;border:1px solid #555;border-radius:6px;padding:8px 18px;cursor:pointer;font-size:13px;font-weight:700;">+ Add Message</button>
+                            <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:8px 22px;cursor:pointer;font-size:13px;">Save Ticker Messages</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- ===== ZONE 4: Origin Locations ===== -->
             <div style="margin-top:8px;text-align:center;">
                 <button type="button" id="fishotel-origins-toggle" style="background:none;border:none;color:#aaa;font-size:0.85em;cursor:pointer;text-decoration:underline;padding:6px 0;">🌍 Origin Locations ▾</button>
@@ -430,6 +464,26 @@ trait FisHotel_Admin {
                 body.style.display = 'none';
                 this.textContent = '⚙️ Advanced Settings ▾';
             }
+        });
+        document.getElementById('fishotel-ticker-toggle').addEventListener('click', function() {
+            var body = document.getElementById('fishotel-ticker-body');
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                this.textContent = '📟 Ticker Messages ▴';
+            } else {
+                body.style.display = 'none';
+                this.textContent = '📟 Ticker Messages ▾';
+            }
+        });
+        document.getElementById('fishotel-ticker-add').addEventListener('click', function() {
+            var list = document.getElementById('fishotel-ticker-list');
+            var row = document.createElement('div');
+            row.className = 'fh-ticker-row';
+            row.style.cssText = 'display:flex;gap:10px;align-items:center;margin-bottom:8px;';
+            row.innerHTML = '<input type="text" name="ticker_msg[]" value="" maxlength="40" placeholder="NEW MESSAGE HERE" style="flex:1;background:#2a2a2a;border:1px solid #555;color:#fff;padding:8px 12px;border-radius:6px;font-size:14px;font-family:\'Courier New\',monospace;">' +
+                '<button type="button" onclick="this.parentNode.remove()" style="background:#c0392b;color:#fff;border:none;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:13px;font-weight:700;">Remove</button>';
+            list.appendChild(row);
+            row.querySelector('input').focus();
         });
         document.getElementById('fishotel-origins-toggle').addEventListener('click', function() {
             var body = document.getElementById('fishotel-origins-body');
@@ -2615,6 +2669,24 @@ trait FisHotel_Admin {
         ];
         update_option( 'fishotel_origin_locations', $defaults );
         return $defaults;
+    }
+
+    public function save_ticker_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_save_ticker_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+        $msgs = [];
+        if ( isset( $_POST['ticker_msg'] ) && is_array( $_POST['ticker_msg'] ) ) {
+            foreach ( $_POST['ticker_msg'] as $msg ) {
+                $msg = sanitize_text_field( $msg );
+                if ( $msg !== '' ) {
+                    $msgs[] = substr( $msg, 0, 40 );
+                }
+            }
+        }
+        update_option( 'fishotel_ticker_messages', $msgs );
+        wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
+        exit;
     }
 
     public function add_location_handler() {
