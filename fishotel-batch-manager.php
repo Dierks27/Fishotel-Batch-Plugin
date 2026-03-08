@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.65 - Departure Manifest clipboard redesign.
- * Version:           2.65
+ * Description:       Stable v2.66 - Clipboard physical redesign: wood grain, 3D clip, typewriter font, ruled paper, stamp buttons.
+ * Version:           2.66
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.65' );
+define( 'FISHOTEL_VERSION', '2.66' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
