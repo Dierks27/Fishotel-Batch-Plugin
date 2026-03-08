@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.66 - Clipboard physical redesign: wood grain, 3D clip, typewriter font, ruled paper, stamp buttons.
- * Version:           2.66
+ * Description:       Stable v2.67 - Historical flight manifest: aged paper, punch holes, government form header, row numbers, stamp buttons, handwritten checkmarks.
+ * Version:           2.67
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.66' );
+define( 'FISHOTEL_VERSION', '2.67' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

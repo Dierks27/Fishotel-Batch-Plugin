@@ -481,28 +481,27 @@ trait FisHotel_Shortcodes {
                     .fh-bp-open-route { flex-wrap:wrap; gap:8px; }
                 }
 
-                /* ── Departure Manifest — Clipboard ── */
+                /* ── Departure Manifest — Clipboard backing board ── */
                 .fh-manifest-card {
-                    background:linear-gradient(160deg, #5c3d11 0%, #6a4a14 30%, #7a5218 60%, #5c3d11 100%);
-                    border:none; border-radius:10px;
+                    background:#3d2b1f;
+                    border:none; border-radius:6px;
                     overflow:visible; margin-bottom:24px;
                     box-shadow:0 8px 32px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.3);
                     position:relative;
-                    padding:0 18px 18px;
+                    padding:0 12px 12px;
                 }
                 /* Wood grain texture overlay */
                 .fh-manifest-card::before {
-                    content:''; position:absolute; inset:0; border-radius:10px;
+                    content:''; position:absolute; inset:0; border-radius:6px;
                     filter:url(#fh-wood-grain); background:rgba(0,0,0,0.08);
                     pointer-events:none; z-index:0; mix-blend-mode:overlay;
                 }
 
-                /* ── Clipboard top bar ── */
+                /* ── Clipboard top bar — no top wood visible ── */
                 .fh-clipboard-bar {
-                    background:linear-gradient(to bottom, #4a3410 0%, #3d2a0b 50%, #4a3410 100%);
-                    height:32px; border-radius:10px 10px 0 0; margin:0 -18px;
+                    background:transparent;
+                    height:0px; border-radius:6px 6px 0 0; margin:0 -12px;
                     position:relative; z-index:2;
-                    box-shadow:0 4px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
                 }
 
                 /* ── Metal binder clip — 3D multi-layer ── */
@@ -548,84 +547,94 @@ trait FisHotel_Shortcodes {
                     box-shadow:0 4px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
                 }
 
-                /* ── Paper sheet ── */
+                /* ── Paper sheet — aged document ── */
                 .fh-clipboard-paper {
-                    background:#f5f0e8; margin-top:6px; border-radius:2px;
+                    background:#f2ead8; margin-top:18px; border-radius:2px;
                     position:relative;
-                    box-shadow:inset 0 6px 12px rgba(0,0,0,0.08), inset 0 -4px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.15);
+                    border:1px solid #c8b99a;
+                    box-shadow:0 4px 40px rgba(0,0,0,0.5);
                     overflow:hidden;
                 }
                 /* Paper grain noise */
                 .fh-clipboard-paper::before {
                     content:''; position:absolute; inset:0;
-                    filter:url(#fh-manifest-grain); background:rgba(180,165,130,0.08);
+                    filter:url(#fh-manifest-grain); background:rgba(180,165,130,0.06);
                     pointer-events:none; z-index:1; mix-blend-mode:multiply;
                 }
-                /* Ruled lines across paper */
-                .fh-clipboard-paper::after {
-                    content:''; position:absolute; inset:0;
-                    background:repeating-linear-gradient(
-                        to bottom,
-                        transparent 0px, transparent 35px,
-                        rgba(0,0,0,0.04) 35px, rgba(0,0,0,0.04) 36px
-                    );
-                    pointer-events:none; z-index:1;
-                }
 
-                /* ── Manifest header on paper ── */
+                /* ── Manifest header — official government form ── */
                 .fh-manifest-header {
-                    padding:20px 24px 14px; background:transparent;
-                    border-bottom:2px solid rgba(0,0,0,0.12);
+                    padding:24px 28px 16px; background:transparent;
+                    border-bottom:3px solid #1a1a2e;
                     position:relative; z-index:2;
                 }
-                .fh-manifest-title {
-                    font-family:'Special Elite',monospace; font-weight:400;
-                    font-size:clamp(0.95rem,2.5vw,1.2rem); text-transform:uppercase;
-                    letter-spacing:0.08em; color:#1a1a2e;
+                /* Punch holes */
+                .fh-punch-hole {
+                    position:absolute; top:16px; width:14px; height:14px;
+                    border-radius:50%; background:#3d2b1f;
+                    border:1px solid #a09080;
+                    box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);
                 }
-                .fh-manifest-subtitle {
-                    font-family:'Special Elite',monospace; font-weight:400;
-                    font-size:0.8rem; color:#5a4a3a; margin-top:6px;
-                    letter-spacing:0.06em; text-transform:uppercase;
+                .fh-punch-hole-left { left:16px; }
+                .fh-punch-hole-right { right:16px; }
+                .fh-manifest-title {
+                    font-family:'Special Elite',monospace; font-weight:700;
+                    font-size:clamp(1.05rem,2.8vw,1.4rem); text-transform:uppercase;
+                    letter-spacing:0.1em; color:#1a1a2e; text-align:center;
+                    margin-bottom:12px;
+                }
+                .fh-manifest-fields {
+                    display:flex; flex-wrap:wrap; gap:4px 24px;
+                    justify-content:center;
+                    font-family:'Special Elite',monospace; font-size:0.78rem;
+                    color:#5a4a3a; text-transform:uppercase; letter-spacing:0.04em;
+                }
+                .fh-manifest-fields span {
+                    white-space:nowrap;
                 }
 
                 /* ── Desktop Table ── */
                 .fh-scroll-wrap {
                     overflow-x:auto; width:100%; box-sizing:border-box;
-                    scrollbar-width:thin; scrollbar-color:#8B6914 #ede8dc;
+                    scrollbar-width:thin; scrollbar-color:#a09080 #ebe0c4;
                     position:relative; z-index:2;
                 }
-                .fh-scroll-wrap::-webkit-scrollbar { height:8px; background:#ede8dc; }
-                .fh-scroll-wrap::-webkit-scrollbar-thumb { background:#8B6914; border-radius:4px; }
+                .fh-scroll-wrap::-webkit-scrollbar { height:8px; background:#ebe0c4; }
+                .fh-scroll-wrap::-webkit-scrollbar-thumb { background:#a09080; border-radius:0; }
 
                 .fishotel-open-table { width:100%; border-collapse:collapse; table-layout:fixed; }
-                .fishotel-open-table thead tr { background:rgba(181,161,101,0.12); }
+                .fishotel-open-table thead tr { background:transparent; }
                 .fishotel-open-table th {
                     text-align:left; color:#1a1a2e; font-family:'Special Elite',monospace;
-                    font-weight:400; font-size:11px; text-transform:uppercase;
-                    letter-spacing:0.06em; padding:12px 14px;
-                    border-bottom:2px solid rgba(0,0,0,0.2);
+                    font-weight:700; font-size:11px; text-transform:uppercase;
+                    letter-spacing:0.06em; padding:10px 10px;
+                    border-bottom:2px solid rgba(0,0,0,0.25);
                     font-variant:small-caps;
                 }
                 .fishotel-open-table th[data-sort] { cursor:pointer; }
-                .fishotel-open-table th[data-sort]:hover { color:#e67e22; }
+                .fishotel-open-table th[data-sort]:hover { color:#8b1a1a; }
                 .fishotel-open-table th[data-sort].sort-asc::after { content:" \25B2"; font-size:0.7em; }
                 .fishotel-open-table th[data-sort].sort-desc::after { content:" \25BC"; font-size:0.7em; }
                 .fishotel-open-table td {
-                    padding:12px 14px; font-family:'Special Elite',monospace;
+                    padding:10px 10px; font-family:'Special Elite',monospace;
                     font-size:13px; color:#1a1a2e;
                     height:44px; box-sizing:border-box;
-                    border-bottom:1px solid rgba(0,0,0,0.08);
+                    border-bottom:1px solid rgba(0,0,0,0.12);
                 }
-                .fishotel-open-table td:nth-child(1) {
-                    white-space:normal; word-wrap:break-word; overflow-wrap:break-word;
+                /* Row number column */
+                .fishotel-open-table .fh-row-num {
+                    width:32px; text-align:center; color:#a09080;
+                    font-size:11px; font-family:'Special Elite',monospace;
+                    padding:10px 4px; position:relative;
                 }
                 .fishotel-open-table td:nth-child(2) {
-                    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-                    color:#5a4a3a !important;
+                    white-space:normal; word-wrap:break-word; overflow-wrap:break-word;
                 }
-                .fishotel-open-table tbody tr:nth-child(odd) { background:#f5f0e8; }
-                .fishotel-open-table tbody tr:nth-child(even) { background:#ede8dc; }
+                .fishotel-open-table td:nth-child(3) {
+                    color:#5a4a3a !important; font-style:italic;
+                }
+                .fishotel-open-table tbody tr:nth-child(odd) { background:#f2ead8; }
+                .fishotel-open-table tbody tr:nth-child(even) { background:#ebe0c4; }
 
                 /* ── Stock Colors ── */
                 .fh-stock-green { color:#2d8a2d; font-weight:700; }
@@ -637,59 +646,65 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-stock-dot-green { background:#2d8a2d; }
                 .fh-stock-dot-orange { background:#c06010; }
-                .fh-row-closed { opacity:0.45; }
+                .fh-row-closed { opacity:0.5; }
 
                 /* ── Size Badge ── */
                 .fh-size-badge {
-                    background:rgba(139,105,20,0.12); color:#5a4a3a;
-                    padding:2px 8px; border-radius:2px; font-size:0.78em;
+                    background:rgba(0,0,0,0.06); color:#5a4a3a;
+                    padding:2px 8px; border-radius:0; font-size:0.78em;
                     font-family:'Special Elite',monospace; letter-spacing:0.04em;
+                    border:1px solid rgba(0,0,0,0.1);
                 }
 
-                /* ── Qty Spinner (table) ── */
+                /* ── Qty Spinner (table) — plain typewritten ── */
                 .fh-qty-wrap {
                     display:inline-flex; align-items:center;
-                    background:#ede8dc; border:1px solid rgba(0,0,0,0.18); border-radius:3px;
+                    background:#f2ead8; border:1px solid rgba(0,0,0,0.2); border-radius:0;
                     overflow:hidden;
                 }
                 .fh-qty-wrap .qty-minus,
                 .fh-qty-wrap .qty-plus {
-                    background:none; border:none; color:#5a4a3a; padding:4px 8px;
+                    background:none; border:none; color:#5a4a3a; padding:4px 7px;
                     cursor:pointer; font-size:14px; font-family:'Special Elite',monospace;
                 }
                 .fh-qty-wrap .qty-minus:hover,
-                .fh-qty-wrap .qty-plus:hover { color:#e67e22; }
+                .fh-qty-wrap .qty-plus:hover { color:#1a1a2e; }
                 .fh-qty-wrap .qty-input {
-                    width:42px; text-align:center; background:#f5f0e8; color:#1a1a2e;
-                    border:none; padding:4px 0; font-family:'Special Elite',monospace; font-size:14px;
+                    width:38px; text-align:center; background:#f8f3e8; color:#1a1a2e;
+                    border:none; border-left:1px solid rgba(0,0,0,0.12);
+                    border-right:1px solid rgba(0,0,0,0.12);
+                    padding:4px 0; font-family:'Special Elite',monospace; font-size:14px;
                 }
 
-                /* ── Request Button — rubber stamp ── */
+                /* ── Request Button — ink stamp impression ── */
                 .fh-req-btn {
                     padding:5px 14px; font-size:0.82em; margin-left:8px;
-                    background:#e67e22; color:#fff; border:2px solid #c06010;
-                    border-radius:2px; cursor:pointer;
+                    background:#fdf0f0; color:#8b1a1a; border:2px solid #8b1a1a;
+                    border-radius:0; cursor:pointer;
                     font-family:'Special Elite',monospace; font-weight:400;
-                    text-transform:uppercase; letter-spacing:0.04em;
-                    box-shadow:inset 0 1px 3px rgba(0,0,0,0.3);
+                    text-transform:uppercase; letter-spacing:0.06em;
+                    box-shadow:inset 0 1px 4px rgba(139,26,26,0.15);
+                    transition:background 0.15s;
                 }
-                .fh-req-btn:hover { background:#d4700f; border-color:#a85a0a; }
+                .fh-req-btn:hover { background:#f5dede; border-color:#6b1010; color:#6b1010; }
 
-                /* ── Green checkmark for in-cart items ── */
+                /* ── Green checkmark — handwritten annotation ── */
                 .fh-in-cart-check {
-                    font-family:'Caveat',cursive; font-size:24px; color:#2d6a2d;
-                    display:inline-block; transform:rotate(-5deg);
-                    margin-left:6px; line-height:1; vertical-align:middle;
-                    font-weight:700;
+                    font-family:'Caveat',cursive; font-size:22px; color:#2d6a2d;
+                    display:inline-block; transform:rotate(-8deg);
+                    line-height:1; vertical-align:middle;
+                    font-weight:700; position:absolute; left:2px; top:50%;
+                    margin-top:-11px;
                 }
 
-                /* ── CLOSED stamp ── */
+                /* ── CLOSED stamp — red rubber stamp diagonal ── */
                 .fh-closed-stamp {
-                    display:inline-block; border:2px solid #cc2222; border-radius:2px;
-                    padding:2px 10px; font-family:'Special Elite',monospace; font-weight:400;
-                    font-size:0.78em; text-transform:uppercase; letter-spacing:0.06em;
-                    color:#cc2222; transform:rotate(-2deg);
-                    box-shadow:inset 0 1px 2px rgba(0,0,0,0.15);
+                    display:inline-block; border:2px solid #8b1a1a; border-radius:0;
+                    padding:2px 12px; font-family:'Special Elite',monospace; font-weight:700;
+                    font-size:0.82em; text-transform:uppercase; letter-spacing:0.1em;
+                    color:#8b1a1a; transform:rotate(-15deg);
+                    box-shadow:inset 0 1px 2px rgba(139,26,26,0.2);
+                    opacity:0.85;
                 }
 
                 /* ── Mobile Controls ── */
@@ -699,13 +714,13 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-mobile-controls select {
                     padding:10px 14px; font-size:0.9em; font-family:'Special Elite',monospace;
-                    border:1px solid rgba(0,0,0,0.15); border-radius:3px; background:#f5f0e8;
+                    border:1px solid rgba(0,0,0,0.15); border-radius:0; background:#f2ead8;
                     color:#1a1a2e; flex:1; min-width:150px;
                     text-transform:uppercase; letter-spacing:0.03em;
                 }
                 .fh-mobile-controls input {
                     padding:10px 14px; font-size:0.9em; font-family:'Special Elite',monospace;
-                    border:1px solid rgba(0,0,0,0.15); border-radius:3px; background:#f5f0e8;
+                    border:1px solid rgba(0,0,0,0.15); border-radius:0; background:#f2ead8;
                     color:#1a1a2e; flex:1; min-width:180px; width:auto;
                 }
                 .fh-mobile-controls input::placeholder { color:#8a7a6a; }
@@ -713,13 +728,13 @@ trait FisHotel_Shortcodes {
                 /* ── Mobile Cards ── */
                 .fish-cards { display:grid; gap:14px; position:relative; z-index:2; }
                 .fish-card {
-                    background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:4px;
+                    background:#f2ead8; border:1px solid rgba(0,0,0,0.12); border-radius:0;
                     padding:16px 18px; font-family:'Special Elite',monospace;
-                    border-bottom:1px solid rgba(0,0,0,0.1);
+                    border-bottom:1px solid rgba(0,0,0,0.12);
                 }
                 .fish-card h4 { margin:0 0 4px; color:#1a1a2e; font-weight:400; font-size:1rem; }
                 .fish-card .sci { font-style:italic; color:#5a4a3a; margin-bottom:10px; font-size:0.85rem; }
-                .fish-card .price { font-size:1.1em; color:#c06010; font-weight:400; }
+                .fish-card .price { font-size:1.1em; color:#1a1a2e; font-weight:400; }
                 .fish-card .stock { font-weight:400; }
                 .fish-card .action { margin-top:14px; display:flex; align-items:center; gap:10px; }
 
@@ -729,7 +744,7 @@ trait FisHotel_Shortcodes {
                     font-family:'Special Elite',monospace; font-weight:400;
                     font-size:clamp(0.75rem,1.8vw,0.9rem); text-transform:uppercase;
                     letter-spacing:0.1em; color:#5a4a3a;
-                    border-top:1px solid rgba(0,0,0,0.08);
+                    border-top:2px solid rgba(0,0,0,0.15);
                     position:relative; z-index:2;
                 }
 
@@ -747,10 +762,15 @@ trait FisHotel_Shortcodes {
                 @media (max-width:600px) {
                     .fish-cards { grid-template-columns:1fr; }
                     #submit-requests { width:100% !important; padding:16px !important; }
-                    .fh-manifest-card { padding:0 8px 10px; border-radius:8px; }
-                    .fh-clipboard-bar { border-radius:8px 8px 0 0; margin:0 -8px; }
-                    .fh-clipboard-paper { margin-top:5px; }
-                    .fh-manifest-header { padding:16px 14px 12px; }
+                    .fh-manifest-card { padding:0 6px 6px; border-radius:4px; }
+                    .fh-clipboard-bar { border-radius:4px 4px 0 0; margin:0 -6px; }
+                    .fh-clipboard-paper { margin-top:14px; }
+                    .fh-manifest-header { padding:18px 14px 12px; }
+                    .fh-manifest-title { font-size:0.95rem; }
+                    .fh-manifest-fields { font-size:0.68rem; gap:2px 12px; }
+                    .fh-punch-hole { width:10px; height:10px; top:12px; }
+                    .fh-punch-hole-left { left:10px; }
+                    .fh-punch-hole-right { right:10px; }
                 }
             </style>
 
@@ -861,8 +881,18 @@ trait FisHotel_Shortcodes {
                     </div>
                     <div class="fh-clipboard-paper">
                     <div class="fh-manifest-header">
-                        <div class="fh-manifest-title">&#x2708; Departure Manifest &mdash; Flight <?php echo esc_html( $flight_number ); ?></div>
-                        <div class="fh-manifest-subtitle"><?php echo intval( $total_species ); ?> Species &middot; <?php echo intval( $total_stock ); ?> Total Stock &middot; Gate QT-1</div>
+                        <div class="fh-punch-hole fh-punch-hole-left"></div>
+                        <div class="fh-punch-hole fh-punch-hole-right"></div>
+                        <div class="fh-manifest-title">FISHOTEL INTL. &middot; DEPARTURE MANIFEST</div>
+                        <div class="fh-manifest-fields">
+                            <span>FLIGHT NO: <?php echo esc_html( $flight_number ); ?></span>
+                            <span>|</span>
+                            <span>DATE: <?php echo strtoupper( date( 'M j, Y' ) ); ?></span>
+                            <span>|</span>
+                            <span>ORIGIN: <?php echo esc_html( strtoupper( $origin_name ) ); ?></span>
+                            <span>|</span>
+                            <span>DESTINATION: CHAMPLIN, MN</span>
+                        </div>
                     </div>
 
                     <!-- Mobile controls -->
@@ -881,18 +911,20 @@ trait FisHotel_Shortcodes {
                     <div class="fh-scroll-wrap">
                         <table class="fishotel-open-table">
                             <thead><tr>
-                                <th data-sort="common" style="width:28%;">Common Name</th>
-                                <th data-sort="sci" style="width:22%;">Scientific Name</th>
+                                <th style="width:32px;text-align:center;">#</th>
+                                <th data-sort="common" style="width:26%;">Common Name</th>
+                                <th data-sort="sci" style="width:20%;">Scientific Name</th>
                                 <th style="text-align:center;width:6%;">Size</th>
                                 <th style="text-align:right;width:10%;" data-sort="price">Avg Price</th>
                                 <th style="text-align:center;width:8%;" data-sort="stock">Stock</th>
-                                <th style="text-align:center;width:26%;">Action</th>
+                                <th style="text-align:center;width:24%;">Action</th>
                             </tr></thead><tbody>
-                            <?php foreach ( $batch_posts as $bp ) {
+                            <?php $row_num = 0; foreach ( $batch_posts as $bp ) {
                                 $master_id = get_post_meta( $bp->ID, '_master_id', true );
                                 if ( ! $master_id ) continue;
                                 $master = get_post( $master_id );
                                 if ( ! $master ) continue;
+                                $row_num++;
                                 $sci_name = get_post_meta( $master_id, '_scientific_name', true );
                                 $price = floatval( get_post_meta( $master_id, '_selling_price', true ) );
                                 $stock = floatval( get_post_meta( $bp->ID, '_stock', true ) );
@@ -903,10 +935,11 @@ trait FisHotel_Shortcodes {
                                 $dot_class   = $stock > 10 ? 'fh-stock-dot-green' : ( $stock > 0 ? 'fh-stock-dot-orange' : '' );
                                 $row_class   = $stock == 0 ? ' class="fh-row-closed"' : '';
                                 echo '<tr' . $row_class . ' data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '">';
+                                echo '<td class="fh-row-num">' . $row_num . '</td>';
                                 echo '<td style="font-weight:600;">' . esc_html( $master->post_title ) . '</td>';
-                                echo '<td style="font-style:italic;color:#8a9bae;">' . esc_html( $sci_name ) . '</td>';
+                                echo '<td>' . esc_html( $sci_name ) . '</td>';
                                 echo '<td style="text-align:center;">' . ( $size ? '<span class="fh-size-badge">' . esc_html( $size ) . '</span>' : '' ) . '</td>';
-                                echo '<td style="text-align:right;color:#e67e22;font-weight:600;">$' . number_format( $price, 2 ) . '</td>';
+                                echo '<td style="text-align:right;">' . number_format( $price, 2 ) . '</td>';
                                 echo '<td style="text-align:center;" class="' . $stock_class . '">';
                                 if ( $dot_class ) echo '<span class="fh-stock-dot ' . $dot_class . '"></span>';
                                 echo intval( $stock ) . '</td>';
@@ -919,7 +952,7 @@ trait FisHotel_Shortcodes {
                                     echo '</div>';
                                     echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $master->post_title ) . '">Request</button>';
                                 } else {
-                                    echo '<span class="fh-closed-stamp">Closed</span>';
+                                    echo '<span class="fh-closed-stamp">Void</span>';
                                 }
                                 echo '</td>';
                                 echo '</tr>';
@@ -963,7 +996,7 @@ trait FisHotel_Shortcodes {
                                 echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $master->post_title ) . '" style="flex:1;padding:10px;font-size:0.95em;">Request</button>';
                                 echo '</div>';
                             } else {
-                                echo '<div style="margin-top:12px;"><span class="fh-closed-stamp">Closed</span></div>';
+                                echo '<div style="margin-top:12px;"><span class="fh-closed-stamp">Void</span></div>';
                             }
                             echo '</div>';
                         } ?>
@@ -1268,18 +1301,20 @@ trait FisHotel_Shortcodes {
                         prevItems.forEach(i => requestedIds.add(String(i.batch_id)));
                         cartItems.forEach(i => requestedIds.add(String(i.batch_id)));
 
-                        // Desktop table rows
+                        // Desktop table rows — checkmark goes in the row-number cell
                         document.querySelectorAll('.fishotel-open-table .add-to-request').forEach(btn => {
                             const batchId = btn.getAttribute('data-batch-id');
-                            const td = btn.closest('td');
+                            const tr = btn.closest('tr');
+                            const numCell = tr ? tr.querySelector('.fh-row-num') : null;
+                            if (!numCell) return;
                             // Remove any existing checkmark first
-                            const existing = td.querySelector('.fh-in-cart-check');
+                            const existing = numCell.querySelector('.fh-in-cart-check');
                             if (existing) existing.remove();
                             if (requestedIds.has(batchId)) {
                                 const chk = document.createElement('span');
                                 chk.className = 'fh-in-cart-check';
                                 chk.textContent = '\u2713';
-                                td.appendChild(chk);
+                                numCell.appendChild(chk);
                             }
                         });
                         // Mobile cards
@@ -1482,7 +1517,16 @@ trait FisHotel_Shortcodes {
                                     }
                                     return asc ? valA.localeCompare(valB) : valB.localeCompare(valA);
                                 });
-                                rows.forEach(function(row) { tbody.appendChild(row); });
+                                rows.forEach(function(row, idx) {
+                                    tbody.appendChild(row);
+                                    var numCell = row.querySelector('.fh-row-num');
+                                    if (numCell) {
+                                        // Preserve checkmark, update number
+                                        var chk = numCell.querySelector('.fh-in-cart-check');
+                                        numCell.textContent = idx + 1;
+                                        if (chk) numCell.appendChild(chk);
+                                    }
+                                });
                             });
                         });
                     })();
