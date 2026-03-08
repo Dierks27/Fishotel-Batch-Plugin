@@ -582,14 +582,14 @@ trait FisHotel_Shortcodes {
                 .fh-manifest-title {
                     font-family:'Special Elite',monospace; font-weight:700;
                     font-size:clamp(1.05rem,2.8vw,1.4rem); text-transform:uppercase;
-                    letter-spacing:0.1em; color:#1a1a2e; text-align:center;
+                    letter-spacing:0.1em; color:#0a0805; text-align:center;
                     margin-bottom:12px;
                 }
                 .fh-manifest-fields {
                     display:flex; flex-wrap:wrap; gap:4px 24px;
                     justify-content:center;
                     font-family:'Special Elite',monospace; font-size:0.78rem;
-                    color:#5a4a3a; text-transform:uppercase; letter-spacing:0.04em;
+                    color:#1a1209; text-transform:uppercase; letter-spacing:0.04em;
                 }
                 .fh-manifest-fields span {
                     white-space:nowrap;
@@ -607,7 +607,7 @@ trait FisHotel_Shortcodes {
                 .fishotel-open-table { width:100%; border-collapse:collapse; table-layout:fixed; }
                 .fishotel-open-table thead tr { background:#f2ead8; }
                 .fishotel-open-table th {
-                    text-align:left; color:#0d0a05; font-family:'Special Elite',monospace;
+                    text-align:left; color:#0a0805; font-family:'Special Elite',monospace;
                     font-weight:700; font-size:11px; text-transform:uppercase;
                     letter-spacing:0.06em; padding:10px 10px;
                     border-bottom:2px solid #3d2b1f;
@@ -619,7 +619,7 @@ trait FisHotel_Shortcodes {
                 .fishotel-open-table th[data-sort].sort-desc::after { content:" \25BC"; font-size:0.7em; }
                 .fishotel-open-table td {
                     padding:10px 10px; font-family:'Special Elite',monospace;
-                    font-size:13px; color:#1a1209;
+                    font-size:13px; color:#0a0805;
                     height:44px; box-sizing:border-box;
                     border-bottom:1px solid rgba(0,0,0,0.12);
                 }
@@ -640,7 +640,7 @@ trait FisHotel_Shortcodes {
                 }
                 /* Scientific Name — smaller, nowrap */
                 .fishotel-open-table td:nth-child(3) {
-                    color:#3d2b1f !important; font-style:italic; font-size:12px;
+                    color:#2a1f14 !important; font-style:italic; font-size:12px;
                     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
                 }
                 /* Inline size badge after common name */
@@ -656,9 +656,9 @@ trait FisHotel_Shortcodes {
                 .fishotel-open-table tbody tr:nth-child(even) td { background:transparent !important; }
 
                 /* ── Stock Colors — typed ink, no dots ── */
-                .fh-stock-green { color:#1a1209; font-weight:700; }
-                .fh-stock-orange { color:#1a1209; font-weight:700; }
-                .fh-stock-red { color:#1a1209; font-weight:700; }
+                .fh-stock-green { color:#0a0805; font-weight:700; }
+                .fh-stock-orange { color:#0a0805; font-weight:700; }
+                .fh-stock-red { color:#0a0805; font-weight:700; }
                 .fh-stock-low::after {
                     content:'*'; font-family:'Special Elite',monospace;
                     color:#3d2b1f; margin-left:1px;
@@ -673,11 +673,11 @@ trait FisHotel_Shortcodes {
                     border:1px solid rgba(0,0,0,0.1);
                 }
 
-                /* ── Qty Spinner (table) — plain typewritten ── */
+                /* ── Qty Spinner (table) — handwritten overlay ── */
                 .fh-qty-wrap {
-                    display:inline-flex; align-items:center;
+                    display:inline-flex; align-items:center; position:relative;
                     background:#f2ead8; border:1px solid rgba(0,0,0,0.2); border-radius:0;
-                    overflow:hidden;
+                    overflow:visible;
                 }
                 .fh-qty-wrap .qty-minus,
                 .fh-qty-wrap .qty-plus {
@@ -685,12 +685,26 @@ trait FisHotel_Shortcodes {
                     cursor:pointer; font-size:14px; font-family:'Special Elite',monospace;
                 }
                 .fh-qty-wrap .qty-minus:hover,
-                .fh-qty-wrap .qty-plus:hover { color:#1a1a2e; }
+                .fh-qty-wrap .qty-plus:hover { color:#0a0805; }
                 .fh-qty-wrap .qty-input {
-                    width:38px; text-align:center; background:#f8f3e8; color:#1a1a2e;
+                    width:38px; text-align:center; background:#f8f3e8; color:transparent;
                     border:none; border-left:1px solid rgba(0,0,0,0.12);
                     border-right:1px solid rgba(0,0,0,0.12);
                     padding:4px 0; font-family:'Special Elite',monospace; font-size:14px;
+                    position:relative; z-index:1;
+                }
+                /* Handwritten overlay on qty input */
+                .fh-hw-input-val {
+                    position:absolute; top:50%; left:50%;
+                    transform:translate(-50%,-50%);
+                    font-family:'Caveat',cursive; font-size:28px; color:#0d0a05;
+                    font-weight:700; line-height:1; pointer-events:none; z-index:2;
+                    white-space:nowrap;
+                }
+                /* Blank form line placeholder */
+                .fh-hw-input-val.fh-hw-blank {
+                    font-family:'Special Elite',monospace; font-size:14px; color:#c8b99a;
+                    letter-spacing:2px;
                 }
 
                 /* ── Request Button — ink stamp impression ── */
@@ -715,13 +729,12 @@ trait FisHotel_Shortcodes {
                 }
                 /* Ensure common name cell anchors absolutely-positioned children */
                 .fh-common-cell { position:relative; }
-                /* ── Handwritten qty in # column when in cart ── */
+                /* ── Handwritten qty in # margin — felt-tip pen annotation ── */
                 .fh-hw-qty {
-                    font-family:'Caveat',cursive; font-size:14px; color:#1a4d1a;
+                    font-family:'Caveat',cursive; font-size:26px; color:#1a4d1a;
                     line-height:1; font-weight:700;
-                    position:absolute; top:50%; left:50%;
-                    transform:translate(-50%, -50%);
-                    /* additional rotation set per-row via inline style */
+                    position:absolute; z-index:3;
+                    /* top, left, rotation set per-row via inline style */
                 }
 
                 /* ── CLOSED stamp — red rubber stamp diagonal ── */
@@ -938,7 +951,7 @@ trait FisHotel_Shortcodes {
                     <div class="fh-scroll-wrap">
                         <table class="fishotel-open-table">
                             <thead><tr>
-                                <th style="width:4%;text-align:center;">#</th>
+                                <th style="width:4%;text-align:center;">&nbsp;</th>
                                 <th data-sort="common" style="width:33%;">Common Name</th>
                                 <th data-sort="sci" style="width:24%;">Scientific Name</th>
                                 <th style="text-align:right;width:10%;" data-sort="price">Avg Price</th>
@@ -961,7 +974,7 @@ trait FisHotel_Shortcodes {
                                 $low_class   = ( $stock > 0 && $stock <= 5 ) ? ' fh-stock-low' : '';
                                 $row_class   = $stock == 0 ? ' class="fh-row-closed"' : '';
                                 echo '<tr' . $row_class . ' data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '" data-rownum="' . $row_num . '">';
-                                echo '<td class="fh-row-num">' . $row_num . '</td>';
+                                echo '<td class="fh-row-num"></td>';
                                 echo '<td class="fh-common-cell">' . esc_html( $master->post_title ) . ( $size ? ' <span class="fh-size-inline">' . esc_html( $size ) . '</span>' : '' ) . '</td>';
                                 echo '<td>' . esc_html( $sci_name ) . '</td>';
                                 echo '<td style="text-align:right;">' . number_format( $price, 2 ) . '</td>';
@@ -969,10 +982,11 @@ trait FisHotel_Shortcodes {
                                 echo '<span>' . intval( $stock ) . '</span></td>';
                                 echo '<td style="text-align:center;white-space:nowrap;">';
                                 if ( $stock > 0 ) {
-                                    echo '<div class="fh-qty-wrap">';
+                                    echo '<div class="fh-qty-wrap" data-idx="' . $row_num . '">';
                                     echo '<button class="qty-minus">&#x2212;</button>';
                                     echo '<input type="number" min="1" value="1" class="qty-input">';
                                     echo '<button class="qty-plus">+</button>';
+                                    echo '<span class="fh-hw-input-val">1</span>';
                                     echo '</div>';
                                     echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $master->post_title ) . '">Request</button>';
                                 } else {
@@ -1356,14 +1370,19 @@ trait FisHotel_Shortcodes {
                                     chk.style.left = nudge + 'px';
                                     commonCell.appendChild(chk);
                                 }
-                                // Handwritten qty in # column
+                                // Handwritten qty in # margin — felt-tip annotation
                                 const qty = qtyMap[batchId] || 0;
                                 if (numCell && qty > 0) {
+                                    const bid = parseInt(batchId) || rowNum;
+                                    const qRot = ((bid * 83 + 17) % 40) - 22;
+                                    const qTop = 8 + ((bid * 47 + 11) % 21);
+                                    const qLeft = -3 + ((bid * 31 + 5) % 12);
                                     const hw = document.createElement('span');
                                     hw.className = 'fh-hw-qty';
-                                    hw.textContent = 'x' + qty;
-                                    const qRot = rot > 0 ? -3 : 3;
-                                    hw.style.transform = 'translate(-50%,-50%) rotate(' + qRot + 'deg)';
+                                    hw.textContent = qty;
+                                    hw.style.transform = 'rotate(' + qRot + 'deg)';
+                                    hw.style.top = qTop + 'px';
+                                    hw.style.left = qLeft + 'px';
                                     numCell.appendChild(hw);
                                 }
                             }
@@ -1385,11 +1404,35 @@ trait FisHotel_Shortcodes {
                     }
                     markRequestedRows();
 
+                    // Handwritten qty display overlay
+                    function updateQtyDisplay(input) {
+                        const wrap = input.closest('.fh-qty-wrap');
+                        if (!wrap) return;
+                        const overlay = wrap.querySelector('.fh-hw-input-val');
+                        if (!overlay) return;
+                        const val = parseInt(input.value) || 0;
+                        const idx = parseInt(wrap.getAttribute('data-idx')) || 1;
+                        const rot = ((idx * 61 + 7) % 14) - 7;
+                        if (val > 0) {
+                            overlay.textContent = val;
+                            overlay.className = 'fh-hw-input-val';
+                            overlay.style.transform = 'translate(-50%,-50%) rotate(' + rot + 'deg)';
+                        } else {
+                            overlay.textContent = '____';
+                            overlay.className = 'fh-hw-input-val fh-hw-blank';
+                            overlay.style.transform = 'translate(-50%,-50%)';
+                        }
+                    }
+
+                    // Init all overlays on load
+                    document.querySelectorAll('.fh-qty-wrap .qty-input').forEach(inp => updateQtyDisplay(inp));
+
                     document.querySelectorAll(".qty-minus").forEach(btn => {
                         btn.addEventListener("click", function() {
                             const input = this.nextElementSibling;
                             let val = parseInt(input.value) || 1;
                             if (val > 1) input.value = val - 1;
+                            updateQtyDisplay(input);
                         });
                     });
                     document.querySelectorAll(".qty-plus").forEach(btn => {
@@ -1397,7 +1440,12 @@ trait FisHotel_Shortcodes {
                             const input = this.previousElementSibling;
                             let val = parseInt(input.value) || 1;
                             input.value = val + 1;
+                            updateQtyDisplay(input);
                         });
+                    });
+                    // Direct input typing
+                    document.querySelectorAll('.fh-qty-wrap .qty-input').forEach(inp => {
+                        inp.addEventListener('input', function() { updateQtyDisplay(this); });
                     });
 
                     document.querySelectorAll(".add-to-request").forEach(btn => {
@@ -1568,16 +1616,7 @@ trait FisHotel_Shortcodes {
                                     }
                                     return asc ? valA.localeCompare(valB) : valB.localeCompare(valA);
                                 });
-                                rows.forEach(function(row, idx) {
-                                    tbody.appendChild(row);
-                                    var numCell = row.querySelector('.fh-row-num');
-                                    if (numCell) {
-                                        // Preserve checkmark, update number
-                                        var chk = numCell.querySelector('.fh-in-cart-check');
-                                        numCell.textContent = idx + 1;
-                                        if (chk) numCell.appendChild(chk);
-                                    }
-                                });
+                                rows.forEach(function(row) { tbody.appendChild(row); });
                             });
                         });
                     })();
