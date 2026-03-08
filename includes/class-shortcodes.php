@@ -193,7 +193,7 @@ trait FisHotel_Shortcodes {
             $bp_deposit_paid = is_user_logged_in() && ( floatval( get_user_meta( get_current_user_id(), '_fishotel_wallet_balance', true ) ) >= $bp_deposit || ! empty( $prev_items ) );
             ?>
 
-            <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Klee+One&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Klee+One&family=Patrick+Hand&display=swap" rel="stylesheet">
             <style>
                 /* ── PanAm Gate Theme — Globals ── */
                 .fh-gate-wrap {
@@ -399,7 +399,7 @@ trait FisHotel_Shortcodes {
                 .fh-bp-open-fish-table td {
                     padding:5px 8px; border-bottom:1px solid rgba(61,43,31,0.15);
                     font-size:15px; color:#0a0805;
-                    font-family:'Klee One',cursive; text-transform:none;
+                    font-family:'Patrick Hand',cursive; text-transform:none;
                 }
                 .fh-bp-open-fish-table td:first-child { padding-left:8px; }
                 .fh-bp-open-fish-table td:nth-child(2) { text-align:center; }
