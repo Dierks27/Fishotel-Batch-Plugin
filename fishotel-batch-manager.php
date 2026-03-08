@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.60 - Footer DEPARTURES/ARRIVALS lit/unlit state.
- * Version:           2.60
+ * Description:       Stable 2.61 - Boarding pass card redesign + Departure Manifest gate board styling.
+ * Version:           2.61
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.60' );
+define( 'FISHOTEL_VERSION', '2.61' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

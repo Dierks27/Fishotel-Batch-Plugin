@@ -121,6 +121,11 @@ trait FisHotel_Shortcodes {
             $route_num = substr( $route_num, 0, 4 ); // cap at 4 digits
             if ( ! $route_num ) $route_num = '001';
             $flight_number = 'FHI-' . $origin_code . $route_num;
+
+            // Boarding pass stub data
+            $arrival_dates  = get_option( 'fishotel_batch_arrival_dates', [] );
+            $arrival_date   = $arrival_dates[ $batch_name ] ?? '';
+            $bp_deposit     = $this->get_deposit_amount( $batch_name );
             ?>
 
             <!-- ===== Login Modal — GATE ACCESS REQUIRED ===== -->
@@ -185,6 +190,7 @@ trait FisHotel_Shortcodes {
                     }
                 }
             }
+            $bp_deposit_paid = is_user_logged_in() && ( floatval( get_user_meta( get_current_user_id(), '_fishotel_wallet_balance', true ) ) >= $bp_deposit || ! empty( $prev_items ) );
             ?>
 
             <style>
@@ -332,66 +338,146 @@ trait FisHotel_Shortcodes {
                     .fh-flap { width:20px; height:30px; min-width:20px; font-size:15px; }
                 }
 
-                /* ── Boarding Request Card ── */
-                .fh-boarding-card {
-                    background:#0c161f; border:2px solid #b5a165; border-radius:10px;
-                    overflow:hidden; margin-bottom:24px;
+                /* ── Boarding Pass Card ── */
+                .fh-bp-open { position:relative; margin-bottom:24px; }
+                .fh-bp-open-inner {
+                    display:flex; background:#0c161f; border-radius:10px; overflow:hidden;
+                    font-family:'Oswald',sans-serif; color:#fff; position:relative;
                 }
-                .fh-boarding-header {
-                    padding:14px 24px; border-bottom:1px solid #b5a165;
-                    font-family:'Oswald',sans-serif; font-weight:700;
-                    font-size:clamp(0.85rem,2vw,1.1rem); text-transform:uppercase;
-                    letter-spacing:0.12em; color:#b5a165;
+                .fh-bp-open::after {
+                    content:''; position:absolute; inset:0; border-radius:10px;
+                    filter:url(#fh-paper-grain); background:rgba(255,255,255,0.04);
+                    pointer-events:none; z-index:1; mix-blend-mode:overlay;
                 }
-                .fh-boarding-body { padding:18px 24px; }
-                #request-list div { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(181,161,101,0.2); }
-                #request-list span { max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#fff; font-family:'Oswald',sans-serif; }
-                #request-list button { background:none; border:none; color:#e74c3c; font-size:1.6em; cursor:pointer; padding:0 8px; }
-                #cart-total { font-family:'Oswald',sans-serif; font-weight:700; color:#e67e22; margin:14px 0; font-size:1.2em; }
+                .fh-bp-open-left { flex:0 0 65%; display:flex; flex-direction:column; }
+                .fh-bp-open-header {
+                    display:flex; justify-content:space-between; align-items:center;
+                    padding:12px 20px; background:#111d28;
+                }
+                .fh-bp-open-header-title {
+                    font-size:0.8rem; font-weight:700; text-transform:uppercase;
+                    letter-spacing:0.14em; color:#b5a165;
+                }
+                .fh-bp-open-header-flight {
+                    font-size:0.8rem; font-weight:400; color:#5a6a7a;
+                    letter-spacing:0.1em;
+                }
+                .fh-bp-open-body { padding:20px; flex:1; }
+                .fh-bp-open-field-label {
+                    font-size:10px; color:#5a6a7a; text-transform:uppercase;
+                    letter-spacing:0.1em; margin:0 0 2px; font-weight:400;
+                }
+                .fh-bp-open-field-value {
+                    font-size:1.15rem; font-weight:700; margin:0 0 14px;
+                }
+                .fh-bp-open-route {
+                    display:flex; align-items:flex-start; gap:16px; margin-bottom:20px;
+                }
+                .fh-bp-open-route-arrow {
+                    color:#5a6a7a; font-size:1.2rem; padding-top:14px;
+                }
+                .fh-bp-open-fish-table {
+                    width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:6px;
+                }
+                .fh-bp-open-fish-table thead tr { background:rgba(181,161,101,0.15); }
+                .fh-bp-open-fish-table th {
+                    text-align:left; color:#b5a165; font-weight:400; font-size:10px;
+                    text-transform:uppercase; letter-spacing:0.08em; padding:6px 10px;
+                    border-bottom:1px solid #333;
+                }
+                .fh-bp-open-fish-table th:last-child { text-align:center; }
+                .fh-bp-open-fish-table td {
+                    padding:6px 10px; border-bottom:1px solid #1a1a1a;
+                    font-size:13px; color:#fff;
+                }
+                .fh-bp-open-fish-table td:last-child { text-align:center; }
+                .fh-bp-open-fish-table tbody tr:nth-child(odd) { background:#0c161f; }
+                .fh-bp-open-fish-table tbody tr:nth-child(even) { background:#0f1e2d; }
+                .fh-bp-open-fish-table .fh-bp-prev-row { opacity:0.6; font-style:italic; }
+                .fh-bp-open-fish-table .fh-bp-remove-btn {
+                    background:none; border:none; color:#e74c3c; font-size:1.3em;
+                    cursor:pointer; padding:0 4px; line-height:1;
+                }
+                .fh-bp-open-empty {
+                    color:#5a6a7a; font-style:italic; padding:20px 0;
+                    text-align:center; font-size:0.9rem;
+                }
+                #cart-total {
+                    font-family:'Oswald',sans-serif; font-weight:700; color:#e67e22;
+                    margin:12px 0; font-size:1.1em; text-align:right;
+                }
                 #submit-requests {
-                    width:auto; padding:14px 40px; font-size:16px; font-weight:700;
+                    width:100%; padding:14px 40px; font-size:16px; font-weight:700;
                     background:#e67e22; color:#0c161f; border:none; border-radius:4px;
-                    cursor:pointer; display:block; margin:4px auto 0;
+                    cursor:pointer; display:block;
                     font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:0.06em;
                 }
                 #submit-requests:hover { background:#d4700f; }
 
-                /* ── Observation Deck (logged-out) ── */
-                .fh-obs-deck {
-                    background:#0c161f; border:2px solid #b5a165; border-radius:10px;
-                    overflow:hidden; margin-bottom:24px;
+                /* Stub (right panel) */
+                .fh-bp-open-stub {
+                    flex:0 0 35%; padding:24px 20px 24px 28px;
+                    display:flex; flex-direction:column; gap:12px;
+                    border-left:2px dashed #b5a165; position:relative;
+                    background:#0c161f;
                 }
-                .fh-obs-header {
-                    padding:14px 24px; border-bottom:1px solid #b5a165;
-                    font-family:'Oswald',sans-serif; font-weight:700;
-                    font-size:clamp(0.85rem,2vw,1.1rem); text-transform:uppercase;
-                    letter-spacing:0.12em; color:#b5a165;
+                .fh-bp-open-scissors {
+                    position:absolute; top:-2px; left:-10px; font-size:16px;
+                    color:#b5a165; z-index:2; line-height:1;
                 }
-                .fh-obs-body {
-                    padding:24px; text-align:center;
+                .fh-bp-open-stub-label {
+                    font-size:10px; color:#5a6a7a; text-transform:uppercase;
+                    letter-spacing:0.1em; margin:0; font-weight:400;
                 }
-                .fh-obs-body p { color:#8a9bae; font-family:'Oswald',sans-serif; margin:0 0 16px; font-size:1rem; }
-                .fh-obs-counts {
-                    display:flex; gap:16px; justify-content:center; margin-bottom:18px;
+                .fh-bp-open-stub-value {
+                    font-size:1rem; font-weight:700; margin:0;
                 }
-                .fh-obs-count-item {
-                    text-align:center;
-                }
-                .fh-obs-count-item .fh-obs-num {
-                    font-family:'Oswald',sans-serif; font-weight:700; font-size:1.4rem; color:#e67e22;
-                }
-                .fh-obs-count-item .fh-obs-lbl {
-                    font-family:'Oswald',sans-serif; font-weight:400; font-size:0.7rem;
-                    text-transform:uppercase; letter-spacing:0.1em; color:#b5a165;
-                }
-                .fh-obs-login-btn {
-                    display:inline-block; padding:12px 32px;
-                    background:#e67e22; color:#0c161f;
-                    font-family:'Oswald',sans-serif; font-weight:700; font-size:0.95rem;
+                .fh-bp-open-deposit-stamp {
+                    display:inline-block; border:2px solid #e67e22; border-radius:4px;
+                    padding:6px 14px; font-weight:700; font-size:0.7rem;
                     text-transform:uppercase; letter-spacing:0.06em;
-                    border:none; border-radius:4px; cursor:pointer;
+                    transform:rotate(-12deg); color:#e67e22; margin-top:4px;
+                    align-self:flex-start;
                 }
-                .fh-obs-login-btn:hover { background:#d4700f; }
+                .fh-bp-open-vertical {
+                    writing-mode:vertical-rl; text-orientation:mixed;
+                    transform:rotate(180deg);
+                    font-size:1rem; font-weight:700; letter-spacing:0.15em;
+                    text-transform:uppercase; color:rgba(181,161,101,0.2);
+                    position:absolute; right:8px; top:50%;
+                    transform:rotate(180deg) translateX(50%);
+                }
+
+                /* Logged-out ghost / overlay */
+                .fh-bp-open-ghost { filter:blur(5px); pointer-events:none; user-select:none; }
+                .fh-bp-open-login-overlay {
+                    position:absolute; inset:0; display:flex; align-items:center;
+                    justify-content:center; flex-direction:column; gap:0;
+                    background:rgba(12,22,31,0.82); border-radius:10px; z-index:2;
+                }
+                .fh-bp-open-login-link {
+                    display:flex; flex-direction:column; align-items:center; gap:8px;
+                    font-family:'Oswald',sans-serif; font-size:1.1rem; color:#b5a165;
+                    text-transform:uppercase; letter-spacing:0.08em;
+                    text-decoration:none; transition:color 0.2s;
+                }
+                .fh-bp-open-login-link:hover { color:#e67e22; }
+                .fh-bp-open-lock { font-size:2rem; display:block; }
+
+                /* Boarding pass mobile */
+                @media (max-width:700px) {
+                    .fh-bp-open-inner { flex-direction:column; }
+                    .fh-bp-open-left { flex:none; }
+                    .fh-bp-open-stub {
+                        flex:none; border-left:none; border-top:2px dashed #b5a165;
+                        flex-direction:row; flex-wrap:wrap; gap:12px 20px;
+                        padding:16px 20px;
+                    }
+                    .fh-bp-open-stub > div { flex:0 0 auto; }
+                    .fh-bp-open-vertical { display:none; }
+                    .fh-bp-open-scissors { display:none; }
+                    .fh-bp-open-route { flex-wrap:wrap; gap:8px; }
+                }
 
                 /* ── Departure Manifest Card ── */
                 .fh-manifest-card {
@@ -399,10 +485,18 @@ trait FisHotel_Shortcodes {
                     overflow:hidden; margin-bottom:24px;
                 }
                 .fh-manifest-header {
-                    padding:14px 24px; border-bottom:1px solid #b5a165;
+                    padding:16px 24px; background:#111d28;
+                    border-bottom:1px solid rgba(181,161,101,0.3);
+                }
+                .fh-manifest-title {
                     font-family:'Oswald',sans-serif; font-weight:700;
-                    font-size:clamp(0.85rem,2vw,1.1rem); text-transform:uppercase;
+                    font-size:clamp(0.9rem,2.5vw,1.15rem); text-transform:uppercase;
                     letter-spacing:0.12em; color:#b5a165;
+                }
+                .fh-manifest-subtitle {
+                    font-family:'Oswald',sans-serif; font-weight:400;
+                    font-size:0.75rem; color:#5a6a7a; margin-top:4px;
+                    letter-spacing:0.1em; text-transform:uppercase;
                 }
 
                 /* ── Desktop Table ── */
@@ -435,6 +529,13 @@ trait FisHotel_Shortcodes {
                 .fh-stock-green { color:#44ff66; font-weight:700; }
                 .fh-stock-orange { color:#e67e22; font-weight:700; }
                 .fh-stock-red { color:#ff4444; font-weight:700; }
+                .fh-stock-dot {
+                    display:inline-block; width:8px; height:8px; border-radius:50%;
+                    margin-right:6px; vertical-align:middle;
+                }
+                .fh-stock-dot-green { background:#44ff66; }
+                .fh-stock-dot-orange { background:#e67e22; }
+                .fh-row-closed { opacity:0.5; }
 
                 /* ── Size Badge ── */
                 .fh-size-badge {
@@ -486,6 +587,7 @@ trait FisHotel_Shortcodes {
                     padding:10px 14px; font-size:0.95em; font-family:'Oswald',sans-serif;
                     border:1px solid #b5a165; border-radius:4px; background:#0c161f;
                     color:#b5a165; flex:1; min-width:150px;
+                    text-transform:uppercase; letter-spacing:0.04em;
                 }
                 .fh-mobile-controls input {
                     padding:10px 14px; font-size:0.95em; font-family:'Oswald',sans-serif;
@@ -555,39 +657,78 @@ trait FisHotel_Shortcodes {
                     </div>
                 </div>
 
-                <!-- ===== My Boarding Request (logged-in) / Observation Deck (logged-out) ===== -->
-                <?php if ( is_user_logged_in() ) : ?>
-                <div class="fh-boarding-card" id="my-requests">
-                    <div class="fh-boarding-header">My Boarding Request</div>
-                    <div class="fh-boarding-body">
-                        <div id="request-list" style="min-height:36px;color:#8a9bae;">No fish requested yet.</div>
-                        <div id="cart-total">Total: $0.00</div>
-                        <button id="submit-requests">Submit My Requests</button>
+                <!-- ===== Boarding Pass ===== -->
+                <svg width="0" height="0" style="position:absolute;"><filter id="fh-paper-grain"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter></svg>
+                <div class="fh-bp-open" id="my-requests">
+                    <?php if ( ! is_user_logged_in() ) : ?>
+                    <div class="fh-bp-open-login-overlay">
+                        <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="fh-bp-open-login-link">
+                            <span class="fh-bp-open-lock">&#x1F512;</span>
+                            LOG IN TO SEE YOUR BOARDING PASS
+                        </a>
                     </div>
-                </div>
-                <?php else : ?>
-                <div class="fh-obs-deck">
-                    <div class="fh-obs-header">Observation Deck</div>
-                    <div class="fh-obs-body">
-                        <p>Log in to place your boarding request</p>
-                        <div class="fh-obs-counts">
-                            <div class="fh-obs-count-item">
-                                <div class="fh-obs-num"><?php echo $total_species; ?></div>
-                                <div class="fh-obs-lbl">Species</div>
+                    <?php endif; ?>
+                    <div class="fh-bp-open-inner<?php echo ! is_user_logged_in() ? ' fh-bp-open-ghost' : ''; ?>">
+                        <div class="fh-bp-open-left">
+                            <div class="fh-bp-open-header">
+                                <span class="fh-bp-open-header-title">Boarding Pass</span>
+                                <span class="fh-bp-open-header-flight"><?php echo esc_html( $flight_number ); ?></span>
                             </div>
-                            <div class="fh-obs-count-item">
-                                <div class="fh-obs-num"><?php echo $total_stock; ?></div>
-                                <div class="fh-obs-lbl">Available</div>
+                            <div class="fh-bp-open-body">
+                                <p class="fh-bp-open-field-label">Passenger</p>
+                                <p class="fh-bp-open-field-value"><?php echo is_user_logged_in() ? esc_html( wp_get_current_user()->display_name ) : 'Guest'; ?></p>
+                                <div class="fh-bp-open-route">
+                                    <div>
+                                        <p class="fh-bp-open-field-label">From</p>
+                                        <p class="fh-bp-open-field-value"><?php echo esc_html( strtoupper( $origin_name ) ); ?></p>
+                                    </div>
+                                    <div class="fh-bp-open-route-arrow">&#x2708;</div>
+                                    <div>
+                                        <p class="fh-bp-open-field-label">To</p>
+                                        <p class="fh-bp-open-field-value">CHAMPLIN, MN</p>
+                                    </div>
+                                </div>
+                                <div id="request-list" style="min-height:36px;"></div>
+                                <div id="cart-total">Total: $0.00</div>
+                                <button id="submit-requests">Submit My Requests</button>
                             </div>
                         </div>
-                        <button class="fh-obs-login-btn" onclick="showLoginModal()">Log In to Request</button>
+                        <div class="fh-bp-open-stub">
+                            <span class="fh-bp-open-scissors">&#x2702;</span>
+                            <div>
+                                <p class="fh-bp-open-stub-label">Flight</p>
+                                <p class="fh-bp-open-stub-value"><?php echo esc_html( $flight_number ); ?></p>
+                            </div>
+                            <div>
+                                <p class="fh-bp-open-stub-label">Gate</p>
+                                <p class="fh-bp-open-stub-value">QT-1</p>
+                            </div>
+                            <div>
+                                <p class="fh-bp-open-stub-label">Batch</p>
+                                <p class="fh-bp-open-stub-value"><?php echo esc_html( $batch_name ); ?></p>
+                            </div>
+                            <div>
+                                <p class="fh-bp-open-stub-label">Deposit</p>
+                                <p class="fh-bp-open-stub-value">$<?php echo number_format( $bp_deposit, 2 ); ?></p>
+                            </div>
+                            <?php if ( $bp_deposit_paid ) : ?>
+                            <div class="fh-bp-open-deposit-stamp">Deposit Paid</div>
+                            <?php endif; ?>
+                            <div>
+                                <p class="fh-bp-open-stub-label">Arrival</p>
+                                <p class="fh-bp-open-stub-value"><?php echo $arrival_date ? esc_html( strtoupper( date( 'M j, Y', strtotime( $arrival_date ) ) ) ) : 'TBD'; ?></p>
+                            </div>
+                            <span class="fh-bp-open-vertical">Boarding Pass</span>
+                        </div>
                     </div>
                 </div>
-                <?php endif; ?>
 
                 <!-- ===== Departure Manifest ===== -->
                 <div class="fh-manifest-card">
-                    <div class="fh-manifest-header">Departure Manifest</div>
+                    <div class="fh-manifest-header">
+                        <div class="fh-manifest-title">&#x2708; Departure Manifest &mdash; Flight <?php echo esc_html( $flight_number ); ?></div>
+                        <div class="fh-manifest-subtitle"><?php echo intval( $total_species ); ?> Species &middot; <?php echo intval( $total_stock ); ?> Total Stock &middot; Gate QT-1</div>
+                    </div>
 
                     <!-- Mobile controls -->
                     <div class="fh-mobile-controls" style="padding:12px 16px 0;">
@@ -623,13 +764,17 @@ trait FisHotel_Shortcodes {
                                 $size = '';
                                 $title_to_check = $master->post_title . ' ' . $bp->post_title;
                                 if ( preg_match( '/\((SM|MED|Lrg|XL|Nano|Tiny)\)/i', $title_to_check, $matches ) ) $size = strtoupper( $matches[1] );
-                                $stock_class = $stock > 5 ? 'fh-stock-green' : ( $stock > 0 ? 'fh-stock-orange' : 'fh-stock-red' );
-                                echo '<tr data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '">';
+                                $stock_class = $stock > 10 ? 'fh-stock-green' : ( $stock > 0 ? 'fh-stock-orange' : 'fh-stock-red' );
+                                $dot_class   = $stock > 10 ? 'fh-stock-dot-green' : ( $stock > 0 ? 'fh-stock-dot-orange' : '' );
+                                $row_class   = $stock == 0 ? ' class="fh-row-closed"' : '';
+                                echo '<tr' . $row_class . ' data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '">';
                                 echo '<td style="font-weight:600;">' . esc_html( $master->post_title ) . '</td>';
                                 echo '<td style="font-style:italic;color:#8a9bae;">' . esc_html( $sci_name ) . '</td>';
-                                echo '<td style="text-align:center;">' . ( $size ? '<span class="fh-size-badge">' . esc_html( $size ) . '</span>' : '&mdash;' ) . '</td>';
+                                echo '<td style="text-align:center;">' . ( $size ? '<span class="fh-size-badge">' . esc_html( $size ) . '</span>' : '' ) . '</td>';
                                 echo '<td style="text-align:right;color:#e67e22;font-weight:600;">$' . number_format( $price, 2 ) . '</td>';
-                                echo '<td style="text-align:center;" class="' . $stock_class . '">' . $stock . '</td>';
+                                echo '<td style="text-align:center;" class="' . $stock_class . '">';
+                                if ( $dot_class ) echo '<span class="fh-stock-dot ' . $dot_class . '"></span>';
+                                echo intval( $stock ) . '</td>';
                                 echo '<td style="text-align:center;white-space:nowrap;">';
                                 if ( $stock > 0 ) {
                                     echo '<div class="fh-qty-wrap">';
@@ -660,14 +805,18 @@ trait FisHotel_Shortcodes {
                             $size = '';
                             $title_to_check = $master->post_title . ' ' . $bp->post_title;
                             if ( preg_match( '/\((SM|MED|Lrg|XL|Nano|Tiny)\)/i', $title_to_check, $matches ) ) $size = strtoupper( $matches[1] );
-                            $stock_class = $stock > 5 ? 'fh-stock-green' : ( $stock > 0 ? 'fh-stock-orange' : 'fh-stock-red' );
-                            echo '<div class="fish-card" data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '">';
+                            $stock_class = $stock > 10 ? 'fh-stock-green' : ( $stock > 0 ? 'fh-stock-orange' : 'fh-stock-red' );
+                            $dot_class   = $stock > 10 ? 'fh-stock-dot-green' : ( $stock > 0 ? 'fh-stock-dot-orange' : '' );
+                            $card_class  = 'fish-card' . ( $stock == 0 ? ' fh-row-closed' : '' );
+                            echo '<div class="' . $card_class . '" data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '">';
                             echo '<h4>' . esc_html( $master->post_title ) . '</h4>';
                             echo '<div class="sci">' . esc_html( $sci_name ) . '</div>';
                             echo '<div style="margin:10px 0;">';
                             if ( $size ) echo '<span class="fh-size-badge" style="margin-right:8px;">' . esc_html( $size ) . '</span>';
                             echo '<span class="price">$' . number_format( $price, 2 ) . '</span>';
-                            echo ' <span class="stock ' . $stock_class . '">Stock: ' . $stock . '</span>';
+                            echo ' <span class="stock ' . $stock_class . '">';
+                            if ( $dot_class ) echo '<span class="fh-stock-dot ' . $dot_class . '"></span>';
+                            echo 'Stock: ' . intval( $stock ) . '</span>';
                             echo '</div>';
                             if ( $stock > 0 ) {
                                 echo '<div class="action">';
@@ -933,34 +1082,31 @@ trait FisHotel_Shortcodes {
                     function renderRequestList() {
                         const list = document.getElementById("request-list");
                         if (!list) return;
-                        let html = '';
 
-                        // Previously submitted requests — dimmed, with × remove button.
-                        if (prevItems.length > 0) {
-                            html += '<div style="color:#5a6a7a;font-size:0.82em;font-style:italic;margin:2px 0 6px;font-family:Oswald,sans-serif;">Previously Requested</div>';
-                            prevItems.forEach((item, idx) => {
-                                const lt = (item.price * item.qty).toFixed(2);
-                                const safeName = item.fish_name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-                                html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(181,161,101,0.15);opacity:0.7;">
-                                    <span style="font-style:italic;color:#8a9bae;">${item.fish_name} × ${item.qty} = $${lt}</span>
-                                    <button onclick="removePrevItem(this,${idx},'${safeName}',${item.request_id},${item.batch_id},${item.price * item.qty})" title="Remove" style="background:none;border:none;color:#e74c3c;font-size:1.6em;cursor:pointer;padding:0 8px;">×</button>
-                                </div>`;
-                            });
+                        if (prevItems.length === 0 && cartItems.length === 0) {
+                            list.innerHTML = '<div class="fh-bp-open-empty">No fish selected yet &mdash; browse the manifest below</div>';
+                            updateCartTotal();
+                            return;
                         }
 
-                        // Current session new requests.
-                        if (cartItems.length > 0) {
-                            if (prevItems.length > 0) html += '<div style="color:#b5a165;font-size:0.82em;margin:10px 0 4px;font-family:Oswald,sans-serif;">New Requests</div>';
-                            cartItems.forEach((item, index) => {
-                                const lineTotal = item.price * item.qty;
-                                html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(181,161,101,0.2);" data-line-total="${lineTotal}" data-index="${index}">
-                                    <span>${item.fish_name} × ${item.qty} = $${lineTotal.toFixed(2)}</span>
-                                    <button onclick="removeItem(this)" title="Remove" style="background:none;border:none;color:#e74c3c;font-size:1.6em;cursor:pointer;padding:0 8px;">×</button>
-                                </div>`;
-                            });
-                        }
+                        let html = '<table class="fh-bp-open-fish-table"><thead><tr><th>Common Name</th><th>Qty</th><th>Unit Price</th><th>Total</th><th></th></tr></thead><tbody>';
 
-                        if (prevItems.length === 0 && cartItems.length === 0) html = '<span style="color:#5a6a7a;">No fish requested yet.</span>';
+                        // Previously submitted requests — dimmed rows
+                        prevItems.forEach((item, idx) => {
+                            const lt = (item.price * item.qty).toFixed(2);
+                            const safeName = item.fish_name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+                            html += `<tr class="fh-bp-prev-row"><td>${item.fish_name}</td><td>${item.qty}</td><td>$${parseFloat(item.price).toFixed(2)}</td><td>$${lt}</td>
+                                <td><button class="fh-bp-remove-btn" onclick="removePrevItem(this,${idx},'${safeName}',${item.request_id},${item.batch_id},${item.price * item.qty})" title="Remove">&times;</button></td></tr>`;
+                        });
+
+                        // Current session new requests
+                        cartItems.forEach((item, index) => {
+                            const lineTotal = item.price * item.qty;
+                            html += `<tr data-line-total="${lineTotal}" data-index="${index}"><td>${item.fish_name}</td><td>${item.qty}</td><td>$${parseFloat(item.price).toFixed(2)}</td><td style="color:#e67e22;font-weight:600;">$${lineTotal.toFixed(2)}</td>
+                                <td><button class="fh-bp-remove-btn" onclick="removeItem(this)" title="Remove">&times;</button></td></tr>`;
+                        });
+
+                        html += '</tbody></table>';
                         list.innerHTML = html;
                         updateCartTotal();
                     }
@@ -1046,7 +1192,7 @@ trait FisHotel_Shortcodes {
                     });
 
                     window.removeItem = function(btn) {
-                        const line = btn.parentNode;
+                        const line = btn.closest('tr');
                         const index = parseInt(line.getAttribute("data-index"));
                         const lineTotal = parseFloat(line.getAttribute("data-line-total")) || 0;
                         cartTotal -= lineTotal;
