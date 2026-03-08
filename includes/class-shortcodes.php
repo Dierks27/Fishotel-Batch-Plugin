@@ -90,14 +90,6 @@ trait FisHotel_Shortcodes {
             foreach ( $ticker_msgs as $msg ) {
                 $msg = str_replace( [ '{species}', '{stock}' ], [ $total_species, intval( $total_stock ) ], $msg );
                 $msg = strtoupper( trim( $msg ) );
-                // Truncate to 24 chars (desktop COLS) at last full word boundary
-                if ( strlen( $msg ) > 24 ) {
-                    $msg = substr( $msg, 0, 24 );
-                    $last_space = strrpos( $msg, ' ' );
-                    if ( $last_space !== false && $last_space > 10 ) {
-                        $msg = substr( $msg, 0, $last_space );
-                    }
-                }
                 $ticker_resolved[] = $msg;
             }
             $closed_dates   = get_option( 'fishotel_batch_closed_dates', [] );
@@ -236,15 +228,15 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-board-row:last-child { border-bottom:none; box-shadow:none; }
                 .fh-board-label {
-                    width:90px; min-width:90px; background:#111;
-                    padding:4px 10px 4px 14px; display:flex; align-items:center; justify-content:flex-end;
+                    width:120px; min-width:120px; background:#111;
+                    padding:4px 12px 4px 16px; display:flex; align-items:center; justify-content:flex-end;
                     font-family:'Oswald',sans-serif; font-weight:700; font-size:clamp(0.55rem,1.4vw,0.72rem);
                     text-transform:uppercase; letter-spacing:0.12em; color:#8a7a50;
                     border-right:1px solid #1a1a10;
                 }
                 .fh-board-tiles {
-                    flex:1; display:flex; align-items:center; gap:2px;
-                    padding:4px 10px; flex-wrap:nowrap; overflow:hidden;
+                    flex:1; display:flex; align-items:center;
+                    padding:4px 6px; flex-wrap:nowrap; overflow:hidden;
                     background:#0a0a0a;
                 }
                 /* ── Split-Flap Tiles — Authentic Fixed Grid ── */
@@ -260,10 +252,39 @@ trait FisHotel_Shortcodes {
                     opacity:0.92;
                 }
                 .fh-flap:nth-child(odd) { background:#121212; }
-                .fh-flap:nth-child(7n) { color:#d4bc7e; }
+                .fh-flap:nth-child(7n)   { color:#d4bc7e; }
+                .fh-flap:nth-child(11n)  { color:#b89640; }
+                .fh-flap:nth-child(5n+2) { color:#c4a055; }
+                .fh-flap:nth-child(13n)  { opacity:0.85; }
+                .fh-flap:nth-child(17n)  { color:#d8c080; }
+                .fh-flap:nth-child(3n+1) { color:#c09848; }
                 .fh-flap::after {
                     content:''; position:absolute; left:0; top:50%;
                     width:100%; height:1px; background:#000;
+                }
+                /* ── Status Light ── */
+                .fh-status-light {
+                    display:inline-block; width:10px; height:10px;
+                    border-radius:50%; margin-right:8px; vertical-align:middle;
+                    position:relative; top:-1px;
+                }
+                .fh-status-green {
+                    background:#00e040;
+                    box-shadow:0 0 4px #00e040, 0 0 10px #00cc33, 0 0 20px rgba(0,200,50,0.4);
+                    animation:fh-pulse-green 2.5s ease-in-out infinite;
+                }
+                .fh-status-amber {
+                    background:#e07b2a;
+                    box-shadow:0 0 4px #e07b2a, 0 0 10px #cc6a1f, 0 0 20px rgba(224,123,42,0.4);
+                    animation:fh-pulse-amber 2.5s ease-in-out infinite;
+                }
+                @keyframes fh-pulse-green {
+                    0%, 100% { opacity:1; box-shadow:0 0 4px #00e040, 0 0 10px #00cc33, 0 0 20px rgba(0,200,50,0.4); }
+                    50% { opacity:0.75; box-shadow:0 0 2px #00e040, 0 0 6px #00cc33, 0 0 12px rgba(0,200,50,0.2); }
+                }
+                @keyframes fh-pulse-amber {
+                    0%, 100% { opacity:1; box-shadow:0 0 4px #e07b2a, 0 0 10px #cc6a1f, 0 0 20px rgba(224,123,42,0.4); }
+                    50% { opacity:0.75; box-shadow:0 0 2px #e07b2a, 0 0 6px #cc6a1f, 0 0 12px rgba(224,123,42,0.2); }
                 }
 
                 @media (max-width:600px) {
@@ -274,7 +295,7 @@ trait FisHotel_Shortcodes {
                     .fh-board-footer { padding:5px 12px; }
                     .fh-board-footer-left, .fh-board-footer-right { font-size:10px; }
                     .fh-board-label { width:60px; min-width:60px; padding:3px 6px 3px 8px; font-size:0.45rem; }
-                    .fh-board-tiles { padding:3px 4px; gap:1px; }
+                    .fh-board-tiles { padding:3px 4px; }
                     .fh-flap { width:20px; height:30px; min-width:20px; font-size:15px; }
                 }
 
@@ -484,7 +505,7 @@ trait FisHotel_Shortcodes {
                 <div class="fh-board" id="fh-board">
                     <div class="fh-board-header">
                         <div class="fh-board-header-left"><span class="fh-board-header-icon">&#x2708;</span> FISHOTEL INTERNATIONAL</div>
-                        <div class="fh-board-header-right">FHI &middot; GATE OPEN</div>
+                        <div class="fh-board-header-right"><span class="fh-status-light <?php echo $status === 'open_ordering' ? 'fh-status-green' : 'fh-status-amber'; ?>"></span>FHI &middot; GATE OPEN</div>
                     </div>
                     <div class="fh-board-row"><div class="fh-board-label">Airport</div><div class="fh-board-tiles" data-fh-text="FISHOTEL INTL"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Destination</div><div class="fh-board-tiles" data-fh-text="CHAMPLIN, MN"></div></div>
@@ -650,28 +671,59 @@ trait FisHotel_Shortcodes {
                         }, 800);
                     }
 
-                    // ── Solari Departure Board — Fixed Grid ──
+                    // ── Solari Departure Board — Dynamic Fixed Grid ──
                     (function() {
                         var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789·,.- ';
-                        var COLS = window.innerWidth <= 600 ? 16 : 24;
                         var board = document.getElementById('fh-board');
                         if (!board) return;
 
-                        // Truncate text to COLS at last full word boundary
-                        function fitText(text) {
+                        // Dynamically calculate COLS from actual tile zone width
+                        var tileZone = board.querySelector('.fh-board-tiles');
+                        var TILE_W = window.innerWidth <= 600 ? 20 : 32;
+                        var zoneWidth = tileZone ? tileZone.offsetWidth : 640;
+                        var COLS = Math.floor(zoneWidth / TILE_W);
+                        if (COLS < 8) COLS = 8; // safety floor
+
+                        // Pad text to exactly COLS characters
+                        function padText(text) {
                             text = text || '';
-                            if (text.length > COLS) {
-                                text = text.substring(0, COLS);
-                                var ls = text.lastIndexOf(' ');
-                                if (ls > Math.floor(COLS / 2)) text = text.substring(0, ls);
-                            }
+                            if (text.length > COLS) text = text.substring(0, COLS);
                             while (text.length < COLS) text += ' ';
                             return text;
                         }
 
+                        // Chunk a long message into COLS-width pieces at word boundaries
+                        // Non-final chunks get » in last tile position
+                        function chunkMessage(msg) {
+                            msg = (msg || '').trim();
+                            if (msg.length <= COLS) return [padText(msg)];
+                            var chunks = [];
+                            var remaining = msg;
+                            while (remaining.length > 0) {
+                                if (remaining.length <= COLS) {
+                                    chunks.push(padText(remaining));
+                                    break;
+                                }
+                                // Reserve last position for » indicator
+                                var cut = remaining.substring(0, COLS - 1);
+                                var ls = cut.lastIndexOf(' ');
+                                if (ls > Math.floor(COLS / 3)) {
+                                    cut = remaining.substring(0, ls);
+                                } else {
+                                    cut = remaining.substring(0, COLS - 1);
+                                }
+                                var display = cut.trim();
+                                while (display.length < COLS - 1) display += ' ';
+                                display += '\u00BB'; // » continuation indicator
+                                chunks.push(display);
+                                remaining = remaining.substring(cut.length).trim();
+                            }
+                            return chunks;
+                        }
+
                         // Always render exactly COLS tiles — spaces are identical blank tiles
                         function buildTiles(container, text) {
-                            text = fitText(text);
+                            text = padText(text);
                             container.innerHTML = '';
                             for (var i = 0; i < COLS; i++) {
                                 var c = text[i];
@@ -685,7 +737,7 @@ trait FisHotel_Shortcodes {
 
                         // Animate tiles staggered left-to-right
                         function animateRow(container, text) {
-                            text = fitText(text);
+                            text = padText(text);
                             var flaps = container.querySelectorAll('.fh-flap');
                             flaps.forEach(function(flap, i) {
                                 var finalChar = text[i] || ' ';
@@ -715,17 +767,26 @@ trait FisHotel_Shortcodes {
                             animateRow(container, text);
                         });
 
-                        // NOTICE row — cycles through ticker messages
+                        // NOTICE row — cycles through ticker messages with chunking
                         var noticeMsgs = <?php echo wp_json_encode( $ticker_resolved ); ?>;
                         var noticeRow = document.getElementById('fh-notice-row');
-                        if (noticeRow && noticeMsgs.length > 1) {
-                            var noticeIdx = 0;
-                            setInterval(function() {
-                                noticeIdx = (noticeIdx + 1) % noticeMsgs.length;
-                                var msg = noticeMsgs[noticeIdx];
-                                buildTiles(noticeRow, msg);
-                                animateRow(noticeRow, msg);
-                            }, 4000);
+                        if (noticeRow && noticeMsgs.length > 0) {
+                            // Pre-chunk all messages into a flat display queue
+                            var displayQueue = [];
+                            for (var m = 0; m < noticeMsgs.length; m++) {
+                                var chunks = chunkMessage(noticeMsgs[m]);
+                                for (var k = 0; k < chunks.length; k++) {
+                                    displayQueue.push(chunks[k]);
+                                }
+                            }
+                            if (displayQueue.length > 1) {
+                                var qIdx = 0;
+                                setInterval(function() {
+                                    qIdx = (qIdx + 1) % displayQueue.length;
+                                    buildTiles(noticeRow, displayQueue[qIdx]);
+                                    animateRow(noticeRow, displayQueue[qIdx]);
+                                }, 4000);
+                            }
                         }
                     })();
 
