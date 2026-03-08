@@ -1314,7 +1314,7 @@ trait FisHotel_Shortcodes {
                             $fill_ok = ( $total_demand === 0 ) || ( $sa['alive'] >= $total_demand );
                         ?>
                         <tr>
-                            <td style="font-weight:500;"><?php echo esc_html( $bp->post_title ); ?></td>
+                            <td style="font-weight:500;"><?php echo esc_html( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title ) ); ?></td>
                             <td style="color:#8a9bae;font-style:italic;"><?php echo esc_html( $sci_name ); ?></td>
                             <td style="text-align:center;"><?php echo $sa['received']; ?></td>
                             <td style="text-align:center;color:<?php echo $sa['doa'] > 0 ? '#e74c3c' : '#666'; ?>;"><?php echo $sa['doa']; ?></td>

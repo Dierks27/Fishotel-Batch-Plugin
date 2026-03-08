@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.44 - Customer-facing arrival tracking view for arrived stage.
- * Version:           2.44
+ * Description:       Stable 2.45 - Strip batch suffix from fish names in arrival species summary.
+ * Version:           2.45
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.44' );
+define( 'FISHOTEL_VERSION', '2.45' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
