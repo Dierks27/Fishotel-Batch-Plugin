@@ -252,12 +252,6 @@ trait FisHotel_Shortcodes {
                     opacity:0.92;
                 }
                 .fh-flap:nth-child(odd) { background:#121212; }
-                .fh-flap:nth-child(7n)   { color:#d4bc7e; }
-                .fh-flap:nth-child(11n)  { color:#b89640; }
-                .fh-flap:nth-child(5n+2) { color:#c4a055; }
-                .fh-flap:nth-child(13n)  { opacity:0.85; }
-                .fh-flap:nth-child(17n)  { color:#d8c080; }
-                .fh-flap:nth-child(3n+1) { color:#c09848; }
                 .fh-flap::after {
                     content:''; position:absolute; left:0; top:50%;
                     width:100%; height:1px; background:#000;
@@ -731,16 +725,29 @@ trait FisHotel_Shortcodes {
                             return chunks;
                         }
 
+                        // Tile color aging — varies per tile using a simple hash
+                        var AMBER_SHADES = ['#c8a84b','#d4bc7e','#b89640','#c4a055','#c09848','#d8c080','#bfa24a','#cbb060'];
+                        var rowCounter = 0;
+                        function tileHash(row, col) {
+                            // Scatter function — no visible pattern across rows or columns
+                            return ((row * 7 + col * 13 + row * col * 3 + 37) * 2654435761) >>> 0;
+                        }
+
                         // Always render exactly COLS tiles — spaces are identical blank tiles
                         function buildTiles(container, text) {
                             text = padText(text);
                             container.innerHTML = '';
+                            var r = rowCounter++;
                             for (var i = 0; i < COLS; i++) {
                                 var c = text[i];
                                 var flap = document.createElement('div');
                                 flap.className = 'fh-flap';
                                 flap.setAttribute('data-char', c);
                                 if (c !== ' ') flap.textContent = c;
+                                // Apply unique color per tile based on row+col hash
+                                var h = tileHash(r, i);
+                                flap.style.color = AMBER_SHADES[h % AMBER_SHADES.length];
+                                if (h % 11 === 0) flap.style.opacity = '0.85'; // occasional faded flap
                                 container.appendChild(flap);
                             }
                         }
