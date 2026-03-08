@@ -168,12 +168,19 @@ trait FisHotel_Shortcodes {
                     font-family:'Oswald',sans-serif; color:#fff;
                 }
 
-                /* ── Solari Departure Board — Aged ── */
+                /* ── Solari Departure Board — Authentic Fixed Grid ── */
                 .fh-board {
                     width:100%; box-sizing:border-box;
-                    background:#0a0a0a; border-radius:6px;
-                    border:6px solid #1a1410;
-                    box-shadow:0 0 0 2px #0a0806, 0 8px 40px rgba(0,0,0,0.9), inset 0 0 60px rgba(0,0,0,0.4);
+                    background:#0a0a0a; border-radius:4px;
+                    border-top:7px solid #1e1a14;
+                    border-left:7px solid #1a1610;
+                    border-right:6px solid #14110c;
+                    border-bottom:5px solid #100e0a;
+                    box-shadow:
+                        0 0 0 1px #0a0806,
+                        4px 6px 20px rgba(0,0,0,0.85),
+                        8px 12px 50px rgba(0,0,0,0.6),
+                        inset 0 0 60px rgba(0,0,0,0.4);
                     overflow:hidden; margin-bottom:24px;
                     position:relative;
                 }
@@ -185,13 +192,34 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-board-header {
                     background:linear-gradient(to bottom, #161410, #111);
-                    padding:10px 20px; text-align:center;
-                    font-family:'Oswald',sans-serif; font-weight:700; font-size:clamp(0.6rem,1.6vw,0.8rem);
-                    text-transform:uppercase; letter-spacing:0.18em; color:#8a7a50;
+                    padding:9px 20px; display:flex; align-items:center; justify-content:space-between;
+                    font-family:'Oswald',sans-serif; font-weight:700;
+                    text-transform:uppercase;
                     border-bottom:1px solid #2a2520;
                     position:relative; z-index:2;
                 }
-                .fh-board-header-icon { opacity:0.7; }
+                .fh-board-header-left {
+                    font-size:22px; letter-spacing:0.08em; color:#f0e8d0;
+                    display:flex; align-items:center; gap:8px;
+                }
+                .fh-board-header-icon { opacity:0.7; font-size:20px; }
+                .fh-board-header-right {
+                    font-size:13px; letter-spacing:0.14em; color:#8a7a50;
+                }
+                .fh-board-footer {
+                    background:linear-gradient(to top, #161410, #111);
+                    padding:7px 20px; display:flex; align-items:center; justify-content:space-between;
+                    font-family:'Oswald',sans-serif; font-weight:700;
+                    text-transform:uppercase;
+                    border-top:1px solid #2a2520;
+                    position:relative; z-index:2;
+                }
+                .fh-board-footer-left {
+                    font-size:13px; letter-spacing:0.14em; color:#8a7a50;
+                }
+                .fh-board-footer-right {
+                    font-size:13px; letter-spacing:0.14em; color:#8a7a50;
+                }
                 .fh-board-row {
                     display:flex;
                     border-bottom:1px solid #0d0d0d;
@@ -200,43 +228,45 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-board-row:last-child { border-bottom:none; box-shadow:none; }
                 .fh-board-label {
-                    width:160px; min-width:160px; background:#111;
-                    padding:8px 16px 8px 20px; display:flex; align-items:center; justify-content:flex-end;
+                    width:140px; min-width:140px; background:#111;
+                    padding:4px 14px 4px 18px; display:flex; align-items:center; justify-content:flex-end;
                     font-family:'Oswald',sans-serif; font-weight:700; font-size:clamp(0.55rem,1.4vw,0.72rem);
                     text-transform:uppercase; letter-spacing:0.12em; color:#8a7a50;
                     border-right:1px solid #1a1a10;
                 }
                 .fh-board-tiles {
                     flex:1; display:flex; align-items:center; gap:2px;
-                    padding:6px 10px; flex-wrap:nowrap; overflow:hidden;
+                    padding:4px 10px; flex-wrap:nowrap; overflow:hidden;
                     background:#0a0a0a;
                 }
-                /* ── Split-Flap Tiles — Aged ── */
+                /* ── Split-Flap Tiles — Authentic Fixed Grid ── */
                 .fh-flap {
-                    width:34px; height:48px; min-width:34px;
-                    background:linear-gradient(to bottom, #1c1c1c 49%, #0a0a0a 49%, #0a0a0a 51%, #1c1c1c 51%);
+                    width:32px; height:46px; min-width:32px;
+                    background:linear-gradient(to bottom, #141414 48%, #080808 48%, #080808 52%, #141414 52%);
                     border-radius:2px;
                     box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 3px 0 #0a0806, 0 2px 6px rgba(0,0,0,0.9);
                     display:flex; align-items:center; justify-content:center;
                     font-family:'Courier New',monospace; font-weight:700;
-                    font-size:26px; color:#c8a84b; letter-spacing:-0.5px;
+                    font-size:24px; color:#c8a84b; letter-spacing:-0.5px;
                     text-transform:uppercase; position:relative;
                     opacity:0.92;
                 }
                 .fh-flap:nth-child(odd) {
-                    background:linear-gradient(to bottom, #181818 49%, #0a0a0a 49%, #0a0a0a 51%, #181818 51%);
+                    background:linear-gradient(to bottom, #121212 48%, #080808 48%, #080808 52%, #121212 52%);
                 }
                 .fh-flap:nth-child(7n) { color:#d4bc7e; }
                 .fh-flap::after { display:none; }
-                .fh-flap-space {
-                    background:transparent; box-shadow:none; width:16px; min-width:16px; opacity:1;
-                }
 
                 @media (max-width:600px) {
-                    .fh-board-label { width:90px; min-width:90px; padding:6px 8px 6px 10px; font-size:0.5rem; }
-                    .fh-board-tiles { padding:4px 6px; gap:1px; }
-                    .fh-flap { width:20px; height:30px; min-width:20px; font-size:16px; }
-                    .fh-flap-space { width:10px; min-width:10px; }
+                    .fh-board-header { padding:7px 12px; }
+                    .fh-board-header-left { font-size:14px; gap:5px; }
+                    .fh-board-header-icon { font-size:13px; }
+                    .fh-board-header-right { font-size:10px; }
+                    .fh-board-footer { padding:5px 12px; }
+                    .fh-board-footer-left, .fh-board-footer-right { font-size:10px; }
+                    .fh-board-label { width:70px; min-width:70px; padding:3px 6px 3px 8px; font-size:0.45rem; }
+                    .fh-board-tiles { padding:3px 4px; gap:1px; }
+                    .fh-flap { width:20px; height:30px; min-width:20px; font-size:15px; }
                 }
 
                 /* ── Boarding Request Card ── */
@@ -443,16 +473,23 @@ trait FisHotel_Shortcodes {
 
                 <!-- ===== Solari Departure Board ===== -->
                 <div class="fh-board" id="fh-board">
-                    <div class="fh-board-header"><span class="fh-board-header-icon">&#x2708;</span> FISHOTEL INTERNATIONAL &middot; FHI &middot; GATE OPEN</div>
-                    <div class="fh-board-row"><div class="fh-board-label">Airport</div><div class="fh-board-tiles" data-fh-text="FISHOTEL INTERNATIONAL"></div></div>
+                    <div class="fh-board-header">
+                        <div class="fh-board-header-left"><span class="fh-board-header-icon">&#x2708;</span> FISHOTEL INTERNATIONAL</div>
+                        <div class="fh-board-header-right">FHI &middot; GATE OPEN</div>
+                    </div>
+                    <div class="fh-board-row"><div class="fh-board-label">Airport</div><div class="fh-board-tiles" data-fh-text="FISHOTEL INTL"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Destination</div><div class="fh-board-tiles" data-fh-text="CHAMPLIN, MN"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Flight</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( strtoupper( $batch_name ) ); ?>"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Status</div><div class="fh-board-tiles" data-fh-text="NOW BOARDING"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Gate Closes</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( $gate_closes_display ); ?>"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Species</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( $total_species . ' SPECIES AVAILABLE' ); ?>"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Stock</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( intval( $total_stock ) . ' TOTAL STOCK' ); ?>"></div></div>
-                    <div class="fh-board-row"><div class="fh-board-label">Boarding</div><div class="fh-board-tiles" data-fh-text="FIRST COME · FIRST SERVED"></div></div>
+                    <div class="fh-board-row"><div class="fh-board-label">Boarding</div><div class="fh-board-tiles" data-fh-text="FCFS OPEN TO ALL"></div></div>
                     <div class="fh-board-row"><div class="fh-board-label">Notice</div><div class="fh-board-tiles" id="fh-notice-row" data-fh-text="<?php echo esc_attr( $ticker_resolved[0] ?? '' ); ?>"></div></div>
+                    <div class="fh-board-footer">
+                        <div class="fh-board-footer-left">ARRIVALS &middot; DEPARTURES</div>
+                        <div class="fh-board-footer-right">SOLARI DI UDINE</div>
+                    </div>
                 </div>
 
                 <!-- ===== My Boarding Request (logged-in) / Observation Deck (logged-out) ===== -->
@@ -604,21 +641,26 @@ trait FisHotel_Shortcodes {
                         }, 800);
                     }
 
-                    // ── Solari Departure Board ──
+                    // ── Solari Departure Board — Fixed Grid ──
                     (function() {
                         var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789·,.- ';
+                        var COLS = window.innerWidth <= 600 ? 16 : 24;
                         var board = document.getElementById('fh-board');
                         if (!board) return;
 
-                        // Build tiles for actual characters only — no trailing padding
+                        // Always render exactly COLS tiles — spaces are identical blank tiles
                         function buildTiles(container, text) {
                             text = text || '';
+                            // Pad or truncate to exactly COLS characters
+                            while (text.length < COLS) text += ' ';
+                            if (text.length > COLS) text = text.substring(0, COLS);
                             container.innerHTML = '';
-                            for (var i = 0; i < text.length; i++) {
+                            for (var i = 0; i < COLS; i++) {
                                 var c = text[i];
                                 var flap = document.createElement('div');
-                                flap.className = c === ' ' ? 'fh-flap fh-flap-space' : 'fh-flap';
+                                flap.className = 'fh-flap';
                                 flap.setAttribute('data-char', c);
+                                if (c !== ' ') flap.textContent = c;
                                 container.appendChild(flap);
                             }
                         }
@@ -626,6 +668,8 @@ trait FisHotel_Shortcodes {
                         // Animate tiles staggered left-to-right
                         function animateRow(container, text) {
                             text = text || '';
+                            while (text.length < COLS) text += ' ';
+                            if (text.length > COLS) text = text.substring(0, COLS);
                             var flaps = container.querySelectorAll('.fh-flap');
                             flaps.forEach(function(flap, i) {
                                 var finalChar = text[i] || ' ';
