@@ -386,24 +386,20 @@ trait FisHotel_Shortcodes {
                 .fh-bp-open-fish-table thead tr { background:transparent !important; }
                 .fh-bp-open-fish-table th,
                 .fh-bp-open-inner .fh-bp-open-body .fh-bp-open-fish-table thead th {
-                    text-align:left; color:#1a1209 !important; font-weight:400; font-size:15px;
-                    text-transform:none; letter-spacing:0; padding:5px 10px;
+                    text-align:left; color:#1a1209 !important; font-weight:400; font-size:11px;
+                    text-transform:uppercase; letter-spacing:0.05em; padding:5px 10px;
                     border-top:1.5px solid #3d2b1f !important;
                     border-bottom:1.5px solid #3d2b1f !important;
                     background:transparent !important;
-                    font-family:'Klee One',cursive;
-                }
-                .fh-bp-hw-header {
-                    display:inline-block; font-family:'Klee One',cursive;
-                    font-size:15px; color:#1a1209; font-weight:400;
+                    font-family:'Special Elite',monospace;
                 }
                 .fh-bp-open-fish-table th:nth-child(3),
                 .fh-bp-open-fish-table th:nth-child(4) { text-align:right; }
                 .fh-bp-open-fish-table th:last-child { text-align:center; }
                 .fh-bp-open-fish-table td {
                     padding:5px 8px; border-bottom:1px solid rgba(61,43,31,0.15);
-                    font-size:13px; color:#0a0805;
-                    font-family:'Special Elite',monospace;
+                    font-size:15px; color:#0a0805;
+                    font-family:'Klee One',cursive; text-transform:none;
                 }
                 .fh-bp-open-fish-table td:first-child { padding-left:8px; }
                 .fh-bp-open-fish-table td:nth-child(2) { text-align:center; }
@@ -1258,12 +1254,7 @@ trait FisHotel_Shortcodes {
                         if (prevItems.length > 0) {
                             html += '<div style="color:#3d2b1f;font-size:11px;text-transform:uppercase;letter-spacing:3px;margin:0 0 4px;font-family:Special Elite,monospace;font-weight:400;">Passenger Itinerary</div><div style="border-bottom:1px solid rgba(61,43,31,0.3);margin-bottom:6px;"></div>';
                         }
-                        html += '<table class="fh-bp-open-fish-table"><thead><tr>'
-                            + '<th><span class="fh-bp-hw-header" style="transform:rotate(-3deg)">Common Name</span></th>'
-                            + '<th><span class="fh-bp-hw-header" style="transform:rotate(2deg)">Qty</span></th>'
-                            + '<th><span class="fh-bp-hw-header" style="transform:rotate(-1deg)">Unit Price</span></th>'
-                            + '<th><span class="fh-bp-hw-header" style="transform:rotate(3deg)">Total</span></th>'
-                            + '<th></th></tr></thead><tbody>';
+                        html += '<table class="fh-bp-open-fish-table"><thead><tr><th>Common Name</th><th>Qty</th><th>Unit Price</th><th>Total</th><th></th></tr></thead><tbody>';
 
                         // Previously submitted requests
                         prevItems.forEach((item, idx) => {
