@@ -1136,6 +1136,216 @@ trait FisHotel_Shortcodes {
             return ob_get_clean();
         }
 
+        // ─── Stage 3b: Arrival tracking view (arrived) ────────────────────
+        if ( $status === 'arrived' ) {
+            $arrival_dates = get_option( 'fishotel_batch_arrival_dates', [] );
+            $arrival_date  = $arrival_dates[ $batch_name ] ?? '';
+            $arrival_fmt   = $arrival_date ? date( 'F j, Y', strtotime( $arrival_date ) ) : '';
+            $qt_end_fmt    = $arrival_date ? date( 'F j, Y', strtotime( $arrival_date . ' +14 days' ) ) : '';
+
+            // Load ALL non-admin requests for this batch, sorted by post date (FCFS)
+            $all_requests = get_posts( [
+                'post_type'   => 'fish_request',
+                'numberposts' => -1,
+                'post_status' => 'any',
+                'orderby'     => 'date',
+                'order'       => 'ASC',
+                'meta_query'  => [ [ 'key' => '_batch_name', 'value' => $batch_name, 'compare' => '=' ] ],
+            ] );
+
+            // Build FCFS queue per species: batch_id => [ [customer_id, qty, cumulative_end], ... ]
+            $fcfs = [];
+            foreach ( $all_requests as $req ) {
+                if ( get_post_meta( $req->ID, '_is_admin_order', true ) ) continue;
+                $cust_id   = intval( get_post_meta( $req->ID, '_customer_id', true ) );
+                $req_items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
+                foreach ( $req_items as $item ) {
+                    $bid = intval( $item['batch_id'] ?? 0 );
+                    $qty = intval( $item['qty'] ?? 1 );
+                    if ( ! $bid ) continue;
+                    if ( ! isset( $fcfs[ $bid ] ) ) $fcfs[ $bid ] = [];
+                    $prev_end = ! empty( $fcfs[ $bid ] ) ? end( $fcfs[ $bid ] )['cum_end'] : 0;
+                    $fcfs[ $bid ][] = [
+                        'customer_id' => $cust_id,
+                        'qty'         => $qty,
+                        'cum_end'     => $prev_end + $qty,
+                    ];
+                }
+            }
+
+            // Arrival meta per species
+            $species_arrival = [];
+            foreach ( $batch_posts as $bp ) {
+                $recv = intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) );
+                $doa  = intval( get_post_meta( $bp->ID, '_arrival_qty_doa', true ) );
+                $species_arrival[ $bp->ID ] = [ 'received' => $recv, 'doa' => $doa, 'alive' => $recv - $doa ];
+            }
+
+            // Current user items
+            $my_items   = [];
+            $uid        = is_user_logged_in() ? get_current_user_id() : 0;
+            if ( $uid ) {
+                foreach ( $all_requests as $req ) {
+                    if ( get_post_meta( $req->ID, '_is_admin_order', true ) ) continue;
+                    if ( intval( get_post_meta( $req->ID, '_customer_id', true ) ) !== $uid ) continue;
+                    $req_items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
+                    foreach ( $req_items as $item ) {
+                        $my_items[] = $item;
+                    }
+                }
+            }
+            ?>
+            <style>
+                .fh-arrival-wrap { max-width:800px; margin:0 auto; font-family:'Oswald',sans-serif; }
+                .fh-arrival-hero {
+                    background:#0c161f; border:2px solid #b5a165; border-radius:12px;
+                    padding:32px 28px; text-align:center; margin-bottom:24px;
+                    animation: fhPulseBorder 2s ease-in-out infinite;
+                }
+                @keyframes fhPulseBorder { 0%,100%{ border-color:#b5a165; } 50%{ border-color:#e67e22; } }
+                .fh-arrival-hero h2 { color:#e67e22; font-size:clamp(1.4rem,4vw,2rem); margin:0 0 6px; text-transform:uppercase; letter-spacing:0.08em; }
+                .fh-arrival-hero p { color:#b5a165; margin:0; font-size:0.95em; }
+                .fh-arrival-card {
+                    background:#0c161f; border:1px solid #333; border-radius:10px;
+                    padding:22px 24px; margin-bottom:24px;
+                }
+                .fh-arrival-card h3 {
+                    margin:0 0 14px; color:#b5a165; font-size:12px; text-transform:uppercase;
+                    letter-spacing:0.1em; font-weight:400;
+                }
+                .fh-arrival-tbl { width:100%; border-collapse:collapse; font-size:0.88rem; }
+                .fh-arrival-tbl thead tr { background:rgba(181,161,101,0.15); }
+                .fh-arrival-tbl th {
+                    text-align:left; color:#b5a165; font-weight:400; font-size:11px;
+                    text-transform:uppercase; letter-spacing:0.08em; padding:8px 10px;
+                }
+                .fh-arrival-tbl td { padding:8px 10px; color:#fff; border-bottom:1px solid #1a2a3a; }
+                .fh-arrival-tbl tbody tr:nth-child(odd) { background:#0c161f; }
+                .fh-arrival-tbl tbody tr:nth-child(even) { background:#0f1e2d; }
+                .fh-badge-ok { display:inline-block; background:#27ae60; color:#fff; font-size:11px; font-weight:700; padding:2px 10px; border-radius:10px; text-transform:uppercase; }
+                .fh-badge-short { display:inline-block; background:#e74c3c; color:#fff; font-size:11px; font-weight:700; padding:2px 10px; border-radius:10px; text-transform:uppercase; }
+                .fh-arrival-qt { background:#0c161f; border:1px solid #b5a165; border-radius:10px; padding:16px 24px; text-align:center; color:#b5a165; font-size:0.95em; }
+            </style>
+            <div class="fh-arrival-wrap">
+
+                <div class="fh-arrival-hero">
+                    <h2>🐠 Your Fish Are Here!</h2>
+                    <p><?php echo esc_html( $batch_name ); ?> — Arrived <?php echo esc_html( $arrival_fmt ); ?></p>
+                </div>
+
+                <?php if ( $uid && ! empty( $my_items ) ) : ?>
+                <div class="fh-arrival-card">
+                    <h3>Your Fish — Arrival Status</h3>
+                    <div style="overflow-x:auto;">
+                    <table class="fh-arrival-tbl">
+                        <thead><tr>
+                            <th>Common Name</th>
+                            <th style="text-align:center;">You Requested</th>
+                            <th style="text-align:center;">Arrived Alive</th>
+                            <th style="text-align:center;">Your Position</th>
+                            <th style="text-align:center;">Status</th>
+                        </tr></thead>
+                        <tbody>
+                        <?php foreach ( $my_items as $item ) :
+                            $bid      = intval( $item['batch_id'] ?? 0 );
+                            $my_qty   = intval( $item['qty'] ?? 1 );
+                            $sa       = $species_arrival[ $bid ] ?? [ 'received' => 0, 'doa' => 0, 'alive' => 0 ];
+                            $alive    = $sa['alive'];
+
+                            // Find this customer's position in the FCFS queue
+                            $position = '—';
+                            $filled   = false;
+                            if ( isset( $fcfs[ $bid ] ) ) {
+                                foreach ( $fcfs[ $bid ] as $entry ) {
+                                    if ( $entry['customer_id'] === $uid ) {
+                                        $position = $entry['cum_end'];
+                                        $filled   = $alive >= $entry['cum_end'];
+                                        break;
+                                    }
+                                }
+                            }
+                        ?>
+                        <tr>
+                            <td style="font-weight:500;"><?php echo esc_html( $item['fish_name'] ); ?></td>
+                            <td style="text-align:center;"><?php echo $my_qty; ?></td>
+                            <td style="text-align:center;"><?php echo $alive; ?></td>
+                            <td style="text-align:center;"><?php echo $position; ?></td>
+                            <td style="text-align:center;">
+                                <?php if ( $filled ) : ?>
+                                    <span class="fh-badge-ok">Filled</span>
+                                <?php else : ?>
+                                    <span class="fh-badge-short">Short</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+                <?php elseif ( ! $uid ) : ?>
+                <div class="fh-arrival-card" style="text-align:center;color:#aaa;">
+                    <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="color:#e67e22;">Log in</a> to see your personal arrival status.
+                </div>
+                <?php endif; ?>
+
+                <div class="fh-arrival-card">
+                    <h3>Full Species Summary</h3>
+                    <div style="overflow-x:auto;">
+                    <table class="fh-arrival-tbl">
+                        <thead><tr>
+                            <th>Common Name</th>
+                            <th>Scientific Name</th>
+                            <th style="text-align:center;">Arrived</th>
+                            <th style="text-align:center;">DOA</th>
+                            <th style="text-align:center;">Alive</th>
+                            <th style="text-align:center;">Fill</th>
+                        </tr></thead>
+                        <tbody>
+                        <?php foreach ( $batch_posts as $bp ) :
+                            $master_id = get_post_meta( $bp->ID, '_master_id', true );
+                            $sci_name  = $master_id ? (string) get_post_meta( $master_id, '_scientific_name', true ) : '';
+                            $sa        = $species_arrival[ $bp->ID ] ?? [ 'received' => 0, 'doa' => 0, 'alive' => 0 ];
+                            $total_demand = 0;
+                            if ( isset( $fcfs[ $bp->ID ] ) ) {
+                                $last = end( $fcfs[ $bp->ID ] );
+                                $total_demand = $last ? $last['cum_end'] : 0;
+                            }
+                            $fill_ok = ( $total_demand === 0 ) || ( $sa['alive'] >= $total_demand );
+                        ?>
+                        <tr>
+                            <td style="font-weight:500;"><?php echo esc_html( $bp->post_title ); ?></td>
+                            <td style="color:#8a9bae;font-style:italic;"><?php echo esc_html( $sci_name ); ?></td>
+                            <td style="text-align:center;"><?php echo $sa['received']; ?></td>
+                            <td style="text-align:center;color:<?php echo $sa['doa'] > 0 ? '#e74c3c' : '#666'; ?>;"><?php echo $sa['doa']; ?></td>
+                            <td style="text-align:center;color:#27ae60;font-weight:700;"><?php echo $sa['alive']; ?></td>
+                            <td style="text-align:center;">
+                                <?php if ( $total_demand === 0 ) : ?>
+                                    <span style="color:#666;">—</span>
+                                <?php elseif ( $fill_ok ) : ?>
+                                    <span class="fh-badge-ok">Filled</span>
+                                <?php else : ?>
+                                    <span class="fh-badge-short">Short</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <?php if ( $qt_end_fmt ) : ?>
+                <div class="fh-arrival-qt">
+                    🔬 Quarantine ends <strong><?php echo esc_html( $qt_end_fmt ); ?></strong>
+                </div>
+                <?php endif; ?>
+
+            </div>
+            <?php
+            return ob_get_clean();
+        }
+
         // Read-only closed batch view for all non-open_ordering stages.
         $my_items = [];
         $my_total = 0.0;
