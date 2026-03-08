@@ -142,11 +142,14 @@ trait FisHotel_Shortcodes {
                 <div style="background:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E&quot;),linear-gradient(165deg,#071420 0%,#060f1a 50%,#040c15 100%);background-size:150px 150px,cover;border:1px solid rgba(181,161,101,0.4);border-radius:3px;box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 0 1px rgba(181,161,101,0.1);padding:36px 40px 32px;width:400px;max-width:92%;color:#fff;position:relative;overflow:hidden;">
                     <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#b5a165 20%,#d4bc7e 50%,#b5a165 80%,transparent);"></div>
                     <h3 style="margin:0 0 24px;font-family:'Special Elite',monospace;font-size:13px;letter-spacing:0.3em;color:#d4bc7e;text-transform:uppercase;text-align:center;">Gate Access Required</h3>
-                    <form id="fishotel-login-form">
-                        <p><input type="text" id="fishotel-username" placeholder="Username or Email" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(181,161,101,0.3);color:#e8dcc0;font-family:'Special Elite',monospace;letter-spacing:0.05em;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(181,161,101,0.7)';this.style.background='rgba(255,255,255,0.09)';this.style.outline='none'" onblur="this.style.borderColor='rgba(181,161,101,0.3)';this.style.background='rgba(255,255,255,0.06)'"></p>
-                        <p><input type="password" id="fishotel-password" placeholder="Password" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(181,161,101,0.3);color:#e8dcc0;font-family:'Special Elite',monospace;letter-spacing:0.05em;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(181,161,101,0.7)';this.style.background='rgba(255,255,255,0.09)';this.style.outline='none'" onblur="this.style.borderColor='rgba(181,161,101,0.3)';this.style.background='rgba(255,255,255,0.06)'"></p>
-                        <p><button type="submit" id="fishotel-login-btn" style="width:100%;padding:12px;background:rgba(181,161,101,0.22);border:1.5px solid #d4bc7e;color:#f0e0a0;font-family:'Special Elite',monospace;font-size:12px;letter-spacing:0.25em;text-transform:uppercase;cursor:pointer;box-shadow:0 0 18px rgba(181,161,101,0.15);" onmouseover="this.style.background='rgba(181,161,101,0.32)'" onmouseout="this.style.background='rgba(181,161,101,0.22)'">&#x2726; &nbsp; Log In &nbsp; &#x2726;</button></p>
-                        <p style="text-align:center;margin:15px 0 0 0;"><a href="<?php echo wp_lostpassword_url(); ?>" style="color:rgba(212,188,126,0.5);font-family:'Special Elite',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;text-decoration:none;" onmouseover="this.style.color='#d4bc7e'" onmouseout="this.style.color='rgba(212,188,126,0.5)'">Forgot Password?</a></p>
+                    <form method="post" action="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>">
+                        <?php wp_nonce_field( 'fishotel_login', 'fishotel_login_nonce' ); ?>
+                        <input type="hidden" name="redirect_to" value="<?php echo esc_url( get_permalink() ); ?>">
+                        <input type="hidden" name="rememberme" value="forever">
+                        <p><input type="text" name="log" placeholder="USERNAME OR EMAIL" autocomplete="username" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(181,161,101,0.3);color:#e8dcc0;font-family:'Special Elite',monospace;letter-spacing:0.05em;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(181,161,101,0.7)';this.style.background='rgba(255,255,255,0.09)';this.style.outline='none'" onblur="this.style.borderColor='rgba(181,161,101,0.3)';this.style.background='rgba(255,255,255,0.06)'"></p>
+                        <p><input type="password" name="pwd" placeholder="PASSWORD" autocomplete="current-password" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(181,161,101,0.3);color:#e8dcc0;font-family:'Special Elite',monospace;letter-spacing:0.05em;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(181,161,101,0.7)';this.style.background='rgba(255,255,255,0.09)';this.style.outline='none'" onblur="this.style.borderColor='rgba(181,161,101,0.3)';this.style.background='rgba(255,255,255,0.06)'"></p>
+                        <p><button type="submit" style="width:100%;padding:12px;background:rgba(181,161,101,0.22);border:1.5px solid #d4bc7e;color:#f0e0a0;font-family:'Special Elite',monospace;font-size:12px;letter-spacing:0.25em;text-transform:uppercase;cursor:pointer;box-shadow:0 0 18px rgba(181,161,101,0.15);" onmouseover="this.style.background='rgba(181,161,101,0.32)'" onmouseout="this.style.background='rgba(181,161,101,0.22)'"><span class="fh-modal-btn-ornament">&#x2726;</span> LOG IN <span class="fh-modal-btn-ornament">&#x2726;</span></button></p>
+                        <p style="text-align:center;margin:15px 0 0 0;"><a href="<?php echo esc_url( wp_lostpassword_url() ); ?>" style="color:rgba(212,188,126,0.5);font-family:'Special Elite',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;text-decoration:none;" onmouseover="this.style.color='#d4bc7e'" onmouseout="this.style.color='rgba(212,188,126,0.5)'">Forgot Password?</a></p>
                     </form>
                     <button onclick="closeLoginModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:rgba(212,188,126,0.5);font-size:18px;cursor:pointer;" onmouseover="this.style.color='#d4bc7e'" onmouseout="this.style.color='rgba(212,188,126,0.5)'">&#x2715;</button>
                 </div>
@@ -1217,39 +1220,8 @@ trait FisHotel_Shortcodes {
                         }); // end requestAnimationFrame
                     })();
 
-                    function showLoginModal(batchId, price, fishName) {
+                    function showLoginModal() {
                         document.getElementById('fishotel-login-modal').style.display = 'flex';
-                        document.getElementById('fishotel-login-form').onsubmit = function(e) {
-                            e.preventDefault();
-                            const btn = document.getElementById('fishotel-login-btn');
-                            btn.innerHTML = 'Logging in...';
-                            btn.disabled = true;
-                            jQuery.ajax({
-                                url: "<?php echo admin_url( 'admin-ajax.php' ); ?>",
-                                type: "POST",
-                                data: {
-                                    action: "fishotel_ajax_login",
-                                    username: document.getElementById('fishotel-username').value,
-                                    password: document.getElementById('fishotel-password').value,
-                                    nonce: '<?php echo wp_create_nonce( 'fishotel_batch_ajax' ); ?>'
-                                },
-                                success: function(response) {
-                                    if (response.success) {
-                                        closeLoginModal();
-                                        location.reload();
-                                    } else {
-                                        alert(response.data.message || 'Login failed. Please try again.');
-                                        btn.innerHTML = 'LOG IN';
-                                        btn.disabled = false;
-                                    }
-                                },
-                                error: function() {
-                                    alert('Login error. Please try again.');
-                                    btn.innerHTML = 'LOG IN';
-                                    btn.disabled = false;
-                                }
-                            });
-                        };
                     }
 
                     function showHFUsernameModal(batchId, price, fishName) {

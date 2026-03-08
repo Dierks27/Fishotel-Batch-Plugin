@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.89 - Modal fractalNoise texture, darker overlay, autofill defeat.
- * Version:           2.89
+ * Description:       Stable v2.90 - Fix login modal: native WP POST with correct field names.
+ * Version:           2.90
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.89' );
+define( 'FISHOTEL_VERSION', '2.90' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
