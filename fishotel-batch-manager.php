@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.46 - Remove emojis from public-facing arrival page text.
- * Version:           2.46
+ * Description:       Stable 2.47 - Arrived/quarantine page full retro polish pass.
+ * Version:           2.47
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.46' );
+define( 'FISHOTEL_VERSION', '2.47' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

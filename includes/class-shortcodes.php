@@ -1194,55 +1194,140 @@ trait FisHotel_Shortcodes {
                     }
                 }
             }
+            // Quarantine countdown
+            $qt_days_left = 0;
+            if ( $arrival_date ) {
+                $qt_end_ts    = strtotime( $arrival_date . ' +14 days' );
+                $qt_days_left = max( 0, (int) ceil( ( $qt_end_ts - time() ) / 86400 ) );
+            }
             ?>
             <style>
-                .fh-arrival-wrap { max-width:800px; margin:0 auto; font-family:'Oswald',sans-serif; }
+                .fh-arrival-wrap {
+                    max-width:800px; margin:0 auto;
+                    font-family:'Oswald',sans-serif; color:#fff;
+                }
+                /* ── Hero Banner ── */
                 .fh-arrival-hero {
                     background:#0c161f; border:2px solid #b5a165; border-radius:12px;
-                    padding:32px 28px; text-align:center; margin-bottom:24px;
-                    animation: fhPulseBorder 2s ease-in-out infinite;
+                    padding:36px 28px 28px; text-align:center; margin-bottom:24px;
+                    position:relative; overflow:hidden;
                 }
-                @keyframes fhPulseBorder { 0%,100%{ border-color:#b5a165; } 50%{ border-color:#e67e22; } }
-                .fh-arrival-hero h2 { color:#e67e22; font-size:clamp(1.4rem,4vw,2rem); margin:0 0 6px; text-transform:uppercase; letter-spacing:0.08em; }
-                .fh-arrival-hero p { color:#b5a165; margin:0; font-size:0.95em; }
-                .fh-arrival-card {
-                    background:#0c161f; border:1px solid #333; border-radius:10px;
-                    padding:22px 24px; margin-bottom:24px;
+                .fh-arrival-hero h2 {
+                    font-family:'Oswald',sans-serif; font-weight:700;
+                    font-size:clamp(1.6rem,4vw,2.4rem); color:#e67e22;
+                    text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px;
                 }
-                .fh-arrival-card h3 {
-                    margin:0 0 14px; color:#b5a165; font-size:12px; text-transform:uppercase;
-                    letter-spacing:0.1em; font-weight:400;
+                .fh-arrival-hero .fh-subline {
+                    color:#b5a165; font-size:clamp(0.85rem,2vw,1.05rem); margin:0 0 20px;
+                    font-weight:400;
                 }
-                .fh-arrival-tbl { width:100%; border-collapse:collapse; font-size:0.88rem; }
-                .fh-arrival-tbl thead tr { background:rgba(181,161,101,0.15); }
-                .fh-arrival-tbl th {
+                .fh-arrival-stamp {
+                    display:inline-block; border:3px solid #e67e22; border-radius:4px;
+                    padding:8px 22px; font-family:'Oswald',sans-serif; font-weight:700;
+                    font-size:clamp(0.95rem,2.5vw,1.3rem); text-transform:uppercase;
+                    letter-spacing:0.06em; transform:rotate(-3deg); color:#e67e22;
+                    margin-bottom:18px;
+                }
+                .fh-arrival-countdown {
+                    font-family:'Oswald',sans-serif; font-weight:700;
+                    font-size:clamp(0.8rem,2vw,1rem); text-transform:uppercase;
+                    letter-spacing:0.1em; color:#b5a165;
+                }
+                .fh-arrival-countdown strong { color:#e67e22; font-size:1.3em; }
+
+                /* ── Cards (manifest style) ── */
+                .fh-arr-card {
+                    margin-bottom:24px; background:#0c161f; border:2px solid #b5a165;
+                    border-radius:10px; overflow:hidden;
+                    font-family:'Oswald',sans-serif; color:#fff;
+                }
+                .fh-arr-card-header {
+                    padding:14px 24px; border-bottom:1px solid #b5a165;
+                    font-weight:700; font-size:clamp(0.85rem,2vw,1.1rem);
+                    text-transform:uppercase; letter-spacing:0.12em; color:#b5a165;
+                }
+                .fh-arr-tbl { width:100%; border-collapse:collapse; font-size:0.88rem; }
+                .fh-arr-tbl thead tr { background:rgba(181,161,101,0.15); }
+                .fh-arr-tbl th {
                     text-align:left; color:#b5a165; font-weight:400; font-size:11px;
-                    text-transform:uppercase; letter-spacing:0.08em; padding:8px 10px;
+                    text-transform:uppercase; letter-spacing:0.08em; padding:8px 14px;
                 }
-                .fh-arrival-tbl td { padding:8px 10px; color:#fff; border-bottom:1px solid #1a2a3a; }
-                .fh-arrival-tbl tbody tr:nth-child(odd) { background:#0c161f; }
-                .fh-arrival-tbl tbody tr:nth-child(even) { background:#0f1e2d; }
-                .fh-badge-ok { display:inline-block; background:#27ae60; color:#fff; font-size:11px; font-weight:700; padding:2px 10px; border-radius:10px; text-transform:uppercase; }
-                .fh-badge-short { display:inline-block; background:#e74c3c; color:#fff; font-size:11px; font-weight:700; padding:2px 10px; border-radius:10px; text-transform:uppercase; }
-                .fh-arrival-qt { background:#0c161f; border:1px solid #b5a165; border-radius:10px; padding:16px 24px; text-align:center; color:#b5a165; font-size:0.95em; }
+                .fh-arr-tbl td { padding:8px 14px; font-size:14px; color:#fff; }
+                .fh-arr-tbl tbody tr:nth-child(odd) { background:#0c161f; }
+                .fh-arr-tbl tbody tr:nth-child(even) { background:#0f1e2d; }
+
+                /* ── Indicator lights ── */
+                .fh-light {
+                    display:inline-block; width:12px; height:12px; border-radius:50%;
+                }
+                .fh-light-green {
+                    background:#44ff66;
+                    box-shadow:0 0 4px 2px rgba(40,255,80,0.6), 0 0 10px 4px rgba(0,255,50,0.25);
+                    animation: fh-glow-green 2s ease-in-out infinite;
+                }
+                .fh-light-red {
+                    background:#ff4444;
+                    box-shadow:0 0 4px 2px rgba(255,40,40,0.6), 0 0 10px 4px rgba(255,0,0,0.25);
+                    animation: fh-glow-red 1.5s ease-in-out infinite;
+                }
+                @keyframes fh-glow-green {
+                    0%,100% { box-shadow:0 0 4px 2px rgba(40,255,80,0.6), 0 0 10px 4px rgba(0,255,50,0.25); }
+                    50% { box-shadow:0 0 6px 3px rgba(40,255,80,0.8), 0 0 14px 6px rgba(0,255,50,0.4); }
+                }
+                @keyframes fh-glow-red {
+                    0%,100% { box-shadow:0 0 4px 2px rgba(255,40,40,0.6), 0 0 10px 4px rgba(255,0,0,0.25); }
+                    50% { box-shadow:0 0 6px 3px rgba(255,40,40,0.8), 0 0 14px 6px rgba(255,0,0,0.4); }
+                }
+
+                .fh-pos-badge {
+                    display:inline-block; color:#b5a165; font-family:'Oswald',sans-serif;
+                    font-weight:700; font-size:13px; letter-spacing:0.04em;
+                }
+
+                /* ── QT Footer ── */
+                .fh-arrival-footer {
+                    text-align:center; padding:20px; font-family:'Oswald',sans-serif;
+                    font-weight:700; font-size:clamp(0.85rem,2vw,1.05rem);
+                    text-transform:uppercase; letter-spacing:0.06em; color:#e67e22;
+                }
+
+                .fh-arr-login {
+                    background:#0c161f; border:2px solid #b5a165; border-radius:10px;
+                    padding:20px 24px; text-align:center; margin-bottom:24px; color:#aaa;
+                }
+
+                .fh-arr-sci { font-style:italic; color:#8a9bae; }
             </style>
             <div class="fh-arrival-wrap">
 
+                <!-- ===== Hero Banner ===== -->
                 <div class="fh-arrival-hero">
                     <h2>Your Fish Are Here!</h2>
-                    <p><?php echo esc_html( $batch_name ); ?> — Arrived <?php echo esc_html( $arrival_fmt ); ?></p>
+                    <p class="fh-subline">
+                        <?php echo esc_html( $batch_name ); ?>
+                        <?php if ( $arrival_fmt ) : ?>
+                            &middot; Arrived <?php echo esc_html( $arrival_fmt ); ?>
+                        <?php endif; ?>
+                    </p>
+                    <div class="fh-arrival-stamp">ARRIVED</div>
+                    <?php if ( $qt_days_left > 0 ) : ?>
+                    <div class="fh-arrival-countdown">In Quarantine &mdash; <strong><?php echo $qt_days_left; ?></strong> Day<?php echo $qt_days_left !== 1 ? 's' : ''; ?> Remaining</div>
+                    <?php else : ?>
+                    <div class="fh-arrival-countdown" style="color:#27ae60;">Quarantine Complete</div>
+                    <?php endif; ?>
                 </div>
 
+                <!-- ===== Your Fish Table ===== -->
                 <?php if ( $uid && ! empty( $my_items ) ) : ?>
-                <div class="fh-arrival-card">
-                    <h3>Your Fish — Arrival Status</h3>
+                <div class="fh-arr-card">
+                    <div class="fh-arr-card-header">Your Fish &mdash; Arrival Status</div>
                     <div style="overflow-x:auto;">
-                    <table class="fh-arrival-tbl">
+                    <table class="fh-arr-tbl">
                         <thead><tr>
                             <th>Common Name</th>
-                            <th style="text-align:center;">You Requested</th>
-                            <th style="text-align:center;">Arrived Alive</th>
-                            <th style="text-align:center;">Your Position</th>
+                            <th style="text-align:center;">Requested</th>
+                            <th style="text-align:center;">Alive</th>
+                            <th style="text-align:center;">Position</th>
                             <th style="text-align:center;">Status</th>
                         </tr></thead>
                         <tbody>
@@ -1252,7 +1337,6 @@ trait FisHotel_Shortcodes {
                             $sa       = $species_arrival[ $bid ] ?? [ 'received' => 0, 'doa' => 0, 'alive' => 0 ];
                             $alive    = $sa['alive'];
 
-                            // Find this customer's position in the FCFS queue
                             $position = '—';
                             $filled   = false;
                             if ( isset( $fcfs[ $bid ] ) ) {
@@ -1269,14 +1353,8 @@ trait FisHotel_Shortcodes {
                             <td style="font-weight:500;"><?php echo esc_html( $item['fish_name'] ); ?></td>
                             <td style="text-align:center;"><?php echo $my_qty; ?></td>
                             <td style="text-align:center;"><?php echo $alive; ?></td>
-                            <td style="text-align:center;"><?php echo $position; ?></td>
-                            <td style="text-align:center;">
-                                <?php if ( $filled ) : ?>
-                                    <span class="fh-badge-ok">Filled</span>
-                                <?php else : ?>
-                                    <span class="fh-badge-short">Short</span>
-                                <?php endif; ?>
-                            </td>
+                            <td style="text-align:center;"><span class="fh-pos-badge">#<?php echo esc_html( $position ); ?></span></td>
+                            <td style="text-align:center;"><span class="fh-light <?php echo $filled ? 'fh-light-green' : 'fh-light-red'; ?>"></span></td>
                         </tr>
                         <?php endforeach; ?>
                         </tbody>
@@ -1284,22 +1362,23 @@ trait FisHotel_Shortcodes {
                     </div>
                 </div>
                 <?php elseif ( ! $uid ) : ?>
-                <div class="fh-arrival-card" style="text-align:center;color:#aaa;">
-                    <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="color:#e67e22;">Log in</a> to see your personal arrival status.
+                <div class="fh-arr-login">
+                    <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="color:#e67e22;text-decoration:none;font-family:'Oswald',sans-serif;font-size:1.1rem;text-transform:uppercase;letter-spacing:0.08em;">Log in to see your arrival status</a>
                 </div>
                 <?php endif; ?>
 
-                <div class="fh-arrival-card">
-                    <h3>Full Species Summary</h3>
+                <!-- ===== Full Species Summary ===== -->
+                <div class="fh-arr-card">
+                    <div class="fh-arr-card-header">Full Species Summary</div>
                     <div style="overflow-x:auto;">
-                    <table class="fh-arrival-tbl">
+                    <table class="fh-arr-tbl">
                         <thead><tr>
                             <th>Common Name</th>
                             <th>Scientific Name</th>
-                            <th style="text-align:center;">Arrived</th>
-                            <th style="text-align:center;">DOA</th>
-                            <th style="text-align:center;">Alive</th>
-                            <th style="text-align:center;">Fill</th>
+                            <th style="text-align:center;width:60px;">Arrived</th>
+                            <th style="text-align:center;width:50px;">DOA</th>
+                            <th style="text-align:center;width:50px;">Alive</th>
+                            <th style="text-align:center;width:50px;">Fill</th>
                         </tr></thead>
                         <tbody>
                         <?php foreach ( $batch_posts as $bp ) :
@@ -1315,17 +1394,15 @@ trait FisHotel_Shortcodes {
                         ?>
                         <tr>
                             <td style="font-weight:500;"><?php echo esc_html( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title ) ); ?></td>
-                            <td style="color:#8a9bae;font-style:italic;"><?php echo esc_html( $sci_name ); ?></td>
+                            <td class="fh-arr-sci"><?php echo esc_html( $sci_name ); ?></td>
                             <td style="text-align:center;"><?php echo $sa['received']; ?></td>
-                            <td style="text-align:center;color:<?php echo $sa['doa'] > 0 ? '#e74c3c' : '#666'; ?>;"><?php echo $sa['doa']; ?></td>
-                            <td style="text-align:center;color:#27ae60;font-weight:700;"><?php echo $sa['alive']; ?></td>
+                            <td style="text-align:center;color:<?php echo $sa['doa'] > 0 ? '#ff4444' : '#444'; ?>;"><?php echo $sa['doa']; ?></td>
+                            <td style="text-align:center;color:#44ff66;font-weight:700;"><?php echo $sa['alive']; ?></td>
                             <td style="text-align:center;">
                                 <?php if ( $total_demand === 0 ) : ?>
-                                    <span style="color:#666;">—</span>
-                                <?php elseif ( $fill_ok ) : ?>
-                                    <span class="fh-badge-ok">Filled</span>
+                                    <span style="color:#444;">—</span>
                                 <?php else : ?>
-                                    <span class="fh-badge-short">Short</span>
+                                    <span class="fh-light <?php echo $fill_ok ? 'fh-light-green' : 'fh-light-red'; ?>"></span>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -1335,8 +1412,9 @@ trait FisHotel_Shortcodes {
                     </div>
                 </div>
 
+                <!-- ===== QT Footer ===== -->
                 <?php if ( $qt_end_fmt ) : ?>
-                <div class="fh-arrival-qt">
+                <div class="fh-arrival-footer">
                     Quarantine ends <strong><?php echo esc_html( $qt_end_fmt ); ?></strong>
                 </div>
                 <?php endif; ?>
