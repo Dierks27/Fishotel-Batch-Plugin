@@ -193,7 +193,7 @@ trait FisHotel_Shortcodes {
             $bp_deposit_paid = is_user_logged_in() && ( floatval( get_user_meta( get_current_user_id(), '_fishotel_wallet_balance', true ) ) >= $bp_deposit || ! empty( $prev_items ) );
             ?>
 
-            <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Caveat:wght@700&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Indie+Flower&display=swap" rel="stylesheet">
             <style>
                 /* ── PanAm Gate Theme — Globals ── */
                 .fh-gate-wrap {
@@ -483,63 +483,11 @@ trait FisHotel_Shortcodes {
 
                 /* ── Departure Manifest — Clipboard backing board ── */
                 .fh-manifest-card {
-                    background:#3d2b1f;
-                    border:none; border-radius:6px;
-                    overflow:visible; margin-bottom:24px;
-                    box-shadow:0 8px 32px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.3);
-                    position:relative;
-                    padding:0 12px 12px;
-                }
-                /* Wood grain — applied as background-image directly, no ::before needed */
-
-                /* ── Clipboard top bar — no top wood visible ── */
-                .fh-clipboard-bar {
                     background:transparent;
-                    height:0px; border-radius:6px 6px 0 0; margin:0 -12px;
-                    position:relative; z-index:2;
-                }
-
-                /* ── Metal binder clip — 3D multi-layer ── */
-                .fh-clipboard-clip {
-                    position:absolute; top:0; left:50%; transform:translate(-50%, -50%); z-index:5;
-                    width:80px;
-                }
-                /* Clip arch / spring piece */
-                .fh-clipboard-clip-arch {
-                    width:52px; height:16px; margin:0 auto;
-                    border:4px solid #888e94; border-bottom:none;
-                    border-radius:14px 14px 0 0;
-                    background:linear-gradient(to bottom, #c8cdd0, #a8adb2);
-                    box-shadow:0 -2px 4px rgba(0,0,0,0.2), inset 0 2px 0 rgba(255,255,255,0.4);
-                }
-                /* Main clip body */
-                .fh-clipboard-clip-body {
-                    width:80px; height:22px;
-                    background:linear-gradient(to bottom, #e0e3e6 0%, #c8cdd0 15%, #9aa0a6 50%, #80868c 85%, #6e7478 100%);
-                    border-radius:3px; margin:0 auto;
-                    box-shadow:0 3px 8px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.7), inset 0 -1px 0 rgba(0,0,0,0.3);
+                    border:none; border-radius:0;
+                    overflow:visible; margin-bottom:24px;
                     position:relative;
-                }
-                /* Ridge detail on clip body */
-                .fh-clipboard-clip-body::after {
-                    content:''; position:absolute; top:8px; left:12px; right:12px; height:2px;
-                    background:linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(255,255,255,0.2));
-                    border-radius:1px;
-                }
-                /* Rivets */
-                .fh-clipboard-clip-rivet {
-                    position:absolute; top:7px; width:6px; height:6px; border-radius:50%;
-                    background:radial-gradient(circle at 35% 35%, #d0d4d8, #80868c);
-                    box-shadow:inset 0 1px 1px rgba(0,0,0,0.3), 0 1px 0 rgba(255,255,255,0.2);
-                }
-                .fh-clipboard-clip-rivet:first-child { left:4px; }
-                .fh-clipboard-clip-rivet:last-child { right:4px; }
-                /* Grip jaw */
-                .fh-clipboard-clip-grip {
-                    width:72px; height:10px; margin:0 auto;
-                    background:linear-gradient(to bottom, #80868c, #9aa0a6, #888e94);
-                    border-radius:0 0 3px 3px;
-                    box-shadow:0 4px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
+                    padding:0;
                 }
 
                 /* ── Paper sheet — aged document ── */
@@ -556,13 +504,6 @@ trait FisHotel_Shortcodes {
                     filter:url(#fh-manifest-grain); background:rgba(180,165,130,0.06);
                     pointer-events:none; z-index:1; mix-blend-mode:multiply;
                 }
-                /* Page curl — bottom-right corner */
-                .fh-clipboard-paper::after {
-                    content:''; position:absolute; bottom:0; right:0;
-                    width:24px; height:24px; z-index:4; pointer-events:none;
-                    background:linear-gradient(225deg, #3d2b1f 0%, #3d2b1f 38%, #d8cdb8 42%, #e8dece 58%, #f2ead8 100%);
-                    box-shadow:-2px -2px 4px rgba(0,0,0,0.12);
-                }
 
                 /* ── Manifest header — official government form ── */
                 .fh-manifest-header {
@@ -573,7 +514,7 @@ trait FisHotel_Shortcodes {
                 /* Punch holes */
                 .fh-punch-hole {
                     position:absolute; top:16px; width:14px; height:14px;
-                    border-radius:50%; background:#3d2b1f;
+                    border-radius:50%; background:#1a1a2e;
                     border:1px solid #a09080;
                     box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);
                 }
@@ -668,6 +609,11 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-row-closed { opacity:0.5; }
 
+                /* ── Price column — printed price on form ── */
+                .fishotel-open-table tbody td:nth-child(4) {
+                    font-size:15px; color:#0a0805; font-weight:700;
+                }
+
                 /* ── Size Badge (mobile cards only) ── */
                 .fh-size-badge {
                     background:rgba(0,0,0,0.06); color:#5a4a3a;
@@ -703,14 +649,9 @@ trait FisHotel_Shortcodes {
                 .fh-hw-input-val {
                     position:absolute; top:50%; left:50%;
                     transform:translate(-50%,-50%);
-                    font-family:'Caveat',cursive; font-size:28px; color:#0d0a05;
+                    font-family:'Indie Flower',cursive; font-size:28px; color:#0d0a05;
                     font-weight:700; line-height:1; pointer-events:none; z-index:2;
                     white-space:nowrap;
-                }
-                /* Blank form line placeholder */
-                .fh-hw-input-val.fh-hw-blank {
-                    font-family:'Special Elite',monospace; font-size:18px; color:#c8b99a;
-                    letter-spacing:2px;
                 }
 
                 /* ── Request Button — ink stamp impression ── */
@@ -727,7 +668,7 @@ trait FisHotel_Shortcodes {
 
                 /* ── Green checkmark — handwritten annotation in common name cell ── */
                 .fh-in-cart-check {
-                    font-family:'Caveat',cursive; font-size:22px; color:#2d6a2d;
+                    font-family:'Indie Flower',cursive; font-size:22px; color:#2d6a2d;
                     display:inline-block;
                     line-height:1; font-weight:700;
                     position:absolute; left:-2px; z-index:3;
@@ -737,10 +678,10 @@ trait FisHotel_Shortcodes {
                 .fh-common-cell { position:relative; }
                 /* ── Handwritten qty in # margin — felt-tip pen annotation ── */
                 .fh-hw-qty {
-                    font-family:'Caveat',cursive; font-size:30px; color:#1a4d1a;
+                    font-family:'Indie Flower',cursive; font-size:30px; color:#1a4d1a;
                     line-height:1; font-weight:700;
-                    position:absolute; z-index:3;
-                    /* top, left, rotation set per-row via inline style */
+                    position:absolute; left:50%; z-index:3;
+                    /* top and transform (translateX + rotation) set per-row via inline style */
                 }
 
                 /* ── CLOSED stamp — red rubber stamp diagonal ── */
@@ -808,9 +749,7 @@ trait FisHotel_Shortcodes {
                 @media (max-width:600px) {
                     .fish-cards { grid-template-columns:1fr; }
                     #submit-requests { width:100% !important; padding:16px !important; }
-                    .fh-manifest-card { padding:0 6px 6px; border-radius:4px; }
-                    .fh-clipboard-bar { border-radius:4px 4px 0 0; margin:0 -6px; }
-                    .fh-clipboard-paper { margin-top:14px; }
+                    .fh-manifest-card { padding:0; }
                     .fh-manifest-header { padding:18px 14px 12px; }
                     .fh-manifest-title { font-size:0.95rem; }
                     .fh-manifest-fields { font-size:0.68rem; gap:2px 12px; }
@@ -910,20 +849,7 @@ trait FisHotel_Shortcodes {
                 </div>
 
                 <!-- ===== Departure Manifest ===== -->
-                <svg width="0" height="0" style="position:absolute;pointer-events:none;">
-                    <filter id="fh-wood-grain"><feTurbulence type="fractalNoise" baseFrequency="0.03 0.9" numOctaves="5" seed="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
-                </svg>
                 <div class="fh-manifest-card">
-                    <div class="fh-clipboard-bar">
-                        <div class="fh-clipboard-clip">
-                            <div class="fh-clipboard-clip-arch"></div>
-                            <div class="fh-clipboard-clip-body">
-                                <span class="fh-clipboard-clip-rivet"></span>
-                                <span class="fh-clipboard-clip-rivet"></span>
-                            </div>
-                            <div class="fh-clipboard-clip-grip"></div>
-                        </div>
-                    </div>
                     <div class="fh-clipboard-paper">
                     <svg width="0" height="0" style="position:absolute;pointer-events:none;"><filter id="fh-manifest-grain"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter></svg>
                     <div class="fh-manifest-header">
@@ -998,7 +924,7 @@ trait FisHotel_Shortcodes {
                                     echo '<button class="qty-minus">&#x2212;</button>';
                                     echo '<input type="number" min="1" value="1" class="qty-input">';
                                     echo '<button class="qty-plus">+</button>';
-                                    echo '<span class="fh-hw-input-val fh-hw-blank">____</span>';
+                                    echo '<span class="fh-hw-input-val" style="display:none;"></span>';
                                     echo '</div>';
                                     echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $master->post_title ) . '">Request</button>';
                                 } else {
@@ -1388,13 +1314,11 @@ trait FisHotel_Shortcodes {
                                     const bid = parseInt(batchId) || rowNum;
                                     const qRot = ((bid * 83 + 17) % 40) - 22;
                                     const qTop = 8 + ((bid * 47 + 11) % 21);
-                                    const qLeft = -3 + ((bid * 31 + 5) % 12);
                                     const hw = document.createElement('span');
                                     hw.className = 'fh-hw-qty';
                                     hw.textContent = qty;
-                                    hw.style.transform = 'rotate(' + qRot + 'deg)';
+                                    hw.style.transform = 'translateX(-50%) rotate(' + qRot + 'deg)';
                                     hw.style.top = qTop + 'px';
-                                    hw.style.left = qLeft + 'px';
                                     numCell.appendChild(hw);
                                 }
                             }
@@ -1425,11 +1349,11 @@ trait FisHotel_Shortcodes {
                         const touched = wrap.classList.contains('fh-qty-touched');
                         const val = parseInt(input.value) || 0;
                         if (!touched || val <= 0) {
-                            // Blank form line — untouched or empty
-                            overlay.textContent = '____';
-                            overlay.className = 'fh-hw-input-val fh-hw-blank';
-                            overlay.style.transform = 'translate(-50%,-50%)';
+                            // Not touched — hide overlay entirely
+                            overlay.textContent = '';
+                            overlay.style.display = 'none';
                         } else {
+                            overlay.style.display = '';
                             // Handwritten number
                             const idx = parseInt(wrap.getAttribute('data-idx')) || 1;
                             const rot = ((idx * 61 + 7) % 14) - 7;
@@ -1454,9 +1378,14 @@ trait FisHotel_Shortcodes {
                     document.querySelectorAll(".qty-plus").forEach(btn => {
                         btn.addEventListener("click", function() {
                             const input = this.previousElementSibling;
-                            let val = parseInt(input.value) || 1;
-                            input.value = val + 1;
-                            this.closest('.fh-qty-wrap').classList.add('fh-qty-touched');
+                            const wrap = this.closest('.fh-qty-wrap');
+                            if (!wrap.classList.contains('fh-qty-touched')) {
+                                input.value = 1;
+                                wrap.classList.add('fh-qty-touched');
+                            } else {
+                                let val = parseInt(input.value) || 1;
+                                input.value = val + 1;
+                            }
                             updateQtyDisplay(input);
                         });
                     });
