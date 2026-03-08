@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.68 - Fix wood grain overlay bleeding onto paper, scope manifest grain SVG, fix clip positioning.
- * Version:           2.68
+ * Description:       Stable v2.69 - Override dark theme td backgrounds on manifest table.
+ * Version:           2.69
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.68' );
+define( 'FISHOTEL_VERSION', '2.69' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

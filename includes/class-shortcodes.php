@@ -630,6 +630,10 @@ trait FisHotel_Shortcodes {
                 }
                 .fishotel-open-table tbody tr:nth-child(odd) { background:#f2ead8; }
                 .fishotel-open-table tbody tr:nth-child(even) { background:#ebe0c4; }
+                /* Override dark theme td backgrounds so tr colors show through */
+                .fishotel-open-table tbody td { background:transparent !important; }
+                .fishotel-open-table tbody tr:nth-child(odd) td { background:transparent !important; }
+                .fishotel-open-table tbody tr:nth-child(even) td { background:transparent !important; }
 
                 /* ── Stock Colors ── */
                 .fh-stock-green { color:#2d8a2d; font-weight:700; }
