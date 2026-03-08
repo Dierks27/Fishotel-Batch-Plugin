@@ -406,6 +406,9 @@ trait FisHotel_Shortcodes {
                 .fh-bp-open-fish-table td:last-child { text-align:center; }
                 .fh-bp-open-fish-table tbody tr:nth-child(odd) { background:#f2ead8; }
                 .fh-bp-open-fish-table tbody tr:nth-child(even) { background:#ebe0c4; }
+                .fh-bp-open-inner .fh-bp-open-fish-table tbody td { background:transparent !important; color:#0a0805 !important; }
+                .fh-bp-open-inner .fh-bp-open-fish-table tbody tr:nth-child(odd) td { background:#f2ead8 !important; }
+                .fh-bp-open-inner .fh-bp-open-fish-table tbody tr:nth-child(even) td { background:#ebe0c4 !important; }
                 .fh-bp-open-fish-table .fh-bp-prev-row { /* same style as new items */ }
                 .fh-bp-open-fish-table .fh-bp-remove-btn {
                     background:none; border:none; color:#8b1a1a; font-size:11px;
