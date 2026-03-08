@@ -605,12 +605,12 @@ trait FisHotel_Shortcodes {
                 .fh-scroll-wrap::-webkit-scrollbar-thumb { background:#a09080; border-radius:0; }
 
                 .fishotel-open-table { width:100%; border-collapse:collapse; table-layout:fixed; }
-                .fishotel-open-table thead tr { background:transparent; }
+                .fishotel-open-table thead tr { background:#f2ead8; }
                 .fishotel-open-table th {
                     text-align:left; color:#0d0a05; font-family:'Special Elite',monospace;
                     font-weight:700; font-size:11px; text-transform:uppercase;
                     letter-spacing:0.06em; padding:10px 10px;
-                    border-bottom:2px solid rgba(0,0,0,0.25);
+                    border-bottom:2px solid #3d2b1f;
                     font-variant:small-caps;
                 }
                 .fishotel-open-table th[data-sort] { cursor:pointer; }
@@ -623,9 +623,13 @@ trait FisHotel_Shortcodes {
                     height:44px; box-sizing:border-box;
                     border-bottom:1px solid rgba(0,0,0,0.12);
                 }
-                /* Row number column */
+                /* Row number column — document margin */
+                .fishotel-open-table .fh-row-num,
+                .fishotel-open-table th:first-child {
+                    border-right:2px solid rgba(0,0,0,0.08);
+                }
                 .fishotel-open-table .fh-row-num {
-                    width:32px; text-align:center; color:#8a7a6a;
+                    width:32px; text-align:center; color:#a09080;
                     font-size:11px; font-family:'Special Elite',monospace;
                     padding:10px 4px; position:relative;
                 }
@@ -715,8 +719,9 @@ trait FisHotel_Shortcodes {
                 .fh-hw-qty {
                     font-family:'Caveat',cursive; font-size:14px; color:#1a4d1a;
                     line-height:1; font-weight:700;
-                    position:absolute; bottom:2px; left:2px;
-                    /* rotation set per-row via inline style */
+                    position:absolute; top:50%; left:50%;
+                    transform:translate(-50%, -50%);
+                    /* additional rotation set per-row via inline style */
                 }
 
                 /* ── CLOSED stamp — red rubber stamp diagonal ── */
@@ -1357,7 +1362,8 @@ trait FisHotel_Shortcodes {
                                     const hw = document.createElement('span');
                                     hw.className = 'fh-hw-qty';
                                     hw.textContent = 'x' + qty;
-                                    hw.style.transform = 'rotate(' + (rot > 0 ? -3 : 3) + 'deg)';
+                                    const qRot = rot > 0 ? -3 : 3;
+                                    hw.style.transform = 'translate(-50%,-50%) rotate(' + qRot + 'deg)';
                                     numCell.appendChild(hw);
                                 }
                             }
