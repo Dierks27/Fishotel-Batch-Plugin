@@ -89,7 +89,15 @@ trait FisHotel_Shortcodes {
             $ticker_resolved = [];
             foreach ( $ticker_msgs as $msg ) {
                 $msg = str_replace( [ '{species}', '{stock}' ], [ $total_species, intval( $total_stock ) ], $msg );
-                $msg = strtoupper( substr( $msg, 0, 40 ) );
+                $msg = strtoupper( trim( $msg ) );
+                // Truncate to 24 chars (desktop COLS) at last full word boundary
+                if ( strlen( $msg ) > 24 ) {
+                    $msg = substr( $msg, 0, 24 );
+                    $last_space = strrpos( $msg, ' ' );
+                    if ( $last_space !== false && $last_space > 10 ) {
+                        $msg = substr( $msg, 0, $last_space );
+                    }
+                }
                 $ticker_resolved[] = $msg;
             }
             $closed_dates   = get_option( 'fishotel_batch_closed_dates', [] );
@@ -228,8 +236,8 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-board-row:last-child { border-bottom:none; box-shadow:none; }
                 .fh-board-label {
-                    width:140px; min-width:140px; background:#111;
-                    padding:4px 14px 4px 18px; display:flex; align-items:center; justify-content:flex-end;
+                    width:90px; min-width:90px; background:#111;
+                    padding:4px 10px 4px 14px; display:flex; align-items:center; justify-content:flex-end;
                     font-family:'Oswald',sans-serif; font-weight:700; font-size:clamp(0.55rem,1.4vw,0.72rem);
                     text-transform:uppercase; letter-spacing:0.12em; color:#8a7a50;
                     border-right:1px solid #1a1a10;
@@ -242,7 +250,7 @@ trait FisHotel_Shortcodes {
                 /* ── Split-Flap Tiles — Authentic Fixed Grid ── */
                 .fh-flap {
                     width:32px; height:46px; min-width:32px;
-                    background:linear-gradient(to bottom, #141414 48%, #080808 48%, #080808 52%, #141414 52%);
+                    background:#141414;
                     border-radius:2px;
                     box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 3px 0 #0a0806, 0 2px 6px rgba(0,0,0,0.9);
                     display:flex; align-items:center; justify-content:center;
@@ -251,11 +259,12 @@ trait FisHotel_Shortcodes {
                     text-transform:uppercase; position:relative;
                     opacity:0.92;
                 }
-                .fh-flap:nth-child(odd) {
-                    background:linear-gradient(to bottom, #121212 48%, #080808 48%, #080808 52%, #121212 52%);
-                }
+                .fh-flap:nth-child(odd) { background:#121212; }
                 .fh-flap:nth-child(7n) { color:#d4bc7e; }
-                .fh-flap::after { display:none; }
+                .fh-flap::after {
+                    content:''; position:absolute; left:0; top:50%;
+                    width:100%; height:1px; background:#000;
+                }
 
                 @media (max-width:600px) {
                     .fh-board-header { padding:7px 12px; }
@@ -264,7 +273,7 @@ trait FisHotel_Shortcodes {
                     .fh-board-header-right { font-size:10px; }
                     .fh-board-footer { padding:5px 12px; }
                     .fh-board-footer-left, .fh-board-footer-right { font-size:10px; }
-                    .fh-board-label { width:70px; min-width:70px; padding:3px 6px 3px 8px; font-size:0.45rem; }
+                    .fh-board-label { width:60px; min-width:60px; padding:3px 6px 3px 8px; font-size:0.45rem; }
                     .fh-board-tiles { padding:3px 4px; gap:1px; }
                     .fh-flap { width:20px; height:30px; min-width:20px; font-size:15px; }
                 }
@@ -648,12 +657,21 @@ trait FisHotel_Shortcodes {
                         var board = document.getElementById('fh-board');
                         if (!board) return;
 
+                        // Truncate text to COLS at last full word boundary
+                        function fitText(text) {
+                            text = text || '';
+                            if (text.length > COLS) {
+                                text = text.substring(0, COLS);
+                                var ls = text.lastIndexOf(' ');
+                                if (ls > Math.floor(COLS / 2)) text = text.substring(0, ls);
+                            }
+                            while (text.length < COLS) text += ' ';
+                            return text;
+                        }
+
                         // Always render exactly COLS tiles — spaces are identical blank tiles
                         function buildTiles(container, text) {
-                            text = text || '';
-                            // Pad or truncate to exactly COLS characters
-                            while (text.length < COLS) text += ' ';
-                            if (text.length > COLS) text = text.substring(0, COLS);
+                            text = fitText(text);
                             container.innerHTML = '';
                             for (var i = 0; i < COLS; i++) {
                                 var c = text[i];
@@ -667,9 +685,7 @@ trait FisHotel_Shortcodes {
 
                         // Animate tiles staggered left-to-right
                         function animateRow(container, text) {
-                            text = text || '';
-                            while (text.length < COLS) text += ' ';
-                            if (text.length > COLS) text = text.substring(0, COLS);
+                            text = fitText(text);
                             var flaps = container.querySelectorAll('.fh-flap');
                             flaps.forEach(function(flap, i) {
                                 var finalChar = text[i] || ' ';

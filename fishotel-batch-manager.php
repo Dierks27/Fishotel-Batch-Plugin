@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.53 - Solari board: authentic fixed-grid overhaul, 3D cabinet frame, split header/footer.
- * Version:           2.53
+ * Description:       Stable 2.54 - Solari board label column tighter, seam decision, NOTICE truncation.
+ * Version:           2.54
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.53' );
+define( 'FISHOTEL_VERSION', '2.54' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
