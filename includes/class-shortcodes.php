@@ -1240,6 +1240,30 @@ trait FisHotel_Shortcodes {
                     function closeHFModal() { document.getElementById('hf-username-modal').style.display = 'none'; }
                     function closeLoginModal() { document.getElementById('fishotel-login-modal').style.display = 'none'; }
 
+                    // Handwriting wobble — seeded per-character transform
+                    function hwWobble(str) {
+                        function hash(s, i) {
+                            let h = 0x811c9dc5;
+                            const full = s + ':' + i;
+                            for (let j = 0; j < full.length; j++) {
+                                h ^= full.charCodeAt(j);
+                                h = Math.imul(h, 0x01000193);
+                            }
+                            return (h >>> 0) / 0xFFFFFFFF;
+                        }
+                        let out = '';
+                        for (let i = 0; i < str.length; i++) {
+                            const ch = str[i];
+                            if (ch === ' ') { out += '<span style="display:inline-block;width:0.35em"></span>'; continue; }
+                            const r = ((hash(str, i) * 5) - 2.5).toFixed(2);
+                            const y = ((hash(str, i * 7 + 3) * 3) - 1.5).toFixed(2);
+                            const s = (0.92 + hash(str, i * 13 + 7) * 0.14).toFixed(3);
+                            const esc = ch === '<' ? '&lt;' : ch === '>' ? '&gt;' : ch === '&' ? '&amp;' : ch;
+                            out += '<span style="display:inline-block;transform:rotate(' + r + 'deg) translateY(' + y + 'px) scale(' + s + ');transform-origin:bottom center">' + esc + '</span>';
+                        }
+                        return out;
+                    }
+
                     function renderRequestList() {
                         const list = document.getElementById("request-list");
                         if (!list) return;
@@ -1260,7 +1284,7 @@ trait FisHotel_Shortcodes {
                         prevItems.forEach((item, idx) => {
                             const lt = (item.price * item.qty).toFixed(2);
                             const safeName = item.fish_name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-                            html += `<tr class="fh-bp-prev-row"><td>${item.fish_name}</td><td>${item.qty}</td><td>$${parseFloat(item.price).toFixed(2)}</td><td style="font-weight:700;">$${lt}</td>
+                            html += `<tr class="fh-bp-prev-row"><td>${hwWobble(item.fish_name)}</td><td>${hwWobble(String(item.qty))}</td><td>${hwWobble('$'+parseFloat(item.price).toFixed(2))}</td><td style="font-weight:700;">${hwWobble('$'+lt)}</td>
                                 <td><button class="fh-bp-remove-btn" onclick="removePrevItem(this,${idx},'${safeName}',${item.request_id},${item.batch_id},${item.price * item.qty})" title="Remove">&times;</button></td></tr>`;
                         });
 
@@ -1270,7 +1294,7 @@ trait FisHotel_Shortcodes {
                         }
                         cartItems.forEach((item, index) => {
                             const lineTotal = item.price * item.qty;
-                            html += `<tr data-line-total="${lineTotal}" data-index="${index}"><td>${item.fish_name}</td><td>${item.qty}</td><td>$${parseFloat(item.price).toFixed(2)}</td><td style="font-weight:700;">$${lineTotal.toFixed(2)}</td>
+                            html += `<tr data-line-total="${lineTotal}" data-index="${index}"><td>${hwWobble(item.fish_name)}</td><td>${hwWobble(String(item.qty))}</td><td>${hwWobble('$'+parseFloat(item.price).toFixed(2))}</td><td style="font-weight:700;">${hwWobble('$'+lineTotal.toFixed(2))}</td>
                                 <td><button class="fh-bp-remove-btn" onclick="removeItem(this)" title="Remove">&times;</button></td></tr>`;
                         });
 

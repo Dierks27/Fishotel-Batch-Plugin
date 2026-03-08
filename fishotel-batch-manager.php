@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.84 - Boarding pass: switch td handwriting font to Patrick Hand.
- * Version:           2.84
+ * Description:       Stable v2.85 - Boarding pass: per-character handwriting wobble on fish table td cells.
+ * Version:           2.85
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.84' );
+define( 'FISHOTEL_VERSION', '2.85' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
