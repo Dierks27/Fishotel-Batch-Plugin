@@ -349,7 +349,7 @@ trait FisHotel_Shortcodes {
                     filter:url(#fh-paper-grain); background:rgba(255,255,255,0.04);
                     pointer-events:none; z-index:1; mix-blend-mode:overlay;
                 }
-                .fh-bp-open-left { flex:0 0 65%; display:flex; flex-direction:column; }
+                .fh-bp-open-left { flex:1 1 65%; min-width:0; display:flex; flex-direction:column; }
                 .fh-bp-open-header {
                     display:flex; justify-content:space-between; align-items:center;
                     padding:12px 20px; background:#111d28;
@@ -393,13 +393,13 @@ trait FisHotel_Shortcodes {
                 .fh-bp-open-fish-table td:last-child { text-align:center; }
                 .fh-bp-open-fish-table tbody tr:nth-child(odd) { background:#0c161f; }
                 .fh-bp-open-fish-table tbody tr:nth-child(even) { background:#0f1e2d; }
-                .fh-bp-open-fish-table .fh-bp-prev-row { opacity:0.6; font-style:italic; }
+                .fh-bp-open-fish-table .fh-bp-prev-row { /* same style as new items */ }
                 .fh-bp-open-fish-table .fh-bp-remove-btn {
                     background:none; border:none; color:#e74c3c; font-size:1.3em;
                     cursor:pointer; padding:0 4px; line-height:1;
                 }
                 .fh-bp-open-empty {
-                    color:#5a6a7a; font-style:italic; padding:20px 0;
+                    color:#5a6a7a; font-style:italic; padding:10px 0;
                     text-align:center; font-size:0.9rem;
                 }
                 #cart-total {
@@ -416,10 +416,11 @@ trait FisHotel_Shortcodes {
 
                 /* Stub (right panel) */
                 .fh-bp-open-stub {
-                    flex:0 0 35%; padding:24px 20px 24px 28px;
+                    flex:0 0 35%; min-width:0; box-sizing:border-box;
+                    padding:24px 20px 24px 28px;
                     display:flex; flex-direction:column; gap:12px;
                     border-left:2px dashed #b5a165; position:relative;
-                    background:#0c161f;
+                    background:#0c161f; overflow:hidden;
                 }
                 .fh-bp-open-scissors {
                     position:absolute; top:-2px; left:-10px; font-size:16px;
@@ -441,11 +442,10 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-bp-open-vertical {
                     writing-mode:vertical-rl; text-orientation:mixed;
-                    transform:rotate(180deg);
                     font-size:1rem; font-weight:700; letter-spacing:0.15em;
                     text-transform:uppercase; color:rgba(181,161,101,0.2);
-                    position:absolute; right:8px; top:50%;
-                    transform:rotate(180deg) translateX(50%);
+                    position:absolute; right:6px; top:50%;
+                    transform:rotate(180deg) translateY(50%);
                 }
 
                 /* Logged-out ghost / overlay */
@@ -671,7 +671,7 @@ trait FisHotel_Shortcodes {
                     <div class="fh-bp-open-inner<?php echo ! is_user_logged_in() ? ' fh-bp-open-ghost' : ''; ?>">
                         <div class="fh-bp-open-left">
                             <div class="fh-bp-open-header">
-                                <span class="fh-bp-open-header-title">Boarding Pass</span>
+                                <span class="fh-bp-open-header-title">BOARDING PASS</span>
                                 <span class="fh-bp-open-header-flight"><?php echo esc_html( $flight_number ); ?></span>
                             </div>
                             <div class="fh-bp-open-body">
@@ -711,7 +711,7 @@ trait FisHotel_Shortcodes {
                                 <p class="fh-bp-open-stub-label">Deposit</p>
                                 <p class="fh-bp-open-stub-value">$<?php echo number_format( $bp_deposit, 2 ); ?></p>
                             </div>
-                            <?php if ( $bp_deposit_paid ) : ?>
+                            <?php if ( is_user_logged_in() ) : ?>
                             <div class="fh-bp-open-deposit-stamp">Deposit Paid</div>
                             <?php endif; ?>
                             <div>
@@ -1089,17 +1089,24 @@ trait FisHotel_Shortcodes {
                             return;
                         }
 
-                        let html = '<table class="fh-bp-open-fish-table"><thead><tr><th>Common Name</th><th>Qty</th><th>Unit Price</th><th>Total</th><th></th></tr></thead><tbody>';
+                        let html = '';
+                        if (prevItems.length > 0) {
+                            html += '<div style="color:#5a6a7a;font-size:0.72em;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 4px;font-family:Oswald,sans-serif;">Previously Requested</div>';
+                        }
+                        html += '<table class="fh-bp-open-fish-table"><thead><tr><th>Common Name</th><th>Qty</th><th>Unit Price</th><th>Total</th><th></th></tr></thead><tbody>';
 
-                        // Previously submitted requests — dimmed rows
+                        // Previously submitted requests
                         prevItems.forEach((item, idx) => {
                             const lt = (item.price * item.qty).toFixed(2);
                             const safeName = item.fish_name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-                            html += `<tr class="fh-bp-prev-row"><td>${item.fish_name}</td><td>${item.qty}</td><td>$${parseFloat(item.price).toFixed(2)}</td><td>$${lt}</td>
+                            html += `<tr class="fh-bp-prev-row"><td>${item.fish_name}</td><td>${item.qty}</td><td>$${parseFloat(item.price).toFixed(2)}</td><td style="color:#e67e22;font-weight:600;">$${lt}</td>
                                 <td><button class="fh-bp-remove-btn" onclick="removePrevItem(this,${idx},'${safeName}',${item.request_id},${item.batch_id},${item.price * item.qty})" title="Remove">&times;</button></td></tr>`;
                         });
 
                         // Current session new requests
+                        if (cartItems.length > 0 && prevItems.length > 0) {
+                            html += `<tr><td colspan="5" style="padding:6px 10px 2px;color:#b5a165;font-size:0.72em;text-transform:uppercase;letter-spacing:0.08em;border:none;">New Requests</td></tr>`;
+                        }
                         cartItems.forEach((item, index) => {
                             const lineTotal = item.price * item.qty;
                             html += `<tr data-line-total="${lineTotal}" data-index="${index}"><td>${item.fish_name}</td><td>${item.qty}</td><td>$${parseFloat(item.price).toFixed(2)}</td><td style="color:#e67e22;font-weight:600;">$${lineTotal.toFixed(2)}</td>
