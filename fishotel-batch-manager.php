@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable 2.49 - Stage 1 layout fixes + Solari split-flap ticker + admin ticker editor.
- * Version:           2.49
+ * Description:       Stable 2.50 - Stage 1 full Solari departure board replacing banner+ticker+stats. FisHotel International FHI.
+ * Version:           2.50
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.49' );
+define( 'FISHOTEL_VERSION', '2.50' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -25,7 +25,6 @@ require_once FISHOTEL_PLUGIN_DIR . 'includes/class-updater.php';
 // Stage-aware title helpers — shared by all title/heading filters
 function fishotel_stage_label_map() {
     return [
-        'open_ordering'  => 'Now Boarding',
         'orders_closed' => 'In Transit',
         'in_transit'     => 'In Transit',
         'arrived'        => 'In Quarantine',

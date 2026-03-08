@@ -68,8 +68,6 @@ trait FisHotel_Shortcodes {
         if ( $status === 'open_ordering' ) {
             $current_hf_username = get_user_meta( get_current_user_id(), '_fishotel_humble_username', true );
             $needs_hf_popup = is_user_logged_in() && empty( $current_hf_username );
-            $batch_origins  = get_option( 'fishotel_batch_origins', [] );
-            $gate_origin    = $batch_origins[ $batch_name ] ?? '';
             $total_species  = 0;
             $total_stock    = 0;
             foreach ( $batch_posts as $bp ) {
@@ -93,6 +91,9 @@ trait FisHotel_Shortcodes {
                 $msg = strtoupper( substr( $msg, 0, 40 ) );
                 $ticker_resolved[] = $msg;
             }
+            $closed_dates   = get_option( 'fishotel_batch_closed_dates', [] );
+            $closed_raw     = $closed_dates[ $batch_name ] ?? '';
+            $gate_closes_display = $closed_raw ? strtoupper( date( 'M j, Y', strtotime( $closed_raw ) ) ) : 'TBD';
             ?>
 
             <!-- ===== Login Modal — GATE ACCESS REQUIRED ===== -->
@@ -162,76 +163,62 @@ trait FisHotel_Shortcodes {
             <style>
                 /* ── PanAm Gate Theme — Globals ── */
                 .fh-gate-wrap {
-                    max-width:860px; margin:0 auto;
+                    max-width:900px; margin:0 auto;
                     font-family:'Oswald',sans-serif; color:#fff;
                 }
 
-                /* ── Gate Banner ── */
-                .fh-gate-banner {
-                    background:#0c161f; border:2px solid #b5a165; border-radius:12px;
-                    padding:36px 28px 24px; text-align:center; margin-bottom:24px;
-                    position:relative; overflow:hidden;
+                /* ── Solari Departure Board ── */
+                .fh-board {
+                    width:100%; box-sizing:border-box;
+                    background:#0a0a0a; border-radius:8px;
+                    box-shadow:0 0 40px rgba(0,0,0,0.8);
+                    overflow:hidden; margin-bottom:24px;
                 }
-                .fh-gate-banner h2 {
-                    font-family:'Oswald',sans-serif; font-weight:700;
-                    font-size:clamp(1.6rem,4vw,2.4rem); color:#e67e22;
-                    text-transform:uppercase; letter-spacing:0.06em; margin:0 0 8px;
+                .fh-board-header {
+                    background:#111; padding:10px 20px; text-align:center;
+                    font-family:'Oswald',sans-serif; font-weight:700; font-size:clamp(0.6rem,1.6vw,0.8rem);
+                    text-transform:uppercase; letter-spacing:0.18em; color:#b5a165;
                 }
-                .fh-gate-batch {
-                    color:#b5a165; font-size:clamp(0.85rem,2vw,1.05rem);
-                    font-weight:400; margin:0 0 18px; letter-spacing:0.04em;
+                .fh-board-row {
+                    display:flex; border-bottom:1px solid #1a1a1a;
                 }
-                .fh-gate-stamp {
-                    display:inline-block; border:3px solid #27ae60; border-radius:4px;
-                    padding:8px 22px; font-family:'Oswald',sans-serif; font-weight:700;
-                    font-size:clamp(0.95rem,2.5vw,1.3rem); text-transform:uppercase;
-                    letter-spacing:0.08em; transform:rotate(-2deg); color:#27ae60;
+                .fh-board-row:last-child { border-bottom:none; }
+                .fh-board-label {
+                    width:160px; min-width:160px; background:#111;
+                    padding:8px 16px 8px 20px; display:flex; align-items:center; justify-content:flex-end;
+                    font-family:'Oswald',sans-serif; font-weight:700; font-size:clamp(0.55rem,1.4vw,0.72rem);
+                    text-transform:uppercase; letter-spacing:0.12em; color:#b5a165;
+                    border-right:1px solid #1a1a1a;
                 }
-
-                /* ── Solari Split-Flap Board ── */
-                .fh-solari {
-                    width:100%; box-sizing:border-box; overflow:hidden;
-                    background:#0a0a0a; border:1px solid #b5a165; border-radius:6px;
-                    padding:14px 12px; margin-bottom:24px;
-                    display:flex; justify-content:center; align-items:center;
-                    min-height:48px;
+                .fh-board-tiles {
+                    flex:1; display:flex; align-items:center; gap:2px;
+                    padding:6px 10px; flex-wrap:nowrap; overflow:hidden;
+                    background:#0a0a0a;
                 }
-                .fh-solari-row {
-                    display:flex; gap:3px; justify-content:center; flex-wrap:nowrap;
-                }
+                /* ── Split-Flap Tiles ── */
                 .fh-flap {
-                    width:clamp(16px,2.4vw,22px); height:clamp(24px,3.2vw,32px);
-                    background:#1a1a1a; border-radius:2px;
-                    box-shadow:inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 4px rgba(0,0,0,0.8);
+                    width:38px; height:48px; min-width:38px;
+                    background:#1a1a1a; border-radius:3px;
+                    box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 6px rgba(0,0,0,0.9);
                     display:flex; align-items:center; justify-content:center;
                     font-family:'Courier New',monospace; font-weight:700;
-                    font-size:clamp(11px,1.8vw,16px); color:#d4bc7e;
+                    font-size:26px; color:#d4bc7e;
                     text-transform:uppercase; position:relative;
-                    overflow:hidden; perspective:80px;
                 }
-                .fh-flap-space { background:transparent; box-shadow:none; width:clamp(8px,1.2vw,12px); }
-                @keyframes fh-flip {
-                    0% { transform:rotateX(0deg); opacity:1; }
-                    40% { transform:rotateX(-90deg); opacity:0.6; }
-                    60% { transform:rotateX(90deg); opacity:0.6; }
-                    100% { transform:rotateX(0deg); opacity:1; }
+                .fh-flap::after {
+                    content:''; position:absolute; left:2px; right:2px; top:50%;
+                    height:0; border-bottom:1px solid rgba(0,0,0,0.7);
                 }
+                .fh-flap-space {
+                    background:transparent; box-shadow:none; width:16px; min-width:16px;
+                }
+                .fh-flap-space::after { display:none; }
 
-                /* ── Stats Block ── */
-                .fh-gate-stats {
-                    display:flex; flex-wrap:nowrap; gap:16px; margin-bottom:24px; justify-content:center;
-                }
-                .fh-gate-stat {
-                    background:#0c161f; border:2px solid #b5a165; border-radius:8px;
-                    padding:16px 28px; text-align:center; flex:1; min-width:0; max-width:200px;
-                }
-                .fh-gate-stat .fh-stat-num {
-                    font-family:'Oswald',sans-serif; font-weight:700;
-                    font-size:clamp(1.6rem,3vw,2.2rem); color:#e67e22; line-height:1;
-                }
-                .fh-gate-stat .fh-stat-label {
-                    font-family:'Oswald',sans-serif; font-weight:400; font-size:0.75rem;
-                    text-transform:uppercase; letter-spacing:0.12em; color:#b5a165; margin-top:4px;
+                @media (max-width:600px) {
+                    .fh-board-label { width:90px; min-width:90px; padding:6px 8px 6px 10px; font-size:0.5rem; }
+                    .fh-board-tiles { padding:4px 6px; gap:1px; }
+                    .fh-flap { width:22px; height:30px; min-width:22px; font-size:16px; }
+                    .fh-flap-space { width:10px; min-width:10px; }
                 }
 
                 /* ── Boarding Request Card ── */
@@ -436,28 +423,18 @@ trait FisHotel_Shortcodes {
 
             <div class="fh-gate-wrap">
 
-                <!-- ===== Gate Banner ===== -->
-                <div class="fh-gate-banner">
-                    <h2><?php echo $gate_origin ? esc_html( strtoupper( $gate_origin ) ) . ' &middot; ' : ''; ?>NOW BOARDING</h2>
-                    <p class="fh-gate-batch"><?php echo esc_html( $batch_name ); ?></p>
-                    <div class="fh-gate-stamp">Open for Requests</div>
-                </div>
-
-                <!-- ===== Solari Split-Flap Board ===== -->
-                <div class="fh-solari" id="fh-solari-board">
-                    <div class="fh-solari-row" id="fh-solari-row"></div>
-                </div>
-
-                <!-- ===== Stats Block ===== -->
-                <div class="fh-gate-stats">
-                    <div class="fh-gate-stat">
-                        <div class="fh-stat-num"><?php echo $total_species; ?></div>
-                        <div class="fh-stat-label">Species</div>
-                    </div>
-                    <div class="fh-gate-stat">
-                        <div class="fh-stat-num"><?php echo $total_stock; ?></div>
-                        <div class="fh-stat-label">Total Stock</div>
-                    </div>
+                <!-- ===== Solari Departure Board ===== -->
+                <div class="fh-board" id="fh-board">
+                    <div class="fh-board-header">&#x2708; FISHOTEL INTERNATIONAL &middot; FHI &middot; GATE OPEN</div>
+                    <div class="fh-board-row"><div class="fh-board-label">Airport</div><div class="fh-board-tiles" data-fh-text="FISHOTEL INTERNATIONAL"></div></div>
+                    <div class="fh-board-row"><div class="fh-board-label">Destination</div><div class="fh-board-tiles" data-fh-text="CHAMPLIN, MN"></div></div>
+                    <div class="fh-board-row"><div class="fh-board-label">Flight</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( strtoupper( $batch_name ) ); ?>"></div></div>
+                    <div class="fh-board-row"><div class="fh-board-label">Status</div><div class="fh-board-tiles" data-fh-text="NOW BOARDING"></div></div>
+                    <div class="fh-board-row"><div class="fh-board-label">Gate Closes</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( $gate_closes_display ); ?>"></div></div>
+                    <div class="fh-board-row"><div class="fh-board-label">Species</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( $total_species . ' SPECIES AVAILABLE' ); ?>"></div></div>
+                    <div class="fh-board-row"><div class="fh-board-label">Stock</div><div class="fh-board-tiles" data-fh-text="<?php echo esc_attr( intval( $total_stock ) . ' TOTAL STOCK' ); ?>"></div></div>
+                    <div class="fh-board-row"><div class="fh-board-label">Boarding</div><div class="fh-board-tiles" data-fh-text="FIRST COME · FIRST SERVED"></div></div>
+                    <div class="fh-board-row"><div class="fh-board-label">Notice</div><div class="fh-board-tiles" id="fh-notice-row" data-fh-text="<?php echo esc_attr( $ticker_resolved[0] ?? '' ); ?>"></div></div>
                 </div>
 
                 <!-- ===== My Boarding Request (logged-in) / Observation Deck (logged-out) ===== -->
@@ -609,85 +586,67 @@ trait FisHotel_Shortcodes {
                         }, 800);
                     }
 
-                    // H1 override: replace page title with gate-style header
+                    // ── Solari Departure Board ──
                     (function() {
-                        var origin = <?php echo wp_json_encode( $gate_origin ); ?>;
-                        var h1 = document.querySelector('h1.entry-title, h1.page-title, header h1, .entry-header h1');
-                        if (h1) {
-                            h1.textContent = (origin ? origin.toUpperCase() + ' \u00B7 ' : '') + 'NOW BOARDING';
-                        }
-                    })();
+                        var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789·,.- ';
+                        var board = document.getElementById('fh-board');
+                        if (!board) return;
 
-                    // ── Solari Split-Flap Board ──
-                    (function() {
-                        var solariMsgs = <?php echo wp_json_encode( $ticker_resolved ); ?>;
-                        var maxLen = 40;
-                        var row = document.getElementById('fh-solari-row');
-                        if (!row || !solariMsgs.length) return;
-
-                        var currentIdx = 0;
-                        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789·-!? ';
-
-                        function padMsg(msg) {
-                            msg = msg.substring(0, maxLen);
-                            var pad = Math.floor((maxLen - msg.length) / 2);
-                            return ' '.repeat(pad) + msg + ' '.repeat(maxLen - pad - msg.length);
+                        // Build tiles for every data-fh-text row
+                        function buildTiles(container, text) {
+                            container.innerHTML = '';
+                            for (var i = 0; i < text.length; i++) {
+                                var c = text[i];
+                                var flap = document.createElement('div');
+                                flap.className = c === ' ' ? 'fh-flap fh-flap-space' : 'fh-flap';
+                                flap.setAttribute('data-char', c);
+                                container.appendChild(flap);
+                            }
                         }
 
-                        // Build initial flap tiles
-                        var padded = padMsg(solariMsgs[0]);
-                        row.innerHTML = '';
-                        for (var i = 0; i < maxLen; i++) {
-                            var flap = document.createElement('div');
-                            flap.className = padded[i] === ' ' ? 'fh-flap fh-flap-space' : 'fh-flap';
-                            flap.textContent = padded[i] === ' ' ? '' : padded[i];
-                            flap.setAttribute('data-idx', i);
-                            row.appendChild(flap);
-                        }
-
-                        function flipTo(msg) {
-                            var target = padMsg(msg);
-                            var flaps = row.querySelectorAll('.fh-flap');
+                        // Animate tiles from blank → final text, staggered left-to-right
+                        function animateRow(container, text) {
+                            var flaps = container.querySelectorAll('.fh-flap');
                             flaps.forEach(function(flap, i) {
-                                var finalChar = target[i];
+                                var finalChar = text[i] || ' ';
                                 var isSpace = finalChar === ' ';
-
-                                // Remove old classes
-                                flap.className = isSpace ? 'fh-flap fh-flap-space' : 'fh-flap';
-
-                                if (flap.textContent === finalChar || (isSpace && flap.textContent === '')) return;
-
-                                // Staggered flip animation
-                                var delay = i * 35;
-                                var flipCount = 4 + Math.floor(Math.random() * 4);
+                                var flipCount = 6 + Math.floor(Math.random() * 5);
                                 var step = 0;
-                                var interval;
-
+                                var iv;
                                 setTimeout(function() {
-                                    flap.style.animation = 'fh-flip 0.12s ease-in-out';
-                                    interval = setInterval(function() {
+                                    iv = setInterval(function() {
                                         step++;
                                         if (step >= flipCount) {
-                                            clearInterval(interval);
+                                            clearInterval(iv);
                                             flap.textContent = isSpace ? '' : finalChar;
-                                            flap.className = isSpace ? 'fh-flap fh-flap-space' : 'fh-flap';
-                                            flap.style.animation = '';
                                             return;
                                         }
-                                        flap.textContent = chars[Math.floor(Math.random() * chars.length)];
-                                        flap.style.animation = 'none';
-                                        flap.offsetHeight; // reflow
-                                        flap.style.animation = 'fh-flip 0.12s ease-in-out';
-                                    }, 100);
-                                }, delay);
+                                        flap.textContent = CHARS[Math.floor(Math.random() * CHARS.length)];
+                                    }, 60);
+                                }, i * 40);
                             });
                         }
 
-                        // Auto-advance every 4 seconds
-                        setInterval(function() {
-                            currentIdx = (currentIdx + 1) % solariMsgs.length;
-                            flipTo(solariMsgs[currentIdx]);
-                        }, 4000);
+                        // Build all static rows and animate on load
+                        var rows = board.querySelectorAll('.fh-board-tiles[data-fh-text]');
+                        rows.forEach(function(container) {
+                            var text = container.getAttribute('data-fh-text');
+                            buildTiles(container, text);
+                            animateRow(container, text);
+                        });
+
+                        // NOTICE row — cycles through ticker messages
+                        var noticeMsgs = <?php echo wp_json_encode( $ticker_resolved ); ?>;
+                        var noticeRow = document.getElementById('fh-notice-row');
+                        if (noticeRow && noticeMsgs.length > 1) {
+                            var noticeIdx = 0;
+                            setInterval(function() {
+                                noticeIdx = (noticeIdx + 1) % noticeMsgs.length;
+                                var msg = noticeMsgs[noticeIdx];
+                                buildTiles(noticeRow, msg);
+                                animateRow(noticeRow, msg);
+                            }, 4000);
+                        }
                     })();
 
                     function showLoginModal(batchId, price, fishName) {
