@@ -129,20 +129,17 @@ trait FisHotel_Shortcodes {
             ?>
 
             <!-- ===== Login Modal — GATE ACCESS REQUIRED ===== -->
-            <div id="fishotel-login-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);z-index:9999;align-items:center;justify-content:center;">
-                <div style="background:#0c161f;padding:0;border-radius:10px;width:400px;max-width:92%;color:#fff;box-shadow:0 10px 40px rgba(0,0,0,0.8);border:2px solid #b5a165;overflow:hidden;position:relative;">
-                    <div style="background:rgba(181,161,101,0.15);padding:18px 24px;border-bottom:1px solid #b5a165;text-align:center;">
-                        <h3 style="margin:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:1.3rem;text-transform:uppercase;letter-spacing:0.1em;color:#b5a165;">Gate Access Required</h3>
-                    </div>
-                    <div style="padding:28px 28px 24px;">
-                        <form id="fishotel-login-form">
-                            <p><input type="text" id="fishotel-username" placeholder="Username or Email" style="width:100%;padding:12px 14px;background:#0f1e2d;border:1px solid #b5a165;border-radius:4px;color:#fff;font-size:15px;font-family:'Oswald',sans-serif;"></p>
-                            <p><input type="password" id="fishotel-password" placeholder="Password" style="width:100%;padding:12px 14px;background:#0f1e2d;border:1px solid #b5a165;border-radius:4px;color:#fff;font-size:15px;font-family:'Oswald',sans-serif;"></p>
-                            <p><button type="submit" id="fishotel-login-btn" style="width:100%;padding:14px;background:#e67e22;color:#0c161f;font-size:16px;font-weight:700;border:none;border-radius:4px;cursor:pointer;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:0.06em;">Log In</button></p>
-                            <p style="text-align:center;margin:15px 0 0 0;"><a href="<?php echo wp_lostpassword_url(); ?>" style="color:#b5a165;font-family:'Oswald',sans-serif;font-size:0.9rem;">Forgot Password?</a></p>
-                        </form>
-                    </div>
-                    <button onclick="closeLoginModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#b5a165;font-size:22px;cursor:pointer;">&#x2715;</button>
+            <div id="fishotel-login-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(7,22,40,0.92);z-index:9999;align-items:center;justify-content:center;">
+                <div style="background:linear-gradient(165deg,#0d2a4a 0%,#0a2040 50%,#071628 100%);border:1px solid rgba(181,161,101,0.4);border-radius:3px;box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 0 1px rgba(181,161,101,0.1);padding:36px 40px 32px;width:400px;max-width:92%;color:#fff;position:relative;overflow:hidden;">
+                    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#b5a165 20%,#d4bc7e 50%,#b5a165 80%,transparent);"></div>
+                    <h3 style="margin:0 0 24px;font-family:'Special Elite',monospace;font-size:13px;letter-spacing:0.3em;color:#d4bc7e;text-transform:uppercase;text-align:center;">Gate Access Required</h3>
+                    <form id="fishotel-login-form">
+                        <p><input type="text" id="fishotel-username" placeholder="Username or Email" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(181,161,101,0.3);color:#e8dcc0;font-family:'Special Elite',monospace;letter-spacing:0.05em;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(181,161,101,0.7)';this.style.background='rgba(255,255,255,0.09)';this.style.outline='none'" onblur="this.style.borderColor='rgba(181,161,101,0.3)';this.style.background='rgba(255,255,255,0.06)'"></p>
+                        <p><input type="password" id="fishotel-password" placeholder="Password" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(181,161,101,0.3);color:#e8dcc0;font-family:'Special Elite',monospace;letter-spacing:0.05em;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(181,161,101,0.7)';this.style.background='rgba(255,255,255,0.09)';this.style.outline='none'" onblur="this.style.borderColor='rgba(181,161,101,0.3)';this.style.background='rgba(255,255,255,0.06)'"></p>
+                        <p><button type="submit" id="fishotel-login-btn" style="width:100%;padding:12px;background:rgba(181,161,101,0.22);border:1.5px solid #d4bc7e;color:#f0e0a0;font-family:'Special Elite',monospace;font-size:12px;letter-spacing:0.25em;text-transform:uppercase;cursor:pointer;box-shadow:0 0 18px rgba(181,161,101,0.15);" onmouseover="this.style.background='rgba(181,161,101,0.32)'" onmouseout="this.style.background='rgba(181,161,101,0.22)'">&#x2726; &nbsp; Log In &nbsp; &#x2726;</button></p>
+                        <p style="text-align:center;margin:15px 0 0 0;"><a href="<?php echo wp_lostpassword_url(); ?>" style="color:rgba(212,188,126,0.5);font-family:'Special Elite',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;text-decoration:none;" onmouseover="this.style.color='#d4bc7e'" onmouseout="this.style.color='rgba(212,188,126,0.5)'">Forgot Password?</a></p>
+                    </form>
+                    <button onclick="closeLoginModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:rgba(212,188,126,0.5);font-size:18px;cursor:pointer;" onmouseover="this.style.color='#d4bc7e'" onmouseout="this.style.color='rgba(212,188,126,0.5)'">&#x2715;</button>
                 </div>
             </div>
 
@@ -855,9 +852,9 @@ trait FisHotel_Shortcodes {
                         <div class="fh-ts-body">
                             <div class="fh-ts-issued-by">Issued by</div>
                             <div class="fh-ts-issuer">FisHotel World Airways, Inc.</div>
-                            <div class="fh-ts-tagline">World's Most Experienced Fish Hotel</div>
+                            <div class="fh-ts-tagline">World's Most Luxury Vacation Experience</div>
                             <div class="fh-ts-divider"></div>
-                            <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="fh-ts-login">Log In to See Your Boarding Pass</a>
+                            <button type="button" class="fh-ts-login" onclick="document.getElementById('fishotel-login-modal').style.display='flex'">Log In to See Your Boarding Pass</button>
                             <div class="fh-ts-fine">
                                 Each passenger should carefully examine this ticket.<br>
                                 This ticket shall not be valid without a verified deposit on file.
@@ -2182,9 +2179,9 @@ trait FisHotel_Shortcodes {
                         <div class="fh-ts-body">
                             <div class="fh-ts-issued-by">Issued by</div>
                             <div class="fh-ts-issuer">FisHotel World Airways, Inc.</div>
-                            <div class="fh-ts-tagline">World's Most Experienced Fish Hotel</div>
+                            <div class="fh-ts-tagline">World's Most Luxury Vacation Experience</div>
                             <div class="fh-ts-divider"></div>
-                            <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="fh-ts-login">Log In to See Your Boarding Pass</a>
+                            <button type="button" class="fh-ts-login" onclick="document.getElementById('fishotel-login-modal').style.display='flex'">Log In to See Your Boarding Pass</button>
                             <div class="fh-ts-fine">
                                 Each passenger should carefully examine this ticket.<br>
                                 This ticket shall not be valid without a verified deposit on file.
