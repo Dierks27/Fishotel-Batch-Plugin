@@ -381,26 +381,32 @@ trait FisHotel_Shortcodes {
                     width:100%; border-collapse:collapse; font-size:13px; margin-bottom:6px;
                     font-family:'Special Elite',monospace;
                 }
-                .fh-bp-open-fish-table thead tr { background:transparent; }
+                .fh-bp-open-fish-table thead tr { background:transparent !important; border-top:1.5px solid #3d2b1f; }
                 .fh-bp-open-fish-table th {
-                    text-align:left; color:#0a0805; font-weight:400; font-size:10px;
-                    text-transform:uppercase; letter-spacing:0.08em; padding:4px 10px;
-                    border-bottom:2px solid #1a1a2e; background:transparent;
+                    text-align:left; color:#5a4a3a; font-weight:400; font-size:9px;
+                    text-transform:uppercase; letter-spacing:2px; padding:5px 10px;
+                    border-bottom:1.5px solid #3d2b1f; background:transparent !important;
                     font-family:'Special Elite',monospace;
                 }
+                .fh-bp-open-fish-table th:nth-child(3),
+                .fh-bp-open-fish-table th:nth-child(4) { text-align:right; }
                 .fh-bp-open-fish-table th:last-child { text-align:center; }
                 .fh-bp-open-fish-table td {
-                    padding:5px 10px; border-bottom:1px solid #c8b99a;
+                    padding:5px 8px; border-bottom:1px solid rgba(61,43,31,0.15);
                     font-size:13px; color:#0a0805;
                     font-family:'Special Elite',monospace;
                 }
+                .fh-bp-open-fish-table td:first-child { padding-left:8px; }
+                .fh-bp-open-fish-table td:nth-child(2) { text-align:center; }
+                .fh-bp-open-fish-table td:nth-child(3),
+                .fh-bp-open-fish-table td:nth-child(4) { text-align:right; }
                 .fh-bp-open-fish-table td:last-child { text-align:center; }
                 .fh-bp-open-fish-table tbody tr:nth-child(odd) { background:#f2ead8; }
                 .fh-bp-open-fish-table tbody tr:nth-child(even) { background:#ebe0c4; }
                 .fh-bp-open-fish-table .fh-bp-prev-row { /* same style as new items */ }
                 .fh-bp-open-fish-table .fh-bp-remove-btn {
-                    background:none; border:none; color:#8b1a1a; font-size:1.3em;
-                    cursor:pointer; padding:0 4px; line-height:1;
+                    background:none; border:none; color:#8b1a1a; font-size:11px;
+                    cursor:pointer; padding:0 2px; line-height:1;
                 }
                 .fh-bp-open-empty {
                     color:#5a4a3a; font-style:italic; padding:10px 0;
@@ -414,12 +420,13 @@ trait FisHotel_Shortcodes {
                     text-transform:uppercase; letter-spacing:0.04em;
                 }
                 #submit-requests {
-                    width:100%; padding:14px 40px; font-size:14px; font-weight:700;
-                    background:#e67e22; color:#0c161f; border:none; border-radius:4px;
+                    width:100%; padding:10px 24px; font-size:13px; font-weight:700;
+                    background:transparent; color:#8b1a1a; border:2px solid #8b1a1a; border-radius:0;
                     cursor:pointer; display:block;
-                    font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:0.06em;
+                    font-family:'Special Elite',monospace; text-transform:uppercase; letter-spacing:3px;
+                    transition:background 0.15s;
                 }
-                #submit-requests:hover { background:#d4700f; }
+                #submit-requests:hover { background:rgba(139,26,26,0.08); }
 
                 /* Stub (right panel) */
                 .fh-bp-open-stub {
@@ -444,10 +451,10 @@ trait FisHotel_Shortcodes {
                     font-family:'Special Elite',monospace;
                 }
                 .fh-bp-open-deposit-stamp {
-                    display:inline-block; border:2px solid #2d6a2d; border-radius:0;
+                    display:inline-block; border:2px solid #8b1a1a; border-radius:0;
                     padding:4px 10px; font-weight:700; font-size:0.65rem;
                     text-transform:uppercase; letter-spacing:0.06em;
-                    transform:rotate(-12deg); color:#2d6a2d; margin-top:2px;
+                    transform:rotate(-12deg); color:#8b1a1a; margin-top:2px;
                     align-self:flex-start;
                     font-family:'Special Elite',monospace;
                 }
@@ -1232,7 +1239,7 @@ trait FisHotel_Shortcodes {
 
                         let html = '';
                         if (prevItems.length > 0) {
-                            html += '<div style="color:#5a4a3a;font-size:0.7em;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 4px;font-family:Special Elite,monospace;">Previously Requested</div>';
+                            html += '<div style="color:#5a4a3a;font-size:9px;text-transform:uppercase;letter-spacing:3px;margin:0 0 4px;font-family:Special Elite,monospace;font-weight:400;">Passenger Itinerary</div><div style="border-bottom:1px solid rgba(61,43,31,0.3);margin-bottom:6px;"></div>';
                         }
                         html += '<table class="fh-bp-open-fish-table"><thead><tr><th>Common Name</th><th>Qty</th><th>Unit Price</th><th>Total</th><th></th></tr></thead><tbody>';
 
@@ -1246,7 +1253,7 @@ trait FisHotel_Shortcodes {
 
                         // Current session new requests
                         if (cartItems.length > 0 && prevItems.length > 0) {
-                            html += `<tr><td colspan="5" style="padding:6px 10px 2px;color:#5a4a3a;font-size:0.7em;text-transform:uppercase;letter-spacing:0.08em;border:none;font-family:Special Elite,monospace;">New Requests</td></tr>`;
+                            html += `<tr><td colspan="5" style="padding:6px 8px 2px;color:#5a4a3a;font-size:9px;text-transform:uppercase;letter-spacing:3px;border:none;font-family:Special Elite,monospace;font-weight:400;">New Requests</td></tr>`;
                         }
                         cartItems.forEach((item, index) => {
                             const lineTotal = item.price * item.qty;
