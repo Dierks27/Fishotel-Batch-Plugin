@@ -200,6 +200,27 @@ trait FisHotel_Shortcodes {
                 }
             }
             $bp_deposit_paid = is_user_logged_in() && ( floatval( get_user_meta( get_current_user_id(), '_fishotel_wallet_balance', true ) ) >= $bp_deposit || ! empty( $prev_items ) );
+
+            // Aggregate total requested qty per fish across ALL users for this batch
+            $all_batch_reqs = get_posts( [
+                'post_type'   => 'fish_request',
+                'numberposts' => -1,
+                'post_status' => 'any',
+                'meta_query'  => [
+                    [ 'key' => '_batch_name', 'value' => $batch_name, 'compare' => '=' ],
+                ],
+            ] );
+            $total_qty_map = [];
+            foreach ( $all_batch_reqs as $req ) {
+                if ( get_post_meta( $req->ID, '_is_admin_order', true ) ) continue;
+                $req_items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
+                foreach ( $req_items as $ritem ) {
+                    $bid = $ritem['batch_id'] ?? '';
+                    if ( $bid ) {
+                        $total_qty_map[ $bid ] = ( $total_qty_map[ $bid ] ?? 0 ) + (int) $ritem['qty'];
+                    }
+                }
+            }
             ?>
 
             <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Klee+One&family=Patrick+Hand&display=swap" rel="stylesheet">
@@ -988,7 +1009,15 @@ trait FisHotel_Shortcodes {
                                 $low_class   = ( $stock > 0 && $stock <= 5 ) ? ' fh-stock-low' : '';
                                 $row_class   = $stock <= 0 ? ' class="fh-row-closed"' : '';
                                 echo '<tr' . $row_class . ' data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '" data-rownum="' . $row_num . '">';
-                                echo '<td class="fh-row-num"></td>';
+                                $fish_total_qty = $total_qty_map[ $bp->ID ] ?? 0;
+                                echo '<td class="fh-row-num">';
+                                if ( $fish_total_qty > 0 ) {
+                                    $bid_hash = $bp->ID;
+                                    $q_rot = ( ( $bid_hash * 83 + 17 ) % 40 ) - 22;
+                                    $q_top = 8 + ( ( $bid_hash * 47 + 11 ) % 21 );
+                                    echo '<span class="fh-hw-qty" style="transform:translateX(-50%) rotate(' . $q_rot . 'deg);top:' . $q_top . 'px;">' . $fish_total_qty . '</span>';
+                                }
+                                echo '</td>';
                                 echo '<td class="fh-common-cell">' . esc_html( $master->post_title ) . ( $size ? ' <span class="fh-size-inline">' . esc_html( $size ) . '</span>' : '' ) . '</td>';
                                 echo '<td>' . esc_html( $sci_name ) . '</td>';
                                 echo '<td style="text-align:right;">' . number_format( $price, 2 ) . '</td>';
