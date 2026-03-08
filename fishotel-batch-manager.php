@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.77 - Remove clipboard/curl, hide blank overlay, fix +1, center margin qty, larger prices, Indie Flower font.
- * Version:           2.77
+ * Description:       Stable v2.78 - Klee One font, boarding pass cream paper redesign, combined passenger line, narrower stub.
+ * Version:           2.78
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.77' );
+define( 'FISHOTEL_VERSION', '2.78' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

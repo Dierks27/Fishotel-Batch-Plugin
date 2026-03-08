@@ -193,7 +193,7 @@ trait FisHotel_Shortcodes {
             $bp_deposit_paid = is_user_logged_in() && ( floatval( get_user_meta( get_current_user_id(), '_fishotel_wallet_balance', true ) ) >= $bp_deposit || ! empty( $prev_items ) );
             ?>
 
-            <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Indie+Flower&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Klee+One&display=swap" rel="stylesheet">
             <style>
                 /* ── PanAm Gate Theme — Globals ── */
                 .fh-gate-wrap {
@@ -339,76 +339,82 @@ trait FisHotel_Shortcodes {
                     .fh-flap { width:20px; height:30px; min-width:20px; font-size:15px; }
                 }
 
-                /* ── Boarding Pass Card ── */
-                .fh-bp-open { position:relative; margin-bottom:24px; overflow:hidden; border-radius:10px; }
+                /* ── Boarding Pass Card — cream paper form ── */
+                .fh-bp-open { position:relative; margin-bottom:24px; overflow:hidden; border-radius:2px; }
                 .fh-bp-open-inner {
-                    display:flex; background:#0c161f; border-radius:10px; overflow:hidden;
-                    font-family:'Oswald',sans-serif; color:#fff; position:relative;
+                    display:flex; background:#f2ead8; border-radius:2px; overflow:hidden;
+                    font-family:'Special Elite',monospace; color:#0a0805; position:relative;
+                    border:1px solid #c8b99a;
+                    box-shadow:0 4px 24px rgba(0,0,0,0.25);
                 }
                 .fh-bp-open::after {
-                    content:''; position:absolute; inset:0; border-radius:10px;
-                    filter:url(#fh-paper-grain); background:rgba(255,255,255,0.04);
-                    pointer-events:none; z-index:1; mix-blend-mode:overlay;
+                    content:''; position:absolute; inset:0; border-radius:2px;
+                    filter:url(#fh-paper-grain); background:rgba(180,165,130,0.06);
+                    pointer-events:none; z-index:1; mix-blend-mode:multiply;
                 }
-                .fh-bp-open-left { flex:1 1 65%; min-width:0; display:flex; flex-direction:column; }
+                .fh-bp-open-left { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
                 .fh-bp-open-header {
                     display:flex; justify-content:space-between; align-items:center;
-                    padding:12px 20px; background:#111d28;
+                    padding:8px 20px; background:#1a1a2e; height:32px; box-sizing:border-box;
                 }
                 .fh-bp-open-header-title {
-                    font-size:0.8rem; font-weight:700; text-transform:uppercase;
-                    letter-spacing:0.14em; color:#b5a165;
+                    font-size:0.75rem; font-weight:700; text-transform:uppercase;
+                    letter-spacing:0.14em; color:#d4bc7e;
+                    font-family:'Special Elite',monospace;
                 }
                 .fh-bp-open-header-flight {
-                    font-size:0.8rem; font-weight:400; color:#5a6a7a;
-                    letter-spacing:0.1em;
+                    font-size:0.75rem; font-weight:400; color:#8a9bae;
+                    letter-spacing:0.1em; font-family:'Special Elite',monospace;
                 }
-                .fh-bp-open-body { padding:20px; flex:1; }
-                .fh-bp-open-field-label {
-                    font-size:10px; color:#5a6a7a; text-transform:uppercase;
-                    letter-spacing:0.1em; margin:0 0 2px; font-weight:400;
+                .fh-bp-open-body { padding:16px 20px; flex:1; }
+                /* Combined passenger + route line */
+                .fh-bp-open-passenger-line {
+                    font-family:'Special Elite',monospace; font-size:13px; color:#0a0805;
+                    margin:0 0 12px; padding-bottom:10px;
+                    border-bottom:2px solid #1a1a2e; line-height:1.5;
+                    text-transform:uppercase; letter-spacing:0.04em;
                 }
-                .fh-bp-open-field-value {
-                    font-size:1.15rem; font-weight:700; margin:0 0 14px;
-                }
-                .fh-bp-open-route {
-                    display:flex; align-items:flex-start; gap:16px; margin-bottom:20px;
-                }
-                .fh-bp-open-route-arrow {
-                    color:#5a6a7a; font-size:1.2rem; padding-top:14px;
+                .fh-bp-open-passenger-line .fh-bp-pax-label {
+                    font-size:9px; color:#5a4a3a; letter-spacing:0.1em; margin-right:6px;
                 }
                 .fh-bp-open-fish-table {
-                    width:100%; border-collapse:collapse; font-size:0.85rem; margin-bottom:6px;
+                    width:100%; border-collapse:collapse; font-size:13px; margin-bottom:6px;
+                    font-family:'Special Elite',monospace;
                 }
-                .fh-bp-open-fish-table thead tr { background:rgba(181,161,101,0.15); }
+                .fh-bp-open-fish-table thead tr { background:transparent; }
                 .fh-bp-open-fish-table th {
-                    text-align:left; color:#b5a165; font-weight:400; font-size:10px;
-                    text-transform:uppercase; letter-spacing:0.08em; padding:6px 10px;
-                    border-bottom:1px solid #333;
+                    text-align:left; color:#0a0805; font-weight:400; font-size:10px;
+                    text-transform:uppercase; letter-spacing:0.08em; padding:4px 10px;
+                    border-bottom:2px solid #1a1a2e; background:transparent;
+                    font-family:'Special Elite',monospace;
                 }
                 .fh-bp-open-fish-table th:last-child { text-align:center; }
                 .fh-bp-open-fish-table td {
-                    padding:6px 10px; border-bottom:1px solid #1a1a1a;
-                    font-size:13px; color:#fff;
+                    padding:5px 10px; border-bottom:1px solid #c8b99a;
+                    font-size:13px; color:#0a0805;
+                    font-family:'Special Elite',monospace;
                 }
                 .fh-bp-open-fish-table td:last-child { text-align:center; }
-                .fh-bp-open-fish-table tbody tr:nth-child(odd) { background:#0c161f; }
-                .fh-bp-open-fish-table tbody tr:nth-child(even) { background:#0f1e2d; }
+                .fh-bp-open-fish-table tbody tr:nth-child(odd) { background:#f2ead8; }
+                .fh-bp-open-fish-table tbody tr:nth-child(even) { background:#ebe0c4; }
                 .fh-bp-open-fish-table .fh-bp-prev-row { /* same style as new items */ }
                 .fh-bp-open-fish-table .fh-bp-remove-btn {
-                    background:none; border:none; color:#e74c3c; font-size:1.3em;
+                    background:none; border:none; color:#8b1a1a; font-size:1.3em;
                     cursor:pointer; padding:0 4px; line-height:1;
                 }
                 .fh-bp-open-empty {
-                    color:#5a6a7a; font-style:italic; padding:10px 0;
-                    text-align:center; font-size:0.9rem;
+                    color:#5a4a3a; font-style:italic; padding:10px 0;
+                    text-align:center; font-size:0.85rem;
+                    font-family:'Special Elite',monospace;
                 }
                 #cart-total {
-                    font-family:'Oswald',sans-serif; font-weight:700; color:#e67e22;
-                    margin:12px 0; font-size:1.1em; text-align:right;
+                    font-family:'Special Elite',monospace; font-weight:700; color:#0a0805;
+                    margin:10px 0; font-size:13px; text-align:right;
+                    padding-top:8px; border-top:2px solid #1a1a2e;
+                    text-transform:uppercase; letter-spacing:0.04em;
                 }
                 #submit-requests {
-                    width:100%; padding:14px 40px; font-size:16px; font-weight:700;
+                    width:100%; padding:14px 40px; font-size:14px; font-weight:700;
                     background:#e67e22; color:#0c161f; border:none; border-radius:4px;
                     cursor:pointer; display:block;
                     font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:0.06em;
@@ -417,37 +423,41 @@ trait FisHotel_Shortcodes {
 
                 /* Stub (right panel) */
                 .fh-bp-open-stub {
-                    flex:0 0 35%; min-width:0; box-sizing:border-box;
-                    padding:24px 20px 24px 28px;
-                    display:flex; flex-direction:column; gap:12px;
-                    border-left:2px dashed #b5a165; position:relative;
-                    background:#0c161f; overflow:hidden;
+                    flex:0 0 220px; max-width:220px; box-sizing:border-box;
+                    padding:20px 16px 20px 20px;
+                    display:flex; flex-direction:column; gap:10px;
+                    border-left:2px dashed #1a1a2e; position:relative;
+                    background:#f2ead8; overflow:hidden;
                 }
                 .fh-bp-open-scissors {
                     position:absolute; top:-2px; left:-1px; font-size:16px;
-                    color:#b5a165; z-index:2; line-height:1;
+                    color:#1a1a2e; z-index:2; line-height:1;
                     transform:translateX(-50%);
                 }
                 .fh-bp-open-stub-label {
-                    font-size:10px; color:#5a6a7a; text-transform:uppercase;
+                    font-size:9px; color:#5a4a3a; text-transform:uppercase;
                     letter-spacing:0.1em; margin:0; font-weight:400;
+                    font-family:'Special Elite',monospace;
                 }
                 .fh-bp-open-stub-value {
-                    font-size:1rem; font-weight:700; margin:0;
+                    font-size:0.9rem; font-weight:700; margin:0; color:#0a0805;
+                    font-family:'Special Elite',monospace;
                 }
                 .fh-bp-open-deposit-stamp {
-                    display:inline-block; border:2px solid #e67e22; border-radius:4px;
-                    padding:6px 14px; font-weight:700; font-size:0.7rem;
+                    display:inline-block; border:2px solid #2d6a2d; border-radius:0;
+                    padding:4px 10px; font-weight:700; font-size:0.65rem;
                     text-transform:uppercase; letter-spacing:0.06em;
-                    transform:rotate(-12deg); color:#e67e22; margin-top:4px;
+                    transform:rotate(-12deg); color:#2d6a2d; margin-top:2px;
                     align-self:flex-start;
+                    font-family:'Special Elite',monospace;
                 }
                 .fh-bp-open-vertical {
                     writing-mode:vertical-rl; text-orientation:mixed;
-                    font-size:1rem; font-weight:700; letter-spacing:0.15em;
-                    text-transform:uppercase; color:rgba(181,161,101,0.2);
-                    position:absolute; right:6px; top:50%;
+                    font-size:0.85rem; font-weight:700; letter-spacing:0.15em;
+                    text-transform:uppercase; color:rgba(26,26,46,0.12);
+                    position:absolute; right:4px; top:50%;
                     transform:rotate(180deg) translateY(50%);
+                    font-family:'Special Elite',monospace;
                 }
 
                 /* Logged-out ghost / overlay */
@@ -455,15 +465,15 @@ trait FisHotel_Shortcodes {
                 .fh-bp-open-login-overlay {
                     position:absolute; inset:0; display:flex; align-items:center;
                     justify-content:center; flex-direction:column; gap:0;
-                    background:rgba(12,22,31,0.82); border-radius:10px; z-index:2;
+                    background:rgba(242,234,216,0.82); border-radius:2px; z-index:2;
                 }
                 .fh-bp-open-login-link {
                     display:flex; flex-direction:column; align-items:center; gap:8px;
-                    font-family:'Oswald',sans-serif; font-size:1.1rem; color:#b5a165;
+                    font-family:'Special Elite',monospace; font-size:1rem; color:#1a1a2e;
                     text-transform:uppercase; letter-spacing:0.08em;
                     text-decoration:none; transition:color 0.2s;
                 }
-                .fh-bp-open-login-link:hover { color:#e67e22; }
+                .fh-bp-open-login-link:hover { color:#8b1a1a; }
                 .fh-bp-open-lock { font-size:2rem; display:block; }
 
                 /* Boarding pass mobile */
@@ -471,14 +481,13 @@ trait FisHotel_Shortcodes {
                     .fh-bp-open-inner { flex-direction:column; }
                     .fh-bp-open-left { flex:none; }
                     .fh-bp-open-stub {
-                        flex:none; border-left:none; border-top:2px dashed #b5a165;
-                        flex-direction:row; flex-wrap:wrap; gap:12px 20px;
-                        padding:16px 20px;
+                        flex:none; max-width:none; border-left:none; border-top:2px dashed #1a1a2e;
+                        flex-direction:row; flex-wrap:wrap; gap:10px 16px;
+                        padding:14px 16px;
                     }
                     .fh-bp-open-stub > div { flex:0 0 auto; }
                     .fh-bp-open-vertical { display:none; }
                     .fh-bp-open-scissors { display:none; }
-                    .fh-bp-open-route { flex-wrap:wrap; gap:8px; }
                 }
 
                 /* ── Departure Manifest — Clipboard backing board ── */
@@ -611,7 +620,7 @@ trait FisHotel_Shortcodes {
 
                 /* ── Price column — printed price on form ── */
                 .fishotel-open-table tbody td:nth-child(4) {
-                    font-size:15px; color:#0a0805; font-weight:700;
+                    font-size:13px; color:#2a1f14; font-weight:500;
                 }
 
                 /* ── Size Badge (mobile cards only) ── */
@@ -649,7 +658,7 @@ trait FisHotel_Shortcodes {
                 .fh-hw-input-val {
                     position:absolute; top:50%; left:50%;
                     transform:translate(-50%,-50%);
-                    font-family:'Indie Flower',cursive; font-size:28px; color:#0d0a05;
+                    font-family:'Klee One',cursive; font-size:28px; color:#0d0a05;
                     font-weight:700; line-height:1; pointer-events:none; z-index:2;
                     white-space:nowrap;
                 }
@@ -668,7 +677,7 @@ trait FisHotel_Shortcodes {
 
                 /* ── Green checkmark — handwritten annotation in common name cell ── */
                 .fh-in-cart-check {
-                    font-family:'Indie Flower',cursive; font-size:22px; color:#2d6a2d;
+                    font-family:'Klee One',cursive; font-size:22px; color:#2d6a2d;
                     display:inline-block;
                     line-height:1; font-weight:700;
                     position:absolute; left:-2px; z-index:3;
@@ -678,7 +687,7 @@ trait FisHotel_Shortcodes {
                 .fh-common-cell { position:relative; }
                 /* ── Handwritten qty in # margin — felt-tip pen annotation ── */
                 .fh-hw-qty {
-                    font-family:'Indie Flower',cursive; font-size:30px; color:#1a4d1a;
+                    font-family:'Klee One',cursive; font-size:30px; color:#1a4d1a;
                     line-height:1; font-weight:700;
                     position:absolute; left:50%; z-index:3;
                     /* top and transform (translateX + rotation) set per-row via inline style */
@@ -800,19 +809,7 @@ trait FisHotel_Shortcodes {
                                 <span class="fh-bp-open-header-flight"><?php echo esc_html( $flight_number ); ?></span>
                             </div>
                             <div class="fh-bp-open-body">
-                                <p class="fh-bp-open-field-label">Passenger</p>
-                                <p class="fh-bp-open-field-value"><?php echo is_user_logged_in() ? esc_html( wp_get_current_user()->display_name ) : 'Guest'; ?></p>
-                                <div class="fh-bp-open-route">
-                                    <div>
-                                        <p class="fh-bp-open-field-label">From</p>
-                                        <p class="fh-bp-open-field-value"><?php echo esc_html( strtoupper( $origin_name ) ); ?></p>
-                                    </div>
-                                    <div class="fh-bp-open-route-arrow">&#x2708;</div>
-                                    <div>
-                                        <p class="fh-bp-open-field-label">To</p>
-                                        <p class="fh-bp-open-field-value">CHAMPLIN, MN</p>
-                                    </div>
-                                </div>
+                                <p class="fh-bp-open-passenger-line"><span class="fh-bp-pax-label">PASSENGER</span> <?php echo is_user_logged_in() ? esc_html( strtoupper( wp_get_current_user()->display_name ) ) : 'GUEST'; ?> &middot; <?php echo esc_html( strtoupper( $origin_name ) ); ?> &#x2708; CHAMPLIN, MN</p>
                                 <div id="request-list" style="min-height:36px;"></div>
                                 <div id="cart-total">Total: $0.00</div>
                                 <button id="submit-requests">Submit My Requests</button>
@@ -1235,7 +1232,7 @@ trait FisHotel_Shortcodes {
 
                         let html = '';
                         if (prevItems.length > 0) {
-                            html += '<div style="color:#5a6a7a;font-size:0.72em;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 4px;font-family:Oswald,sans-serif;">Previously Requested</div>';
+                            html += '<div style="color:#5a4a3a;font-size:0.7em;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 4px;font-family:Special Elite,monospace;">Previously Requested</div>';
                         }
                         html += '<table class="fh-bp-open-fish-table"><thead><tr><th>Common Name</th><th>Qty</th><th>Unit Price</th><th>Total</th><th></th></tr></thead><tbody>';
 
@@ -1243,17 +1240,17 @@ trait FisHotel_Shortcodes {
                         prevItems.forEach((item, idx) => {
                             const lt = (item.price * item.qty).toFixed(2);
                             const safeName = item.fish_name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-                            html += `<tr class="fh-bp-prev-row"><td>${item.fish_name}</td><td>${item.qty}</td><td>$${parseFloat(item.price).toFixed(2)}</td><td style="color:#e67e22;font-weight:600;">$${lt}</td>
+                            html += `<tr class="fh-bp-prev-row"><td>${item.fish_name}</td><td>${item.qty}</td><td>$${parseFloat(item.price).toFixed(2)}</td><td style="font-weight:700;">$${lt}</td>
                                 <td><button class="fh-bp-remove-btn" onclick="removePrevItem(this,${idx},'${safeName}',${item.request_id},${item.batch_id},${item.price * item.qty})" title="Remove">&times;</button></td></tr>`;
                         });
 
                         // Current session new requests
                         if (cartItems.length > 0 && prevItems.length > 0) {
-                            html += `<tr><td colspan="5" style="padding:6px 10px 2px;color:#b5a165;font-size:0.72em;text-transform:uppercase;letter-spacing:0.08em;border:none;">New Requests</td></tr>`;
+                            html += `<tr><td colspan="5" style="padding:6px 10px 2px;color:#5a4a3a;font-size:0.7em;text-transform:uppercase;letter-spacing:0.08em;border:none;font-family:Special Elite,monospace;">New Requests</td></tr>`;
                         }
                         cartItems.forEach((item, index) => {
                             const lineTotal = item.price * item.qty;
-                            html += `<tr data-line-total="${lineTotal}" data-index="${index}"><td>${item.fish_name}</td><td>${item.qty}</td><td>$${parseFloat(item.price).toFixed(2)}</td><td style="color:#e67e22;font-weight:600;">$${lineTotal.toFixed(2)}</td>
+                            html += `<tr data-line-total="${lineTotal}" data-index="${index}"><td>${item.fish_name}</td><td>${item.qty}</td><td>$${parseFloat(item.price).toFixed(2)}</td><td style="font-weight:700;">$${lineTotal.toFixed(2)}</td>
                                 <td><button class="fh-bp-remove-btn" onclick="removeItem(this)" title="Remove">&times;</button></td></tr>`;
                         });
 
