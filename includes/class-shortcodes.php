@@ -339,7 +339,7 @@ trait FisHotel_Shortcodes {
                 }
 
                 /* ── Boarding Pass Card ── */
-                .fh-bp-open { position:relative; margin-bottom:24px; }
+                .fh-bp-open { position:relative; margin-bottom:24px; overflow:hidden; border-radius:10px; }
                 .fh-bp-open-inner {
                     display:flex; background:#0c161f; border-radius:10px; overflow:hidden;
                     font-family:'Oswald',sans-serif; color:#fff; position:relative;
@@ -423,8 +423,9 @@ trait FisHotel_Shortcodes {
                     background:#0c161f; overflow:hidden;
                 }
                 .fh-bp-open-scissors {
-                    position:absolute; top:-2px; left:-10px; font-size:16px;
+                    position:absolute; top:-2px; left:-1px; font-size:16px;
                     color:#b5a165; z-index:2; line-height:1;
+                    transform:translateX(-50%);
                 }
                 .fh-bp-open-stub-label {
                     font-size:10px; color:#5a6a7a; text-transform:uppercase;
@@ -507,7 +508,7 @@ trait FisHotel_Shortcodes {
                 .fh-scroll-wrap::-webkit-scrollbar { height:8px; background:#0c161f; }
                 .fh-scroll-wrap::-webkit-scrollbar-thumb { background:#b5a165; border-radius:4px; }
 
-                .fishotel-open-table { width:100%; min-width:920px; border-collapse:collapse; }
+                .fishotel-open-table { width:100%; border-collapse:collapse; table-layout:fixed; }
                 .fishotel-open-table thead tr { background:rgba(181,161,101,0.15); }
                 .fishotel-open-table th {
                     text-align:left; color:#b5a165; font-family:'Oswald',sans-serif;
@@ -521,6 +522,7 @@ trait FisHotel_Shortcodes {
                 .fishotel-open-table td {
                     padding:10px 14px; font-family:'Oswald',sans-serif;
                     font-size:14px; color:#fff;
+                    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
                 }
                 .fishotel-open-table tbody tr:nth-child(odd) { background:#0c161f; }
                 .fishotel-open-table tbody tr:nth-child(even) { background:#0f1e2d; }
@@ -746,12 +748,12 @@ trait FisHotel_Shortcodes {
                     <div class="fh-scroll-wrap">
                         <table class="fishotel-open-table">
                             <thead><tr>
-                                <th data-sort="common">Common Name</th>
-                                <th data-sort="sci">Scientific Name</th>
-                                <th style="text-align:center;">Size</th>
-                                <th style="text-align:right;" data-sort="price">Avg Price</th>
-                                <th style="text-align:center;" data-sort="stock">Stock</th>
-                                <th style="text-align:center;">Action</th>
+                                <th data-sort="common" style="width:22%;">Common Name</th>
+                                <th data-sort="sci" style="width:24%;">Scientific Name</th>
+                                <th style="text-align:center;width:8%;">Size</th>
+                                <th style="text-align:right;width:12%;" data-sort="price">Avg Price</th>
+                                <th style="text-align:center;width:10%;" data-sort="stock">Stock</th>
+                                <th style="text-align:center;width:24%;">Action</th>
                             </tr></thead><tbody>
                             <?php foreach ( $batch_posts as $bp ) {
                                 $master_id = get_post_meta( $bp->ID, '_master_id', true );
