@@ -2816,6 +2816,7 @@ trait FisHotel_Admin {
         // ── Arrival Data Form ──────────────────────────────────────────────
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:28px;">';
         echo '<h2 style="color:#e67e22;margin-top:0;font-size:1.2em;">Arrival Data</h2>';
+        echo '<input type="text" id="fh-arrival-search" placeholder="Search species..." style="width:100%;padding:10px 14px;margin-bottom:16px;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:6px;font-size:14px;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor=\'#e67e22\'" onblur="this.style.borderColor=\'#555\'">';
 
         echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
         wp_nonce_field( 'fishotel_save_arrival_nonce' );
@@ -2846,11 +2847,12 @@ trait FisHotel_Admin {
             $available   = intval( $qty_received ) - intval( $qty_doa );
             $fill_ok     = ( $cust_demand === 0 ) || ( $available >= $cust_demand );
 
-            echo '<tr class="fh-arrival-row" data-id="' . $bp->ID . '" data-demand="' . $cust_demand . '" style="border-bottom:1px solid #333;">';
+            $row_bg = intval( $qty_received ) > 0 ? 'border-bottom:1px solid #333;background:rgba(181,161,101,0.08);' : 'border-bottom:1px solid #333;';
+            echo '<tr class="fh-arrival-row" data-id="' . $bp->ID . '" data-demand="' . $cust_demand . '" style="' . $row_bg . '">';
             echo '<td style="padding:8px;">' . esc_html( $common ) . '</td>';
             echo '<td style="padding:8px;color:#aaa;font-style:italic;">' . esc_html( $sci_name ) . '</td>';
             echo '<td style="padding:8px;text-align:center;">' . $cust_demand . '</td>';
-            echo '<td style="padding:8px;text-align:center;"><input type="number" name="items[' . $bp->ID . '][qty_ordered]" value="' . esc_attr( $qty_ordered ) . '" min="0" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
+            echo '<td style="padding:8px;text-align:center;color:#fff;font-weight:600;">' . intval( $cust_demand ) . '</td>';
             echo '<td style="padding:8px;text-align:center;"><input type="number" name="items[' . $bp->ID . '][qty_received]" value="' . esc_attr( $qty_received ) . '" min="0" class="fh-recv" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
             echo '<td style="padding:8px;text-align:center;"><input type="number" name="items[' . $bp->ID . '][qty_doa]" value="' . esc_attr( $qty_doa ) . '" min="0" class="fh-doa" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
 
@@ -2949,6 +2951,13 @@ trait FisHotel_Admin {
         ?>
         <script>
         jQuery(function($){
+            var fhArrival = {
+                ajax_url: '<?php echo esc_url( admin_url( "admin-ajax.php" ) ); ?>',
+                nonce: '<?php echo wp_create_nonce( "fishotel_arrival_save" ); ?>',
+                batch: '<?php echo esc_js( $selected ); ?>'
+            };
+
+            // Real-time fill rate
             $('.fh-arrival-row').on('input', '.fh-recv, .fh-doa', function(){
                 var row    = $(this).closest('.fh-arrival-row');
                 var demand = parseInt(row.data('demand')) || 0;
@@ -2958,6 +2967,46 @@ trait FisHotel_Admin {
                 var ok     = (demand === 0) || (avail >= demand);
                 row.find('.fh-fill-dot').css('background', ok ? '#27ae60' : '#e74c3c');
                 row.find('.fh-fill-text').text(avail + ' / ' + demand);
+            });
+
+            // Search filter
+            $('#fh-arrival-search').on('input', function(){
+                var q = $(this).val().toLowerCase();
+                $('.fh-arrival-row').each(function(){
+                    var name = $(this).find('td').first().text().toLowerCase();
+                    $(this).toggle(name.indexOf(q) !== -1);
+                });
+            });
+
+            // Per-row AJAX auto-save
+            $('.fh-arrival-row').on('change', '.fh-recv, .fh-doa', function(){
+                var $input = $(this);
+                var row    = $input.closest('.fh-arrival-row');
+                var fishId = row.data('id');
+                var field  = $input.hasClass('fh-recv') ? 'qty_received' : 'qty_doa';
+                var value  = parseInt($input.val()) || 0;
+
+                $.post(fhArrival.ajax_url, {
+                    action: 'fishotel_save_arrival_field',
+                    nonce: fhArrival.nonce,
+                    fish_id: fishId,
+                    field: field,
+                    value: value,
+                    batch_name: fhArrival.batch
+                }, function(resp){
+                    if (resp.success) {
+                        var $td = $input.closest('td');
+                        var $chk = $('<span style="color:#27ae60;font-weight:700;margin-left:6px;font-size:13px;">&#x2713;</span>');
+                        $td.find('.fh-save-ok').remove();
+                        $chk.addClass('fh-save-ok').appendTo($td);
+                        setTimeout(function(){ $chk.fadeOut(300, function(){ $chk.remove(); }); }, 1500);
+
+                        // Highlight row if qty_received > 0
+                        if (field === 'qty_received') {
+                            row.css('background', value > 0 ? 'rgba(181,161,101,0.08)' : '');
+                        }
+                    }
+                });
             });
         });
         </script>
@@ -2982,7 +3031,6 @@ trait FisHotel_Admin {
             if ( ! $post || $post->post_type !== 'fish_batch' ) continue;
             if ( get_post_meta( $batch_id, '_batch_name', true ) !== $batch_name ) continue;
 
-            update_post_meta( $batch_id, '_arrival_qty_ordered',  intval( $data['qty_ordered'] ?? 0 ) );
             update_post_meta( $batch_id, '_arrival_qty_received', intval( $data['qty_received'] ?? 0 ) );
             update_post_meta( $batch_id, '_arrival_qty_doa',      intval( $data['qty_doa'] ?? 0 ) );
         }

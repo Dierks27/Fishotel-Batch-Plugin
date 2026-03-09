@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v3.17 - Move stamp down to letterhead area.
- * Version:           3.17
+ * Description:       Stable v3.18 - Arrival entry: read-only demand, search, AJAX save, row highlights.
+ * Version:           3.18
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '3.17' );
+define( 'FISHOTEL_VERSION', '3.18' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -216,6 +216,7 @@ class FisHotel_Batch_Manager {
         add_action( 'wp_ajax_fishotel_get_order_details', [$this, 'ajax_get_order_details'] );
         add_action( 'wp_ajax_fishotel_remove_request_item', [$this, 'ajax_remove_request_item'] );
         add_action( 'wp_ajax_fishotel_remove_from_order', [$this, 'ajax_remove_from_order'] );
+        add_action( 'wp_ajax_fishotel_save_arrival_field', [$this, 'ajax_save_arrival_field'] );
 
         add_action( 'woocommerce_after_checkout_form', [$this, 'add_return_to_fish_button'] );
         add_action( 'woocommerce_thankyou', [$this, 'add_return_to_fish_button'] );

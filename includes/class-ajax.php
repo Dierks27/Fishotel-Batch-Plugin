@@ -256,4 +256,33 @@ trait FisHotel_Ajax {
         ] );
     }
 
+    public function ajax_save_arrival_field() {
+        check_ajax_referer( 'fishotel_arrival_save', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        $fish_id    = intval( $_POST['fish_id'] ?? 0 );
+        $field      = sanitize_text_field( $_POST['field'] ?? '' );
+        $value      = intval( $_POST['value'] ?? 0 );
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+
+        if ( ! in_array( $field, [ 'qty_received', 'qty_doa' ], true ) ) {
+            wp_send_json_error( [ 'message' => 'Invalid field.' ] );
+        }
+
+        $post = get_post( $fish_id );
+        if ( ! $post || $post->post_type !== 'fish_batch' ) {
+            wp_send_json_error( [ 'message' => 'Invalid fish batch.' ] );
+        }
+        if ( get_post_meta( $fish_id, '_batch_name', true ) !== $batch_name ) {
+            wp_send_json_error( [ 'message' => 'Batch mismatch.' ] );
+        }
+
+        update_post_meta( $fish_id, '_arrival_' . $field, $value );
+
+        wp_send_json_success( [ 'fish_id' => $fish_id, 'field' => $field, 'value' => $value ] );
+    }
+
 }
