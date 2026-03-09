@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.94 - Fix mobile board: force 900px width, top-left origin.
- * Version:           2.94
+ * Description:       Stable v2.95 - Fix mobile board scale: CSS var + JS for cross-browser calc.
+ * Version:           2.95
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.94' );
+define( 'FISHOTEL_VERSION', '2.95' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

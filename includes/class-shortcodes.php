@@ -362,8 +362,8 @@ trait FisHotel_Shortcodes {
                     .fh-board {
                         width:900px !important;
                         transform-origin:top left;
-                        transform:scale(calc(100vw / 900));
-                        margin-bottom:calc((100vw / 900 - 1) * 593px);
+                        transform:scale(var(--fh-board-scale,1));
+                        margin-bottom:calc((var(--fh-board-scale,1) - 1) * 593px);
                     }
                 }
 
@@ -874,6 +874,7 @@ trait FisHotel_Shortcodes {
                     </div>
                 </div>
                 </div>
+                <script>(function(){function s(){document.documentElement.style.setProperty('--fh-board-scale',Math.min(1,window.innerWidth/900))}s();window.addEventListener('resize',s)})()</script>
 
                 <!-- ===== Boarding Pass ===== -->
                 <div class="fh-bp-open" id="my-requests">
