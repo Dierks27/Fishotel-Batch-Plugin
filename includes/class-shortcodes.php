@@ -358,11 +358,12 @@ trait FisHotel_Shortcodes {
                 }
 
                 @media (max-width:960px) {
-                    .fh-board-wrapper { overflow:hidden; }
+                    .fh-board-wrapper { overflow:hidden; width:100%; }
                     .fh-board {
-                        transform-origin:top center;
-                        transform:scale(calc(min(100vw, 900px) / 900));
-                        margin-bottom:calc((min(100vw, 900px) / 900 - 1) * 593px);
+                        width:900px !important;
+                        transform-origin:top left;
+                        transform:scale(calc(100vw / 900));
+                        margin-bottom:calc((100vw / 900 - 1) * 593px);
                     }
                 }
 
