@@ -248,7 +248,7 @@ trait FisHotel_Shortcodes {
                 }
 
                 /* ── Solari Departure Board — Authentic Fixed Grid ── */
-                .fh-board-wrapper { overflow:hidden; margin-bottom:24px; }
+                .fh-board-wrapper { overflow:hidden; margin-bottom:24px; max-width:900px; }
                 .fh-board {
                     width:900px; min-width:900px; box-sizing:border-box;
                     background:#0a0a0a; border-radius:4px;
@@ -838,7 +838,7 @@ trait FisHotel_Shortcodes {
                 .fh-mobile-controls input::placeholder { color:#8a7a6a !important; -webkit-text-fill-color:#8a7a6a !important; }
 
                 /* ── Mobile Cards ── */
-                .fish-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; position:relative; z-index:2; box-sizing:border-box; width:100%; overflow:hidden; }
+                .fish-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; position:relative; z-index:2; box-sizing:border-box; width:100%; overflow:hidden; }
                 .fish-card {
                     background:#f2ead8; border:1px solid rgba(0,0,0,0.12); border-radius:0;
                     padding:16px 18px; font-family:'Special Elite',monospace;
@@ -862,10 +862,10 @@ trait FisHotel_Shortcodes {
                 }
 
                 /* ── Responsive ── */
-                @media (min-width:1101px) {
+                @media (min-width:783px) {
                     .fish-cards, .fh-mobile-controls { display:none !important; }
                 }
-                @media (max-width:1100px) {
+                @media (max-width:782px) {
                     .fh-scroll-wrap { display:none !important; }
                     .fh-mobile-controls { display:flex !important; }
                 }
