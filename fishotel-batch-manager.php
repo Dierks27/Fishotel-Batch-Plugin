@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v3.18 - Arrival entry: read-only demand, search, AJAX save, row highlights.
- * Version:           3.18
+ * Description:       Stable v3.19 - Arrived view: pending state, blur login, spa check-in card.
+ * Version:           3.19
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '3.18' );
+define( 'FISHOTEL_VERSION', '3.19' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

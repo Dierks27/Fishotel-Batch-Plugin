@@ -2604,6 +2604,11 @@ trait FisHotel_Shortcodes {
                 $species_arrival[ $bp->ID ] = [ 'received' => $recv, 'doa' => $doa, 'alive' => $recv - $doa ];
             }
 
+            // Check if arrival data has been entered yet
+            $total_received = 0;
+            foreach ( $species_arrival as $sa_check ) { $total_received += $sa_check['received']; }
+            $arrival_pending = ( $total_received === 0 );
+
             // Current user items
             $my_items   = [];
             $uid        = is_user_logged_in() ? get_current_user_id() : 0;
@@ -2720,6 +2725,53 @@ trait FisHotel_Shortcodes {
                 }
 
                 .fh-arr-sci { font-style:italic; color:#8a9bae; }
+
+                /* ── Pending state ── */
+                .fh-arr-pending {
+                    background:#0c161f; border:2px solid #b5a165; border-radius:10px;
+                    padding:40px 28px; text-align:center; margin-bottom:24px;
+                }
+                .fh-arr-pending-icon { font-size:48px; margin-bottom:12px; }
+                .fh-arr-pending-title {
+                    font-family:'Oswald',sans-serif; font-weight:700; font-size:20px;
+                    text-transform:uppercase; letter-spacing:0.1em; color:#b5a165; margin:0 0 10px;
+                }
+                .fh-arr-pending-text { color:#8a9bae; font-size:14px; line-height:1.5; margin:0; }
+
+                /* ── Spa check-in card ── */
+                .fh-arr-spa {
+                    display:flex; align-items:center; gap:20px;
+                    background:#0c161f; border:2px solid #b5a165; border-radius:10px;
+                    padding:16px 24px; margin-bottom:24px;
+                }
+                .fh-arr-spa-logo { flex:0 0 50px; }
+                .fh-arr-spa-logo img { width:50px; height:50px; object-fit:contain; }
+                .fh-arr-spa-body { flex:1; }
+                .fh-arr-spa-title {
+                    font-family:'Oswald',sans-serif; font-weight:700; font-size:16px;
+                    text-transform:uppercase; letter-spacing:0.1em; color:#b5a165; margin:0 0 4px;
+                }
+                .fh-arr-spa-flavor { color:#8a9bae; font-size:13px; margin:0 0 4px; }
+                .fh-arr-spa-meta {
+                    font-family:'Oswald',sans-serif; font-size:10px; font-weight:400;
+                    text-transform:uppercase; letter-spacing:0.1em; color:#b5a165;
+                }
+
+                /* ── Blur overlay for logged-out ── */
+                .fh-arr-blur-wrap { position:relative; }
+                .fh-arr-blur-content { transition:filter 0.3s; }
+                .fh-arr-blur-content.fh-blurred { filter:blur(5px); pointer-events:none; }
+                .fh-arr-blur-overlay {
+                    position:absolute; top:0; left:0; right:0; bottom:0; z-index:10;
+                    display:flex; align-items:center; justify-content:center;
+                    background:rgba(12,22,31,0.82); border-radius:10px;
+                }
+                .fh-arr-blur-overlay a {
+                    font-family:'Oswald',sans-serif; font-size:1.1rem; font-weight:700;
+                    text-transform:uppercase; letter-spacing:0.08em;
+                    color:#b5a165; text-decoration:none;
+                }
+                .fh-arr-blur-overlay a:hover { color:#e67e22; }
             </style>
             <div class="fh-arrival-wrap">
 
@@ -2740,53 +2792,112 @@ trait FisHotel_Shortcodes {
                     <?php endif; ?>
                 </div>
 
+                <!-- ===== Spa Check-In Card ===== -->
+                <?php
+                $spa_flavors = [
+                    'Your fish have checked in and are settling into their private quarantine suites.',
+                    'All guests are receiving the full spa treatment. Results in approximately 14 days.',
+                    'Fish checked in. Medications administered. Rest and recovery in progress.',
+                    'The Hotel Spa is at capacity. Our guests are resting comfortably.',
+                ];
+                $spa_flavor = $spa_flavors[ rand( 0, count( $spa_flavors ) - 1 ) ];
+                $spa_date   = $arrival_date ? strtoupper( date( 'M j, Y', strtotime( $arrival_date ) ) ) : '';
+                ?>
+                <div class="fh-arr-spa">
+                    <div class="fh-arr-spa-logo">
+                        <img src="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" alt="FisHotel">
+                    </div>
+                    <div class="fh-arr-spa-body">
+                        <p class="fh-arr-spa-title">Welcome to the Hotel Spa</p>
+                        <p class="fh-arr-spa-flavor"><?php echo esc_html( $spa_flavor ); ?></p>
+                        <?php if ( $spa_date ) : ?>
+                        <span class="fh-arr-spa-meta"><?php echo esc_html( $batch_name ); ?> &middot; Checked In <?php echo $spa_date; ?></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <?php if ( $arrival_pending ) : ?>
+                <!-- ===== Pending State ===== -->
+                <div class="fh-arr-pending">
+                    <div class="fh-arr-pending-icon">&#x1F420;</div>
+                    <p class="fh-arr-pending-title">Arrival Data Being Recorded</p>
+                    <p class="fh-arr-pending-text">Dierks is counting fish right now. Check back in a few hours &mdash; your status will appear here once confirmed.</p>
+                </div>
+
+                <?php else : ?>
                 <!-- ===== Your Fish Table ===== -->
                 <?php if ( $uid && ! empty( $my_items ) ) : ?>
-                <div class="fh-arr-card">
-                    <div class="fh-arr-card-header">Your Fish &mdash; Arrival Status</div>
-                    <div style="overflow-x:auto;">
-                    <table class="fh-arr-tbl">
-                        <thead><tr>
-                            <th>Common Name</th>
-                            <th style="text-align:center;">Requested</th>
-                            <th style="text-align:center;">Alive</th>
-                            <th style="text-align:center;">Position</th>
-                            <th style="text-align:center;">Status</th>
-                        </tr></thead>
-                        <tbody>
-                        <?php foreach ( $my_items as $item ) :
-                            $bid      = intval( $item['batch_id'] ?? 0 );
-                            $my_qty   = intval( $item['qty'] ?? 1 );
-                            $sa       = $species_arrival[ $bid ] ?? [ 'received' => 0, 'doa' => 0, 'alive' => 0 ];
-                            $alive    = $sa['alive'];
+                <div class="fh-arr-blur-wrap">
+                    <div class="fh-arr-blur-content">
+                    <div class="fh-arr-card">
+                        <div class="fh-arr-card-header">Your Fish &mdash; Arrival Status</div>
+                        <div style="overflow-x:auto;">
+                        <table class="fh-arr-tbl">
+                            <thead><tr>
+                                <th>Common Name</th>
+                                <th style="text-align:center;">Requested</th>
+                                <th style="text-align:center;">Alive</th>
+                                <th style="text-align:center;">Position</th>
+                                <th style="text-align:center;">Status</th>
+                            </tr></thead>
+                            <tbody>
+                            <?php foreach ( $my_items as $item ) :
+                                $bid      = intval( $item['batch_id'] ?? 0 );
+                                $my_qty   = intval( $item['qty'] ?? 1 );
+                                $sa       = $species_arrival[ $bid ] ?? [ 'received' => 0, 'doa' => 0, 'alive' => 0 ];
+                                $alive    = $sa['alive'];
 
-                            $position = '—';
-                            $filled   = false;
-                            if ( isset( $fcfs[ $bid ] ) ) {
-                                foreach ( $fcfs[ $bid ] as $entry ) {
-                                    if ( $entry['customer_id'] === $uid ) {
-                                        $position = $entry['cum_end'];
-                                        $filled   = $alive >= $entry['cum_end'];
-                                        break;
+                                $position = '—';
+                                $filled   = false;
+                                if ( isset( $fcfs[ $bid ] ) ) {
+                                    foreach ( $fcfs[ $bid ] as $entry ) {
+                                        if ( $entry['customer_id'] === $uid ) {
+                                            $position = $entry['cum_end'];
+                                            $filled   = $alive >= $entry['cum_end'];
+                                            break;
+                                        }
                                     }
                                 }
-                            }
-                        ?>
-                        <tr>
-                            <td style="font-weight:500;"><?php echo esc_html( $item['fish_name'] ); ?></td>
-                            <td style="text-align:center;"><?php echo $my_qty; ?></td>
-                            <td style="text-align:center;"><?php echo $alive; ?></td>
-                            <td style="text-align:center;"><span class="fh-pos-badge">#<?php echo esc_html( $position ); ?></span></td>
-                            <td style="text-align:center;"><span class="fh-light <?php echo $filled ? 'fh-light-green' : 'fh-light-red'; ?>"></span></td>
-                        </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                            ?>
+                            <tr>
+                                <td style="font-weight:500;"><?php echo esc_html( $item['fish_name'] ); ?></td>
+                                <td style="text-align:center;"><?php echo $my_qty; ?></td>
+                                <td style="text-align:center;"><?php echo $alive; ?></td>
+                                <td style="text-align:center;"><span class="fh-pos-badge">#<?php echo esc_html( $position ); ?></span></td>
+                                <td style="text-align:center;"><span class="fh-light <?php echo $filled ? 'fh-light-green' : 'fh-light-red'; ?>"></span></td>
+                            </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
                     </div>
                 </div>
                 <?php elseif ( ! $uid ) : ?>
-                <div class="fh-arr-login">
-                    <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="color:#e67e22;text-decoration:none;font-family:'Oswald',sans-serif;font-size:1.1rem;text-transform:uppercase;letter-spacing:0.08em;">Log in to see your arrival status</a>
+                <div class="fh-arr-blur-wrap">
+                    <div class="fh-arr-blur-content fh-blurred">
+                    <div class="fh-arr-card">
+                        <div class="fh-arr-card-header">Your Fish &mdash; Arrival Status</div>
+                        <div style="overflow-x:auto;">
+                        <table class="fh-arr-tbl">
+                            <thead><tr>
+                                <th>Common Name</th>
+                                <th style="text-align:center;">Requested</th>
+                                <th style="text-align:center;">Alive</th>
+                                <th style="text-align:center;">Position</th>
+                                <th style="text-align:center;">Status</th>
+                            </tr></thead>
+                            <tbody>
+                            <tr><td style="font-weight:500;">Example Fish</td><td style="text-align:center;">2</td><td style="text-align:center;">2</td><td style="text-align:center;"><span class="fh-pos-badge">#2</span></td><td style="text-align:center;"><span class="fh-light fh-light-green"></span></td></tr>
+                            <tr><td style="font-weight:500;">Another Fish</td><td style="text-align:center;">1</td><td style="text-align:center;">1</td><td style="text-align:center;"><span class="fh-pos-badge">#1</span></td><td style="text-align:center;"><span class="fh-light fh-light-green"></span></td></tr>
+                            </tbody>
+                        </table>
+                        </div>
+                    </div>
+                    </div>
+                    <div class="fh-arr-blur-overlay">
+                        <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>">&#x1F512; Log In to See Your Arrival Status</a>
+                    </div>
                 </div>
                 <?php endif; ?>
 
@@ -2834,6 +2945,7 @@ trait FisHotel_Shortcodes {
                     </table>
                     </div>
                 </div>
+                <?php endif; ?>
 
                 <!-- ===== QT Footer ===== -->
                 <?php if ( $qt_end_fmt ) : ?>
