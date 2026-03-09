@@ -221,6 +221,15 @@ trait FisHotel_Shortcodes {
                     }
                 }
             }
+
+            // Build per-fish qty map for current user's existing requests (for spinner pre-fill)
+            $user_cart_qty = [];
+            foreach ( $prev_items as $pi ) {
+                $bid = $pi['batch_id'] ?? '';
+                if ( $bid ) {
+                    $user_cart_qty[ $bid ] = ( $user_cart_qty[ $bid ] ?? 0 ) + (int) $pi['qty'];
+                }
+            }
             ?>
 
             <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Klee+One&family=Patrick+Hand&display=swap" rel="stylesheet">
@@ -576,7 +585,7 @@ trait FisHotel_Shortcodes {
                     background:#f2ead8; margin-top:18px; border-radius:2px;
                     position:relative;
                     border:1px solid #c8b99a;
-                    box-shadow:0 4px 40px rgba(0,0,0,0.5);
+                    box-shadow:0 4px 40px rgba(0,0,0,0.5), inset 0 0 80px rgba(60,40,20,0.12);
                     overflow:hidden;
                 }
                 /* Paper grain noise */
@@ -584,6 +593,15 @@ trait FisHotel_Shortcodes {
                     content:''; position:absolute; inset:0;
                     filter:url(#fh-manifest-grain); background:rgba(180,165,130,0.06);
                     pointer-events:none; z-index:1; mix-blend-mode:multiply;
+                }
+                /* Coffee ring stain */
+                .fh-clipboard-paper::after {
+                    content:''; position:absolute; top:35px; right:60px;
+                    width:110px; height:110px; border-radius:50%;
+                    border:8px solid rgba(139,105,20,0.07);
+                    box-shadow:inset 0 0 12px rgba(139,105,20,0.04), 0 0 6px rgba(139,105,20,0.03);
+                    pointer-events:none; z-index:1;
+                    transform:rotate(-12deg);
                 }
 
                 /* ── Manifest header — official government form ── */
@@ -726,15 +744,12 @@ trait FisHotel_Shortcodes {
                     color:#3a2e1e; -webkit-text-fill-color:#3a2e1e;
                     position:relative; z-index:1;
                 }
-                .fh-clipboard-paper .fishotel-open-table .qty-input {
-                    color:transparent !important; caret-color:transparent !important;
-                }
                 .fishotel-open-table .qty-input:-webkit-autofill,
                 .fishotel-open-table .qty-input:-webkit-autofill:hover,
                 .fishotel-open-table .qty-input:-webkit-autofill:focus {
-                    -webkit-box-shadow: 0 0 0 1000px #ecdfc3 inset !important;
-                    -webkit-text-fill-color: rgba(0,0,0,0) !important;
-                    caret-color: transparent;
+                    -webkit-box-shadow: 0 0 0 1000px #f8f3e8 inset !important;
+                    -webkit-text-fill-color: #3a2e1e !important;
+                    caret-color: #3a2e1e;
                 }
                 .fish-card .qty-input {
                     color:#3a2e1e !important; -webkit-text-fill-color:#3a2e1e !important;
@@ -847,10 +862,10 @@ trait FisHotel_Shortcodes {
                     .fh-scroll-wrap { display:none !important; }
                     .fh-mobile-controls { display:flex !important; }
                 }
-                @media (max-width:1100px) and (min-width:641px) {
+                @media (max-width:1100px) and (min-width:701px) {
                     .fish-cards { grid-template-columns:1fr 1fr; }
                 }
-                @media (max-width:640px) {
+                @media (max-width:700px) {
                     .fish-cards { grid-template-columns:1fr; }
                     #submit-requests { width:100% !important; padding:16px !important; }
                     .fh-manifest-card { padding:0; }
@@ -1041,11 +1056,11 @@ trait FisHotel_Shortcodes {
                                 if ( $stock > 0 ) {
                                     $is_in_cart = isset( $in_cart_ids[ $bp->ID ] );
                                     $touched_class = $is_in_cart ? ' fh-qty-touched' : '';
-                                    echo '<div class="fh-qty-wrap' . $touched_class . '" data-idx="' . $row_num . '">';
+                                    $prefill = $user_cart_qty[ $bp->ID ] ?? '';
+                                    echo '<div class="fh-qty-wrap' . $touched_class . '">';
                                     echo '<button class="qty-minus">&#x2212;</button>';
-                                    echo '<input type="number" min="0" value="1" class="qty-input">';
+                                    echo '<input type="number" min="0" value="' . esc_attr( $prefill ) . '" class="qty-input">';
                                     echo '<button class="qty-plus">+</button>';
-                                    echo '<span class="fh-hw-input-val" style="display:none;"></span>';
                                     echo '</div>';
                                     echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $master->post_title ) . '">Request</button>';
                                 } else {
@@ -1083,10 +1098,11 @@ trait FisHotel_Shortcodes {
                             echo 'Stock: ' . intval( $stock ) . '</span>';
                             echo '</div>';
                             if ( $stock > 0 ) {
+                                $card_prefill = $user_cart_qty[ $bp->ID ] ?? '';
                                 echo '<div class="action">';
                                 echo '<div class="fh-qty-wrap">';
                                 echo '<button class="qty-minus" style="padding:6px 10px;">&#x2212;</button>';
-                                echo '<input type="number" min="0" value="1" class="qty-input" style="width:48px;padding:6px 0;color:#3a2e1e;">';
+                                echo '<input type="number" min="0" value="' . esc_attr( $card_prefill ) . '" class="qty-input" style="width:48px;padding:6px 0;">';
                                 echo '<button class="qty-plus" style="padding:6px 10px;">+</button>';
                                 echo '</div>';
                                 echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $master->post_title ) . '" style="flex:1;padding:10px;font-size:0.95em;">Request</button>';
@@ -1110,6 +1126,7 @@ trait FisHotel_Shortcodes {
                     let prevTotal  = <?php echo (float) $prev_total; ?>;
                     let cartItems  = [];
                     let cartTotal  = prevTotal;  // includes any already-submitted amounts
+                    const fhDemandTotals = <?php echo wp_json_encode( (object) $total_qty_map ); ?>;
                     let currentUserHasHFUsername = <?php echo ( get_user_meta( get_current_user_id(), '_fishotel_humble_username', true ) !== '' ) ? 'true' : 'false'; ?>;
 
                     if (<?php echo is_user_logged_in() ? 'true' : 'false'; ?> && !currentUserHasHFUsername) {
@@ -1385,17 +1402,19 @@ trait FisHotel_Shortcodes {
 
                     // Mark manifest rows that are already in cart/prev with a green checkmark
                     function markRequestedRows() {
-                        // Collect all batch_ids currently requested
+                        // Collect all batch_ids the current user has requested
                         const requestedIds = new Set();
                         prevItems.forEach(i => requestedIds.add(String(i.batch_id)));
                         cartItems.forEach(i => requestedIds.add(String(i.batch_id)));
 
-                        // Collect qty per batch_id for handwritten annotation
-                        const qtyMap = {};
-                        prevItems.forEach(i => { qtyMap[String(i.batch_id)] = (qtyMap[String(i.batch_id)] || 0) + parseInt(i.qty); });
-                        cartItems.forEach(i => { qtyMap[String(i.batch_id)] = (qtyMap[String(i.batch_id)] || 0) + parseInt(i.qty); });
+                        // Build demand totals: start from server-side ALL-user totals, add session cart additions
+                        const demandMap = Object.assign({}, fhDemandTotals);
+                        cartItems.forEach(i => {
+                            const k = String(i.batch_id);
+                            demandMap[k] = (demandMap[k] || 0) + parseInt(i.qty);
+                        });
 
-                        // Desktop table rows — checkmark in common name cell, qty in # cell
+                        // Desktop table rows
                         document.querySelectorAll('.fishotel-open-table .add-to-request').forEach(btn => {
                             const batchId = btn.getAttribute('data-batch-id');
                             const tr = btn.closest('tr');
@@ -1405,13 +1424,12 @@ trait FisHotel_Shortcodes {
                             // Remove existing annotations
                             if (commonCell) { const ex = commonCell.querySelector('.fh-in-cart-check'); if (ex) ex.remove(); }
                             if (numCell) { const ex = numCell.querySelector('.fh-hw-qty'); if (ex) ex.remove(); }
+
+                            // Checkmark for current user's items
                             if (requestedIds.has(batchId)) {
                                 const rowNum = parseInt(tr.getAttribute('data-rownum')) || 1;
-                                // Wide rotation range -20 to +10 using larger multiplier
                                 const rot = ((rowNum * 137 + 23) % 31) - 20;
-                                // Vertical jitter: 4-16px from top of cell
                                 const topPx = 4 + ((rowNum * 47) % 12);
-                                // Horizontal jitter
                                 const nudge = (rowNum % 2 === 1) ? -2 : 1;
                                 if (commonCell) {
                                     const chk = document.createElement('span');
@@ -1422,19 +1440,20 @@ trait FisHotel_Shortcodes {
                                     chk.style.left = nudge + 'px';
                                     commonCell.appendChild(chk);
                                 }
-                                // Handwritten qty in # margin — felt-tip annotation
-                                const qty = qtyMap[batchId] || 0;
-                                if (numCell && qty > 0) {
-                                    const bid = parseInt(batchId) || rowNum;
-                                    const qRot = ((bid * 83 + 17) % 40) - 22;
-                                    const qTop = 8 + ((bid * 47 + 11) % 21);
-                                    const hw = document.createElement('span');
-                                    hw.className = 'fh-hw-qty';
-                                    hw.textContent = qty;
-                                    hw.style.transform = 'translateX(-50%) rotate(' + qRot + 'deg)';
-                                    hw.style.top = qTop + 'px';
-                                    numCell.appendChild(hw);
-                                }
+                            }
+
+                            // Demand qty in # column — shown to ALL visitors
+                            const demand = demandMap[batchId] || 0;
+                            if (numCell && demand > 0) {
+                                const bid = parseInt(batchId) || 1;
+                                const qRot = ((bid * 83 + 17) % 40) - 22;
+                                const qTop = 8 + ((bid * 47 + 11) % 21);
+                                const hw = document.createElement('span');
+                                hw.className = 'fh-hw-qty';
+                                hw.textContent = demand;
+                                hw.style.transform = 'translateX(-50%) rotate(' + qRot + 'deg)';
+                                hw.style.top = qTop + 'px';
+                                numCell.appendChild(hw);
                             }
                         });
                         // Mobile cards
@@ -1454,31 +1473,8 @@ trait FisHotel_Shortcodes {
                     }
                     markRequestedRows();
 
-                    // Handwritten qty display overlay
-                    function updateQtyDisplay(input) {
-                        const wrap = input.closest('.fh-qty-wrap');
-                        if (!wrap) return;
-                        const overlay = wrap.querySelector('.fh-hw-input-val');
-                        if (!overlay) return;
-                        const touched = wrap.classList.contains('fh-qty-touched');
-                        const val = parseInt(input.value) || 0;
-                        if (!touched || val <= 0) {
-                            // Not touched — hide overlay entirely
-                            overlay.textContent = '';
-                            overlay.style.display = 'none';
-                        } else {
-                            overlay.style.display = '';
-                            // Handwritten number
-                            const idx = parseInt(wrap.getAttribute('data-idx')) || 1;
-                            const rot = ((idx * 61 + 7) % 14) - 7;
-                            overlay.textContent = val;
-                            overlay.className = 'fh-hw-input-val';
-                            overlay.style.transform = 'translate(-50%,-50%) rotate(' + rot + 'deg)';
-                        }
-                    }
-
-                    // Init all overlays on load
-                    document.querySelectorAll('.fh-qty-wrap .qty-input').forEach(inp => updateQtyDisplay(inp));
+                    // No-op placeholder — wobble overlay removed from table view
+                    function updateQtyDisplay(input) {}
 
                     document.querySelectorAll(".qty-minus").forEach(btn => {
                         btn.addEventListener("click", function() {
@@ -1488,28 +1484,20 @@ trait FisHotel_Shortcodes {
                                 val--;
                                 input.value = val === 0 ? '' : val;
                             }
-                            this.closest('.fh-qty-wrap').classList.add('fh-qty-touched');
                             updateQtyDisplay(input);
                         });
                     });
                     document.querySelectorAll(".qty-plus").forEach(btn => {
                         btn.addEventListener("click", function() {
                             const input = this.previousElementSibling;
-                            const wrap = this.closest('.fh-qty-wrap');
-                            if (!wrap.classList.contains('fh-qty-touched')) {
-                                input.value = 1;
-                                wrap.classList.add('fh-qty-touched');
-                            } else {
-                                let val = parseInt(input.value) || 1;
-                                input.value = val + 1;
-                            }
+                            let val = parseInt(input.value) || 0;
+                            input.value = val + 1;
                             updateQtyDisplay(input);
                         });
                     });
                     // Direct input typing
                     document.querySelectorAll('.fh-qty-wrap .qty-input').forEach(inp => {
                         inp.addEventListener('input', function() {
-                            this.closest('.fh-qty-wrap').classList.add('fh-qty-touched');
                             updateQtyDisplay(this);
                         });
                     });

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.99 - Fix card grid single-col at 640px, fix qty spinner text in cards.
- * Version:           2.99
+ * Description:       Stable v3.00 - Manifest audit: demand column, clean spinners, paper texture, card grid.
+ * Version:           3.00
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.99' );
+define( 'FISHOTEL_VERSION', '3.00' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
