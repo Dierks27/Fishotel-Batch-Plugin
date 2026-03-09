@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v3.12 - Manifest letterhead, typewriter font, table row fix.
- * Version:           3.12
+ * Description:       Stable v3.13 - Manifest HR margins, letterhead contrast, td background fix.
+ * Version:           3.13
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '3.12' );
+define( 'FISHOTEL_VERSION', '3.13' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

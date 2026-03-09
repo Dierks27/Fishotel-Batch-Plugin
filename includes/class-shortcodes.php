@@ -1980,6 +1980,10 @@ trait FisHotel_Shortcodes {
                     font-size:clamp(0.7rem,1.8vw,0.85rem); text-transform:uppercase;
                     letter-spacing:0.2em; color:#b5a165; margin:0 0 14px;
                 }
+                /* HR margin override — defeat theme's ~108px global hr margins */
+                .fh-manifest hr, .fh-manifest .fh-manifest-letterhead-rule, .fh-manifest .fh-manifest-rule {
+                    margin-top: 8px !important; margin-bottom: 8px !important;
+                }
                 /* Letterhead detail block */
                 .fh-manifest-letterhead-rule {
                     border:none; border-top:1px solid rgba(139,109,56,0.4); margin:0;
@@ -1987,12 +1991,12 @@ trait FisHotel_Shortcodes {
                 .fh-manifest-letterhead-row {
                     display:flex; justify-content:space-between; padding:6px 0;
                     font-family:'Special Elite',monospace; font-size:9px;
-                    text-transform:uppercase; letter-spacing:0.06em; color:#8a7a5a;
+                    text-transform:uppercase; letter-spacing:0.06em; color:#6b5a3a;
                 }
                 .fh-manifest-emblem {
                     text-align:center; padding:6px 0;
                     font-family:'Special Elite',monospace; font-size:10px;
-                    letter-spacing:2px; color:#b5a165; text-transform:uppercase;
+                    letter-spacing:2px; color:#8a6f2e; text-transform:uppercase;
                 }
                 .fh-manifest-rule {
                     border:none; border-top:2px solid #1a1a2e; margin:0 0 16px;
@@ -2018,9 +2022,13 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-manifest th:first-child { width:30px; text-align:center; }
                 .fh-manifest th:last-child { text-align:center; }
-                .fh-manifest td {
+                .fh-manifest table td {
                     padding:9px 16px; font-family:'Special Elite',monospace; font-size:13px;
                     color:#1a1a1a !important; border-bottom:1px solid rgba(139,109,56,0.3) !important;
+                    background-color: #f0e8d5 !important;
+                }
+                .fh-manifest table tr:nth-child(even) td {
+                    background-color: #ebe0c8 !important;
                 }
                 .fh-manifest td:first-child { text-align:center; width:30px; }
                 .fh-manifest td:last-child { text-align:center; }
@@ -2036,11 +2044,11 @@ trait FisHotel_Shortcodes {
                 .fh-manifest tbody tr:nth-child(5n+4) .fh-manifest-check { transform:rotate(-3deg); }
                 .fh-manifest tbody tr:nth-child(5n+5) .fh-manifest-check { transform:rotate(1deg); }
                 /* Total row */
-                .fh-manifest-total td {
+                .fh-manifest .fh-manifest-total td {
                     padding:12px 16px; border-top:2px solid #b5a165 !important; border-bottom:none !important;
                     color:#1a1a1a !important; font-weight:700; font-size:13px;
                     text-transform:uppercase; letter-spacing:0.06em;
-                    background:#e8d9b8 !important;
+                    background-color:#e8d9b8 !important;
                 }
                 .fh-manifest-total td:first-child { border-left:3px solid #b5a165; }
                 .fh-manifest table tr.fh-manifest-total { background-color:#e8d9b8 !important; }
