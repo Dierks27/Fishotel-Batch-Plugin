@@ -374,7 +374,7 @@ trait FisHotel_Shortcodes {
                     50% { opacity:0.75; box-shadow:0 0 2px #e07b2a, 0 0 6px #cc6a1f, 0 0 12px rgba(224,123,42,0.2); }
                 }
 
-                @media (max-width:900px) {
+                @media (max-width:1030px) {
                     .fh-board {
                         transform-origin:top left;
                         transform:scale(var(--fh-board-scale,1));
@@ -838,7 +838,7 @@ trait FisHotel_Shortcodes {
                 .fh-mobile-controls input::placeholder { color:#8a7a6a !important; -webkit-text-fill-color:#8a7a6a !important; }
 
                 /* ── Mobile Cards ── */
-                .fish-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; position:relative; z-index:2; box-sizing:border-box; width:100%; overflow:hidden; }
+                .fish-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(310px, 1fr)); gap:16px; position:relative; z-index:2; box-sizing:border-box; width:100%; overflow:hidden; }
                 .fish-card {
                     background:#f2ead8; border:1px solid rgba(0,0,0,0.12); border-radius:0;
                     padding:16px 18px; font-family:'Special Elite',monospace;
