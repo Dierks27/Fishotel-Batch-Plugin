@@ -2383,7 +2383,7 @@ trait FisHotel_Shortcodes {
                     $fh_note_html = '';
                     foreach ( $fh_note_words as $wi => $w ) {
                         $r = $fh_rotations[ $wi % count($fh_rotations) ];
-                        $fh_note_html .= '<span style="display:inline-block;transform:rotate(' . $r . 'deg)">' . esc_html($w) . ' </span>';
+                        $fh_note_html .= '<span style="display:inline-block;transform:rotate(' . $r . 'deg)">' . esc_html($w) . '</span> ';
                     }
                     $fh_sig_styles = [
                         'transform:rotate(-4deg) scaleX(1.05);letter-spacing:1px',
