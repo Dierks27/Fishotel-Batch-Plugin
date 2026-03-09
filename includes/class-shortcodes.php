@@ -2559,8 +2559,9 @@ trait FisHotel_Shortcodes {
             return ob_get_clean();
         }
 
-        // ─── Stage 3b: Arrival tracking view (arrived) ────────────────────
-        if ( $status === 'arrived' ) {
+        // ─── Stage 3b: Arrival tracking view (arrived + all post-arrived stages) ──
+        $arrived_stages = [ 'arrived', 'in_quarantine', 'graduation', 'verification', 'draft', 'invoicing' ];
+        if ( in_array( $status, $arrived_stages, true ) ) {
             $arrival_dates = get_option( 'fishotel_batch_arrival_dates', [] );
             $arrival_date  = $arrival_dates[ $batch_name ] ?? '';
             $arrival_fmt   = $arrival_date ? date( 'F j, Y', strtotime( $arrival_date ) ) : '';
@@ -2629,9 +2630,10 @@ trait FisHotel_Shortcodes {
                 $qt_days_left = max( 0, (int) ceil( ( $qt_end_ts - time() ) / 86400 ) );
             }
             ?>
+            <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
             <style>
                 .fh-arrival-wrap {
-                    max-width:800px; margin:0 auto;
+                    max-width:900px; margin:0 auto;
                     font-family:'Oswald',sans-serif; color:#fff;
                 }
                 /* ── Hero Banner ── */
@@ -2772,10 +2774,61 @@ trait FisHotel_Shortcodes {
                     color:#b5a165; text-decoration:none;
                 }
                 .fh-arr-blur-overlay a:hover { color:#e67e22; }
+
+                /* ── Collapsible boarding pass strip ── */
+                .fh-ab-strip {
+                    display:flex; align-items:center; gap:16px;
+                    background:#0c161f; border:2px solid #b5a165; border-radius:10px;
+                    padding:12px 20px; margin-bottom:24px; cursor:pointer;
+                    transition:background 0.2s;
+                }
+                .fh-ab-strip:hover { background:#0f1e2d; }
+                .fh-ab-strip-logo img { width:36px; height:36px; object-fit:contain; }
+                .fh-ab-strip-info { flex:1; }
+                .fh-ab-strip-title {
+                    font-family:'Oswald',sans-serif; font-weight:700; font-size:14px;
+                    text-transform:uppercase; letter-spacing:0.08em; color:#b5a165; margin:0;
+                }
+                .fh-ab-strip-meta {
+                    font-family:'Oswald',sans-serif; font-size:11px; font-weight:400;
+                    text-transform:uppercase; letter-spacing:0.06em; color:#8a9bae; margin:0;
+                }
+                .fh-ab-strip-chevron {
+                    font-size:20px; color:#b5a165; transition:transform 0.3s;
+                }
+                .fh-ab-strip-chevron.open { transform:rotate(180deg); }
+                .fh-ab-detail {
+                    max-height:0; overflow:hidden;
+                    transition:max-height 0.4s ease;
+                }
+                .fh-ab-detail.open { max-height:2000px; }
             </style>
             <div class="fh-arrival-wrap">
 
-                <!-- ===== Hero Banner ===== -->
+                <!-- ===== Collapsible Boarding Pass Strip ===== -->
+                <?php
+                $my_species_count = count( $my_items );
+                $strip_stage = fishotel_stage_label_map()[ $status ] ?? ucfirst( $status );
+                $strip_date  = $arrival_date ? strtoupper( date( 'M j, Y', strtotime( $arrival_date ) ) ) : '';
+                ?>
+                <div class="fh-ab-strip" onclick="var d=document.getElementById('fh-ab-detail'),c=this.querySelector('.fh-ab-strip-chevron');d.classList.toggle('open');c.classList.toggle('open');">
+                    <div class="fh-ab-strip-logo">
+                        <img src="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" alt="FisHotel">
+                    </div>
+                    <div class="fh-ab-strip-info">
+                        <p class="fh-ab-strip-title"><?php echo esc_html( $batch_name ); ?> &middot; <?php echo esc_html( $strip_stage ); ?></p>
+                        <p class="fh-ab-strip-meta">
+                            <?php if ( $strip_date ) echo 'Arrived ' . $strip_date . ' &middot; '; ?>
+                            <?php if ( $uid && $my_species_count > 0 ) echo $my_species_count . ' species requested'; ?>
+                            <?php if ( $qt_days_left > 0 ) echo ' &middot; ' . $qt_days_left . ' day' . ( $qt_days_left !== 1 ? 's' : '' ) . ' QT remaining'; ?>
+                            <?php if ( $qt_days_left === 0 && $arrival_date ) echo ' &middot; QT complete'; ?>
+                        </p>
+                    </div>
+                    <div class="fh-ab-strip-chevron">&#x25BC;</div>
+                </div>
+
+                <!-- ===== Expandable Detail (Hero + Spa) ===== -->
+                <div id="fh-ab-detail" class="fh-ab-detail">
                 <div class="fh-arrival-hero">
                     <h2>Your Fish Are Here!</h2>
                     <p class="fh-subline">
@@ -2792,7 +2845,6 @@ trait FisHotel_Shortcodes {
                     <?php endif; ?>
                 </div>
 
-                <!-- ===== Spa Check-In Card ===== -->
                 <?php
                 $spa_flavors = [
                     'Your fish have checked in and are settling into their private quarantine suites.',
@@ -2814,6 +2866,7 @@ trait FisHotel_Shortcodes {
                         <span class="fh-arr-spa-meta"><?php echo esc_html( $batch_name ); ?> &middot; Checked In <?php echo $spa_date; ?></span>
                         <?php endif; ?>
                     </div>
+                </div>
                 </div>
 
                 <?php if ( $arrival_pending ) : ?>
@@ -2901,50 +2954,36 @@ trait FisHotel_Shortcodes {
                 </div>
                 <?php endif; ?>
 
-                <!-- ===== Full Species Summary ===== -->
-                <div class="fh-arr-card">
-                    <div class="fh-arr-card-header">Full Species Summary</div>
-                    <div style="overflow-x:auto;">
-                    <table class="fh-arr-tbl">
-                        <thead><tr>
-                            <th>Common Name</th>
-                            <th>Scientific Name</th>
-                            <th style="text-align:center;width:60px;">Arrived</th>
-                            <th style="text-align:center;width:50px;">DOA</th>
-                            <th style="text-align:center;width:50px;">Alive</th>
-                            <th style="text-align:center;width:50px;">Fill</th>
-                        </tr></thead>
-                        <tbody>
-                        <?php foreach ( $batch_posts as $bp ) :
-                            $master_id = get_post_meta( $bp->ID, '_master_id', true );
-                            $sci_name  = $master_id ? (string) get_post_meta( $master_id, '_scientific_name', true ) : '';
-                            $sa        = $species_arrival[ $bp->ID ] ?? [ 'received' => 0, 'doa' => 0, 'alive' => 0 ];
-                            $total_demand = 0;
-                            if ( isset( $fcfs[ $bp->ID ] ) ) {
-                                $last = end( $fcfs[ $bp->ID ] );
-                                $total_demand = $last ? $last['cum_end'] : 0;
-                            }
-                            $fill_ok = ( $total_demand === 0 ) || ( $sa['alive'] >= $total_demand );
-                        ?>
-                        <tr>
-                            <td style="font-weight:500;"><?php echo esc_html( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title ) ); ?></td>
-                            <td class="fh-arr-sci"><?php echo esc_html( $sci_name ); ?></td>
-                            <td style="text-align:center;"><?php echo $sa['received']; ?></td>
-                            <td style="text-align:center;color:<?php echo $sa['doa'] > 0 ? '#ff4444' : '#444'; ?>;"><?php echo $sa['doa']; ?></td>
-                            <td style="text-align:center;color:#44ff66;font-weight:700;"><?php echo $sa['alive']; ?></td>
-                            <td style="text-align:center;">
-                                <?php if ( $total_demand === 0 ) : ?>
-                                    <span style="color:#444;">—</span>
-                                <?php else : ?>
-                                    <span class="fh-light <?php echo $fill_ok ? 'fh-light-green' : 'fh-light-red'; ?>"></span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                    </div>
-                </div>
+                <!-- ===== Solari Arrival Board ===== -->
+                <?php
+                // Build species data for the Solari board
+                $board_species = [];
+                foreach ( $batch_posts as $bp ) {
+                    $sa     = $species_arrival[ $bp->ID ] ?? [ 'received' => 0, 'doa' => 0, 'alive' => 0 ];
+                    $demand = 0;
+                    if ( isset( $fcfs[ $bp->ID ] ) ) {
+                        $last = end( $fcfs[ $bp->ID ] );
+                        $demand = $last ? $last['cum_end'] : 0;
+                    }
+                    $board_species[] = [
+                        'fish_id'      => $bp->ID,
+                        'common_name'  => preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title ),
+                        'name'         => strtoupper( mb_substr( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title ), 0, 20 ) ),
+                        'qty_received' => $sa['received'],
+                        'recv'         => $sa['received'],
+                        'qty_ordered'  => $demand,
+                        'ordered'      => $demand,
+                        'tank'         => get_post_meta( $bp->ID, '_arrival_tank', true ) ?: '—',
+                        'status'       => get_post_meta( $bp->ID, '_arrival_status', true ) ?: 'in_transit',
+                        'updated_at'   => intval( get_post_meta( $bp->ID, '_arrival_updated_at', true ) ),
+                    ];
+                }
+                $stage_labels = fishotel_stage_label_map();
+                $ab_stage_label = strtoupper( $stage_labels[ $status ] ?? $status );
+                $ab_batch_slug = urlencode( $batch_name );
+                ?>
+                <style><?php $this->render_arrival_board_css(); ?></style>
+                <?php $this->render_arrival_board_html( $batch_name, $ab_stage_label, $board_species, $ab_batch_slug, $arrival_date, false ); ?>
                 <?php endif; ?>
 
                 <!-- ===== QT Footer ===== -->

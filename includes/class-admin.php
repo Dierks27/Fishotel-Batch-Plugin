@@ -2240,13 +2240,14 @@ trait FisHotel_Admin {
      */
     private function get_valid_stages(): array {
         return [
-            'open_ordering'  => 'Open Ordering',
-            'orders_closed'  => 'Orders Closed',
-            'arrived'        => 'Arrived',
-            'graduation'     => 'Graduation',
-            'verification'   => 'Verification',
-            'draft'          => 'Draft',
-            'invoicing'      => 'Invoicing',
+            'open_ordering'   => 'Open Ordering',
+            'orders_closed'   => 'Orders Closed',
+            'arrived'         => 'Arrived — Counting',
+            'in_quarantine'   => 'In Quarantine',
+            'graduation'      => 'Graduation Day',
+            'verification'    => 'Accept or Pass',
+            'draft'           => 'Draft Pool',
+            'invoicing'       => 'Invoicing',
         ];
     }
 
@@ -2739,7 +2740,7 @@ trait FisHotel_Admin {
         $batches_str   = get_option( 'fishotel_batches', '' );
         $batches_array = array_values( array_filter( array_map( 'trim', explode( "\n", $batches_str ) ) ) );
         $statuses      = get_option( 'fishotel_batch_statuses', [] );
-        $arrived_plus  = [ 'arrived', 'graduation', 'verification', 'draft', 'invoicing' ];
+        $arrived_plus  = [ 'arrived', 'in_quarantine', 'graduation', 'verification', 'draft', 'invoicing' ];
 
         $eligible = array_filter( $batches_array, function ( $b ) use ( $statuses, $arrived_plus ) {
             return in_array( $statuses[ $b ] ?? '', $arrived_plus, true );
@@ -2831,6 +2832,8 @@ trait FisHotel_Admin {
         echo '<th style="padding:8px;color:#b5a165;text-align:center;">Qty Ordered</th>';
         echo '<th style="padding:8px;color:#b5a165;text-align:center;">Qty Received</th>';
         echo '<th style="padding:8px;color:#b5a165;text-align:center;">Qty DOA</th>';
+        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Tank</th>';
+        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Status</th>';
         echo '<th style="padding:8px;color:#b5a165;text-align:center;">Fill Rate</th>';
         echo '</tr></thead><tbody>';
 
@@ -2842,10 +2845,20 @@ trait FisHotel_Admin {
             $qty_ordered  = get_post_meta( $bp->ID, '_arrival_qty_ordered', true );
             $qty_received = get_post_meta( $bp->ID, '_arrival_qty_received', true );
             $qty_doa      = get_post_meta( $bp->ID, '_arrival_qty_doa', true );
+            $tank         = get_post_meta( $bp->ID, '_arrival_tank', true );
+            $arr_status   = get_post_meta( $bp->ID, '_arrival_status', true );
 
             $cust_demand = $demand[ $bp->ID ] ?? 0;
             $available   = intval( $qty_received ) - intval( $qty_doa );
             $fill_ok     = ( $cust_demand === 0 ) || ( $available >= $cust_demand );
+
+            // Auto-suggest status if none saved
+            if ( ! $arr_status ) {
+                $recv = intval( $qty_received );
+                if ( $recv === 0 ) $arr_status = 'no_arrival';
+                elseif ( $recv >= $cust_demand && $cust_demand > 0 ) $arr_status = 'in_quarantine';
+                elseif ( $recv > 0 ) $arr_status = 'short';
+            }
 
             $row_bg = intval( $qty_received ) > 0 ? 'border-bottom:1px solid #333;background:rgba(181,161,101,0.08);' : 'border-bottom:1px solid #333;';
             echo '<tr class="fh-arrival-row" data-id="' . $bp->ID . '" data-demand="' . $cust_demand . '" style="' . $row_bg . '">';
@@ -2855,6 +2868,14 @@ trait FisHotel_Admin {
             echo '<td style="padding:8px;text-align:center;color:#fff;font-weight:600;">' . intval( $cust_demand ) . '</td>';
             echo '<td style="padding:8px;text-align:center;"><input type="number" name="items[' . $bp->ID . '][qty_received]" value="' . esc_attr( $qty_received ) . '" min="0" class="fh-recv" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
             echo '<td style="padding:8px;text-align:center;"><input type="number" name="items[' . $bp->ID . '][qty_doa]" value="' . esc_attr( $qty_doa ) . '" min="0" class="fh-doa" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
+            echo '<td style="padding:8px;text-align:center;"><input type="text" name="items[' . $bp->ID . '][tank]" value="' . esc_attr( $tank ) . '" class="fh-tank" style="width:60px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;" placeholder="—"></td>';
+
+            $status_options = [ 'in_transit' => 'In Transit', 'landed' => 'Landed', 'counting' => 'Counting', 'in_quarantine' => 'In Quarantine', 'short' => 'Short', 'no_arrival' => 'No Arrival' ];
+            echo '<td style="padding:8px;text-align:center;"><select name="items[' . $bp->ID . '][status]" class="fh-status" style="background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;font-size:12px;">';
+            foreach ( $status_options as $skey => $slabel ) {
+                echo '<option value="' . $skey . '"' . selected( $arr_status, $skey, false ) . '>' . $slabel . '</option>';
+            }
+            echo '</select></td>';
 
             $dot_color = $fill_ok ? '#27ae60' : '#e74c3c';
             $fill_text = $available . ' / ' . $cust_demand;
@@ -2979,34 +3000,37 @@ trait FisHotel_Admin {
             });
 
             // Per-row AJAX auto-save
-            $('.fh-arrival-row').on('change', '.fh-recv, .fh-doa', function(){
-                var $input = $(this);
-                var row    = $input.closest('.fh-arrival-row');
-                var fishId = row.data('id');
-                var field  = $input.hasClass('fh-recv') ? 'qty_received' : 'qty_doa';
-                var value  = parseInt($input.val()) || 0;
-
+            function fhSaveField($el, field, value) {
+                var row = $el.closest('.fh-arrival-row');
                 $.post(fhArrival.ajax_url, {
                     action: 'fishotel_save_arrival_field',
                     nonce: fhArrival.nonce,
-                    fish_id: fishId,
+                    fish_id: row.data('id'),
                     field: field,
                     value: value,
                     batch_name: fhArrival.batch
                 }, function(resp){
                     if (resp.success) {
-                        var $td = $input.closest('td');
+                        var $td = $el.closest('td');
                         var $chk = $('<span style="color:#27ae60;font-weight:700;margin-left:6px;font-size:13px;">&#x2713;</span>');
                         $td.find('.fh-save-ok').remove();
                         $chk.addClass('fh-save-ok').appendTo($td);
                         setTimeout(function(){ $chk.fadeOut(300, function(){ $chk.remove(); }); }, 1500);
-
-                        // Highlight row if qty_received > 0
                         if (field === 'qty_received') {
-                            row.css('background', value > 0 ? 'rgba(181,161,101,0.08)' : '');
+                            row.css('background', (parseInt(value)||0) > 0 ? 'rgba(181,161,101,0.08)' : '');
                         }
                     }
                 });
+            }
+            $('.fh-arrival-row').on('change', '.fh-recv, .fh-doa', function(){
+                var field = $(this).hasClass('fh-recv') ? 'qty_received' : 'qty_doa';
+                fhSaveField($(this), field, parseInt($(this).val()) || 0);
+            });
+            $('.fh-arrival-row').on('change', '.fh-tank', function(){
+                fhSaveField($(this), 'tank', $(this).val());
+            });
+            $('.fh-arrival-row').on('change', '.fh-status', function(){
+                fhSaveField($(this), 'status', $(this).val());
             });
         });
         </script>
@@ -3033,6 +3057,9 @@ trait FisHotel_Admin {
 
             update_post_meta( $batch_id, '_arrival_qty_received', intval( $data['qty_received'] ?? 0 ) );
             update_post_meta( $batch_id, '_arrival_qty_doa',      intval( $data['qty_doa'] ?? 0 ) );
+            update_post_meta( $batch_id, '_arrival_tank',         sanitize_text_field( $data['tank'] ?? '' ) );
+            update_post_meta( $batch_id, '_arrival_status',       sanitize_text_field( $data['status'] ?? '' ) );
+            update_post_meta( $batch_id, '_arrival_updated_at',   time() );
         }
 
         wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&updated=1' ) );

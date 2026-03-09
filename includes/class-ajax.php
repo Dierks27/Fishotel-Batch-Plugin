@@ -265,10 +265,10 @@ trait FisHotel_Ajax {
 
         $fish_id    = intval( $_POST['fish_id'] ?? 0 );
         $field      = sanitize_text_field( $_POST['field'] ?? '' );
-        $value      = intval( $_POST['value'] ?? 0 );
         $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
 
-        if ( ! in_array( $field, [ 'qty_received', 'qty_doa' ], true ) ) {
+        $valid_fields = [ 'qty_received', 'qty_doa', 'tank', 'status' ];
+        if ( ! in_array( $field, $valid_fields, true ) ) {
             wp_send_json_error( [ 'message' => 'Invalid field.' ] );
         }
 
@@ -280,7 +280,14 @@ trait FisHotel_Ajax {
             wp_send_json_error( [ 'message' => 'Batch mismatch.' ] );
         }
 
+        if ( in_array( $field, [ 'qty_received', 'qty_doa' ], true ) ) {
+            $value = intval( $_POST['value'] ?? 0 );
+        } else {
+            $value = sanitize_text_field( $_POST['value'] ?? '' );
+        }
+
         update_post_meta( $fish_id, '_arrival_' . $field, $value );
+        update_post_meta( $fish_id, '_arrival_updated_at', time() );
 
         wp_send_json_success( [ 'fish_id' => $fish_id, 'field' => $field, 'value' => $value ] );
     }
