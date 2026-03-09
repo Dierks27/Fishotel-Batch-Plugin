@@ -2636,34 +2636,51 @@ trait FisHotel_Shortcodes {
                     max-width:900px; margin:0 auto;
                     font-family:'Oswald',sans-serif; color:#fff;
                 }
-                /* ── Hero Banner ── */
-                .fh-arrival-hero {
-                    background:#0c161f; border:2px solid #b5a165; border-radius:12px;
+                /* ── Hotel Spa Welcome Panel ── */
+                .fh-welcome-panel {
+                    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='wp'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23wp)' opacity='0.04'/%3E%3C/svg%3E"),
+                              linear-gradient(165deg,#0c161f 0%,#0a1320 50%,#081018 100%);
+                    background-size:200px 200px,cover;
+                    border:2px solid #b5a165; border-radius:12px;
                     padding:36px 28px 28px; text-align:center; margin-bottom:24px;
                     position:relative; overflow:hidden;
                 }
-                .fh-arrival-hero h2 {
+                .fh-welcome-title {
                     font-family:'Oswald',sans-serif; font-weight:700;
-                    font-size:clamp(1.6rem,4vw,2.4rem); color:#e67e22;
-                    text-transform:uppercase; letter-spacing:0.04em; margin:0 0 10px;
+                    font-size:clamp(1.4rem,3.5vw,2rem); color:#b5a165;
+                    text-transform:uppercase; letter-spacing:0.08em; margin:0 0 8px;
                 }
-                .fh-arrival-hero .fh-subline {
-                    color:#b5a165; font-size:clamp(0.85rem,2vw,1.05rem); margin:0 0 20px;
-                    font-weight:400;
+                .fh-welcome-sub {
+                    color:#8a9bae; font-size:clamp(0.8rem,2vw,0.95rem); margin:0 0 24px;
+                    font-weight:400; line-height:1.5;
                 }
-                .fh-arrival-stamp {
+                .fh-welcome-stats {
+                    display:flex; justify-content:center; gap:12px; flex-wrap:wrap;
+                    margin-bottom:24px;
+                }
+                .fh-welcome-stat {
+                    text-align:center; padding:0 16px;
+                }
+                .fh-welcome-stat-label {
+                    font-family:'Oswald',sans-serif; font-weight:400;
+                    font-size:10px; letter-spacing:0.12em; text-transform:uppercase;
+                    color:#8a7a50; margin:0 0 4px;
+                }
+                .fh-welcome-stat-val {
+                    font-family:'Oswald',sans-serif; font-weight:700;
+                    font-size:clamp(0.95rem,2.5vw,1.2rem); color:#d4bc7e;
+                    text-transform:uppercase; letter-spacing:0.04em; margin:0;
+                }
+                .fh-welcome-stat-sep {
+                    display:flex; align-items:center; color:#8a7a50;
+                    font-family:'Oswald',sans-serif; font-size:18px; padding:0 4px;
+                }
+                .fh-welcome-stamp {
                     display:inline-block; border:3px solid #e67e22; border-radius:4px;
                     padding:8px 22px; font-family:'Oswald',sans-serif; font-weight:700;
                     font-size:clamp(0.95rem,2.5vw,1.3rem); text-transform:uppercase;
                     letter-spacing:0.06em; transform:rotate(-3deg); color:#e67e22;
-                    margin-bottom:18px;
                 }
-                .fh-arrival-countdown {
-                    font-family:'Oswald',sans-serif; font-weight:700;
-                    font-size:clamp(0.8rem,2vw,1rem); text-transform:uppercase;
-                    letter-spacing:0.1em; color:#b5a165;
-                }
-                .fh-arrival-countdown strong { color:#e67e22; font-size:1.3em; }
 
                 /* ── Cards (manifest style) ── */
                 .fh-arr-card {
@@ -2740,24 +2757,7 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-arr-pending-text { color:#8a9bae; font-size:14px; line-height:1.5; margin:0; }
 
-                /* ── Spa check-in card ── */
-                .fh-arr-spa {
-                    display:flex; align-items:center; gap:20px;
-                    background:#0c161f; border:2px solid #b5a165; border-radius:10px;
-                    padding:16px 24px; margin-bottom:24px;
-                }
-                .fh-arr-spa-logo { flex:0 0 50px; }
-                .fh-arr-spa-logo img { width:50px; height:50px; object-fit:contain; }
-                .fh-arr-spa-body { flex:1; }
-                .fh-arr-spa-title {
-                    font-family:'Oswald',sans-serif; font-weight:700; font-size:16px;
-                    text-transform:uppercase; letter-spacing:0.1em; color:#b5a165; margin:0 0 4px;
-                }
-                .fh-arr-spa-flavor { color:#8a9bae; font-size:13px; margin:0 0 4px; }
-                .fh-arr-spa-meta {
-                    font-family:'Oswald',sans-serif; font-size:10px; font-weight:400;
-                    text-transform:uppercase; letter-spacing:0.1em; color:#b5a165;
-                }
+                /* (Spa check-in card styles removed — replaced by welcome panel) */
 
                 /* ── Hotel Spa Check-In Card ── */
                 .fh-checkin-card { margin-bottom:24px; }
@@ -2766,20 +2766,26 @@ trait FisHotel_Shortcodes {
                               linear-gradient(165deg,#0c161f 0%,#0a1320 50%,#081018 100%);
                     background-size:150px 150px,cover;
                     border:2px solid rgba(181,161,101,0.5); border-radius:6px;
-                    overflow:hidden;
+                    border-top:4px solid #b5a165;
+                    overflow:hidden; position:relative;
                     box-shadow:0 6px 24px rgba(0,0,0,0.5), inset 0 0 40px rgba(0,0,0,0.3);
+                }
+                .fh-checkin-inner::before {
+                    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+                    opacity:0.04; mix-blend-mode:overlay;
+                    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='t'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23t)'/%3E%3C/svg%3E");
                 }
                 .fh-checkin-header {
                     padding:12px 20px; background:rgba(181,161,101,0.12);
                     border-bottom:1px solid rgba(181,161,101,0.3);
                     font-family:'Oswald',sans-serif; font-weight:700;
                     font-size:13px; letter-spacing:0.12em; color:#b5a165;
-                    text-transform:uppercase;
+                    text-transform:uppercase; position:relative; z-index:1;
                 }
-                .fh-checkin-body { padding:8px 20px 16px; }
+                .fh-checkin-body { padding:8px 20px 16px; position:relative; z-index:1; }
                 .fh-checkin-row {
                     display:flex; justify-content:space-between; align-items:center;
-                    padding:10px 0; border-bottom:1px solid rgba(181,161,101,0.12);
+                    padding:10px 0; border-bottom:1px solid rgba(181,161,101,0.15);
                 }
                 .fh-checkin-row:last-child { border-bottom:none; }
                 .fh-checkin-fish { display:flex; align-items:baseline; gap:8px; }
@@ -2874,45 +2880,33 @@ trait FisHotel_Shortcodes {
                     <div class="fh-ab-strip-chevron">&#x25BC;</div>
                 </div>
 
-                <!-- ===== Expandable Detail (Hero + Spa) ===== -->
+                <!-- ===== Expandable Detail (Hotel Spa Welcome Panel) ===== -->
                 <div id="fh-ab-detail" class="fh-ab-detail">
-                <div class="fh-arrival-hero">
-                    <h2>Your Fish Are Here!</h2>
-                    <p class="fh-subline">
-                        <?php echo esc_html( $batch_name ); ?>
-                        <?php if ( $arrival_fmt ) : ?>
-                            &middot; Arrived <?php echo esc_html( $arrival_fmt ); ?>
-                        <?php endif; ?>
-                    </p>
-                    <div class="fh-arrival-stamp">ARRIVED</div>
-                    <?php if ( $qt_days_left > 0 ) : ?>
-                    <div class="fh-arrival-countdown">In Quarantine &mdash; <strong><?php echo $qt_days_left; ?></strong> Day<?php echo $qt_days_left !== 1 ? 's' : ''; ?> Remaining</div>
-                    <?php else : ?>
-                    <div class="fh-arrival-countdown" style="color:#27ae60;">Quarantine Complete</div>
-                    <?php endif; ?>
-                </div>
-
                 <?php
-                $spa_flavors = [
-                    'Your fish have checked in and are settling into their private quarantine suites.',
-                    'All guests are receiving the full spa treatment. Results in approximately 14 days.',
-                    'Fish checked in. Medications administered. Rest and recovery in progress.',
-                    'The Hotel Spa is at capacity. Our guests are resting comfortably.',
-                ];
-                $spa_flavor = $spa_flavors[ rand( 0, count( $spa_flavors ) - 1 ) ];
-                $spa_date   = $arrival_date ? strtoupper( date( 'M j, Y', strtotime( $arrival_date ) ) ) : '';
+                $arrived_fmt_stat = $arrival_date ? strtoupper( date( 'M j, Y', strtotime( $arrival_date ) ) ) : '—';
+                $qt_end_date      = $arrival_date ? strtoupper( date( 'M j, Y', strtotime( $arrival_date . ' +14 days' ) ) ) : '—';
+                $stamp_label      = $qt_days_left > 0 ? 'IN QUARANTINE' : 'QT COMPLETE';
                 ?>
-                <div class="fh-arr-spa">
-                    <div class="fh-arr-spa-logo">
-                        <img src="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" alt="FisHotel">
+                <div class="fh-welcome-panel">
+                    <h2 class="fh-welcome-title">Welcome to the Hotel Spa</h2>
+                    <p class="fh-welcome-sub">Your fish have checked in and are receiving the full spa treatment.</p>
+                    <div class="fh-welcome-stats">
+                        <div class="fh-welcome-stat">
+                            <p class="fh-welcome-stat-label">Arrived</p>
+                            <p class="fh-welcome-stat-val"><?php echo esc_html( $arrived_fmt_stat ); ?></p>
+                        </div>
+                        <div class="fh-welcome-stat-sep">&middot;</div>
+                        <div class="fh-welcome-stat">
+                            <p class="fh-welcome-stat-label">QT Ends</p>
+                            <p class="fh-welcome-stat-val"><?php echo esc_html( $qt_end_date ); ?></p>
+                        </div>
+                        <div class="fh-welcome-stat-sep">&middot;</div>
+                        <div class="fh-welcome-stat">
+                            <p class="fh-welcome-stat-label">Days Remaining</p>
+                            <p class="fh-welcome-stat-val"><?php echo $qt_days_left > 0 ? $qt_days_left : '0'; ?></p>
+                        </div>
                     </div>
-                    <div class="fh-arr-spa-body">
-                        <p class="fh-arr-spa-title">Welcome to the Hotel Spa</p>
-                        <p class="fh-arr-spa-flavor"><?php echo esc_html( $spa_flavor ); ?></p>
-                        <?php if ( $spa_date ) : ?>
-                        <span class="fh-arr-spa-meta"><?php echo esc_html( $batch_name ); ?> &middot; Checked In <?php echo $spa_date; ?></span>
-                        <?php endif; ?>
-                    </div>
+                    <div class="fh-welcome-stamp"><?php echo esc_html( $stamp_label ); ?></div>
                 </div>
                 </div>
 
