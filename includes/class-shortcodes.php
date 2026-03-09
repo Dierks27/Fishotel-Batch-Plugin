@@ -869,10 +869,10 @@ trait FisHotel_Shortcodes {
                     .fh-scroll-wrap { display:none !important; }
                     .fh-mobile-controls { display:flex !important; }
                 }
-                @media (max-width:1100px) and (min-width:541px) {
+                @media (max-width:1100px) and (min-width:651px) {
                     .fish-cards { grid-template-columns:1fr 1fr; }
                 }
-                @media (max-width:540px) {
+                @media (max-width:650px) {
                     .fish-cards { grid-template-columns:1fr; }
                     #submit-requests { width:100% !important; padding:16px !important; }
                     .fh-manifest-card { padding:0; }
