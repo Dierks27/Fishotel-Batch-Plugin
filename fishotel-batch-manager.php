@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v3.00 - Manifest audit: demand column, clean spinners, paper texture, card grid.
- * Version:           3.00
+ * Description:       Stable v3.01 - Gate wrap negative margins on narrow viewports, card grid 1-col at 860px.
+ * Version:           3.01
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '3.00' );
+define( 'FISHOTEL_VERSION', '3.01' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
