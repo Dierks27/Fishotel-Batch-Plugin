@@ -2996,7 +2996,7 @@ trait FisHotel_Shortcodes {
                     $board_raw[] = [
                         'fish_id'      => $bp->ID,
                         'common_name'  => $cname,
-                        'name'         => strtoupper( mb_substr( $cname, 0, 20 ) ),
+                        'name'         => strtoupper( $cname ),
                         'qty_received' => $sa['received'],
                         'recv'         => $sa['received'],
                         'qty_ordered'  => $demand,
@@ -3011,7 +3011,7 @@ trait FisHotel_Shortcodes {
                 }
                 $board_species = FisHotel_Batch_Manager::dedup_species( $board_raw );
                 foreach ( $board_species as &$bsp ) {
-                    $bsp['name']  = strtoupper( mb_substr( $bsp['common_name'], 0, 20 ) );
+                    $bsp['name']  = strtoupper( $bsp['common_name'] );
                     $bsp['alive'] = ( $bsp['recv'] ?? $bsp['qty_received'] ) - ( $bsp['doa'] ?? $bsp['qty_doa'] );
                 }
                 unset( $bsp );

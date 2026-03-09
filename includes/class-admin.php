@@ -2910,7 +2910,7 @@ trait FisHotel_Admin {
             $cust_demand = $demand[ $bp->ID ] ?? 0;
             $available   = $recv - $doa;
             $fill_label  = ( $cust_demand === 0 ) ? 'no demand' : ( $available >= $cust_demand ? 'filled' : 'short' );
-            $hf_lines[]  = '[*] ' . $bp->post_title . ' — Received: ' . $recv . ', DOA: ' . $doa . ' (' . $fill_label . ')';
+            $hf_lines[]  = '[*] ' . FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title ) . ' — Received: ' . $recv . ', DOA: ' . $doa . ' (' . $fill_label . ')';
         }
 
         $hf_post  = '[b]' . esc_html( $selected ) . ' — Arrival Report (' . $hf_arrival_fmt . ')[/b]' . "\n\n";
@@ -2955,7 +2955,7 @@ trait FisHotel_Admin {
             if ( empty( $badges ) ) $badges = '<span style="color:#666;">No entries yet</span>';
 
             echo '<tr style="border-bottom:1px solid #333;">';
-            echo '<td style="padding:8px;">' . esc_html( $bp->post_title ) . '</td>';
+            echo '<td style="padding:8px;">' . esc_html( FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title ) ) . '</td>';
             echo '<td style="padding:8px;">' . $badges . '</td>';
             echo '<td style="padding:8px;text-align:center;"><input type="number" name="survival[' . $bp->ID . ']" min="0" placeholder="—" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
             echo '</tr>';
