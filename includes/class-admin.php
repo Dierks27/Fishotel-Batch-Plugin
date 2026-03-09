@@ -2839,7 +2839,7 @@ trait FisHotel_Admin {
 
         foreach ( $batch_fish as $bp ) {
             $master_id = get_post_meta( $bp->ID, '_master_id', true );
-            $common    = $bp->post_title;
+            $common    = FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title );
             $sci_name  = $master_id ? get_post_meta( $master_id, '_scientific_name', true ) : '';
 
             $qty_ordered  = get_post_meta( $bp->ID, '_arrival_qty_ordered', true );

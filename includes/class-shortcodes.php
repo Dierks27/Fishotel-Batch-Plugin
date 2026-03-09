@@ -2957,27 +2957,37 @@ trait FisHotel_Shortcodes {
                 <!-- ===== Solari Arrival Board ===== -->
                 <?php
                 // Build species data for the Solari board
-                $board_species = [];
+                $board_raw = [];
                 foreach ( $batch_posts as $bp ) {
+                    $cname  = FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title );
                     $sa     = $species_arrival[ $bp->ID ] ?? [ 'received' => 0, 'doa' => 0, 'alive' => 0 ];
                     $demand = 0;
                     if ( isset( $fcfs[ $bp->ID ] ) ) {
                         $last = end( $fcfs[ $bp->ID ] );
                         $demand = $last ? $last['cum_end'] : 0;
                     }
-                    $board_species[] = [
+                    $board_raw[] = [
                         'fish_id'      => $bp->ID,
-                        'common_name'  => preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title ),
-                        'name'         => strtoupper( mb_substr( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title ), 0, 20 ) ),
+                        'common_name'  => $cname,
+                        'name'         => strtoupper( mb_substr( $cname, 0, 20 ) ),
                         'qty_received' => $sa['received'],
                         'recv'         => $sa['received'],
                         'qty_ordered'  => $demand,
                         'ordered'      => $demand,
+                        'qty_doa'      => $sa['doa'],
+                        'doa'          => $sa['doa'],
+                        'alive'        => $sa['alive'],
                         'tank'         => get_post_meta( $bp->ID, '_arrival_tank', true ) ?: '—',
                         'status'       => get_post_meta( $bp->ID, '_arrival_status', true ) ?: 'in_transit',
                         'updated_at'   => intval( get_post_meta( $bp->ID, '_arrival_updated_at', true ) ),
                     ];
                 }
+                $board_species = FisHotel_Batch_Manager::dedup_species( $board_raw );
+                foreach ( $board_species as &$bsp ) {
+                    $bsp['name']  = strtoupper( mb_substr( $bsp['common_name'], 0, 20 ) );
+                    $bsp['alive'] = ( $bsp['recv'] ?? $bsp['qty_received'] ) - ( $bsp['doa'] ?? $bsp['qty_doa'] );
+                }
+                unset( $bsp );
                 $stage_labels = fishotel_stage_label_map();
                 $ab_stage_label = strtoupper( $stage_labels[ $status ] ?? $status );
                 $ab_batch_slug = urlencode( $batch_name );

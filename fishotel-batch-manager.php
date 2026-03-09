@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v4.0 - Arrival Day Live Tracking Board: Solari split-flap, REST API, embed URL, in_quarantine stage.
- * Version:           4.0
+ * Description:       Stable v4.01 - Fix common names: master lookup, suffix strip, species dedup on arrival board.
+ * Version:           4.01
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.0' );
+define( 'FISHOTEL_VERSION', '4.01' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -226,6 +226,58 @@ class FisHotel_Batch_Manager {
         add_action( 'woocommerce_thankyou', [$this, 'add_return_to_fish_button'] );
     }
 
+    // ─── Helpers — Arrival Species ──────────────────────────────────────
+
+    /**
+     * Resolve the clean common name for a fish_batch post.
+     * Prefers the fish_master title when available, strips batch suffix.
+     */
+    public static function resolve_common_name( $batch_post_id, $batch_post_title = '' ) {
+        $master_id = get_post_meta( $batch_post_id, '_master_id', true );
+        $title     = ( $master_id && get_post( $master_id ) ) ? get_the_title( $master_id ) : $batch_post_title;
+        return preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $title );
+    }
+
+    /**
+     * Deduplicate a species array by common_name.
+     * Sums qty_ordered, qty_received, qty_doa. Keeps highest-priority status.
+     */
+    public static function dedup_species( $species ) {
+        $priority = [ 'in_quarantine' => 1, 'short' => 2, 'no_arrival' => 3, 'counting' => 4, 'landed' => 5, 'in_transit' => 6 ];
+        $merged = [];
+        foreach ( $species as $sp ) {
+            $key = $sp['common_name'] ?? ( $sp['name'] ?? '' );
+            if ( ! isset( $merged[ $key ] ) ) {
+                $merged[ $key ] = $sp;
+            } else {
+                $m = &$merged[ $key ];
+                $m['qty_ordered']  = ( $m['qty_ordered'] ?? 0 ) + ( $sp['qty_ordered'] ?? 0 );
+                $m['qty_received'] = ( $m['qty_received'] ?? 0 ) + ( $sp['qty_received'] ?? 0 );
+                $m['qty_doa']      = ( $m['qty_doa'] ?? 0 ) + ( $sp['qty_doa'] ?? 0 );
+                if ( isset( $sp['recv'] ) )    $m['recv']    = ( $m['recv'] ?? 0 ) + $sp['recv'];
+                if ( isset( $sp['ordered'] ) ) $m['ordered'] = ( $m['ordered'] ?? 0 ) + $sp['ordered'];
+                if ( isset( $sp['doa'] ) )     $m['doa']     = ( $m['doa'] ?? 0 ) + $sp['doa'];
+                if ( isset( $sp['alive'] ) )   $m['alive']   = ( $m['alive'] ?? 0 ) + $sp['alive'];
+                // Keep highest-priority status
+                $cur_p = $priority[ $m['status'] ?? 'in_transit' ] ?? 99;
+                $new_p = $priority[ $sp['status'] ?? 'in_transit' ] ?? 99;
+                if ( $new_p < $cur_p ) $m['status'] = $sp['status'];
+                // Keep latest updated_at
+                if ( ( $sp['updated_at'] ?? 0 ) > ( $m['updated_at'] ?? 0 ) ) {
+                    $m['updated_at'] = $sp['updated_at'] ?? 0;
+                }
+                // Concatenate tanks
+                $old_tank = $m['tank'] ?? '';
+                $new_tank = $sp['tank'] ?? '';
+                if ( $new_tank && $new_tank !== '—' && $old_tank !== $new_tank ) {
+                    $m['tank'] = trim( $old_tank . ',' . $new_tank, ',—' );
+                }
+                unset( $m );
+            }
+        }
+        return array_values( $merged );
+    }
+
     // ─── REST API ────────────────────────────────────────────────────────
     public function register_rest_routes() {
         register_rest_route( 'fishotel/v1', '/arrival-status/(?P<batch>.+)', [
@@ -266,11 +318,11 @@ class FisHotel_Batch_Manager {
             }
         }
 
-        $species = [];
+        $species_raw = [];
         foreach ( $batch_fish as $bp ) {
-            $species[] = [
+            $species_raw[] = [
                 'fish_id'      => $bp->ID,
-                'common_name'  => $bp->post_title,
+                'common_name'  => self::resolve_common_name( $bp->ID, $bp->post_title ),
                 'qty_ordered'  => $demand[ $bp->ID ] ?? 0,
                 'qty_received' => intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) ),
                 'qty_doa'      => intval( get_post_meta( $bp->ID, '_arrival_qty_doa', true ) ),
@@ -279,6 +331,7 @@ class FisHotel_Batch_Manager {
                 'updated_at'   => intval( get_post_meta( $bp->ID, '_arrival_updated_at', true ) ),
             ];
         }
+        $species = self::dedup_species( $species_raw );
 
         return rest_ensure_response( [
             'batch'   => $batch_name,
@@ -337,20 +390,33 @@ class FisHotel_Batch_Manager {
             }
         }
 
-        $species = [];
+        $species_raw = [];
         foreach ( $batch_fish as $bp ) {
-            $recv = intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) );
-            $doa  = intval( get_post_meta( $bp->ID, '_arrival_qty_doa', true ) );
-            $species[] = [
-                'name'    => strtoupper( mb_substr( $bp->post_title, 0, 20 ) ),
-                'recv'    => $recv,
-                'doa'     => $doa,
-                'alive'   => $recv - $doa,
-                'ordered' => $demand[ $bp->ID ] ?? 0,
-                'tank'    => get_post_meta( $bp->ID, '_arrival_tank', true ) ?: '—',
-                'status'  => get_post_meta( $bp->ID, '_arrival_status', true ) ?: 'in_transit',
+            $cname = self::resolve_common_name( $bp->ID, $bp->post_title );
+            $recv  = intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) );
+            $doa   = intval( get_post_meta( $bp->ID, '_arrival_qty_doa', true ) );
+            $species_raw[] = [
+                'common_name' => $cname,
+                'name'        => strtoupper( mb_substr( $cname, 0, 20 ) ),
+                'recv'        => $recv,
+                'doa'         => $doa,
+                'alive'       => $recv - $doa,
+                'ordered'     => $demand[ $bp->ID ] ?? 0,
+                'qty_ordered' => $demand[ $bp->ID ] ?? 0,
+                'qty_received'=> $recv,
+                'qty_doa'     => $doa,
+                'tank'        => get_post_meta( $bp->ID, '_arrival_tank', true ) ?: '—',
+                'status'      => get_post_meta( $bp->ID, '_arrival_status', true ) ?: 'in_transit',
+                'updated_at'  => intval( get_post_meta( $bp->ID, '_arrival_updated_at', true ) ),
             ];
         }
+        $species = self::dedup_species( $species_raw );
+        // Recompute derived fields after dedup
+        foreach ( $species as &$sp ) {
+            $sp['name']  = strtoupper( mb_substr( $sp['common_name'], 0, 20 ) );
+            $sp['alive'] = ( $sp['recv'] ?? $sp['qty_received'] ) - ( $sp['doa'] ?? $sp['qty_doa'] );
+        }
+        unset( $sp );
 
         $stage_labels = fishotel_stage_label_map();
         $stage_label  = strtoupper( $stage_labels[ $batch_status ] ?? $batch_status );
