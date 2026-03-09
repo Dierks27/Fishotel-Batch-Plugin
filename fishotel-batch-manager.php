@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v3.01 - Gate wrap negative margins on narrow viewports, card grid 1-col at 860px.
- * Version:           3.01
+ * Description:       Stable v3.02 - Measured breakpoints: gate-wrap at 1050px, card grid 1-col at 900px.
+ * Version:           3.02
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '3.01' );
+define( 'FISHOTEL_VERSION', '3.02' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
