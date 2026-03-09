@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v3.16 - Manifest polish: checks, stamp, punch holes, staples, sig, colors.
- * Version:           3.16
+ * Description:       Stable v3.17 - Move stamp down to letterhead area.
+ * Version:           3.17
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '3.16' );
+define( 'FISHOTEL_VERSION', '3.17' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

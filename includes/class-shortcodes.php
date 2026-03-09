@@ -1946,7 +1946,7 @@ trait FisHotel_Shortcodes {
                 .fh-manifest-staple:nth-child(2) { top:25px; }
                 /* Rubber stamp */
                 .fh-manifest-stamp {
-                    position:absolute; top:52px; left:50%; z-index:4;
+                    position:absolute; top:148px; left:50%; z-index:4;
                     transform:translateX(-50%) rotate(-5deg);
                     font-family:'Special Elite',monospace; font-weight:700; font-size:16px;
                     color:#c0152a; text-transform:uppercase; letter-spacing:3px;
