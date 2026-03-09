@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.97 - Board scale uses wrapper width, not viewport width.
- * Version:           2.97
+ * Description:       Stable v2.98 - Mobile fixes: spacing, text colors, card grid, spinner min 0.
+ * Version:           2.98
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.97' );
+define( 'FISHOTEL_VERSION', '2.98' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

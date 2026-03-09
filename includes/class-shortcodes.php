@@ -232,7 +232,7 @@ trait FisHotel_Shortcodes {
                 }
 
                 /* ── Solari Departure Board — Authentic Fixed Grid ── */
-                .fh-board-wrapper { overflow:hidden; }
+                .fh-board-wrapper { overflow:hidden; margin-bottom:24px; }
                 .fh-board {
                     width:900px; min-width:900px; box-sizing:border-box;
                     background:#0a0a0a; border-radius:4px;
@@ -723,6 +723,7 @@ trait FisHotel_Shortcodes {
                     border:none; border-left:1px solid rgba(0,0,0,0.12);
                     border-right:1px solid rgba(0,0,0,0.12);
                     padding:4px 0; font-family:'Special Elite',monospace; font-size:14px;
+                    color:#3a2e1e; -webkit-text-fill-color:#3a2e1e;
                     position:relative; z-index:1;
                 }
                 .fh-clipboard-paper .fishotel-open-table .qty-input {
@@ -792,22 +793,25 @@ trait FisHotel_Shortcodes {
                 .fh-mobile-controls select {
                     padding:10px 14px; font-size:0.9em; font-family:'Special Elite',monospace;
                     border:1px solid rgba(0,0,0,0.15); border-radius:0; background:#f2ead8;
-                    color:#1a1a2e; flex:1; min-width:150px;
+                    color:#3a2e1e !important; -webkit-text-fill-color:#3a2e1e !important;
+                    flex:1; min-width:150px;
                     text-transform:uppercase; letter-spacing:0.03em;
                 }
                 .fh-mobile-controls input {
                     padding:10px 14px; font-size:0.9em; font-family:'Special Elite',monospace;
                     border:1px solid rgba(0,0,0,0.15); border-radius:0; background:#f2ead8;
-                    color:#1a1a2e; flex:1; min-width:180px; width:auto;
+                    color:#3a2e1e !important; -webkit-text-fill-color:#3a2e1e !important;
+                    flex:1; min-width:180px; width:auto;
                 }
-                .fh-mobile-controls input::placeholder { color:#8a7a6a; }
+                .fh-mobile-controls input::placeholder { color:#8a7a6a !important; -webkit-text-fill-color:#8a7a6a !important; }
 
                 /* ── Mobile Cards ── */
-                .fish-cards { display:grid; gap:14px; position:relative; z-index:2; }
+                .fish-cards { display:grid; gap:14px; position:relative; z-index:2; box-sizing:border-box; width:100%; }
                 .fish-card {
                     background:#f2ead8; border:1px solid rgba(0,0,0,0.12); border-radius:0;
                     padding:16px 18px; font-family:'Special Elite',monospace;
                     border-bottom:1px solid rgba(0,0,0,0.12);
+                    box-sizing:border-box; min-width:0; overflow:hidden;
                 }
                 .fish-card h4 { margin:0 0 4px; color:#1a1a2e; font-weight:400; font-size:1rem; }
                 .fish-card .sci { font-style:italic; color:#5a4a3a; margin-bottom:10px; font-size:0.85rem; }
@@ -1029,7 +1033,7 @@ trait FisHotel_Shortcodes {
                                     $touched_class = $is_in_cart ? ' fh-qty-touched' : '';
                                     echo '<div class="fh-qty-wrap' . $touched_class . '" data-idx="' . $row_num . '">';
                                     echo '<button class="qty-minus">&#x2212;</button>';
-                                    echo '<input type="number" min="1" value="1" class="qty-input">';
+                                    echo '<input type="number" min="0" value="1" class="qty-input">';
                                     echo '<button class="qty-plus">+</button>';
                                     echo '<span class="fh-hw-input-val" style="display:none;"></span>';
                                     echo '</div>';
@@ -1072,7 +1076,7 @@ trait FisHotel_Shortcodes {
                                 echo '<div class="action">';
                                 echo '<div class="fh-qty-wrap">';
                                 echo '<button class="qty-minus" style="padding:6px 10px;">&#x2212;</button>';
-                                echo '<input type="number" min="1" value="1" class="qty-input" style="width:48px;padding:6px 0;">';
+                                echo '<input type="number" min="0" value="1" class="qty-input" style="width:48px;padding:6px 0;color:#3a2e1e;">';
                                 echo '<button class="qty-plus" style="padding:6px 10px;">+</button>';
                                 echo '</div>';
                                 echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $master->post_title ) . '" style="flex:1;padding:10px;font-size:0.95em;">Request</button>';
@@ -1469,8 +1473,11 @@ trait FisHotel_Shortcodes {
                     document.querySelectorAll(".qty-minus").forEach(btn => {
                         btn.addEventListener("click", function() {
                             const input = this.nextElementSibling;
-                            let val = parseInt(input.value) || 1;
-                            if (val > 1) input.value = val - 1;
+                            let val = parseInt(input.value) || 0;
+                            if (val > 0) {
+                                val--;
+                                input.value = val === 0 ? '' : val;
+                            }
                             this.closest('.fh-qty-wrap').classList.add('fh-qty-touched');
                             updateQtyDisplay(input);
                         });
