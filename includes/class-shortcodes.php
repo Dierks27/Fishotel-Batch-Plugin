@@ -2759,21 +2759,62 @@ trait FisHotel_Shortcodes {
                     text-transform:uppercase; letter-spacing:0.1em; color:#b5a165;
                 }
 
-                /* ── Blur overlay for logged-out ── */
-                .fh-arr-blur-wrap { position:relative; }
-                .fh-arr-blur-content { transition:filter 0.3s; }
-                .fh-arr-blur-content.fh-blurred { filter:blur(5px); pointer-events:none; }
-                .fh-arr-blur-overlay {
-                    position:absolute; top:0; left:0; right:0; bottom:0; z-index:10;
-                    display:flex; align-items:center; justify-content:center;
-                    background:rgba(12,22,31,0.82); border-radius:10px;
+                /* ── Hotel Spa Check-In Card ── */
+                .fh-checkin-card { margin-bottom:24px; }
+                .fh-checkin-inner {
+                    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+                              linear-gradient(165deg,#0c161f 0%,#0a1320 50%,#081018 100%);
+                    background-size:150px 150px,cover;
+                    border:2px solid rgba(181,161,101,0.5); border-radius:6px;
+                    overflow:hidden;
+                    box-shadow:0 6px 24px rgba(0,0,0,0.5), inset 0 0 40px rgba(0,0,0,0.3);
                 }
-                .fh-arr-blur-overlay a {
-                    font-family:'Oswald',sans-serif; font-size:1.1rem; font-weight:700;
-                    text-transform:uppercase; letter-spacing:0.08em;
-                    color:#b5a165; text-decoration:none;
+                .fh-checkin-header {
+                    padding:12px 20px; background:rgba(181,161,101,0.12);
+                    border-bottom:1px solid rgba(181,161,101,0.3);
+                    font-family:'Oswald',sans-serif; font-weight:700;
+                    font-size:13px; letter-spacing:0.12em; color:#b5a165;
+                    text-transform:uppercase;
                 }
-                .fh-arr-blur-overlay a:hover { color:#e67e22; }
+                .fh-checkin-body { padding:8px 20px 16px; }
+                .fh-checkin-row {
+                    display:flex; justify-content:space-between; align-items:center;
+                    padding:10px 0; border-bottom:1px solid rgba(181,161,101,0.12);
+                }
+                .fh-checkin-row:last-child { border-bottom:none; }
+                .fh-checkin-fish { display:flex; align-items:baseline; gap:8px; }
+                .fh-checkin-name {
+                    font-family:'Oswald',sans-serif; font-weight:600;
+                    font-size:15px; color:#d4bc7e; text-transform:uppercase;
+                    letter-spacing:0.04em;
+                }
+                .fh-checkin-qty {
+                    font-family:'Oswald',sans-serif; font-weight:400;
+                    font-size:12px; color:#8a7a50;
+                }
+                .fh-checkin-status { display:flex; align-items:center; gap:10px; }
+                .fh-checkin-pos {
+                    font-family:'Oswald',sans-serif; font-weight:400;
+                    font-size:11px; letter-spacing:0.08em; color:#8a9bae;
+                    text-transform:uppercase;
+                }
+                .fh-checkin-led {
+                    width:10px; height:10px; border-radius:50%; flex-shrink:0;
+                }
+                .fh-checkin-led-green {
+                    background:#44ff66;
+                    box-shadow:0 0 4px 2px rgba(40,255,80,0.6), 0 0 10px 4px rgba(0,255,50,0.25);
+                }
+                .fh-checkin-led-red {
+                    background:#ff4444;
+                    box-shadow:0 0 4px 2px rgba(255,40,40,0.6), 0 0 10px 4px rgba(255,0,0,0.25);
+                }
+                .fh-checkin-empty {
+                    padding:20px 0; text-align:center;
+                    font-family:'Oswald',sans-serif; font-weight:400;
+                    font-size:13px; letter-spacing:0.1em; color:#5a6a7a;
+                    text-transform:uppercase;
+                }
 
                 /* ── Collapsible boarding pass strip ── */
                 .fh-ab-strip {
@@ -2808,20 +2849,26 @@ trait FisHotel_Shortcodes {
                 <!-- ===== Collapsible Boarding Pass Strip ===== -->
                 <?php
                 $my_species_count = count( $my_items );
-                $strip_stage = fishotel_stage_label_map()[ $status ] ?? ucfirst( $status );
-                $strip_date  = $arrival_date ? strtoupper( date( 'M j, Y', strtotime( $arrival_date ) ) ) : '';
+                $strip_origin = strtoupper( preg_split( '/[\s\-]/', $batch_name )[0] ?? $batch_name );
+                $strip_parts = [];
+                $strip_parts[] = $strip_origin . ' ' . preg_replace( '/^[a-zA-Z]+\s*/', '', $batch_name );
+                $strip_parts[] = 'FISH ARE HERE';
+                if ( $qt_days_left > 0 ) {
+                    $strip_parts[] = 'IN QUARANTINE';
+                    $strip_parts[] = $qt_days_left . ' DAY' . ( $qt_days_left !== 1 ? 'S' : '' ) . ' REMAINING';
+                } elseif ( $arrival_date ) {
+                    $strip_parts[] = 'QT COMPLETE';
+                }
+                $strip_text = implode( ' · ', $strip_parts );
                 ?>
                 <div class="fh-ab-strip" onclick="var d=document.getElementById('fh-ab-detail'),c=this.querySelector('.fh-ab-strip-chevron');d.classList.toggle('open');c.classList.toggle('open');">
                     <div class="fh-ab-strip-logo">
                         <img src="https://fishotel.com/wp-content/uploads/2026/03/Small-Fish-Hotel-White.png" alt="FisHotel">
                     </div>
                     <div class="fh-ab-strip-info">
-                        <p class="fh-ab-strip-title"><?php echo esc_html( $batch_name ); ?> &middot; <?php echo esc_html( $strip_stage ); ?></p>
+                        <p class="fh-ab-strip-title">&#x1F420; <?php echo esc_html( $strip_text ); ?></p>
                         <p class="fh-ab-strip-meta">
-                            <?php if ( $strip_date ) echo 'Arrived ' . $strip_date . ' &middot; '; ?>
                             <?php if ( $uid && $my_species_count > 0 ) echo $my_species_count . ' species requested'; ?>
-                            <?php if ( $qt_days_left > 0 ) echo ' &middot; ' . $qt_days_left . ' day' . ( $qt_days_left !== 1 ? 's' : '' ) . ' QT remaining'; ?>
-                            <?php if ( $qt_days_left === 0 && $arrival_date ) echo ' &middot; QT complete'; ?>
                         </p>
                     </div>
                     <div class="fh-ab-strip-chevron">&#x25BC;</div>
@@ -2878,78 +2925,64 @@ trait FisHotel_Shortcodes {
                 </div>
 
                 <?php else : ?>
-                <!-- ===== Your Fish Table ===== -->
+                <!-- ===== Hotel Spa Check-In Card ===== -->
                 <?php if ( $uid && ! empty( $my_items ) ) : ?>
-                <div class="fh-arr-blur-wrap">
-                    <div class="fh-arr-blur-content">
-                    <div class="fh-arr-card">
-                        <div class="fh-arr-card-header">Your Fish &mdash; Arrival Status</div>
-                        <div style="overflow-x:auto;">
-                        <table class="fh-arr-tbl">
-                            <thead><tr>
-                                <th>Common Name</th>
-                                <th style="text-align:center;">Requested</th>
-                                <th style="text-align:center;">Alive</th>
-                                <th style="text-align:center;">Position</th>
-                                <th style="text-align:center;">Status</th>
-                            </tr></thead>
-                            <tbody>
-                            <?php foreach ( $my_items as $item ) :
-                                $bid      = intval( $item['batch_id'] ?? 0 );
-                                $my_qty   = intval( $item['qty'] ?? 1 );
-                                $sa       = $species_arrival[ $bid ] ?? [ 'received' => 0, 'doa' => 0, 'alive' => 0 ];
-                                $alive    = $sa['alive'];
-
-                                $position = '—';
-                                $filled   = false;
-                                if ( isset( $fcfs[ $bid ] ) ) {
-                                    foreach ( $fcfs[ $bid ] as $entry ) {
-                                        if ( $entry['customer_id'] === $uid ) {
-                                            $position = $entry['cum_end'];
-                                            $filled   = $alive >= $entry['cum_end'];
-                                            break;
-                                        }
+                <div class="fh-checkin-card">
+                    <svg width="0" height="0"><defs><filter id="fh-checkin-grain"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter></defs></svg>
+                    <div class="fh-checkin-inner">
+                        <div class="fh-checkin-header">&#x1F420; HOTEL SPA &middot; CHECK-IN CONFIRMATION</div>
+                        <div class="fh-checkin-body">
+                        <?php foreach ( $my_items as $item ) :
+                            $bid      = intval( $item['batch_id'] ?? 0 );
+                            $my_qty   = intval( $item['qty'] ?? 1 );
+                            $sa       = $species_arrival[ $bid ] ?? [ 'received' => 0, 'doa' => 0, 'alive' => 0 ];
+                            $alive    = $sa['alive'];
+                            $position = '—';
+                            $filled   = false;
+                            if ( isset( $fcfs[ $bid ] ) ) {
+                                foreach ( $fcfs[ $bid ] as $entry ) {
+                                    if ( $entry['customer_id'] === $uid ) {
+                                        $position = $entry['cum_end'];
+                                        $filled   = $alive >= $entry['cum_end'];
+                                        break;
                                     }
                                 }
-                            ?>
-                            <tr>
-                                <td style="font-weight:500;"><?php echo esc_html( $item['fish_name'] ); ?></td>
-                                <td style="text-align:center;"><?php echo $my_qty; ?></td>
-                                <td style="text-align:center;"><?php echo $alive; ?></td>
-                                <td style="text-align:center;"><span class="fh-pos-badge">#<?php echo esc_html( $position ); ?></span></td>
-                                <td style="text-align:center;"><span class="fh-light <?php echo $filled ? 'fh-light-green' : 'fh-light-red'; ?>"></span></td>
-                            </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                            }
+                            $fish_name = FisHotel_Batch_Manager::resolve_common_name( $bid, $item['fish_name'] ?? '' );
+                            $led = $filled ? 'fh-checkin-led-green' : 'fh-checkin-led-red';
+                        ?>
+                        <div class="fh-checkin-row">
+                            <div class="fh-checkin-fish">
+                                <span class="fh-checkin-name"><?php echo esc_html( $fish_name ); ?></span>
+                                <span class="fh-checkin-qty">x<?php echo $my_qty; ?></span>
+                            </div>
+                            <div class="fh-checkin-status">
+                                <span class="fh-checkin-pos">ROOM PRIORITY #<?php echo esc_html( $position ); ?></span>
+                                <span class="fh-checkin-led <?php echo $led; ?>"></span>
+                            </div>
                         </div>
-                    </div>
+                        <?php endforeach; ?>
+                        </div>
                     </div>
                 </div>
                 <?php elseif ( ! $uid ) : ?>
-                <div class="fh-arr-blur-wrap">
-                    <div class="fh-arr-blur-content fh-blurred">
-                    <div class="fh-arr-card">
-                        <div class="fh-arr-card-header">Your Fish &mdash; Arrival Status</div>
-                        <div style="overflow-x:auto;">
-                        <table class="fh-arr-tbl">
-                            <thead><tr>
-                                <th>Common Name</th>
-                                <th style="text-align:center;">Requested</th>
-                                <th style="text-align:center;">Alive</th>
-                                <th style="text-align:center;">Position</th>
-                                <th style="text-align:center;">Status</th>
-                            </tr></thead>
-                            <tbody>
-                            <tr><td style="font-weight:500;">Example Fish</td><td style="text-align:center;">2</td><td style="text-align:center;">2</td><td style="text-align:center;"><span class="fh-pos-badge">#2</span></td><td style="text-align:center;"><span class="fh-light fh-light-green"></span></td></tr>
-                            <tr><td style="font-weight:500;">Another Fish</td><td style="text-align:center;">1</td><td style="text-align:center;">1</td><td style="text-align:center;"><span class="fh-pos-badge">#1</span></td><td style="text-align:center;"><span class="fh-light fh-light-green"></span></td></tr>
-                            </tbody>
-                        </table>
+                <div class="fh-checkin-card">
+                    <div class="fh-checkin-inner">
+                        <div class="fh-checkin-header">&#x1F420; HOTEL SPA &middot; CHECK-IN CONFIRMATION</div>
+                        <div class="fh-checkin-body">
+                            <div class="fh-checkin-empty">
+                                <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="color:#b5a165;text-decoration:none;">&#x1F512; LOG IN TO VIEW YOUR RESERVATION</a>
+                            </div>
                         </div>
                     </div>
-                    </div>
-                    <div class="fh-arr-blur-overlay">
-                        <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>">&#x1F512; Log In to See Your Arrival Status</a>
+                </div>
+                <?php elseif ( empty( $my_items ) ) : ?>
+                <div class="fh-checkin-card">
+                    <div class="fh-checkin-inner">
+                        <div class="fh-checkin-header">&#x1F420; HOTEL SPA &middot; CHECK-IN CONFIRMATION</div>
+                        <div class="fh-checkin-body">
+                            <div class="fh-checkin-empty">NO RESERVATION ON FILE</div>
+                        </div>
                     </div>
                 </div>
                 <?php endif; ?>

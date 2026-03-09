@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v4.02 - Scientific name reverse lookup fallback in resolve_common_name.
- * Version:           4.02
+ * Description:       Stable v4.03 - Board fixes: fixed tiles, all-tile status, LED dots, check-in card, strip text.
+ * Version:           4.03
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.02' );
+define( 'FISHOTEL_VERSION', '4.03' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -513,49 +513,58 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
         }
         .fh-ab-fl-lit { color:#d4bc7e; text-shadow:0 0 8px rgba(212,188,126,0.6); }
 
-        /* Column headers row */
+        /* Column headers row — 4 columns: LED+SPECIES, STATUS, ARRIVED, QT POS */
         .fh-ab-cols {
-            display:grid;
-            grid-template-columns: minmax(140px,2fr) minmax(110px,1.3fr) 70px 80px 70px;
-            padding:6px 16px; background:#111; border-bottom:1px solid #1a1a10;
-            position:relative; z-index:2;
+            display:flex; padding:6px 12px; background:#111;
+            border-bottom:1px solid #1a1a10; position:relative; z-index:2;
         }
         .fh-ab-col-hd {
             font-size:11px; font-weight:700; text-transform:uppercase;
             letter-spacing:0.12em; color:#8a7a50; padding:2px 4px;
         }
-        .fh-ab-col-hd:nth-child(n+3) { text-align:center; }
 
-        /* Data rows */
+        /* Data rows — flex layout, tiles wall-to-wall */
         .fh-ab-row {
-            display:grid;
-            grid-template-columns: minmax(140px,2fr) minmax(110px,1.3fr) 70px 80px 70px;
-            padding:5px 16px; border-bottom:1px solid #0d0d0d;
+            display:flex; align-items:center;
+            padding:4px 12px; border-bottom:1px solid #0d0d0d;
             box-shadow:inset 0 1px 0 #252520;
-            position:relative; z-index:2; align-items:center;
-            transition: background 0.3s;
+            position:relative; z-index:2;
+            transition:background 0.3s;
         }
         .fh-ab-row:last-child { border-bottom:none; box-shadow:none; }
         .fh-ab-row.fh-ab-qt { background:rgba(0,255,100,0.04); }
         .fh-ab-row.fh-ab-short { background:rgba(255,180,0,0.06); }
         .fh-ab-row.fh-ab-noarr { background:rgba(255,60,60,0.05); }
 
-        .fh-ab-cell {
-            padding:3px 4px; overflow:hidden; white-space:nowrap;
+        /* LED indicator dot */
+        .fh-ab-led {
+            width:8px; height:8px; min-width:8px; border-radius:50%;
+            margin-right:6px; flex-shrink:0;
         }
-        .fh-ab-cell:nth-child(n+3) { text-align:center; }
+        .fh-ab-led-qt {
+            background:rgba(0,255,120,0.9);
+            box-shadow:0 0 4px rgba(0,255,120,0.6), 0 0 10px rgba(0,255,120,0.3);
+            animation:fh-ab-pulse 2.5s ease-in-out infinite;
+        }
+        .fh-ab-led-short { background:rgba(255,180,0,0.9); box-shadow:0 0 4px rgba(255,180,0,0.4); }
+        .fh-ab-led-noarr { background:rgba(255,60,60,0.5); }
+        .fh-ab-led-dim { background:rgba(120,120,120,0.3); }
+        @keyframes fh-ab-pulse {
+            0%,100% { opacity:1; box-shadow:0 0 4px rgba(0,255,120,0.6), 0 0 10px rgba(0,255,120,0.3); }
+            50% { opacity:0.6; box-shadow:0 0 2px rgba(0,255,120,0.3), 0 0 6px rgba(0,255,120,0.15); }
+        }
 
-        /* Flap tiles inside cells */
+        /* Flap tiles */
         .fh-ab-tiles {
-            display:flex; flex-wrap:nowrap; gap:1px; overflow:hidden;
+            display:flex; flex-wrap:nowrap; gap:1px; overflow:hidden; flex-shrink:0;
         }
         .fh-ab-flap {
-            width:22px; height:34px; min-width:22px;
+            width:18px; height:30px; min-width:18px;
             background:#141414; border-radius:2px;
             box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 0 #0a0806, 0 1px 4px rgba(0,0,0,0.9);
             display:flex; align-items:center; justify-content:center;
             font-family:'Courier New',monospace; font-weight:700;
-            font-size:17px; color:#c8a84b; letter-spacing:-0.5px;
+            font-size:15px; color:#c8a84b; letter-spacing:-0.5px;
             text-transform:uppercase; position:relative;
         }
         .fh-ab-flap:nth-child(odd) { background:#121212; }
@@ -564,32 +573,21 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             width:100%; height:1px; background:#000;
         }
 
-        /* Status cell — text only, no tiles */
-        .fh-ab-status-text {
-            font-family:'Courier New',monospace; font-weight:700;
-            font-size:13px; text-transform:uppercase; letter-spacing:0.04em;
-        }
-        .fh-ab-status-qt { color:#44ff88; }
-        .fh-ab-status-short { color:#ffaa33; }
-        .fh-ab-status-noarr { color:#ff5555; }
-        .fh-ab-status-transit { color:#8a7a50; }
-        .fh-ab-status-landed { color:#66ccff; }
-        .fh-ab-status-counting { color:#d4bc7e; }
+        /* Column gaps between tile groups */
+        .fh-ab-gap { width:8px; flex-shrink:0; }
 
         /* Responsive */
         @media (max-width:700px) {
-            .fh-ab-cols, .fh-ab-row {
-                grid-template-columns: minmax(100px,2fr) minmax(80px,1.3fr) 50px 60px 50px;
-                padding:4px 8px;
-            }
             .fh-ab-flap {
-                width:14px; height:22px; min-width:14px;
-                font-size:11px;
+                width:12px; height:20px; min-width:12px;
+                font-size:10px;
             }
             .fh-ab-hl { font-size:13px; }
             .fh-ab-hr, .fh-ab-fl, .fh-ab-fr { font-size:10px; }
             .fh-ab-col-hd { font-size:9px; }
-            .fh-ab-status-text { font-size:10px; }
+            .fh-ab-led { width:6px; height:6px; min-width:6px; margin-right:4px; }
+            .fh-ab-gap { width:4px; }
+            .fh-ab-cols, .fh-ab-row { padding:3px 6px; }
         }
         <?php
     }
@@ -604,13 +602,10 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             'short'          => 'SHORT',
             'no_arrival'     => 'NO ARRIVAL',
         ];
-        $status_classes = [
-            'in_quarantine' => 'fh-ab-status-qt',
-            'short'         => 'fh-ab-status-short',
-            'no_arrival'    => 'fh-ab-status-noarr',
-            'in_transit'    => 'fh-ab-status-transit',
-            'landed'        => 'fh-ab-status-landed',
-            'counting'      => 'fh-ab-status-counting',
+        $led_classes = [
+            'in_quarantine' => 'fh-ab-led-qt',
+            'short'         => 'fh-ab-led-short',
+            'no_arrival'    => 'fh-ab-led-noarr',
         ];
         $row_classes = [
             'in_quarantine' => 'fh-ab-qt',
@@ -630,35 +625,40 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 <div class="fh-ab-hr"><?php echo esc_html( $stage_label ); ?></div>
             </div>
 
-            <!-- Column headers -->
+            <!-- Column headers — tile-count aligned -->
             <div class="fh-ab-cols">
-                <div class="fh-ab-col-hd">SPECIES</div>
-                <div class="fh-ab-col-hd">STATUS</div>
-                <div class="fh-ab-col-hd">TANK</div>
-                <div class="fh-ab-col-hd">ARRIVED</div>
-                <div class="fh-ab-col-hd">QT POS</div>
+                <div class="fh-ab-col-hd" style="width:14px;"></div>
+                <div class="fh-ab-col-hd" style="flex:0 0 calc(22 * 19px);">SPECIES</div>
+                <div class="fh-ab-gap"></div>
+                <div class="fh-ab-col-hd" style="flex:0 0 calc(12 * 19px);">STATUS</div>
+                <div class="fh-ab-gap"></div>
+                <div class="fh-ab-col-hd" style="flex:0 0 calc(7 * 19px);">ARRIVED</div>
+                <div class="fh-ab-gap"></div>
+                <div class="fh-ab-col-hd" style="flex:0 0 calc(5 * 19px);">QT POS</div>
             </div>
 
-            <!-- Data rows -->
+            <!-- Data rows — all tiles, wall to wall -->
             <div id="fh-ab-body">
             <?php foreach ( $species as $idx => $sp ) :
                 $st        = $sp['status'] ?? 'in_transit';
                 $st_label  = $status_labels[ $st ] ?? strtoupper( $st );
-                $st_class  = $status_classes[ $st ] ?? 'fh-ab-status-transit';
+                $led_class = $led_classes[ $st ] ?? 'fh-ab-led-dim';
                 $row_class = $row_classes[ $st ] ?? '';
-                $name      = strtoupper( mb_substr( is_array( $sp ) && isset( $sp['name'] ) ? $sp['name'] : ( $sp['common_name'] ?? '' ), 0, 20 ) );
-                $tank      = strtoupper( $sp['tank'] ?? '—' );
-                $recv      = isset( $sp['recv'] ) ? $sp['recv'] : ( $sp['qty_received'] ?? 0 );
-                $ordered   = isset( $sp['ordered'] ) ? $sp['ordered'] : ( $sp['qty_ordered'] ?? 0 );
-                $arrived_display = $recv . ' / ' . $ordered;
-                $qt_pos    = '—';
+                $name      = strtoupper( mb_substr( $sp['name'] ?? ( $sp['common_name'] ?? '' ), 0, 22 ) );
+                $recv      = $sp['recv'] ?? ( $sp['qty_received'] ?? 0 );
+                $ordered   = $sp['ordered'] ?? ( $sp['qty_ordered'] ?? 0 );
+                $arrived_display = $recv . '/' . $ordered;
+                $qt_pos    = '--';
             ?>
-            <div class="fh-ab-row <?php echo esc_attr( $row_class ); ?>" data-fish-id="<?php echo intval( $sp['fish_id'] ?? $idx ); ?>" data-updated="<?php echo intval( $sp['updated_at'] ?? 0 ); ?>">
-                <div class="fh-ab-cell"><div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $name ); ?>"></div></div>
-                <div class="fh-ab-cell"><span class="fh-ab-status-text <?php echo esc_attr( $st_class ); ?>" data-fh-st="<?php echo esc_attr( $st ); ?>"><?php echo esc_html( $st_label ); ?></span></div>
-                <div class="fh-ab-cell"><div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $tank ); ?>"></div></div>
-                <div class="fh-ab-cell"><div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $arrived_display ); ?>"></div></div>
-                <div class="fh-ab-cell"><div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $qt_pos ); ?>"></div></div>
+            <div class="fh-ab-row <?php echo esc_attr( $row_class ); ?>" data-fish-id="<?php echo intval( $sp['fish_id'] ?? $idx ); ?>" data-updated="<?php echo intval( $sp['updated_at'] ?? 0 ); ?>" data-status="<?php echo esc_attr( $st ); ?>">
+                <div class="fh-ab-led <?php echo esc_attr( $led_class ); ?>"></div>
+                <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $name ); ?>" data-fh-col="0"></div>
+                <div class="fh-ab-gap"></div>
+                <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $st_label ); ?>" data-fh-col="1"></div>
+                <div class="fh-ab-gap"></div>
+                <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $arrived_display ); ?>" data-fh-col="2"></div>
+                <div class="fh-ab-gap"></div>
+                <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $qt_pos ); ?>" data-fh-col="3"></div>
             </div>
             <?php endforeach; ?>
             </div>
@@ -677,16 +677,16 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
         <script>
         (function(){
             var AMBER_SHADES = ['#c8a84b','#d4bc7e','#b89640','#c4a055','#c09848','#d8c080','#bfa24a','#cbb060'];
-            var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/# ';
             var rowCounter = 0;
+            var COL_LENS = [22, 12, 7, 5]; // species, status, arrived, qtpos
 
             function tileHash(row, col) {
                 return ((row * 7 + col * 13 + row * col * 3 + 37) * 2654435761) >>> 0;
             }
 
             function buildTilesAB(container, text, maxLen) {
-                maxLen = maxLen || text.length || 1;
-                text = text.toUpperCase();
+                text = text.toUpperCase().substring(0, maxLen);
                 while (text.length < maxLen) text += ' ';
                 container.innerHTML = '';
                 var r = rowCounter++;
@@ -704,8 +704,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             }
 
             function animateRowAB(container, text, maxLen) {
-                maxLen = maxLen || text.length || 1;
-                text = text.toUpperCase();
+                text = text.toUpperCase().substring(0, maxLen);
                 while (text.length < maxLen) text += ' ';
                 var flaps = container.querySelectorAll('.fh-ab-flap');
                 flaps.forEach(function(flap, i) {
@@ -727,19 +726,16 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 });
             }
 
-            // Column max lengths for consistent tile widths
-            var COL_LENS = { species: 20, tank: 5, arrived: 7, qtpos: 3 };
-
             // Initial build + staggered cascade
             requestAnimationFrame(function() {
                 var rows = document.querySelectorAll('.fh-ab-row');
                 rows.forEach(function(row, rIdx) {
                     var tiles = row.querySelectorAll('.fh-ab-tiles[data-fh-ab]');
                     setTimeout(function() {
-                        tiles.forEach(function(t, cIdx) {
+                        tiles.forEach(function(t) {
                             var text = t.getAttribute('data-fh-ab') || '';
-                            var lens = [COL_LENS.species, 0, COL_LENS.tank, COL_LENS.arrived, COL_LENS.qtpos];
-                            var len = lens[cIdx] || text.length || 1;
+                            var col = parseInt(t.getAttribute('data-fh-col'));
+                            var len = COL_LENS[col] || text.length || 1;
                             buildTilesAB(t, text, len);
                             animateRowAB(t, text, len);
                         });
@@ -747,15 +743,14 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 });
             });
 
-            // Status label map
+            // Status + LED maps for polling
             var STATUS_LABELS = {
                 'in_transit':'IN TRANSIT','landed':'LANDED','counting':'COUNTING',
                 'in_quarantine':'IN QT','short':'SHORT','no_arrival':'NO ARRIVAL'
             };
-            var STATUS_CSS = {
-                'in_quarantine':'fh-ab-status-qt','short':'fh-ab-status-short',
-                'no_arrival':'fh-ab-status-noarr','in_transit':'fh-ab-status-transit',
-                'landed':'fh-ab-status-landed','counting':'fh-ab-status-counting'
+            var LED_CSS = {
+                'in_quarantine':'fh-ab-led-qt','short':'fh-ab-led-short',
+                'no_arrival':'fh-ab-led-noarr'
             };
             var ROW_CSS = {
                 'in_quarantine':'fh-ab-qt','short':'fh-ab-short','no_arrival':'fh-ab-noarr'
@@ -772,36 +767,33 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                         var rows = document.querySelectorAll('.fh-ab-row');
                         data.species.forEach(function(sp) {
                             rows.forEach(function(row) {
-                                if (parseInt(row.getAttribute('data-fish-id')) !== sp.fish_id) return;
+                                var cn = (sp.common_name || '').toUpperCase().substring(0, 22);
+                                // Match by common name since dedup removes fish_id
+                                var rowName = (row.querySelectorAll('.fh-ab-tiles[data-fh-col="0"]')[0] || {}).getAttribute('data-fh-ab') || '';
+                                if (cn !== rowName && parseInt(row.getAttribute('data-fish-id')) !== sp.fish_id) return;
+
                                 var oldUpdated = parseInt(row.getAttribute('data-updated')) || 0;
                                 if (sp.updated_at <= oldUpdated) return;
                                 row.setAttribute('data-updated', sp.updated_at);
 
-                                // Update status text
-                                var stEl = row.querySelector('.fh-ab-status-text');
-                                if (stEl) {
-                                    stEl.className = 'fh-ab-status-text ' + (STATUS_CSS[sp.status] || 'fh-ab-status-transit');
-                                    stEl.textContent = STATUS_LABELS[sp.status] || sp.status.toUpperCase();
-                                    stEl.setAttribute('data-fh-st', sp.status);
-                                }
-
-                                // Update row tint
+                                // Update row tint + LED
                                 row.className = 'fh-ab-row ' + (ROW_CSS[sp.status] || '');
+                                row.setAttribute('data-status', sp.status);
+                                var led = row.querySelector('.fh-ab-led');
+                                if (led) led.className = 'fh-ab-led ' + (LED_CSS[sp.status] || 'fh-ab-led-dim');
 
-                                // Re-animate changed tile cells
-                                var tiles = row.querySelectorAll('.fh-ab-tiles[data-fh-ab]');
-                                var newName = (sp.common_name || '').toUpperCase().substring(0, 20);
-                                var newTank = (sp.tank || '—').toUpperCase();
-                                var newArrived = sp.qty_received + ' / ' + sp.qty_ordered;
-                                var newValues = [newName, newTank, newArrived, '—'];
-                                var lens = [COL_LENS.species, COL_LENS.tank, COL_LENS.arrived, COL_LENS.qtpos];
-                                tiles.forEach(function(t, i) {
+                                // Re-animate changed tile columns
+                                var newStatus = STATUS_LABELS[sp.status] || sp.status.toUpperCase();
+                                var newArrived = sp.qty_received + '/' + sp.qty_ordered;
+                                var newValues = [cn, newStatus, newArrived, '--'];
+                                row.querySelectorAll('.fh-ab-tiles[data-fh-col]').forEach(function(t) {
+                                    var col = parseInt(t.getAttribute('data-fh-col'));
                                     var oldText = t.getAttribute('data-fh-ab');
-                                    var newText = newValues[i] || '';
+                                    var newText = newValues[col] || '';
                                     if (oldText !== newText) {
                                         t.setAttribute('data-fh-ab', newText);
-                                        buildTilesAB(t, newText, lens[i]);
-                                        animateRowAB(t, newText, lens[i]);
+                                        buildTilesAB(t, newText, COL_LENS[col]);
+                                        animateRowAB(t, newText, COL_LENS[col]);
                                     }
                                 });
                             });

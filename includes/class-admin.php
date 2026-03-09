@@ -2870,7 +2870,7 @@ trait FisHotel_Admin {
             echo '<td style="padding:8px;text-align:center;"><input type="number" name="items[' . $bp->ID . '][qty_doa]" value="' . esc_attr( $qty_doa ) . '" min="0" class="fh-doa" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
             echo '<td style="padding:8px;text-align:center;"><input type="text" name="items[' . $bp->ID . '][tank]" value="' . esc_attr( $tank ) . '" class="fh-tank" style="width:60px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;" placeholder="—"></td>';
 
-            $status_options = [ 'in_transit' => 'In Transit', 'landed' => 'Landed', 'counting' => 'Counting', 'in_quarantine' => 'In Quarantine', 'short' => 'Short', 'no_arrival' => 'No Arrival' ];
+            $status_options = [ 'in_transit' => 'In Transit', 'counting' => 'Counting', 'in_quarantine' => "In Quarantine \xe2\x9c\x93", 'short' => "Short Supply \xe2\x9a\xa0", 'no_arrival' => "No Arrival \xe2\x9c\x97" ];
             echo '<td style="padding:8px;text-align:center;"><select name="items[' . $bp->ID . '][status]" class="fh-status" style="background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;font-size:12px;">';
             foreach ( $status_options as $skey => $slabel ) {
                 echo '<option value="' . $skey . '"' . selected( $arr_status, $skey, false ) . '>' . $slabel . '</option>';
