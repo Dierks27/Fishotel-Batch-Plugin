@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v3.08 - Board scale at 1030px, cards minmax 310px for 2-col at 688px.
- * Version:           3.08
+ * Description:       Stable v3.09 - All breakpoints aligned to Bootstrap: 1023px and 767px only.
+ * Version:           3.09
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '3.08' );
+define( 'FISHOTEL_VERSION', '3.09' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
