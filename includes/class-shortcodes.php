@@ -357,16 +357,13 @@ trait FisHotel_Shortcodes {
                     50% { opacity:0.75; box-shadow:0 0 2px #e07b2a, 0 0 6px #cc6a1f, 0 0 12px rgba(224,123,42,0.2); }
                 }
 
-                @media (max-width:600px) {
-                    .fh-board-header { padding:7px 12px; }
-                    .fh-board-header-left { font-size:14px; gap:5px; }
-                    .fh-board-header-icon { font-size:13px; }
-                    .fh-board-header-right { font-size:10px; }
-                    .fh-board-footer { padding:5px 12px; }
-                    .fh-board-footer-left, .fh-board-footer-right { font-size:10px; }
-                    .fh-board-label { width:60px; min-width:60px; padding:3px 6px 3px 8px; font-size:0.45rem; }
-                    .fh-board-tiles { padding:3px 4px; }
-                    .fh-flap { width:20px; height:30px; min-width:20px; font-size:15px; }
+                @media (max-width:960px) {
+                    .fh-board-wrapper { overflow:hidden; }
+                    .fh-board {
+                        transform-origin:top center;
+                        transform:scale(calc(min(100vw, 900px) / 900));
+                        margin-bottom:calc((min(100vw, 900px) / 900 - 1) * 593px);
+                    }
                 }
 
                 /* ── Boarding Pass Card — cream paper form ── */
@@ -855,6 +852,7 @@ trait FisHotel_Shortcodes {
             <div class="fh-gate-wrap">
 
                 <!-- ===== Solari Departure Board ===== -->
+                <div class="fh-board-wrapper">
                 <div class="fh-board" id="fh-board">
                     <div class="fh-board-header">
                         <div class="fh-board-header-left"><span class="fh-board-header-icon">&#x2708;</span> FISHOTEL INTERNATIONAL</div>
@@ -873,6 +871,7 @@ trait FisHotel_Shortcodes {
                         <div class="fh-board-footer-left"><span class="fh-footer-unlit">ARRIVALS</span> <span class="fh-footer-sep">&middot;</span> <span class="fh-footer-lit">DEPARTURES</span></div>
                         <div class="fh-board-footer-right">SOLARI DI UDINE</div>
                     </div>
+                </div>
                 </div>
 
                 <!-- ===== Boarding Pass ===== -->

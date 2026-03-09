@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v2.92 - Show total requested qty in manifest row numbers for all visitors.
- * Version:           2.92
+ * Description:       Stable v2.93 - Mobile board: CSS transform scale instead of reflow.
+ * Version:           2.93
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '2.92' );
+define( 'FISHOTEL_VERSION', '2.93' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
