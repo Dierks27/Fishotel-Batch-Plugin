@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v4.01 - Fix common names: master lookup, suffix strip, species dedup on arrival board.
- * Version:           4.01
+ * Description:       Stable v4.02 - Scientific name reverse lookup fallback in resolve_common_name.
+ * Version:           4.02
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.01' );
+define( 'FISHOTEL_VERSION', '4.02' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -230,12 +230,41 @@ class FisHotel_Batch_Manager {
 
     /**
      * Resolve the clean common name for a fish_batch post.
-     * Prefers the fish_master title when available, strips batch suffix.
+     * Tier 1: fish_master title via _master_id
+     * Tier 2: fish_batch post title (suffix stripped)
+     * Tier 3: if title looks like a scientific name, reverse-lookup fish_master by _scientific_name
      */
     public static function resolve_common_name( $batch_post_id, $batch_post_title = '' ) {
         $master_id = get_post_meta( $batch_post_id, '_master_id', true );
-        $title     = ( $master_id && get_post( $master_id ) ) ? get_the_title( $master_id ) : $batch_post_title;
-        return preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $title );
+        if ( $master_id && get_post( $master_id ) ) {
+            return preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', get_the_title( $master_id ) );
+        }
+
+        $resolved = preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $batch_post_title );
+
+        // Tier 3: scientific name reverse lookup
+        $is_scientific = (
+            strtoupper( $resolved ) === $resolved
+            && strpos( $resolved, ' ' ) !== false
+            && strpos( $resolved, ':' ) === false
+        );
+        if ( $is_scientific ) {
+            $query = new \WP_Query( [
+                'post_type'      => 'fish_master',
+                'meta_query'     => [ [
+                    'key'     => '_scientific_name',
+                    'value'   => $resolved,
+                    'compare' => 'LIKE',
+                ] ],
+                'posts_per_page' => 1,
+                'fields'         => 'ids',
+            ] );
+            if ( ! empty( $query->posts ) ) {
+                return preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', get_the_title( $query->posts[0] ) );
+            }
+        }
+
+        return $resolved;
     }
 
     /**
