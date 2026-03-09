@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v4.03 - Board fixes: fixed tiles, all-tile status, LED dots, check-in card, strip text.
- * Version:           4.03
+ * Description:       Stable v4.04 - Mobile arrival board: card list view with status badges, desktop tiles unchanged.
+ * Version:           4.04
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.03' );
+define( 'FISHOTEL_VERSION', '4.04' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -576,18 +576,52 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
         /* Column gaps between tile groups */
         .fh-ab-gap { width:8px; flex-shrink:0; }
 
-        /* Responsive */
+        /* Mobile card list — hidden on desktop */
+        .fh-ab-mobile { display:none; }
+
+        /* ── Responsive: mobile card list ── */
         @media (max-width:700px) {
-            .fh-ab-flap {
-                width:12px; height:20px; min-width:12px;
-                font-size:10px;
-            }
+            /* Hide desktop tile elements */
+            .fh-ab-cols { display:none !important; }
+            .fh-ab-row { display:none !important; }
             .fh-ab-hl { font-size:13px; }
             .fh-ab-hr, .fh-ab-fl, .fh-ab-fr { font-size:10px; }
-            .fh-ab-col-hd { font-size:9px; }
-            .fh-ab-led { width:6px; height:6px; min-width:6px; margin-right:4px; }
-            .fh-ab-gap { width:4px; }
-            .fh-ab-cols, .fh-ab-row { padding:3px 6px; }
+            .fh-ab-header, .fh-ab-footer { padding:8px 12px; }
+
+            /* Show mobile card list */
+            .fh-ab-mobile { display:block; position:relative; z-index:2; }
+            .fh-ab-mrow {
+                display:flex; align-items:center; justify-content:space-between;
+                padding:8px 12px; border-bottom:1px solid rgba(181,161,101,0.1);
+            }
+            .fh-ab-mrow:last-child { border-bottom:none; }
+            .fh-ab-mleft { display:flex; align-items:center; gap:8px; min-width:0; flex:1; }
+            .fh-ab-mled {
+                width:7px; height:7px; min-width:7px; border-radius:50%; flex-shrink:0;
+            }
+            .fh-ab-mled-qt {
+                background:rgba(0,255,120,0.9);
+                box-shadow:0 0 3px rgba(0,255,120,0.5);
+                animation:fh-ab-pulse 2.5s ease-in-out infinite;
+            }
+            .fh-ab-mled-short { background:rgba(255,180,0,0.9); box-shadow:0 0 3px rgba(255,180,0,0.3); }
+            .fh-ab-mled-noarr { background:rgba(255,60,60,0.5); }
+            .fh-ab-mled-dim { background:rgba(120,120,120,0.3); }
+            .fh-ab-mname {
+                font-family:'Oswald',sans-serif; font-size:13px; color:#b5a165;
+                white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+            }
+            .fh-ab-mbadge {
+                flex-shrink:0; font-family:'Oswald',sans-serif; font-size:11px;
+                font-weight:600; text-transform:uppercase; letter-spacing:0.04em;
+                padding:3px 8px; border-radius:2px; white-space:nowrap;
+            }
+            .fh-ab-mbadge-qt { color:#44ff88; background:rgba(0,255,100,0.1); }
+            .fh-ab-mbadge-short { color:#ffaa33; background:rgba(255,180,0,0.1); }
+            .fh-ab-mbadge-noarr { color:#ff5555; background:rgba(255,60,60,0.08); }
+            .fh-ab-mbadge-transit { color:#8a7a50; background:rgba(138,122,80,0.1); }
+            .fh-ab-mbadge-counting { color:#d4bc7e; background:rgba(212,188,126,0.1); }
+            .fh-ab-mbadge-landed { color:#66ccff; background:rgba(102,204,255,0.1); }
         }
         <?php
     }
@@ -625,14 +659,14 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 <div class="fh-ab-hr"><?php echo esc_html( $stage_label ); ?></div>
             </div>
 
-            <!-- Column headers — tile-count aligned -->
+            <!-- Column headers — tile-count aligned (20+12+6+5 = 43 tiles) -->
             <div class="fh-ab-cols">
                 <div class="fh-ab-col-hd" style="width:14px;"></div>
-                <div class="fh-ab-col-hd" style="flex:0 0 calc(22 * 19px);">SPECIES</div>
+                <div class="fh-ab-col-hd" style="flex:0 0 calc(20 * 19px);">SPECIES</div>
                 <div class="fh-ab-gap"></div>
                 <div class="fh-ab-col-hd" style="flex:0 0 calc(12 * 19px);">STATUS</div>
                 <div class="fh-ab-gap"></div>
-                <div class="fh-ab-col-hd" style="flex:0 0 calc(7 * 19px);">ARRIVED</div>
+                <div class="fh-ab-col-hd" style="flex:0 0 calc(6 * 19px);">ARRIVED</div>
                 <div class="fh-ab-gap"></div>
                 <div class="fh-ab-col-hd" style="flex:0 0 calc(5 * 19px);">QT POS</div>
             </div>
@@ -644,7 +678,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 $st_label  = $status_labels[ $st ] ?? strtoupper( $st );
                 $led_class = $led_classes[ $st ] ?? 'fh-ab-led-dim';
                 $row_class = $row_classes[ $st ] ?? '';
-                $name      = strtoupper( mb_substr( $sp['name'] ?? ( $sp['common_name'] ?? '' ), 0, 22 ) );
+                $name      = strtoupper( mb_substr( $sp['name'] ?? ( $sp['common_name'] ?? '' ), 0, 20 ) );
                 $recv      = $sp['recv'] ?? ( $sp['qty_received'] ?? 0 );
                 $ordered   = $sp['ordered'] ?? ( $sp['qty_ordered'] ?? 0 );
                 $arrived_display = $recv . '/' . $ordered;
@@ -659,6 +693,28 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $arrived_display ); ?>" data-fh-col="2"></div>
                 <div class="fh-ab-gap"></div>
                 <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $qt_pos ); ?>" data-fh-col="3"></div>
+            </div>
+            <?php endforeach; ?>
+            </div>
+
+            <!-- Mobile card list (hidden on desktop) -->
+            <div class="fh-ab-mobile" id="fh-ab-mobile">
+            <?php
+            $mobile_led = [ 'in_quarantine' => 'fh-ab-mled-qt', 'short' => 'fh-ab-mled-short', 'no_arrival' => 'fh-ab-mled-noarr' ];
+            $mobile_badge = [ 'in_quarantine' => 'fh-ab-mbadge-qt', 'short' => 'fh-ab-mbadge-short', 'no_arrival' => 'fh-ab-mbadge-noarr', 'in_transit' => 'fh-ab-mbadge-transit', 'landed' => 'fh-ab-mbadge-landed', 'counting' => 'fh-ab-mbadge-counting' ];
+            foreach ( $species as $idx => $sp ) :
+                $st       = $sp['status'] ?? 'in_transit';
+                $st_label = $status_labels[ $st ] ?? strtoupper( $st );
+                $m_led    = $mobile_led[ $st ] ?? 'fh-ab-mled-dim';
+                $m_badge  = $mobile_badge[ $st ] ?? 'fh-ab-mbadge-transit';
+                $m_name   = $sp['common_name'] ?? ( $sp['name'] ?? '' );
+            ?>
+            <div class="fh-ab-mrow" data-fish-id="<?php echo intval( $sp['fish_id'] ?? $idx ); ?>" data-status="<?php echo esc_attr( $st ); ?>">
+                <div class="fh-ab-mleft">
+                    <div class="fh-ab-mled <?php echo esc_attr( $m_led ); ?>"></div>
+                    <span class="fh-ab-mname"><?php echo esc_html( $m_name ); ?></span>
+                </div>
+                <span class="fh-ab-mbadge <?php echo esc_attr( $m_badge ); ?>"><?php echo esc_html( $st_label ); ?></span>
             </div>
             <?php endforeach; ?>
             </div>
@@ -679,7 +735,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             var AMBER_SHADES = ['#c8a84b','#d4bc7e','#b89640','#c4a055','#c09848','#d8c080','#bfa24a','#cbb060'];
             var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/# ';
             var rowCounter = 0;
-            var COL_LENS = [22, 12, 7, 5]; // species, status, arrived, qtpos
+            var COL_LENS = [20, 12, 6, 5]; // species, status, arrived, qtpos
 
             function tileHash(row, col) {
                 return ((row * 7 + col * 13 + row * col * 3 + 37) * 2654435761) >>> 0;
@@ -767,7 +823,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                         var rows = document.querySelectorAll('.fh-ab-row');
                         data.species.forEach(function(sp) {
                             rows.forEach(function(row) {
-                                var cn = (sp.common_name || '').toUpperCase().substring(0, 22);
+                                var cn = (sp.common_name || '').toUpperCase().substring(0, 20);
                                 // Match by common name since dedup removes fish_id
                                 var rowName = (row.querySelectorAll('.fh-ab-tiles[data-fh-col="0"]')[0] || {}).getAttribute('data-fh-ab') || '';
                                 if (cn !== rowName && parseInt(row.getAttribute('data-fish-id')) !== sp.fish_id) return;
@@ -798,6 +854,24 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                                 });
                             });
                         });
+                        // Update mobile rows
+                        var MLED = {'in_quarantine':'fh-ab-mled-qt','short':'fh-ab-mled-short','no_arrival':'fh-ab-mled-noarr'};
+                        var MBADGE = {'in_quarantine':'fh-ab-mbadge-qt','short':'fh-ab-mbadge-short','no_arrival':'fh-ab-mbadge-noarr','in_transit':'fh-ab-mbadge-transit','landed':'fh-ab-mbadge-landed','counting':'fh-ab-mbadge-counting'};
+                        var mrows = document.querySelectorAll('.fh-ab-mrow');
+                        data.species.forEach(function(sp) {
+                            mrows.forEach(function(mr) {
+                                if (parseInt(mr.getAttribute('data-fish-id')) !== sp.fish_id) {
+                                    var mname = mr.querySelector('.fh-ab-mname');
+                                    if (!mname || mname.textContent.toUpperCase().substring(0,20) !== (sp.common_name||'').toUpperCase().substring(0,20)) return;
+                                }
+                                mr.setAttribute('data-status', sp.status);
+                                var ml = mr.querySelector('.fh-ab-mled');
+                                if (ml) ml.className = 'fh-ab-mled ' + (MLED[sp.status] || 'fh-ab-mled-dim');
+                                var mb = mr.querySelector('.fh-ab-mbadge');
+                                if (mb) { mb.className = 'fh-ab-mbadge ' + (MBADGE[sp.status] || 'fh-ab-mbadge-transit'); mb.textContent = STATUS_LABELS[sp.status] || sp.status.toUpperCase(); }
+                            });
+                        });
+
                         // Update time
                         var timeEl = document.getElementById('fh-ab-time');
                         if (timeEl) {
