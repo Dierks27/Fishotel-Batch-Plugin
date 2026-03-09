@@ -1937,20 +1937,27 @@ trait FisHotel_Shortcodes {
                 }
                 /* Staple marks */
                 .fh-manifest-staple {
-                    position:absolute; left:18px; width:12px; height:3px;
-                    background:#555; border-radius:1px; transform:rotate(2deg);
+                    position:absolute; left:18px; width:16px; height:3px;
+                    background:#4a4a4a; border-radius:2px;
+                    box-shadow:0 1px 0 rgba(255,255,255,0.3);
                     z-index:3; pointer-events:none;
                 }
                 .fh-manifest-staple:first-child { top:15px; }
-                .fh-manifest-staple:nth-child(2) { top:21px; }
+                .fh-manifest-staple:nth-child(2) { top:25px; }
                 /* Rubber stamp */
                 .fh-manifest-stamp {
-                    position:absolute; top:22px; right:24px; z-index:4;
+                    position:absolute; top:52px; left:50%; z-index:4;
+                    transform:translateX(-50%) rotate(-5deg);
                     font-family:'Special Elite',monospace; font-weight:700; font-size:16px;
-                    color:#c0392b; text-transform:uppercase; letter-spacing:3px;
-                    border:2px solid #c0392b; padding:6px 10px; opacity:0.75;
-                    transform:rotate(-8deg); filter:blur(0.4px);
+                    color:#c0152a; text-transform:uppercase; letter-spacing:3px;
+                    border:2px solid #c0152a; padding:6px 10px; opacity:0.82;
+                    box-shadow:inset 0 0 0 2px rgba(192,21,42,0.3);
+                    filter:blur(0.4px);
                     pointer-events:none; line-height:1;
+                }
+                .fh-manifest-splatter {
+                    position:absolute; border-radius:50%; background:rgba(192,21,42,0.55);
+                    pointer-events:none; z-index:4;
                 }
                 /* Coffee stain */
                 .fh-manifest-coffee {
@@ -1968,8 +1975,8 @@ trait FisHotel_Shortcodes {
                     border:1px solid #a09080;
                     box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);
                 }
-                .fh-manifest-doc-header .fh-punch-left { left:50%; margin-left:-40px; }
-                .fh-manifest-doc-header .fh-punch-right { left:50%; margin-left:26px; }
+                .fh-manifest-doc-header .fh-punch-left { left:50%; margin-left:-70px; }
+                .fh-manifest-doc-header .fh-punch-right { left:50%; margin-left:56px; }
                 .fh-manifest-airline {
                     font-family:'Oswald',sans-serif; font-weight:700;
                     font-size:clamp(1.1rem,2.8vw,1.5rem); text-transform:uppercase;
@@ -1978,7 +1985,7 @@ trait FisHotel_Shortcodes {
                 .fh-manifest-subtitle {
                     font-family:'Special Elite',monospace; font-weight:400;
                     font-size:clamp(0.7rem,1.8vw,0.85rem); text-transform:uppercase;
-                    letter-spacing:0.2em; color:#b5a165; margin:0 0 14px;
+                    letter-spacing:0.2em; color:#7a6020; margin:0 0 14px;
                 }
                 /* HR margin override — defeat theme's ~108px global hr margins */
                 .fh-manifest hr, .fh-manifest .fh-manifest-letterhead-rule, .fh-manifest .fh-manifest-rule {
@@ -1991,12 +1998,12 @@ trait FisHotel_Shortcodes {
                 .fh-manifest-letterhead-row {
                     display:flex; justify-content:space-between; padding:6px 0;
                     font-family:'Special Elite',monospace; font-size:9px;
-                    text-transform:uppercase; letter-spacing:0.06em; color:#6b5a3a;
+                    text-transform:uppercase; letter-spacing:0.06em; color:#5a4a20;
                 }
                 .fh-manifest-emblem {
                     text-align:center; padding:6px 0;
                     font-family:'Special Elite',monospace; font-size:10px;
-                    letter-spacing:2px; color:#8a6f2e; text-transform:uppercase;
+                    letter-spacing:2px; color:#7a6020; text-transform:uppercase;
                 }
                 .fh-manifest-rule {
                     border:none; border-top:2px solid #1a1a2e; margin:0 0 16px;
@@ -2038,11 +2045,11 @@ trait FisHotel_Shortcodes {
                     display:inline-block; width:22px; height:22px; vertical-align:middle;
                 }
                 .fh-manifest-check svg { width:22px; height:22px; }
-                .fh-manifest tbody tr:nth-child(5n+1) .fh-manifest-check { transform:rotate(-2deg); }
+                .fh-manifest tbody tr:nth-child(5n+1) .fh-manifest-check { transform:rotate(-3deg); }
                 .fh-manifest tbody tr:nth-child(5n+2) .fh-manifest-check { transform:rotate(-1deg); }
-                .fh-manifest tbody tr:nth-child(5n+3) .fh-manifest-check { transform:rotate(2deg); }
-                .fh-manifest tbody tr:nth-child(5n+4) .fh-manifest-check { transform:rotate(-3deg); }
-                .fh-manifest tbody tr:nth-child(5n+5) .fh-manifest-check { transform:rotate(1deg); }
+                .fh-manifest tbody tr:nth-child(5n+3) .fh-manifest-check { transform:rotate(-4deg); }
+                .fh-manifest tbody tr:nth-child(5n+4) .fh-manifest-check { transform:rotate(-2deg); }
+                .fh-manifest tbody tr:nth-child(5n+5) .fh-manifest-check { transform:rotate(-5deg); }
                 /* Total row */
                 .fh-manifest .fh-manifest-total td {
                     padding:12px 16px; border-top:2px solid #b5a165 !important; border-bottom:none !important;
@@ -2092,7 +2099,7 @@ trait FisHotel_Shortcodes {
                 /* Signature */
                 .fh-manifest-sig-name {
                     font-family:'Caveat',cursive; font-size:28px; font-weight:700;
-                    color:#1a4a9e; display:inline-block; margin-bottom:-8px;
+                    color:#1a1a2e; display:inline-block; margin-bottom:-8px;
                 }
                 /* ── Boarding Pass ── */
                 .fh-bp-wrap { position: relative; margin-top: 28px; }
@@ -2305,10 +2312,17 @@ trait FisHotel_Shortcodes {
                 <?php if ( ! empty( $manifest_species ) ) : ?>
                 <div class="fh-manifest">
                     <!-- Staple marks -->
-                    <div class="fh-manifest-staple"></div>
-                    <div class="fh-manifest-staple"></div>
+                    <?php $fh_staple_rots = [-4,-2,-1,1,3,5]; ?>
+                    <div class="fh-manifest-staple" style="transform:rotate(<?php echo $fh_staple_rots[rand(0,5)]; ?>deg)"></div>
+                    <div class="fh-manifest-staple" style="transform:rotate(<?php echo $fh_staple_rots[rand(0,5)]; ?>deg)"></div>
                     <!-- Rubber stamp -->
                     <div class="fh-manifest-stamp">Cleared for Departure</div>
+                    <span class="fh-manifest-splatter" style="top:49px;left:48%;width:3px;height:3px"></span>
+                    <span class="fh-manifest-splatter" style="top:54px;left:55%;width:2px;height:2px"></span>
+                    <span class="fh-manifest-splatter" style="top:72px;left:46%;width:4px;height:4px"></span>
+                    <span class="fh-manifest-splatter" style="top:50px;left:58%;width:2px;height:3px"></span>
+                    <span class="fh-manifest-splatter" style="top:75px;left:53%;width:3px;height:3px"></span>
+                    <span class="fh-manifest-splatter" style="top:48px;left:42%;width:2px;height:2px"></span>
                     <!-- Coffee stain -->
                     <svg class="fh-manifest-coffee" viewBox="0 0 120 110" xmlns="http://www.w3.org/2000/svg">
                         <defs><radialGradient id="fh-coffee-grad" cx="50%" cy="50%" r="50%">
@@ -2348,9 +2362,20 @@ trait FisHotel_Shortcodes {
                             <th>&nbsp;</th><th>Common Name</th><th>Scientific Name</th><th>Qty</th>
                         </tr></thead>
                         <tbody>
+                        <?php
+                        $fh_check_paths = [
+                            'M2 7.5 C3 6.5, 5 10, 5.5 11 C6.5 8.5, 9.5 3.5, 12 2',
+                            'M2.5 8 C3.5 7, 5.5 10.5, 6 11.5 C7 9, 10 4, 12.5 2.5',
+                            'M2 7 C3 6, 4.5 9.5, 5 10.5 C6 8, 9 3, 11.5 1.5',
+                            'M2.5 7 C3 6, 5 9.5, 5.5 10.5 C6.5 8, 10 3.5, 12 2.5',
+                            'M2 8 C3.5 7.5, 5 11, 5.5 11.5 C6.5 9.5, 9.5 4.5, 12.5 3',
+                        ];
+                        $fh_ri = 0;
+                        ?>
                         <?php foreach ( $manifest_species as $ms ) : ?>
+                            <?php $fh_cp = $fh_check_paths[ $fh_ri % 5 ]; $fh_ri++; ?>
                             <tr>
-                                <td><span class="fh-manifest-check"><svg viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 7.5 C3 7, 5 10.5, 5.5 11 C6 9, 9 4, 11.5 2.5" stroke="#1a4a9e" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                                <td><span class="fh-manifest-check"><svg viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg"><path d="<?php echo $fh_cp; ?>" stroke="#1a4a9e" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
                                 <td><?php echo esc_html( $ms['fish_name'] ); ?></td>
                                 <td class="fh-manifest-sci"><?php echo esc_html( $ms['scientific_name'] ); ?></td>
                                 <td><?php echo intval( $ms['total_qty'] ); ?></td>
@@ -2407,10 +2432,6 @@ trait FisHotel_Shortcodes {
                                 <span class="fh-manifest-sig-name" style="<?php echo esc_attr($fh_sig_style); ?>">Dierks</span>
                                 <div class="fh-manifest-sig-line"></div>
                                 <span class="fh-manifest-sig-label">Supervising Agent</span>
-                            </div>
-                            <div class="fh-manifest-sig-block">
-                                <div class="fh-manifest-sig-line"></div>
-                                <span class="fh-manifest-sig-label">Cargo Officer</span>
                             </div>
                         </div>
                         <hr class="fh-manifest-letterhead-rule">

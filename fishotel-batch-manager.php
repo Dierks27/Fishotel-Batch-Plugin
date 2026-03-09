@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v3.15 - Fix note text word spacing in manifest.
- * Version:           3.15
+ * Description:       Stable v3.16 - Manifest polish: checks, stamp, punch holes, staples, sig, colors.
+ * Version:           3.16
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '3.15' );
+define( 'FISHOTEL_VERSION', '3.16' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
