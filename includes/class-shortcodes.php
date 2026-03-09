@@ -1897,7 +1897,7 @@ trait FisHotel_Shortcodes {
             usort( $manifest_species, fn( $a, $b ) => strcasecmp( $a['fish_name'], $b['fish_name'] ) );
             $manifest_total_fish = array_sum( array_column( $manifest_species, 'total_qty' ) );
             ?>
-            <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Caveat:wght@400&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Caveat:wght@400&family=Special+Elite&display=swap" rel="stylesheet">
             <style>
                 .fh-transit-wrap { max-width: 960px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
                 .fh-hero-map {
@@ -1946,7 +1946,7 @@ trait FisHotel_Shortcodes {
                 /* Rubber stamp */
                 .fh-manifest-stamp {
                     position:absolute; top:22px; right:24px; z-index:4;
-                    font-family:'Oswald',sans-serif; font-weight:700; font-size:16px;
+                    font-family:'Special Elite',monospace; font-weight:700; font-size:16px;
                     color:#c0392b; text-transform:uppercase; letter-spacing:3px;
                     border:2px solid #c0392b; padding:6px 10px; opacity:0.75;
                     transform:rotate(-8deg); filter:blur(0.4px);
@@ -1976,37 +1976,55 @@ trait FisHotel_Shortcodes {
                     letter-spacing:0.08em; color:#1a1a1a; margin:0 0 4px;
                 }
                 .fh-manifest-subtitle {
-                    font-family:'Oswald',sans-serif; font-weight:400;
+                    font-family:'Special Elite',monospace; font-weight:400;
                     font-size:clamp(0.7rem,1.8vw,0.85rem); text-transform:uppercase;
                     letter-spacing:0.2em; color:#b5a165; margin:0 0 14px;
                 }
+                /* Letterhead detail block */
+                .fh-manifest-letterhead-rule {
+                    border:none; border-top:1px solid rgba(139,109,56,0.4); margin:0;
+                }
+                .fh-manifest-letterhead-row {
+                    display:flex; justify-content:space-between; padding:6px 0;
+                    font-family:'Special Elite',monospace; font-size:9px;
+                    text-transform:uppercase; letter-spacing:0.06em; color:#8a7a5a;
+                }
+                .fh-manifest-emblem {
+                    text-align:center; padding:6px 0;
+                    font-family:'Special Elite',monospace; font-size:10px;
+                    letter-spacing:2px; color:#b5a165; text-transform:uppercase;
+                }
                 .fh-manifest-rule {
-                    border:none; border-top:2px solid #1a1a2e; margin:0 0 12px;
+                    border:none; border-top:2px solid #1a1a2e; margin:0 0 16px;
                 }
                 .fh-manifest-info {
                     display:flex; flex-wrap:wrap; gap:4px 20px; justify-content:center;
-                    font-family:'Oswald',sans-serif; font-size:0.75rem; font-weight:400;
+                    font-family:'Special Elite',monospace; font-size:0.75rem; font-weight:400;
                     color:#3a2a1a; text-transform:uppercase; letter-spacing:0.04em;
                     padding-bottom:16px; border-bottom:1px solid rgba(0,0,0,0.12);
                     margin-bottom:0;
                 }
                 .fh-manifest-info span { white-space:nowrap; }
-                /* Table */
-                .fh-manifest table { width:100%; border-collapse:collapse; position:relative; z-index:2; }
-                .fh-manifest thead tr { background:rgba(181,161,101,0.1); }
+                /* Table — explicit overrides to defeat global plugin table styles */
+                .fh-manifest table { width:100%; border-collapse:collapse; position:relative; z-index:2; background:transparent !important; }
+                .fh-manifest table tr { background-color:#f0e8d5 !important; }
+                .fh-manifest table tr:nth-child(even) { background-color:#ebe0c8 !important; }
+                .fh-manifest thead tr { background-color:rgba(181,161,101,0.1) !important; }
                 .fh-manifest th {
-                    text-align:left; color:#3a2a1a; font-weight:600; font-size:11px;
+                    text-align:left; color:#1a1a1a !important; font-family:'Special Elite',monospace;
+                    font-weight:600; font-size:11px;
                     text-transform:uppercase; letter-spacing:0.08em; padding:10px 16px;
-                    border-bottom:2px solid #b5a165;
+                    border-bottom:2px solid #b5a165; border-color:rgba(139,109,56,0.3) !important;
                 }
                 .fh-manifest th:first-child { width:30px; text-align:center; }
                 .fh-manifest th:last-child { text-align:center; }
-                .fh-manifest td { padding:9px 16px; font-size:14px; color:#1a1a1a; border-bottom:1px solid rgba(181,161,101,0.25); }
+                .fh-manifest td {
+                    padding:9px 16px; font-family:'Special Elite',monospace; font-size:13px;
+                    color:#1a1a1a !important; border-bottom:1px solid rgba(139,109,56,0.3) !important;
+                }
                 .fh-manifest td:first-child { text-align:center; width:30px; }
                 .fh-manifest td:last-child { text-align:center; }
-                .fh-manifest tbody tr:nth-child(odd) { background:#f0e8d5; }
-                .fh-manifest tbody tr:nth-child(even) { background:#ebe0c8; }
-                .fh-manifest-sci { font-style:italic; color:#4a3a2a; }
+                .fh-manifest-sci { font-style:italic; color:#4a3a2a !important; }
                 /* Checkmark — wobbly SVG */
                 .fh-manifest-check {
                     display:inline-block; width:14px; height:14px; vertical-align:middle;
@@ -2019,19 +2037,20 @@ trait FisHotel_Shortcodes {
                 .fh-manifest tbody tr:nth-child(5n+5) .fh-manifest-check { transform:rotate(1deg); }
                 /* Total row */
                 .fh-manifest-total td {
-                    padding:12px 16px; border-top:2px solid #b5a165; border-bottom:none;
-                    color:#1a1a1a; font-weight:700; font-size:13px;
+                    padding:12px 16px; border-top:2px solid #b5a165 !important; border-bottom:none !important;
+                    color:#1a1a1a !important; font-weight:700; font-size:13px;
                     text-transform:uppercase; letter-spacing:0.06em;
-                    background:#e8d9b8; border-left:3px solid #b5a165;
+                    background:#e8d9b8 !important;
                 }
                 .fh-manifest-total td:first-child { border-left:3px solid #b5a165; }
+                .fh-manifest table tr.fh-manifest-total { background-color:#e8d9b8 !important; }
                 /* Footer */
                 .fh-manifest-footer {
                     padding:16px 28px 24px; position:relative; z-index:2;
                     border-top:1px solid rgba(0,0,0,0.12);
                 }
                 .fh-manifest-carrier {
-                    font-family:'Oswald',sans-serif; font-size:9px; font-weight:400;
+                    font-family:'Special Elite',monospace; font-size:9px; font-weight:400;
                     text-transform:uppercase; letter-spacing:0.1em; color:#8a7a5a;
                     text-align:center; margin:0 0 18px;
                 }
@@ -2043,7 +2062,7 @@ trait FisHotel_Shortcodes {
                     width:200px; border-bottom:1px solid #3a2a1a; margin-bottom:4px;
                 }
                 .fh-manifest-sig-label {
-                    font-family:'Oswald',sans-serif; font-size:8px; font-weight:400;
+                    font-family:'Special Elite',monospace; font-size:8px; font-weight:400;
                     text-transform:uppercase; letter-spacing:0.1em; color:#8a7a5a;
                 }
                 /* Handwritten annotation */
@@ -2286,6 +2305,13 @@ trait FisHotel_Shortcodes {
                         <div class="fh-punch-hole fh-punch-right"></div>
                         <p class="fh-manifest-airline">FisHotel World Airways, Inc.</p>
                         <p class="fh-manifest-subtitle">Live Animal Cargo Manifest</p>
+                        <hr class="fh-manifest-letterhead-rule">
+                        <div class="fh-manifest-letterhead-row">
+                            <span>Est. 2019 &middot; Champlin, MN &middot; U.S.A.</span>
+                            <span>License No. FHW-2019-MN &middot; USDA Certified</span>
+                        </div>
+                        <hr class="fh-manifest-letterhead-rule">
+                        <div class="fh-manifest-emblem">&#x2726; Live Animal Transport &middot; Marine Species &middot; International Quarantine Service &#x2726;</div>
                         <hr class="fh-manifest-rule">
                         <div class="fh-manifest-info">
                             <span>Flight No: <?php echo esc_html( $flight_number ); ?></span>
