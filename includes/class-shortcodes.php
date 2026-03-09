@@ -2798,22 +2798,10 @@ trait FisHotel_Shortcodes {
                     font-family:'Oswald',sans-serif; font-weight:400;
                     font-size:12px; color:#8a7a50;
                 }
-                .fh-checkin-status { display:flex; align-items:center; gap:10px; }
                 .fh-checkin-pos {
-                    font-family:'Oswald',sans-serif; font-weight:400;
-                    font-size:11px; letter-spacing:0.08em; color:#8a9bae;
+                    font-family:'Courier New',monospace; font-weight:400;
+                    font-size:12px; letter-spacing:0.06em; color:#8a9bae;
                     text-transform:uppercase;
-                }
-                .fh-checkin-led {
-                    width:10px; height:10px; border-radius:50%; flex-shrink:0;
-                }
-                .fh-checkin-led-green {
-                    background:#44ff66;
-                    box-shadow:0 0 4px 2px rgba(40,255,80,0.6), 0 0 10px 4px rgba(0,255,50,0.25);
-                }
-                .fh-checkin-led-red {
-                    background:#ff4444;
-                    box-shadow:0 0 4px 2px rgba(255,40,40,0.6), 0 0 10px 4px rgba(255,0,0,0.25);
                 }
                 .fh-checkin-empty {
                     padding:20px 0; text-align:center;
@@ -2922,38 +2910,29 @@ trait FisHotel_Shortcodes {
                 <!-- ===== Hotel Spa Check-In Card ===== -->
                 <?php if ( $uid && ! empty( $my_items ) ) : ?>
                 <div class="fh-checkin-card">
-                    <svg width="0" height="0"><defs><filter id="fh-checkin-grain"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter></defs></svg>
                     <div class="fh-checkin-inner">
-                        <div class="fh-checkin-header">&#x1F420; HOTEL SPA &middot; CHECK-IN CONFIRMATION</div>
+                        <div class="fh-checkin-header">THE HOTEL SPA &middot; GUEST FOLIO</div>
                         <div class="fh-checkin-body">
                         <?php foreach ( $my_items as $item ) :
                             $bid      = intval( $item['batch_id'] ?? 0 );
                             $my_qty   = intval( $item['qty'] ?? 1 );
-                            $sa       = $species_arrival[ $bid ] ?? [ 'received' => 0, 'doa' => 0, 'alive' => 0 ];
-                            $alive    = $sa['alive'];
                             $position = '—';
-                            $filled   = false;
                             if ( isset( $fcfs[ $bid ] ) ) {
                                 foreach ( $fcfs[ $bid ] as $entry ) {
                                     if ( $entry['customer_id'] === $uid ) {
                                         $position = $entry['cum_end'];
-                                        $filled   = $alive >= $entry['cum_end'];
                                         break;
                                     }
                                 }
                             }
                             $fish_name = FisHotel_Batch_Manager::resolve_common_name( $bid, $item['fish_name'] ?? '' );
-                            $led = $filled ? 'fh-checkin-led-green' : 'fh-checkin-led-red';
                         ?>
                         <div class="fh-checkin-row">
                             <div class="fh-checkin-fish">
                                 <span class="fh-checkin-name"><?php echo esc_html( $fish_name ); ?></span>
-                                <span class="fh-checkin-qty">x<?php echo $my_qty; ?></span>
+                                <span class="fh-checkin-qty">QTY: <?php echo $my_qty; ?></span>
                             </div>
-                            <div class="fh-checkin-status">
-                                <span class="fh-checkin-pos">ROOM PRIORITY #<?php echo esc_html( $position ); ?></span>
-                                <span class="fh-checkin-led <?php echo $led; ?>"></span>
-                            </div>
+                            <span class="fh-checkin-pos">STATEROOM NO. <?php echo esc_html( $position ); ?></span>
                         </div>
                         <?php endforeach; ?>
                         </div>
@@ -2962,10 +2941,10 @@ trait FisHotel_Shortcodes {
                 <?php elseif ( ! $uid ) : ?>
                 <div class="fh-checkin-card">
                     <div class="fh-checkin-inner">
-                        <div class="fh-checkin-header">&#x1F420; HOTEL SPA &middot; CHECK-IN CONFIRMATION</div>
+                        <div class="fh-checkin-header">THE HOTEL SPA &middot; GUEST FOLIO</div>
                         <div class="fh-checkin-body">
                             <div class="fh-checkin-empty">
-                                <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="color:#b5a165;text-decoration:none;">&#x1F512; LOG IN TO VIEW YOUR RESERVATION</a>
+                                <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="color:#b5a165;text-decoration:none;">PLEASE PRESENT YOUR CREDENTIALS AT THE FRONT DESK</a>
                             </div>
                         </div>
                     </div>
@@ -2973,7 +2952,7 @@ trait FisHotel_Shortcodes {
                 <?php elseif ( empty( $my_items ) ) : ?>
                 <div class="fh-checkin-card">
                     <div class="fh-checkin-inner">
-                        <div class="fh-checkin-header">&#x1F420; HOTEL SPA &middot; CHECK-IN CONFIRMATION</div>
+                        <div class="fh-checkin-header">THE HOTEL SPA &middot; GUEST FOLIO</div>
                         <div class="fh-checkin-body">
                             <div class="fh-checkin-empty">NO RESERVATION ON FILE</div>
                         </div>

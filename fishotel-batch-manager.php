@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v4.06 - Remove LEDs, fluid tiles, tight XX/XX arrived, word-boundary truncation fix, resolved names in admin.
- * Version:           4.06
+ * Description:       Stable v4.07 - Calculated tile width, remove QT POS, blank tile color, mechanical status badge, 1950s guest folio.
+ * Version:           4.07
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.06' );
+define( 'FISHOTEL_VERSION', '4.07' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -523,7 +523,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             letter-spacing:0.12em; color:#8a7a50; padding:2px 4px;
         }
 
-        /* Data rows — fluid flex layout */
+        /* Data rows */
         .fh-ab-row {
             display:flex; align-items:center; width:100%;
             padding:4px 12px; border-bottom:1px solid #0d0d0d;
@@ -536,37 +536,35 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
         .fh-ab-row.fh-ab-short { background:rgba(255,180,0,0.06); }
         .fh-ab-row.fh-ab-noarr { background:rgba(255,60,60,0.05); }
 
-        /* Inline status badge */
+        /* Status indicator — mechanical readout style */
         .fh-ab-badge {
-            flex:0 0 80px; font-family:'Oswald',sans-serif; font-size:11px;
-            font-weight:600; text-transform:uppercase; letter-spacing:0.04em;
-            padding:3px 8px; border-radius:2px; white-space:nowrap;
-            text-align:center; margin:0 6px; box-sizing:border-box;
+            flex:0 0 100px; font-family:'Courier New',monospace; font-size:12px;
+            font-weight:700; text-transform:uppercase; letter-spacing:0.1em;
+            padding:3px 6px; border-radius:0; white-space:nowrap;
+            text-align:center; margin:0 8px; box-sizing:border-box;
+            background:transparent;
         }
-        .fh-ab-badge-qt { color:#44ff88; background:rgba(0,255,100,0.1); }
-        .fh-ab-badge-short { color:#ffaa33; background:rgba(255,180,0,0.1); }
-        .fh-ab-badge-noarr { color:#ff5555; background:rgba(255,60,60,0.08); }
-        .fh-ab-badge-transit { color:#8a7a50; background:rgba(138,122,80,0.1); }
-        .fh-ab-badge-counting { color:#d4bc7e; background:rgba(212,188,126,0.1); }
-        .fh-ab-badge-landed { color:#66ccff; background:rgba(102,204,255,0.1); }
+        .fh-ab-badge-qt { color:#44ff88; border:1px solid rgba(68,255,136,0.3); }
+        .fh-ab-badge-short { color:#ffaa33; border:1px solid rgba(255,170,51,0.3); }
+        .fh-ab-badge-noarr { color:#ff5555; border:1px solid rgba(255,85,85,0.3); }
+        .fh-ab-badge-transit { color:#8a7a50; border:1px solid rgba(138,122,80,0.3); }
+        .fh-ab-badge-counting { color:#d4bc7e; border:1px solid rgba(212,188,126,0.3); }
+        .fh-ab-badge-landed { color:#66ccff; border:1px solid rgba(102,204,255,0.3); }
 
-        /* Flap tile groups — fluid flex proportions */
+        /* Flap tile groups */
         .fh-ab-tiles {
-            display:flex; flex-wrap:nowrap; gap:1px; overflow:hidden;
+            display:flex; flex-wrap:nowrap; gap:1px; overflow:hidden; flex-shrink:0;
         }
-        .fh-ab-tiles[data-fh-col="0"] { flex:4; }
-        .fh-ab-tiles[data-fh-col="1"] { flex:1; }
-        .fh-ab-tiles[data-fh-col="2"] { flex:1; margin-left:6px; }
         .fh-ab-flap {
-            flex:1; min-width:0; height:30px;
-            background:#141414; border-radius:2px;
+            width:var(--fh-tile-w, 18px); height:30px;
+            background:#0d1117; border-radius:2px;
             box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 0 #0a0806, 0 1px 4px rgba(0,0,0,0.9);
             display:flex; align-items:center; justify-content:center;
             font-family:'Courier New',monospace; font-weight:700;
             font-size:15px; color:#c8a84b; letter-spacing:-0.5px;
-            text-transform:uppercase; position:relative;
+            text-transform:uppercase; position:relative; flex-shrink:0;
         }
-        .fh-ab-flap:nth-child(odd) { background:#121212; }
+        .fh-ab-flap:nth-child(odd) { background:#0b0f14; }
         .fh-ab-flap::after {
             content:''; position:absolute; left:0; top:50%;
             width:100%; height:1px; background:#000;
@@ -596,16 +594,17 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
             }
             .fh-ab-mbadge {
-                flex-shrink:0; font-family:'Oswald',sans-serif; font-size:11px;
-                font-weight:600; text-transform:uppercase; letter-spacing:0.04em;
-                padding:3px 8px; border-radius:2px; white-space:nowrap;
+                flex-shrink:0; font-family:'Courier New',monospace; font-size:11px;
+                font-weight:700; text-transform:uppercase; letter-spacing:0.08em;
+                padding:3px 6px; border-radius:0; white-space:nowrap;
+                background:transparent;
             }
-            .fh-ab-mbadge-qt { color:#44ff88; background:rgba(0,255,100,0.1); }
-            .fh-ab-mbadge-short { color:#ffaa33; background:rgba(255,180,0,0.1); }
-            .fh-ab-mbadge-noarr { color:#ff5555; background:rgba(255,60,60,0.08); }
-            .fh-ab-mbadge-transit { color:#8a7a50; background:rgba(138,122,80,0.1); }
-            .fh-ab-mbadge-counting { color:#d4bc7e; background:rgba(212,188,126,0.1); }
-            .fh-ab-mbadge-landed { color:#66ccff; background:rgba(102,204,255,0.1); }
+            .fh-ab-mbadge-qt { color:#44ff88; border:1px solid rgba(68,255,136,0.3); }
+            .fh-ab-mbadge-short { color:#ffaa33; border:1px solid rgba(255,170,51,0.3); }
+            .fh-ab-mbadge-noarr { color:#ff5555; border:1px solid rgba(255,85,85,0.3); }
+            .fh-ab-mbadge-transit { color:#8a7a50; border:1px solid rgba(138,122,80,0.3); }
+            .fh-ab-mbadge-counting { color:#d4bc7e; border:1px solid rgba(212,188,126,0.3); }
+            .fh-ab-mbadge-landed { color:#66ccff; border:1px solid rgba(102,204,255,0.3); }
         }
         <?php
     }
@@ -635,8 +634,9 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
         ];
         $origin = strtoupper( preg_split( '/[\s\-]/', $batch_name )[0] ?? $batch_name );
         $col_limit = 20; // species tile count
+        $total_tiles = 25; // 20 species + 5 arrived
         ?>
-        <div class="fh-ab-wrap" id="fh-arrival-board" data-batch-slug="<?php echo esc_attr( $batch_slug ); ?>">
+        <div class="fh-ab-wrap" id="fh-arrival-board" data-batch-slug="<?php echo esc_attr( $batch_slug ); ?>" data-total-tiles="<?php echo $total_tiles; ?>">
         <div class="fh-ab">
             <!-- Header -->
             <div class="fh-ab-header">
@@ -647,15 +647,14 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 <div class="fh-ab-hr"><?php echo esc_html( $stage_label ); ?></div>
             </div>
 
-            <!-- Column headers — fluid flex proportions -->
-            <div class="fh-ab-cols">
-                <div class="fh-ab-col-hd" style="flex:4;">SPECIES</div>
-                <div class="fh-ab-col-hd" style="flex:0 0 80px; text-align:center; margin:0 6px;">STATUS</div>
-                <div class="fh-ab-col-hd" style="flex:1;">ARRIVED</div>
-                <div class="fh-ab-col-hd" style="flex:1; margin-left:6px;">QT POS</div>
+            <!-- Column headers: SPECIES (20 tiles) + STATUS badge (100px) + ARRIVED (5 tiles) -->
+            <div class="fh-ab-cols" id="fh-ab-cols">
+                <div class="fh-ab-col-hd fh-ab-col-species">SPECIES</div>
+                <div class="fh-ab-col-hd" style="flex:0 0 100px; text-align:center; margin:0 8px;">STATUS</div>
+                <div class="fh-ab-col-hd fh-ab-col-arrived">ARRIVED</div>
             </div>
 
-            <!-- Data rows — species tiles + badge + arrived tiles + qtpos tiles -->
+            <!-- Data rows: species tiles + badge + arrived tiles -->
             <div id="fh-ab-body">
             <?php foreach ( $species as $idx => $sp ) :
                 $st         = $sp['status'] ?? 'in_transit';
@@ -674,13 +673,11 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 $recv       = intval( $sp['recv'] ?? ( $sp['qty_received'] ?? 0 ) );
                 $ordered    = intval( $sp['ordered'] ?? ( $sp['qty_ordered'] ?? 0 ) );
                 $arrived_display = ( $recv < 10 ? ' ' : '' ) . $recv . '/' . ( $ordered < 10 ? ' ' : '' ) . $ordered;
-                $qt_pos     = '--';
             ?>
             <div class="fh-ab-row <?php echo esc_attr( $row_class ); ?>" data-fish-id="<?php echo intval( $sp['fish_id'] ?? $idx ); ?>" data-updated="<?php echo intval( $sp['updated_at'] ?? 0 ); ?>" data-status="<?php echo esc_attr( $st ); ?>">
                 <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $name ); ?>" data-fh-col="0"></div>
                 <span class="fh-ab-badge <?php echo esc_attr( $badge_cls ); ?>" data-fh-status="<?php echo esc_attr( $st ); ?>"><?php echo esc_html( $st_label ); ?></span>
                 <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $arrived_display ); ?>" data-fh-col="1"></div>
-                <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $qt_pos ); ?>" data-fh-col="2"></div>
             </div>
             <?php endforeach; ?>
             </div>
@@ -720,20 +717,39 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             var AMBER_SHADES = ['#c8a84b','#d4bc7e','#b89640','#c4a055','#c09848','#d8c080','#bfa24a','#cbb060'];
             var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/# ';
             var rowCounter = 0;
-            var COL_LENS = [20, 5, 5]; // species, arrived, qtpos
+            var COL_LENS = [20, 5]; // species, arrived
+            var TOTAL_TILES = 25;
 
             function tileHash(row, col) {
                 return ((row * 7 + col * 13 + row * col * 3 + 37) * 2654435761) >>> 0;
             }
 
-            // Word-boundary truncation: never cut inside a word
             function truncWord(str, maxLen) {
                 str = str.toUpperCase();
                 if (str.length <= maxLen) return str;
-                // Find last space at or before position maxLen
                 var sub = str.substring(0, maxLen);
                 var ls = sub.lastIndexOf(' ');
                 return ls > 0 ? sub.substring(0, ls) : sub;
+            }
+
+            // Calculate tile width from container and set CSS variable
+            function calcTileWidth() {
+                var board = document.querySelector('.fh-ab');
+                if (!board) return;
+                var style = getComputedStyle(board);
+                var boardW = board.clientWidth - parseFloat(style.paddingLeft || 0) - parseFloat(style.paddingRight || 0);
+                // Subtract row padding (12px each side), badge width (100px), badge margins (8px each side), tile gaps (24 * 1px for species, 4 * 1px for arrived)
+                var rowPad = 24; // 12px * 2
+                var badgeW = 116; // 100px + 8px margin each side
+                var gapW = (COL_LENS[0] - 1) + (COL_LENS[1] - 1); // 1px gaps between tiles within each group
+                var available = boardW - rowPad - badgeW - gapW;
+                var tileW = Math.floor(available / TOTAL_TILES);
+                board.style.setProperty('--fh-tile-w', tileW + 'px');
+                // Align column headers
+                var colSpecies = document.querySelector('.fh-ab-col-species');
+                var colArrived = document.querySelector('.fh-ab-col-arrived');
+                if (colSpecies) colSpecies.style.flex = '0 0 ' + (tileW * 20 + 19) + 'px';
+                if (colArrived) colArrived.style.flex = '0 0 ' + (tileW * 5 + 4) + 'px';
             }
 
             function buildTilesAB(container, text, maxLen) {
@@ -777,12 +793,12 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 });
             }
 
-            // Format arrived as tight XX/XX (5 chars)
             function fmtArrived(r, o) {
                 return (r < 10 ? ' ' + r : '' + r) + '/' + (o < 10 ? ' ' + o : '' + o);
             }
 
-            // Initial build + staggered cascade
+            // Calculate tile width, then build + animate
+            calcTileWidth();
             requestAnimationFrame(function() {
                 var rows = document.querySelectorAll('.fh-ab-row');
                 rows.forEach(function(row, rIdx) {
@@ -799,6 +815,8 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                     }, rIdx * 80);
                 });
             });
+            // Recalculate on resize
+            window.addEventListener('resize', calcTileWidth);
 
             // Polling maps
             var STATUS_LABELS = {
@@ -833,11 +851,9 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                                 if (sp.updated_at <= oldUpdated) return;
                                 row.setAttribute('data-updated', sp.updated_at);
 
-                                // Update row tint
                                 row.className = 'fh-ab-row ' + (ROW_CSS[sp.status] || '');
                                 row.setAttribute('data-status', sp.status);
 
-                                // Update status badge
                                 var badge = row.querySelector('.fh-ab-badge');
                                 if (badge) {
                                     badge.className = 'fh-ab-badge ' + (BADGE_CSS[sp.status] || 'fh-ab-badge-transit');
@@ -845,9 +861,9 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                                     badge.setAttribute('data-fh-status', sp.status);
                                 }
 
-                                // Re-animate changed tile columns (0=species, 1=arrived, 2=qtpos)
+                                // Re-animate changed tile columns (0=species, 1=arrived)
                                 var newArrived = fmtArrived(sp.qty_received, sp.qty_ordered);
-                                var newValues = [cn, newArrived, '--'];
+                                var newValues = [cn, newArrived];
                                 row.querySelectorAll('.fh-ab-tiles[data-fh-col]').forEach(function(t) {
                                     var col = parseInt(t.getAttribute('data-fh-col'));
                                     var oldText = t.getAttribute('data-fh-ab');
@@ -875,7 +891,6 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                             });
                         });
 
-                        // Update time
                         var timeEl = document.getElementById('fh-ab-time');
                         if (timeEl) {
                             var now = new Date();
