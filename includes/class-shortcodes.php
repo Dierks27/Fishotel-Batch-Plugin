@@ -459,8 +459,9 @@ trait FisHotel_Shortcodes {
                 .fh-bp-open-inner table.fh-bp-open-fish-table tbody tr:nth-child(even) td { background:#ebe0c4 !important; }
                 .fh-bp-open-fish-table .fh-bp-prev-row { /* same style as new items */ }
                 .fh-bp-open-fish-table .fh-bp-remove-btn {
-                    background:none; border:none; color:#8b1a1a; font-size:11px;
-                    cursor:pointer; padding:0 2px; line-height:1;
+                    background:none; border:none; color:#8b1a1a; font-size:18px;
+                    cursor:pointer; padding:4px 8px; line-height:1;
+                    min-width:28px; min-height:28px;
                 }
                 .fh-bp-open-empty {
                     color:#5a4a3a; font-style:italic; padding:10px 0;
