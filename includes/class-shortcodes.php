@@ -2035,9 +2035,9 @@ trait FisHotel_Shortcodes {
                 .fh-manifest-sci { font-style:italic; color:#4a3a2a !important; }
                 /* Checkmark — wobbly SVG */
                 .fh-manifest-check {
-                    display:inline-block; width:14px; height:14px; vertical-align:middle;
+                    display:inline-block; width:22px; height:22px; vertical-align:middle;
                 }
-                .fh-manifest-check svg { width:14px; height:14px; }
+                .fh-manifest-check svg { width:22px; height:22px; }
                 .fh-manifest tbody tr:nth-child(5n+1) .fh-manifest-check { transform:rotate(-2deg); }
                 .fh-manifest tbody tr:nth-child(5n+2) .fh-manifest-check { transform:rotate(-1deg); }
                 .fh-manifest tbody tr:nth-child(5n+3) .fh-manifest-check { transform:rotate(2deg); }
@@ -2060,7 +2060,7 @@ trait FisHotel_Shortcodes {
                 .fh-manifest-carrier {
                     font-family:'Special Elite',monospace; font-size:9px; font-weight:400;
                     text-transform:uppercase; letter-spacing:0.1em; color:#8a7a5a;
-                    text-align:center; margin:0 0 18px;
+                    text-align:center; margin:12px 0 0;
                 }
                 .fh-manifest-signatures {
                     display:flex; gap:40px; justify-content:flex-start;
@@ -2073,15 +2073,27 @@ trait FisHotel_Shortcodes {
                     font-family:'Special Elite',monospace; font-size:8px; font-weight:400;
                     text-transform:uppercase; letter-spacing:0.1em; color:#8a7a5a;
                 }
-                /* Handwritten annotation */
-                .fh-manifest-annotation {
-                    font-family:'Caveat',cursive; font-size:18px; color:#1a2744;
-                    opacity:0.7; margin-top:12px; position:relative; z-index:2;
-                    padding:0 28px 4px;
+                /* Notes section */
+                .fh-manifest-notes {
+                    padding:8px 28px 12px; position:relative; z-index:2;
                 }
-                .fh-manifest-annotation span:nth-child(1) { display:inline-block; transform:rotate(-1.5deg); }
-                .fh-manifest-annotation span:nth-child(2) { display:inline-block; transform:rotate(0.5deg); }
-                .fh-manifest-annotation span:nth-child(3) { display:inline-block; transform:rotate(-2deg); }
+                .fh-manifest-notes-label {
+                    font-family:'Special Elite',monospace; font-size:10px; text-transform:uppercase;
+                    color:#6b5a3a; display:inline-block; margin-right:8px; vertical-align:top; margin-top:4px;
+                }
+                .fh-manifest-notes-body {
+                    display:inline-block; border-bottom:1px solid rgba(139,109,56,0.5);
+                    padding:2px 4px 4px; min-width:280px;
+                }
+                .fh-manifest-note-text {
+                    font-family:'Caveat',cursive; font-size:19px; font-weight:400;
+                    color:#1a2744; opacity:0.75;
+                }
+                /* Signature */
+                .fh-manifest-sig-name {
+                    font-family:'Caveat',cursive; font-size:28px; font-weight:700;
+                    color:#1a4a9e; display:inline-block; margin-bottom:-8px;
+                }
                 /* ── Boarding Pass ── */
                 .fh-bp-wrap { position: relative; margin-top: 28px; }
                 .fh-boarding-pass {
@@ -2338,7 +2350,7 @@ trait FisHotel_Shortcodes {
                         <tbody>
                         <?php foreach ( $manifest_species as $ms ) : ?>
                             <tr>
-                                <td><span class="fh-manifest-check"><svg viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 7.5 C3 7, 5 10.5, 5.5 11 C6 9, 9 4, 11.5 2.5" stroke="#1a3a5c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
+                                <td><span class="fh-manifest-check"><svg viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 7.5 C3 7, 5 10.5, 5.5 11 C6 9, 9 4, 11.5 2.5" stroke="#1a4a9e" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
                                 <td><?php echo esc_html( $ms['fish_name'] ); ?></td>
                                 <td class="fh-manifest-sci"><?php echo esc_html( $ms['scientific_name'] ); ?></td>
                                 <td><?php echo intval( $ms['total_qty'] ); ?></td>
@@ -2351,21 +2363,58 @@ trait FisHotel_Shortcodes {
                             </tr>
                         </tbody>
                     </table>
-                    <!-- Annotation -->
-                    <div class="fh-manifest-annotation"><span>all </span><span>accounted </span><span>for</span></div>
+                    <!-- Notes -->
+                    <?php
+                    $fh_notes = [
+                        'handle with care — live specimens',
+                        'all counted, verified × 2',
+                        'CITES permit attached — see file',
+                        'Ref: QT-' . rand(1000,9999) . ' · confirmed',
+                        'inspector on site 0600 hrs',
+                        'fragile · keep upright · no stacking',
+                        'priority shipment — expedite customs',
+                        'temp-controlled hold confirmed',
+                        'all specimens accounted for',
+                        'customs pre-cleared · FHW auth.',
+                    ];
+                    $fh_note = $fh_notes[ rand(0, count($fh_notes) - 1) ];
+                    $fh_note_words = explode(' ', $fh_note);
+                    $fh_rotations = [-1.5, 0.5, -2.0, 1.0, -0.5];
+                    $fh_note_html = '';
+                    foreach ( $fh_note_words as $wi => $w ) {
+                        $r = $fh_rotations[ $wi % count($fh_rotations) ];
+                        $fh_note_html .= '<span style="display:inline-block;transform:rotate(' . $r . 'deg)">' . esc_html($w) . ' </span>';
+                    }
+                    $fh_sig_styles = [
+                        'transform:rotate(-4deg) scaleX(1.05);letter-spacing:1px',
+                        'transform:rotate(-2deg) scaleX(0.95);letter-spacing:-1px',
+                        'transform:rotate(-6deg) scaleX(1.1);letter-spacing:2px',
+                        'transform:rotate(-3deg) scaleX(1.0);letter-spacing:0px',
+                        'transform:rotate(-5deg) scaleX(1.08);letter-spacing:1.5px',
+                    ];
+                    $fh_sig_style = $fh_sig_styles[ rand(0, 4) ];
+                    ?>
+                    <div class="fh-manifest-notes">
+                        <span class="fh-manifest-notes-label">NOTES:</span>
+                        <div class="fh-manifest-notes-body">
+                            <span class="fh-manifest-note-text"><?php echo $fh_note_html; ?></span>
+                        </div>
+                    </div>
                     <!-- Footer -->
                     <div class="fh-manifest-footer">
-                        <p class="fh-manifest-carrier">Carrier: FisHotel World Airways, Inc. &middot; All Live Cargo Subject to Quarantine Inspection</p>
                         <div class="fh-manifest-signatures">
+                            <div class="fh-manifest-sig-block">
+                                <span class="fh-manifest-sig-name" style="<?php echo esc_attr($fh_sig_style); ?>">Dierks</span>
+                                <div class="fh-manifest-sig-line"></div>
+                                <span class="fh-manifest-sig-label">Supervising Agent</span>
+                            </div>
                             <div class="fh-manifest-sig-block">
                                 <div class="fh-manifest-sig-line"></div>
                                 <span class="fh-manifest-sig-label">Cargo Officer</span>
                             </div>
-                            <div class="fh-manifest-sig-block">
-                                <div class="fh-manifest-sig-line"></div>
-                                <span class="fh-manifest-sig-label">Inspector</span>
-                            </div>
                         </div>
+                        <hr class="fh-manifest-letterhead-rule">
+                        <p class="fh-manifest-carrier">Carrier: FisHotel World Airways, Inc. &middot; All Live Cargo Subject to Quarantine Inspection</p>
                     </div>
                 </div>
                 <?php endif; ?>
