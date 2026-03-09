@@ -838,7 +838,7 @@ trait FisHotel_Shortcodes {
                 .fh-mobile-controls input::placeholder { color:#8a7a6a !important; -webkit-text-fill-color:#8a7a6a !important; }
 
                 /* ── Mobile Cards ── */
-                .fish-cards { display:grid; gap:14px; position:relative; z-index:2; box-sizing:border-box; width:100%; overflow:hidden; }
+                .fish-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; position:relative; z-index:2; box-sizing:border-box; width:100%; overflow:hidden; }
                 .fish-card {
                     background:#f2ead8; border:1px solid rgba(0,0,0,0.12); border-radius:0;
                     padding:16px 18px; font-family:'Special Elite',monospace;
@@ -869,11 +869,7 @@ trait FisHotel_Shortcodes {
                     .fh-scroll-wrap { display:none !important; }
                     .fh-mobile-controls { display:flex !important; }
                 }
-                @media (max-width:1100px) and (min-width:651px) {
-                    .fish-cards { grid-template-columns:1fr 1fr; }
-                }
                 @media (max-width:650px) {
-                    .fish-cards { grid-template-columns:1fr; }
                     #submit-requests { width:100% !important; padding:16px !important; }
                     .fh-manifest-card { padding:0; }
                     .fh-manifest-header { padding:18px 14px 12px; }

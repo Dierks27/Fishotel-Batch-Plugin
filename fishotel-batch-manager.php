@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v3.04 - Card grid single-col at 650px.
- * Version:           3.04
+ * Description:       Stable v3.05 - Card grid auto-fit minmax(260px,1fr), no viewport breakpoints.
+ * Version:           3.05
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '3.04' );
+define( 'FISHOTEL_VERSION', '3.05' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
