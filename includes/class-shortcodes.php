@@ -862,10 +862,10 @@ trait FisHotel_Shortcodes {
                 }
 
                 /* ── Responsive ── */
-                @media (min-width:783px) {
+                @media (min-width:1031px) {
                     .fish-cards, .fh-mobile-controls { display:none !important; }
                 }
-                @media (max-width:782px) {
+                @media (max-width:1030px) {
                     .fh-scroll-wrap { display:none !important; }
                     .fh-mobile-controls { display:flex !important; }
                 }

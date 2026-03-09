@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v3.06 - Table/cards at 782px, board wrapper max-width, cards minmax 320px.
- * Version:           3.06
+ * Description:       Stable v3.07 - Table/cards switchover at 1030px.
+ * Version:           3.07
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '3.06' );
+define( 'FISHOTEL_VERSION', '3.07' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
