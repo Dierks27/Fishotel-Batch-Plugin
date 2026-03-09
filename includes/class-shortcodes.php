@@ -1897,7 +1897,7 @@ trait FisHotel_Shortcodes {
             usort( $manifest_species, fn( $a, $b ) => strcasecmp( $a['fish_name'], $b['fish_name'] ) );
             $manifest_total_fish = array_sum( array_column( $manifest_species, 'total_qty' ) );
             ?>
-            <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Caveat:wght@400&display=swap" rel="stylesheet">
             <style>
                 .fh-transit-wrap { max-width: 960px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
                 .fh-hero-map {
@@ -1922,33 +1922,139 @@ trait FisHotel_Shortcodes {
                     text-transform: uppercase; letter-spacing: 0.06em; transform: rotate(-2deg);
                     color: #e67e22;
                 }
-                /* ── Flight Manifest ── */
+                /* ── Flight Manifest — Vintage Cargo Document ── */
                 .fh-manifest {
-                    margin-top: 28px; background: #0c161f; border: 2px solid #b5a165; border-radius: 10px;
-                    font-family: 'Oswald', sans-serif; color: #fff; overflow: hidden;
+                    margin-top: 28px; background: #f0e8d5; border: 1px solid #c8b99a; border-radius: 2px;
+                    font-family: 'Oswald', sans-serif; color: #1a1a1a; overflow: hidden;
+                    position: relative;
+                    box-shadow: 0 4px 30px rgba(0,0,0,0.3), inset 0 0 60px rgba(60,40,20,0.1);
                 }
-                .fh-manifest-header {
-                    padding: 16px 24px; border-top: 1px solid #b5a165; border-bottom: 1px solid #b5a165;
-                    font-family: 'Oswald', sans-serif; font-weight: 700; font-size: clamp(0.95rem, 2.5vw, 1.2rem);
-                    text-transform: uppercase; letter-spacing: 0.12em; color: #b5a165;
+                /* Paper grain */
+                .fh-manifest::before {
+                    content:''; position:absolute; inset:0;
+                    filter:url(#fh-paper-grain); background:rgba(180,165,130,0.05);
+                    pointer-events:none; z-index:1; mix-blend-mode:multiply;
                 }
-                .fh-manifest table { width: 100%; border-collapse: collapse; }
-                .fh-manifest thead tr { background: rgba(181,161,101,0.15); }
+                /* Staple marks */
+                .fh-manifest-staple {
+                    position:absolute; left:18px; width:12px; height:3px;
+                    background:#555; border-radius:1px; transform:rotate(2deg);
+                    z-index:3; pointer-events:none;
+                }
+                .fh-manifest-staple:first-child { top:15px; }
+                .fh-manifest-staple:nth-child(2) { top:21px; }
+                /* Rubber stamp */
+                .fh-manifest-stamp {
+                    position:absolute; top:22px; right:24px; z-index:4;
+                    font-family:'Oswald',sans-serif; font-weight:700; font-size:16px;
+                    color:#c0392b; text-transform:uppercase; letter-spacing:3px;
+                    border:2px solid #c0392b; padding:6px 10px; opacity:0.75;
+                    transform:rotate(-8deg); filter:blur(0.4px);
+                    pointer-events:none; line-height:1;
+                }
+                /* Coffee stain */
+                .fh-manifest-coffee {
+                    position:absolute; bottom:30px; right:40px; z-index:2;
+                    width:120px; height:110px; pointer-events:none;
+                    transform:rotate(15deg);
+                }
+                /* Header */
+                .fh-manifest-doc-header {
+                    padding:28px 28px 0; text-align:center; position:relative; z-index:2;
+                }
+                .fh-manifest-doc-header .fh-punch-hole {
+                    position:absolute; top:16px; width:14px; height:14px;
+                    border-radius:50%; background:#1a1a2e;
+                    border:1px solid #a09080;
+                    box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);
+                }
+                .fh-manifest-doc-header .fh-punch-left { left:50%; margin-left:-40px; }
+                .fh-manifest-doc-header .fh-punch-right { left:50%; margin-left:26px; }
+                .fh-manifest-airline {
+                    font-family:'Oswald',sans-serif; font-weight:700;
+                    font-size:clamp(1.1rem,2.8vw,1.5rem); text-transform:uppercase;
+                    letter-spacing:0.08em; color:#1a1a1a; margin:0 0 4px;
+                }
+                .fh-manifest-subtitle {
+                    font-family:'Oswald',sans-serif; font-weight:400;
+                    font-size:clamp(0.7rem,1.8vw,0.85rem); text-transform:uppercase;
+                    letter-spacing:0.2em; color:#b5a165; margin:0 0 14px;
+                }
+                .fh-manifest-rule {
+                    border:none; border-top:2px solid #1a1a2e; margin:0 0 12px;
+                }
+                .fh-manifest-info {
+                    display:flex; flex-wrap:wrap; gap:4px 20px; justify-content:center;
+                    font-family:'Oswald',sans-serif; font-size:0.75rem; font-weight:400;
+                    color:#3a2a1a; text-transform:uppercase; letter-spacing:0.04em;
+                    padding-bottom:16px; border-bottom:1px solid rgba(0,0,0,0.12);
+                    margin-bottom:0;
+                }
+                .fh-manifest-info span { white-space:nowrap; }
+                /* Table */
+                .fh-manifest table { width:100%; border-collapse:collapse; position:relative; z-index:2; }
+                .fh-manifest thead tr { background:rgba(181,161,101,0.1); }
                 .fh-manifest th {
-                    text-align: left; color: #b5a165; font-weight: 400; font-size: 11px;
-                    text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 16px;
+                    text-align:left; color:#3a2a1a; font-weight:600; font-size:11px;
+                    text-transform:uppercase; letter-spacing:0.08em; padding:10px 16px;
+                    border-bottom:2px solid #b5a165;
                 }
-                .fh-manifest th:last-child { text-align: center; }
-                .fh-manifest td { padding: 8px 16px; font-size: 14px; color: #fff; }
-                .fh-manifest td:last-child { text-align: center; }
-                .fh-manifest tbody tr:nth-child(odd) { background: #0c161f; }
-                .fh-manifest tbody tr:nth-child(even) { background: #0f1e2d; }
-                .fh-manifest-sci { font-style: italic; color: #8a9bae; }
+                .fh-manifest th:first-child { width:30px; text-align:center; }
+                .fh-manifest th:last-child { text-align:center; }
+                .fh-manifest td { padding:9px 16px; font-size:14px; color:#1a1a1a; border-bottom:1px solid rgba(181,161,101,0.25); }
+                .fh-manifest td:first-child { text-align:center; width:30px; }
+                .fh-manifest td:last-child { text-align:center; }
+                .fh-manifest tbody tr:nth-child(odd) { background:#f0e8d5; }
+                .fh-manifest tbody tr:nth-child(even) { background:#ebe0c8; }
+                .fh-manifest-sci { font-style:italic; color:#4a3a2a; }
+                /* Checkmark — wobbly SVG */
+                .fh-manifest-check {
+                    display:inline-block; width:14px; height:14px; vertical-align:middle;
+                }
+                .fh-manifest-check svg { width:14px; height:14px; }
+                .fh-manifest tbody tr:nth-child(5n+1) .fh-manifest-check { transform:rotate(-2deg); }
+                .fh-manifest tbody tr:nth-child(5n+2) .fh-manifest-check { transform:rotate(-1deg); }
+                .fh-manifest tbody tr:nth-child(5n+3) .fh-manifest-check { transform:rotate(2deg); }
+                .fh-manifest tbody tr:nth-child(5n+4) .fh-manifest-check { transform:rotate(-3deg); }
+                .fh-manifest tbody tr:nth-child(5n+5) .fh-manifest-check { transform:rotate(1deg); }
+                /* Total row */
                 .fh-manifest-total td {
-                    padding: 12px 16px; border-top: 1px solid #b5a165;
-                    color: #b5a165; font-weight: 700; font-size: 13px;
-                    text-transform: uppercase; letter-spacing: 0.06em;
+                    padding:12px 16px; border-top:2px solid #b5a165; border-bottom:none;
+                    color:#1a1a1a; font-weight:700; font-size:13px;
+                    text-transform:uppercase; letter-spacing:0.06em;
+                    background:#e8d9b8; border-left:3px solid #b5a165;
                 }
+                .fh-manifest-total td:first-child { border-left:3px solid #b5a165; }
+                /* Footer */
+                .fh-manifest-footer {
+                    padding:16px 28px 24px; position:relative; z-index:2;
+                    border-top:1px solid rgba(0,0,0,0.12);
+                }
+                .fh-manifest-carrier {
+                    font-family:'Oswald',sans-serif; font-size:9px; font-weight:400;
+                    text-transform:uppercase; letter-spacing:0.1em; color:#8a7a5a;
+                    text-align:center; margin:0 0 18px;
+                }
+                .fh-manifest-signatures {
+                    display:flex; gap:40px; justify-content:flex-start;
+                }
+                .fh-manifest-sig-block { display:flex; flex-direction:column; }
+                .fh-manifest-sig-line {
+                    width:200px; border-bottom:1px solid #3a2a1a; margin-bottom:4px;
+                }
+                .fh-manifest-sig-label {
+                    font-family:'Oswald',sans-serif; font-size:8px; font-weight:400;
+                    text-transform:uppercase; letter-spacing:0.1em; color:#8a7a5a;
+                }
+                /* Handwritten annotation */
+                .fh-manifest-annotation {
+                    font-family:'Caveat',cursive; font-size:18px; color:#1a2744;
+                    opacity:0.7; margin-top:12px; position:relative; z-index:2;
+                    padding:0 28px 4px;
+                }
+                .fh-manifest-annotation span:nth-child(1) { display:inline-block; transform:rotate(-1.5deg); }
+                .fh-manifest-annotation span:nth-child(2) { display:inline-block; transform:rotate(0.5deg); }
+                .fh-manifest-annotation span:nth-child(3) { display:inline-block; transform:rotate(-2deg); }
                 /* ── Boarding Pass ── */
                 .fh-bp-wrap { position: relative; margin-top: 28px; }
                 .fh-boarding-pass {
@@ -2159,25 +2265,74 @@ trait FisHotel_Shortcodes {
                 <!-- ===== SECTION 3: Flight Manifest ===== -->
                 <?php if ( ! empty( $manifest_species ) ) : ?>
                 <div class="fh-manifest">
-                    <div class="fh-manifest-header">&#9992; Flight Manifest</div>
+                    <!-- Staple marks -->
+                    <div class="fh-manifest-staple"></div>
+                    <div class="fh-manifest-staple"></div>
+                    <!-- Rubber stamp -->
+                    <div class="fh-manifest-stamp">Cleared for Departure</div>
+                    <!-- Coffee stain -->
+                    <svg class="fh-manifest-coffee" viewBox="0 0 120 110" xmlns="http://www.w3.org/2000/svg">
+                        <defs><radialGradient id="fh-coffee-grad" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="rgba(101,67,33,0.18)"/>
+                            <stop offset="50%" stop-color="rgba(101,67,33,0.25)"/>
+                            <stop offset="85%" stop-color="rgba(101,67,33,0.05)"/>
+                            <stop offset="100%" stop-color="rgba(101,67,33,0)"/>
+                        </radialGradient></defs>
+                        <ellipse cx="60" cy="55" rx="55" ry="50" fill="url(#fh-coffee-grad)"/>
+                    </svg>
+                    <!-- Document header -->
+                    <div class="fh-manifest-doc-header">
+                        <div class="fh-punch-hole fh-punch-left"></div>
+                        <div class="fh-punch-hole fh-punch-right"></div>
+                        <p class="fh-manifest-airline">FisHotel World Airways, Inc.</p>
+                        <p class="fh-manifest-subtitle">Live Animal Cargo Manifest</p>
+                        <hr class="fh-manifest-rule">
+                        <div class="fh-manifest-info">
+                            <span>Flight No: <?php echo esc_html( $flight_number ); ?></span>
+                            <span>|</span>
+                            <span>Date: <?php echo strtoupper( date( 'M j, Y' ) ); ?></span>
+                            <span>|</span>
+                            <span>Origin: <?php echo esc_html( strtoupper( $origin_name ) ); ?></span>
+                            <span>|</span>
+                            <span>Destination: Champlin, MN</span>
+                        </div>
+                    </div>
                     <table>
                         <thead><tr>
-                            <th>Common Name</th><th>Scientific Name</th><th>Qty</th>
+                            <th>&nbsp;</th><th>Common Name</th><th>Scientific Name</th><th>Qty</th>
                         </tr></thead>
                         <tbody>
                         <?php foreach ( $manifest_species as $ms ) : ?>
                             <tr>
+                                <td><span class="fh-manifest-check"><svg viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 7.5 C3 7, 5 10.5, 5.5 11 C6 9, 9 4, 11.5 2.5" stroke="#1a3a5c" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></td>
                                 <td><?php echo esc_html( $ms['fish_name'] ); ?></td>
                                 <td class="fh-manifest-sci"><?php echo esc_html( $ms['scientific_name'] ); ?></td>
                                 <td><?php echo intval( $ms['total_qty'] ); ?></td>
                             </tr>
                         <?php endforeach; ?>
                             <tr class="fh-manifest-total">
+                                <td>&nbsp;</td>
                                 <td colspan="2" style="text-align:right;">Total Passengers: <?php echo intval( $manifest_total_fish ); ?> Fish</td>
                                 <td style="text-align:center;"><?php echo intval( $manifest_total_fish ); ?></td>
                             </tr>
                         </tbody>
                     </table>
+                    <!-- Annotation -->
+                    <div class="fh-manifest-annotation"><span>all </span><span>accounted </span><span>for</span></div>
+                    <!-- Footer -->
+                    <div class="fh-manifest-footer">
+                        <p class="fh-manifest-carrier">Carrier: FisHotel World Airways, Inc. &middot; All Live Cargo Subject to Quarantine Inspection</p>
+                        <div class="fh-manifest-signatures">
+                            <div class="fh-manifest-sig-block">
+                                <div class="fh-manifest-sig-line"></div>
+                                <span class="fh-manifest-sig-label">Cargo Officer</span>
+                            </div>
+                            <div class="fh-manifest-sig-block">
+                                <div class="fh-manifest-sig-line"></div>
+                                <span class="fh-manifest-sig-label">Inspector</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <?php endif; ?>
 
