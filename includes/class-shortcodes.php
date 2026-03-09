@@ -873,7 +873,7 @@ trait FisHotel_Shortcodes {
                     </div>
                 </div>
                 </div>
-                <script>(function(){function s(){document.documentElement.style.setProperty('--fh-board-scale',Math.min(1,window.innerWidth/900))}s();window.addEventListener('resize',s)})()</script>
+                <script>(function(){var w=document.querySelector('.fh-board-wrapper');function s(){if(!w)return;var scale=Math.min(1,w.offsetWidth/900);w.style.setProperty('--fh-board-scale',scale)}requestAnimationFrame(s);window.addEventListener('resize',s)})()</script>
 
                 <!-- ===== Boarding Pass ===== -->
                 <div class="fh-bp-open" id="my-requests">
