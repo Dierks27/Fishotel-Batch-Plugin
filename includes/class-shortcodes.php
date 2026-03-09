@@ -232,8 +232,9 @@ trait FisHotel_Shortcodes {
                 }
 
                 /* ── Solari Departure Board — Authentic Fixed Grid ── */
+                .fh-board-wrapper { overflow:hidden; }
                 .fh-board {
-                    width:100%; box-sizing:border-box;
+                    width:900px; min-width:900px; box-sizing:border-box;
                     background:#0a0a0a; border-radius:4px;
                     border-top:7px solid #1e1a14;
                     border-left:7px solid #1a1610;
@@ -357,10 +358,8 @@ trait FisHotel_Shortcodes {
                     50% { opacity:0.75; box-shadow:0 0 2px #e07b2a, 0 0 6px #cc6a1f, 0 0 12px rgba(224,123,42,0.2); }
                 }
 
-                @media (max-width:960px) {
-                    .fh-board-wrapper { overflow:hidden; width:100%; }
+                @media (max-width:900px) {
                     .fh-board {
-                        width:900px !important;
                         transform-origin:top left;
                         transform:scale(var(--fh-board-scale,1));
                         margin-bottom:calc((var(--fh-board-scale,1) - 1) * 593px);
