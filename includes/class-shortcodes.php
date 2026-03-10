@@ -2972,10 +2972,12 @@ trait FisHotel_Shortcodes {
                         $last = end( $fcfs[ $bp->ID ] );
                         $demand = $last ? $last['cum_end'] : 0;
                     }
+                    // Remove colons and collapse whitespace (e.g. "BUTTERFLY : BARONESSA" → "BUTTERFLY BARONESSA")
+                    $board_cname = trim( preg_replace( '/\s+/', ' ', str_replace( ':', '', $cname ) ) );
                     $board_raw[] = [
                         'fish_id'      => $bp->ID,
-                        'common_name'  => $cname,
-                        'name'         => strtoupper( $cname ),
+                        'common_name'  => $board_cname,
+                        'name'         => strtoupper( $board_cname ),
                         'qty_received' => $sa['received'],
                         'recv'         => $sa['received'],
                         'qty_ordered'  => $demand,
@@ -2999,7 +3001,7 @@ trait FisHotel_Shortcodes {
                 $ab_batch_slug = urlencode( $batch_name );
                 ?>
                 <style><?php $this->render_arrival_board_css(); ?></style>
-                <?php $this->render_arrival_board_html( $batch_name, $ab_stage_label, $board_species, $ab_batch_slug, $arrival_date, false ); ?>
+                <?php $this->render_arrival_board_html( $batch_name, $ab_stage_label, $board_species, $ab_batch_slug, $arrival_date, false, ( $status === 'arrived' ) ); ?>
                 <?php endif; ?>
 
                 <!-- ===== QT Footer ===== -->

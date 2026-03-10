@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       Stable v4.07 - Calculated tile width, remove QT POS, blank tile color, mechanical status badge, 1950s guest folio.
- * Version:           4.07
+ * Description:       v4.08 - Fix colon truncation, tight tile spacing, 60/20/20 columns, pending status, no-space arrived count, species dedup.
+ * Version:           4.08
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.07' );
+define( 'FISHOTEL_VERSION', '4.08' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -465,7 +465,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
 <?php $this->render_arrival_board_css(); ?>
 </style>
 </head><body>
-<?php $this->render_arrival_board_html( $matched, $stage_label, $species, $batch_slug, $arrival_date, true ); ?>
+<?php $this->render_arrival_board_html( $matched, $stage_label, $species, $batch_slug, $arrival_date, true, ( $batch_status === 'arrived' ) ); ?>
 </body></html>
         <?php
         exit;
@@ -538,10 +538,10 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
 
         /* Status indicator — mechanical readout style */
         .fh-ab-badge {
-            flex:0 0 100px; font-family:'Courier New',monospace; font-size:12px;
+            flex:0 0 20%; font-family:'Courier New',monospace; font-size:12px;
             font-weight:700; text-transform:uppercase; letter-spacing:0.1em;
             padding:3px 6px; border-radius:0; white-space:nowrap;
-            text-align:center; margin:0 8px; box-sizing:border-box;
+            text-align:center; box-sizing:border-box;
             background:transparent;
         }
         .fh-ab-badge-qt { color:#44ff88; border:1px solid rgba(68,255,136,0.3); }
@@ -550,20 +550,25 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
         .fh-ab-badge-transit { color:#8a7a50; border:1px solid rgba(138,122,80,0.3); }
         .fh-ab-badge-counting { color:#d4bc7e; border:1px solid rgba(212,188,126,0.3); }
         .fh-ab-badge-landed { color:#66ccff; border:1px solid rgba(102,204,255,0.3); }
+        .fh-ab-badge-pending { color:#d4a017; border:1px solid rgba(212,160,23,0.3); }
 
         /* Flap tile groups */
         .fh-ab-tiles {
-            display:flex; flex-wrap:nowrap; gap:1px; overflow:hidden; flex-shrink:0;
+            display:flex; flex-wrap:nowrap; gap:0; overflow:hidden;
         }
+        .fh-ab-tiles[data-fh-col="0"] { flex:0 0 60%; }
+        .fh-ab-tiles[data-fh-col="1"] { flex:0 0 20%; }
         .fh-ab-flap {
             width:var(--fh-tile-w, 18px); height:30px;
-            background:#0d1117; border-radius:2px;
+            background:#0d1117; border-radius:1px;
+            border-right:1px solid #080a0e;
             box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 0 #0a0806, 0 1px 4px rgba(0,0,0,0.9);
             display:flex; align-items:center; justify-content:center;
             font-family:'Courier New',monospace; font-weight:700;
             font-size:15px; color:#c8a84b; letter-spacing:-0.5px;
             text-transform:uppercase; position:relative; flex-shrink:0;
         }
+        .fh-ab-flap:last-child { border-right:none; }
         .fh-ab-flap:nth-child(odd) { background:#0b0f14; }
         .fh-ab-flap::after {
             content:''; position:absolute; left:0; top:50%;
@@ -605,12 +610,13 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             .fh-ab-mbadge-transit { color:#8a7a50; border:1px solid rgba(138,122,80,0.3); }
             .fh-ab-mbadge-counting { color:#d4bc7e; border:1px solid rgba(212,188,126,0.3); }
             .fh-ab-mbadge-landed { color:#66ccff; border:1px solid rgba(102,204,255,0.3); }
+            .fh-ab-mbadge-pending { color:#d4a017; border:1px solid rgba(212,160,23,0.3); }
         }
         <?php
     }
 
     // ─── Arrival Board — Reusable HTML + JS ───────────────────────────
-    public function render_arrival_board_html( $batch_name, $stage_label, $species, $batch_slug, $arrival_date, $is_embed = false ) {
+    public function render_arrival_board_html( $batch_name, $stage_label, $species, $batch_slug, $arrival_date, $is_embed = false, $counting_in_progress = false ) {
         $status_labels = [
             'in_transit'     => 'IN TRANSIT',
             'landed'         => 'LANDED',
@@ -618,11 +624,13 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             'in_quarantine'  => 'IN QT',
             'short'          => 'SHORT',
             'no_arrival'     => 'NO ARRIVAL',
+            'pending'        => 'PENDING',
         ];
         $row_classes = [
             'in_quarantine' => 'fh-ab-qt',
             'short'         => 'fh-ab-short',
             'no_arrival'    => 'fh-ab-noarr',
+            'pending'       => '',
         ];
         $badge_classes = [
             'in_quarantine' => 'fh-ab-badge-qt',
@@ -631,6 +639,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             'in_transit'    => 'fh-ab-badge-transit',
             'landed'        => 'fh-ab-badge-landed',
             'counting'      => 'fh-ab-badge-counting',
+            'pending'       => 'fh-ab-badge-pending',
         ];
         $origin = strtoupper( preg_split( '/[\s\-]/', $batch_name )[0] ?? $batch_name );
         $col_limit = 20; // species tile count
@@ -647,17 +656,21 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 <div class="fh-ab-hr"><?php echo esc_html( $stage_label ); ?></div>
             </div>
 
-            <!-- Column headers: SPECIES (20 tiles) + STATUS badge (100px) + ARRIVED (5 tiles) -->
+            <!-- Column headers: SPECIES 60% + STATUS 20% + ARRIVED 20% -->
             <div class="fh-ab-cols" id="fh-ab-cols">
-                <div class="fh-ab-col-hd fh-ab-col-species">SPECIES</div>
-                <div class="fh-ab-col-hd" style="flex:0 0 100px; text-align:center; margin:0 8px;">STATUS</div>
-                <div class="fh-ab-col-hd fh-ab-col-arrived">ARRIVED</div>
+                <div class="fh-ab-col-hd" style="flex:0 0 60%;">SPECIES</div>
+                <div class="fh-ab-col-hd" style="flex:0 0 20%; text-align:center;">STATUS</div>
+                <div class="fh-ab-col-hd" style="flex:0 0 20%;">ARRIVED</div>
             </div>
 
             <!-- Data rows: species tiles + badge + arrived tiles -->
             <div id="fh-ab-body">
             <?php foreach ( $species as $idx => $sp ) :
                 $st         = $sp['status'] ?? 'in_transit';
+                // During counting, show PENDING instead of alarming NO ARRIVAL / IN TRANSIT
+                if ( $counting_in_progress && in_array( $st, [ 'no_arrival', 'in_transit' ], true ) ) {
+                    $st = 'pending';
+                }
                 $st_label   = $status_labels[ $st ] ?? strtoupper( $st );
                 $row_class  = $row_classes[ $st ] ?? '';
                 $badge_cls  = $badge_classes[ $st ] ?? 'fh-ab-badge-transit';
@@ -672,7 +685,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 }
                 $recv       = intval( $sp['recv'] ?? ( $sp['qty_received'] ?? 0 ) );
                 $ordered    = intval( $sp['ordered'] ?? ( $sp['qty_ordered'] ?? 0 ) );
-                $arrived_display = ( $recv < 10 ? ' ' : '' ) . $recv . '/' . ( $ordered < 10 ? ' ' : '' ) . $ordered;
+                $arrived_display = $recv . '/' . $ordered;
             ?>
             <div class="fh-ab-row <?php echo esc_attr( $row_class ); ?>" data-fish-id="<?php echo intval( $sp['fish_id'] ?? $idx ); ?>" data-updated="<?php echo intval( $sp['updated_at'] ?? 0 ); ?>" data-status="<?php echo esc_attr( $st ); ?>">
                 <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $name ); ?>" data-fh-col="0"></div>
@@ -685,9 +698,12 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             <!-- Mobile card list (hidden on desktop) -->
             <div class="fh-ab-mobile" id="fh-ab-mobile">
             <?php
-            $mobile_badge = [ 'in_quarantine' => 'fh-ab-mbadge-qt', 'short' => 'fh-ab-mbadge-short', 'no_arrival' => 'fh-ab-mbadge-noarr', 'in_transit' => 'fh-ab-mbadge-transit', 'landed' => 'fh-ab-mbadge-landed', 'counting' => 'fh-ab-mbadge-counting' ];
+            $mobile_badge = [ 'in_quarantine' => 'fh-ab-mbadge-qt', 'short' => 'fh-ab-mbadge-short', 'no_arrival' => 'fh-ab-mbadge-noarr', 'in_transit' => 'fh-ab-mbadge-transit', 'landed' => 'fh-ab-mbadge-landed', 'counting' => 'fh-ab-mbadge-counting', 'pending' => 'fh-ab-mbadge-pending' ];
             foreach ( $species as $idx => $sp ) :
                 $st       = $sp['status'] ?? 'in_transit';
+                if ( $counting_in_progress && in_array( $st, [ 'no_arrival', 'in_transit' ], true ) ) {
+                    $st = 'pending';
+                }
                 $st_label = $status_labels[ $st ] ?? strtoupper( $st );
                 $m_badge  = $mobile_badge[ $st ] ?? 'fh-ab-mbadge-transit';
                 $m_name   = $sp['common_name'] ?? ( $sp['name'] ?? '' );
@@ -732,24 +748,16 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 return ls > 0 ? sub.substring(0, ls) : sub;
             }
 
-            // Calculate tile width from container and set CSS variable
+            // Calculate tile width from container columns
             function calcTileWidth() {
                 var board = document.querySelector('.fh-ab');
                 if (!board) return;
-                var style = getComputedStyle(board);
-                var boardW = board.clientWidth - parseFloat(style.paddingLeft || 0) - parseFloat(style.paddingRight || 0);
-                // Subtract row padding (12px each side), badge width (100px), badge margins (8px each side), tile gaps (24 * 1px for species, 4 * 1px for arrived)
-                var rowPad = 24; // 12px * 2
-                var badgeW = 116; // 100px + 8px margin each side
-                var gapW = (COL_LENS[0] - 1) + (COL_LENS[1] - 1); // 1px gaps between tiles within each group
-                var available = boardW - rowPad - badgeW - gapW;
-                var tileW = Math.floor(available / TOTAL_TILES);
+                // Use first species tile container to derive tile width
+                var specTiles = board.querySelector('.fh-ab-tiles[data-fh-col="0"]');
+                if (!specTiles) return;
+                var specW = specTiles.getBoundingClientRect().width;
+                var tileW = Math.floor(specW / COL_LENS[0]);
                 board.style.setProperty('--fh-tile-w', tileW + 'px');
-                // Align column headers
-                var colSpecies = document.querySelector('.fh-ab-col-species');
-                var colArrived = document.querySelector('.fh-ab-col-arrived');
-                if (colSpecies) colSpecies.style.flex = '0 0 ' + (tileW * 20 + 19) + 'px';
-                if (colArrived) colArrived.style.flex = '0 0 ' + (tileW * 5 + 4) + 'px';
             }
 
             function buildTilesAB(container, text, maxLen) {
@@ -794,7 +802,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             }
 
             function fmtArrived(r, o) {
-                return (r < 10 ? ' ' + r : '' + r) + '/' + (o < 10 ? ' ' + o : '' + o);
+                return r + '/' + o;
             }
 
             // Calculate tile width, then build + animate
@@ -821,7 +829,8 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             // Polling maps
             var STATUS_LABELS = {
                 'in_transit':'IN TRANSIT','landed':'LANDED','counting':'COUNTING',
-                'in_quarantine':'IN QT','short':'SHORT','no_arrival':'NO ARRIVAL'
+                'in_quarantine':'IN QT','short':'SHORT','no_arrival':'NO ARRIVAL',
+                'pending':'PENDING'
             };
             var ROW_CSS = {
                 'in_quarantine':'fh-ab-qt','short':'fh-ab-short','no_arrival':'fh-ab-noarr'
@@ -829,7 +838,8 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             var BADGE_CSS = {
                 'in_quarantine':'fh-ab-badge-qt','short':'fh-ab-badge-short',
                 'no_arrival':'fh-ab-badge-noarr','in_transit':'fh-ab-badge-transit',
-                'landed':'fh-ab-badge-landed','counting':'fh-ab-badge-counting'
+                'landed':'fh-ab-badge-landed','counting':'fh-ab-badge-counting',
+                'pending':'fh-ab-badge-pending'
             };
 
             // Auto-poll every 15 seconds
