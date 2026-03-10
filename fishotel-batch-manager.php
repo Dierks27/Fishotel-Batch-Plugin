@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.12 - Tight tiles, no dead space, dimmed backlit text, slash padding, blank tiles restored.
- * Version:           4.12
+ * Description:       v4.13 - Bigger tile text, centered status badge, MSP INTL header.
+ * Version:           4.13
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.12' );
+define( 'FISHOTEL_VERSION', '4.13' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -538,10 +538,10 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
 
         /* Status indicator — mechanical readout style */
         .fh-ab-badge {
-            flex:0 0 100px; font-family:'Courier New',monospace; font-size:12px;
+            flex:1 1 0; font-family:'Courier New',monospace; font-size:12px;
             font-weight:700; text-transform:uppercase; letter-spacing:0.1em;
             padding:3px 6px; border-radius:0; white-space:nowrap;
-            text-align:center; margin:0 8px; box-sizing:border-box;
+            text-align:center; margin:0; box-sizing:border-box;
             background:transparent;
         }
         .fh-ab-badge-qt { color:#44ff88; border:1px solid rgba(68,255,136,0.3); }
@@ -562,7 +562,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 0 #0a0806, 0 1px 4px rgba(0,0,0,0.9);
             display:flex; align-items:center; justify-content:center;
             font-family:'Courier New',monospace; font-weight:700;
-            font-size:17px; color:#cdc2a4; letter-spacing:-0.5px;
+            font-size:20px; color:#cdc2a4; letter-spacing:-0.5px;
             text-transform:uppercase; position:relative; flex-shrink:0;
         }
         .fh-ab-flap:nth-child(odd) { background:#0b0f14; }
@@ -660,7 +660,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             <div class="fh-ab-header">
                 <div class="fh-ab-hl">
                     <span style="opacity:0.7;font-size:16px;">&#x2708;</span>
-                    FISHOTEL INTL &middot; ARRIVALS
+                    MSP INTL &middot; ARRIVALS
                 </div>
                 <div class="fh-ab-hr"><?php echo esc_html( $stage_label ); ?></div>
             </div>
@@ -668,7 +668,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             <!-- Column headers -->
             <div class="fh-ab-cols" id="fh-ab-cols">
                 <div class="fh-ab-col-hd fh-ab-col-species">SPECIES</div>
-                <div class="fh-ab-col-hd" style="flex:0 0 100px; text-align:center; margin:0 8px;">STATUS</div>
+                <div class="fh-ab-col-hd" style="flex:1 1 0; text-align:center;">STATUS</div>
                 <div class="fh-ab-col-hd fh-ab-col-arrived" style="margin-left:auto; text-align:center;">ARRIVED</div>
             </div>
 
@@ -768,11 +768,11 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 if (!board) return;
                 var style = getComputedStyle(board);
                 var boardW = board.clientWidth - parseFloat(style.paddingLeft || 0) - parseFloat(style.paddingRight || 0);
-                // Subtract row padding (4px each side), badge (100px + 8px margins each side), slash (14px + 8px padding)
+                // Subtract row padding (4px each side), min badge space, slash (14px + 8px padding)
                 var rowPad = 8; // 4px * 2
-                var badgeW = 116; // 100px + 8px margin each side
+                var badgeMin = 90; // minimum space for the flex badge
                 var slashW = 22; // 14px + 4px padding each side
-                var available = boardW - rowPad - badgeW - slashW;
+                var available = boardW - rowPad - badgeMin - slashW;
                 var tileW = Math.floor(available / TOTAL_TILES);
                 board.style.setProperty('--fh-tile-w', tileW + 'px');
                 // Align column headers: species flush-left, arrived right-aligned
