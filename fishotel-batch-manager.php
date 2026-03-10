@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.10 - Bigger brighter tile text, slash board divider, chunk-flip long names.
- * Version:           4.10
+ * Description:       v4.11 - Tight tiles, no dead space, dimmed backlit text, slash padding.
+ * Version:           4.11
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.10' );
+define( 'FISHOTEL_VERSION', '4.11' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -515,7 +515,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
 
         /* Column headers row */
         .fh-ab-cols {
-            display:flex; align-items:center; padding:6px 12px; background:#111;
+            display:flex; align-items:center; padding:6px 4px; background:#111;
             border-bottom:1px solid #1a1a10; position:relative; z-index:2;
         }
         .fh-ab-col-hd {
@@ -526,7 +526,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
         /* Data rows */
         .fh-ab-row {
             display:flex; align-items:center; width:100%;
-            padding:4px 12px; border-bottom:1px solid #0d0d0d;
+            padding:4px 4px; border-bottom:1px solid #0d0d0d;
             box-shadow:inset 0 1px 0 #252520;
             position:relative; z-index:2;
             transition:background 0.3s; box-sizing:border-box;
@@ -554,7 +554,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
 
         /* Flap tile groups */
         .fh-ab-tiles {
-            display:flex; flex-wrap:nowrap; gap:1px; overflow:hidden; flex-shrink:0;
+            display:flex; flex-wrap:nowrap; gap:0; overflow:hidden; flex-shrink:0;
         }
         .fh-ab-flap {
             width:var(--fh-tile-w, 18px); height:30px;
@@ -562,17 +562,24 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 0 #0a0806, 0 1px 4px rgba(0,0,0,0.9);
             display:flex; align-items:center; justify-content:center;
             font-family:'Courier New',monospace; font-weight:700;
-            font-size:17px; color:#e8dcc0; letter-spacing:-0.5px;
+            font-size:17px; color:#cdc2a4; letter-spacing:-0.5px;
             text-transform:uppercase; position:relative; flex-shrink:0;
         }
         .fh-ab-flap:nth-child(odd) { background:#0b0f14; }
+        /* Hide empty trailing filler tiles in species column */
+        .fh-ab-flap[data-char=" "] {
+            background:transparent; box-shadow:none;
+        }
+        .fh-ab-flap[data-char=" "]::after { display:none; }
 
         /* Arrived column: two tile groups with a board-painted slash divider */
         .fh-ab-arrived {
             display:flex; align-items:center; flex-shrink:0;
+            margin-left:auto;
         }
         .fh-ab-slash {
             width:14px; height:30px; display:flex; align-items:center; justify-content:center;
+            padding:0 4px;
             font-family:'Courier New',monospace; font-weight:700; font-size:14px;
             color:#5a5030; text-shadow:0 0 2px rgba(90,80,48,0.4);
             flex-shrink:0; user-select:none;
@@ -663,11 +670,11 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 <div class="fh-ab-hr"><?php echo esc_html( $stage_label ); ?></div>
             </div>
 
-            <!-- Column headers: SPECIES (20 tiles) + STATUS badge (100px) + ARRIVED (2+slash+2 tiles) -->
+            <!-- Column headers -->
             <div class="fh-ab-cols" id="fh-ab-cols">
                 <div class="fh-ab-col-hd fh-ab-col-species">SPECIES</div>
                 <div class="fh-ab-col-hd" style="flex:0 0 100px; text-align:center; margin:0 8px;">STATUS</div>
-                <div class="fh-ab-col-hd fh-ab-col-arrived">ARRIVED</div>
+                <div class="fh-ab-col-hd fh-ab-col-arrived" style="margin-left:auto; text-align:center;">ARRIVED</div>
             </div>
 
             <!-- Data rows: species tiles + badge + arrived tiles -->
@@ -742,7 +749,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
 
         <script>
         (function(){
-            var AMBER_SHADES = ['#e8dcc0','#f0e6d0','#ddd0b0','#e4d8bc','#dfd2b4','#f2ead8','#e0d4b8','#eae0c8'];
+            var AMBER_SHADES = ['#cdc2a4','#d6ccb2','#c2b89a','#c9c0a5','#c5bb9c','#d8d0ba','#c3b99e','#cfc7ac'];
             var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/# ';
             var rowCounter = 0;
             var COL_LENS = [20, 2, 2]; // species, arrived-left, arrived-right
@@ -766,19 +773,18 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 if (!board) return;
                 var style = getComputedStyle(board);
                 var boardW = board.clientWidth - parseFloat(style.paddingLeft || 0) - parseFloat(style.paddingRight || 0);
-                // Subtract row padding (12px each side), badge (100px + 8px margins each side), slash divider (~14px), tile gaps
-                var rowPad = 24; // 12px * 2
+                // Subtract row padding (4px each side), badge (100px + 8px margins each side), slash (14px + 8px padding)
+                var rowPad = 8; // 4px * 2
                 var badgeW = 116; // 100px + 8px margin each side
-                var slashW = 14; // slash divider width
-                var gapW = (COL_LENS[0] - 1) + (COL_LENS[1] - 1) + (COL_LENS[2] - 1); // 1px gaps within each tile group
-                var available = boardW - rowPad - badgeW - slashW - gapW;
+                var slashW = 22; // 14px + 4px padding each side
+                var available = boardW - rowPad - badgeW - slashW;
                 var tileW = Math.floor(available / TOTAL_TILES);
                 board.style.setProperty('--fh-tile-w', tileW + 'px');
-                // Align column headers
+                // Align column headers: species flush-left, arrived right-aligned
                 var colSpecies = document.querySelector('.fh-ab-col-species');
                 var colArrived = document.querySelector('.fh-ab-col-arrived');
-                if (colSpecies) colSpecies.style.flex = '0 0 ' + (tileW * COL_LENS[0] + COL_LENS[0] - 1) + 'px';
-                if (colArrived) colArrived.style.flex = '0 0 ' + (tileW * (COL_LENS[1] + COL_LENS[2]) + (COL_LENS[1] - 1) + (COL_LENS[2] - 1) + slashW) + 'px';
+                if (colSpecies) colSpecies.style.flex = '1 1 auto';
+                if (colArrived) colArrived.style.flex = '0 0 ' + (tileW * (COL_LENS[1] + COL_LENS[2]) + slashW) + 'px';
             }
 
             function buildTilesAB(container, text, maxLen) {
