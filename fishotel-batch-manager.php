@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.09 - Revert tile spacing/columns, slash as board divider, marquee scroll for long names.
- * Version:           4.09
+ * Description:       v4.10 - Bigger brighter tile text, slash board divider, chunk-flip long names.
+ * Version:           4.10
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.09' );
+define( 'FISHOTEL_VERSION', '4.10' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -562,7 +562,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 0 #0a0806, 0 1px 4px rgba(0,0,0,0.9);
             display:flex; align-items:center; justify-content:center;
             font-family:'Courier New',monospace; font-weight:700;
-            font-size:15px; color:#c8a84b; letter-spacing:-0.5px;
+            font-size:17px; color:#e8dcc0; letter-spacing:-0.5px;
             text-transform:uppercase; position:relative; flex-shrink:0;
         }
         .fh-ab-flap:nth-child(odd) { background:#0b0f14; }
@@ -742,7 +742,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
 
         <script>
         (function(){
-            var AMBER_SHADES = ['#c8a84b','#d4bc7e','#b89640','#c4a055','#c09848','#d8c080','#bfa24a','#cbb060'];
+            var AMBER_SHADES = ['#e8dcc0','#f0e6d0','#ddd0b0','#e4d8bc','#dfd2b4','#f2ead8','#e0d4b8','#eae0c8'];
             var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/# ';
             var rowCounter = 0;
             var COL_LENS = [20, 2, 2]; // species, arrived-left, arrived-right
