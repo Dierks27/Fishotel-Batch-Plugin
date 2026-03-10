@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.08 - Fix colon truncation, tight tile spacing, 60/20/20 columns, pending status, no-space arrived count, species dedup.
- * Version:           4.08
+ * Description:       v4.09 - Revert tile spacing/columns, slash as board divider, marquee scroll for long names.
+ * Version:           4.09
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.08' );
+define( 'FISHOTEL_VERSION', '4.09' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -538,10 +538,10 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
 
         /* Status indicator — mechanical readout style */
         .fh-ab-badge {
-            flex:0 0 20%; font-family:'Courier New',monospace; font-size:12px;
+            flex:0 0 100px; font-family:'Courier New',monospace; font-size:12px;
             font-weight:700; text-transform:uppercase; letter-spacing:0.1em;
             padding:3px 6px; border-radius:0; white-space:nowrap;
-            text-align:center; box-sizing:border-box;
+            text-align:center; margin:0 8px; box-sizing:border-box;
             background:transparent;
         }
         .fh-ab-badge-qt { color:#44ff88; border:1px solid rgba(68,255,136,0.3); }
@@ -554,22 +554,29 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
 
         /* Flap tile groups */
         .fh-ab-tiles {
-            display:flex; flex-wrap:nowrap; gap:0; overflow:hidden;
+            display:flex; flex-wrap:nowrap; gap:1px; overflow:hidden; flex-shrink:0;
         }
-        .fh-ab-tiles[data-fh-col="0"] { flex:0 0 60%; }
-        .fh-ab-tiles[data-fh-col="1"] { flex:0 0 20%; }
         .fh-ab-flap {
             width:var(--fh-tile-w, 18px); height:30px;
-            background:#0d1117; border-radius:1px;
-            border-right:1px solid #080a0e;
+            background:#0d1117; border-radius:2px;
             box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 0 #0a0806, 0 1px 4px rgba(0,0,0,0.9);
             display:flex; align-items:center; justify-content:center;
             font-family:'Courier New',monospace; font-weight:700;
             font-size:15px; color:#c8a84b; letter-spacing:-0.5px;
             text-transform:uppercase; position:relative; flex-shrink:0;
         }
-        .fh-ab-flap:last-child { border-right:none; }
         .fh-ab-flap:nth-child(odd) { background:#0b0f14; }
+
+        /* Arrived column: two tile groups with a board-painted slash divider */
+        .fh-ab-arrived {
+            display:flex; align-items:center; flex-shrink:0;
+        }
+        .fh-ab-slash {
+            width:14px; height:30px; display:flex; align-items:center; justify-content:center;
+            font-family:'Courier New',monospace; font-weight:700; font-size:14px;
+            color:#5a5030; text-shadow:0 0 2px rgba(90,80,48,0.4);
+            flex-shrink:0; user-select:none;
+        }
         .fh-ab-flap::after {
             content:''; position:absolute; left:0; top:50%;
             width:100%; height:1px; background:#000;
@@ -643,7 +650,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
         ];
         $origin = strtoupper( preg_split( '/[\s\-]/', $batch_name )[0] ?? $batch_name );
         $col_limit = 20; // species tile count
-        $total_tiles = 25; // 20 species + 5 arrived
+        $total_tiles = 24; // 20 species + 2 arrived-left + 2 arrived-right
         ?>
         <div class="fh-ab-wrap" id="fh-arrival-board" data-batch-slug="<?php echo esc_attr( $batch_slug ); ?>" data-total-tiles="<?php echo $total_tiles; ?>">
         <div class="fh-ab">
@@ -656,11 +663,11 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 <div class="fh-ab-hr"><?php echo esc_html( $stage_label ); ?></div>
             </div>
 
-            <!-- Column headers: SPECIES 60% + STATUS 20% + ARRIVED 20% -->
+            <!-- Column headers: SPECIES (20 tiles) + STATUS badge (100px) + ARRIVED (2+slash+2 tiles) -->
             <div class="fh-ab-cols" id="fh-ab-cols">
-                <div class="fh-ab-col-hd" style="flex:0 0 60%;">SPECIES</div>
-                <div class="fh-ab-col-hd" style="flex:0 0 20%; text-align:center;">STATUS</div>
-                <div class="fh-ab-col-hd" style="flex:0 0 20%;">ARRIVED</div>
+                <div class="fh-ab-col-hd fh-ab-col-species">SPECIES</div>
+                <div class="fh-ab-col-hd" style="flex:0 0 100px; text-align:center; margin:0 8px;">STATUS</div>
+                <div class="fh-ab-col-hd fh-ab-col-arrived">ARRIVED</div>
             </div>
 
             <!-- Data rows: species tiles + badge + arrived tiles -->
@@ -685,12 +692,17 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 }
                 $recv       = intval( $sp['recv'] ?? ( $sp['qty_received'] ?? 0 ) );
                 $ordered    = intval( $sp['ordered'] ?? ( $sp['qty_ordered'] ?? 0 ) );
-                $arrived_display = $recv . '/' . $ordered;
+                $arr_left   = ( $recv < 10 ? ' ' : '' ) . $recv;
+                $arr_right  = ( $ordered < 10 ? ' ' : '' ) . $ordered;
             ?>
-            <div class="fh-ab-row <?php echo esc_attr( $row_class ); ?>" data-fish-id="<?php echo intval( $sp['fish_id'] ?? $idx ); ?>" data-updated="<?php echo intval( $sp['updated_at'] ?? 0 ); ?>" data-status="<?php echo esc_attr( $st ); ?>">
-                <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $name ); ?>" data-fh-col="0"></div>
+            <div class="fh-ab-row <?php echo esc_attr( $row_class ); ?>" data-fish-id="<?php echo intval( $sp['fish_id'] ?? $idx ); ?>" data-updated="<?php echo intval( $sp['updated_at'] ?? 0 ); ?>" data-status="<?php echo esc_attr( $st ); ?>" data-recv="<?php echo $recv; ?>" data-ordered="<?php echo $ordered; ?>">
+                <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $name ); ?>" data-fh-full="<?php echo esc_attr( $raw_name ); ?>" data-fh-col="0"></div>
                 <span class="fh-ab-badge <?php echo esc_attr( $badge_cls ); ?>" data-fh-status="<?php echo esc_attr( $st ); ?>"><?php echo esc_html( $st_label ); ?></span>
-                <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $arrived_display ); ?>" data-fh-col="1"></div>
+                <div class="fh-ab-arrived">
+                    <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $arr_left ); ?>" data-fh-col="1"></div>
+                    <span class="fh-ab-slash">/</span>
+                    <div class="fh-ab-tiles" data-fh-ab="<?php echo esc_attr( $arr_right ); ?>" data-fh-col="2"></div>
+                </div>
             </div>
             <?php endforeach; ?>
             </div>
@@ -733,8 +745,8 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             var AMBER_SHADES = ['#c8a84b','#d4bc7e','#b89640','#c4a055','#c09848','#d8c080','#bfa24a','#cbb060'];
             var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/# ';
             var rowCounter = 0;
-            var COL_LENS = [20, 5]; // species, arrived
-            var TOTAL_TILES = 25;
+            var COL_LENS = [20, 2, 2]; // species, arrived-left, arrived-right
+            var TOTAL_TILES = 24;
 
             function tileHash(row, col) {
                 return ((row * 7 + col * 13 + row * col * 3 + 37) * 2654435761) >>> 0;
@@ -748,16 +760,25 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 return ls > 0 ? sub.substring(0, ls) : sub;
             }
 
-            // Calculate tile width from container columns
+            // Calculate tile width from container and set CSS variable
             function calcTileWidth() {
                 var board = document.querySelector('.fh-ab');
                 if (!board) return;
-                // Use first species tile container to derive tile width
-                var specTiles = board.querySelector('.fh-ab-tiles[data-fh-col="0"]');
-                if (!specTiles) return;
-                var specW = specTiles.getBoundingClientRect().width;
-                var tileW = Math.floor(specW / COL_LENS[0]);
+                var style = getComputedStyle(board);
+                var boardW = board.clientWidth - parseFloat(style.paddingLeft || 0) - parseFloat(style.paddingRight || 0);
+                // Subtract row padding (12px each side), badge (100px + 8px margins each side), slash divider (~14px), tile gaps
+                var rowPad = 24; // 12px * 2
+                var badgeW = 116; // 100px + 8px margin each side
+                var slashW = 14; // slash divider width
+                var gapW = (COL_LENS[0] - 1) + (COL_LENS[1] - 1) + (COL_LENS[2] - 1); // 1px gaps within each tile group
+                var available = boardW - rowPad - badgeW - slashW - gapW;
+                var tileW = Math.floor(available / TOTAL_TILES);
                 board.style.setProperty('--fh-tile-w', tileW + 'px');
+                // Align column headers
+                var colSpecies = document.querySelector('.fh-ab-col-species');
+                var colArrived = document.querySelector('.fh-ab-col-arrived');
+                if (colSpecies) colSpecies.style.flex = '0 0 ' + (tileW * COL_LENS[0] + COL_LENS[0] - 1) + 'px';
+                if (colArrived) colArrived.style.flex = '0 0 ' + (tileW * (COL_LENS[1] + COL_LENS[2]) + (COL_LENS[1] - 1) + (COL_LENS[2] - 1) + slashW) + 'px';
             }
 
             function buildTilesAB(container, text, maxLen) {
@@ -801,8 +822,11 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 });
             }
 
-            function fmtArrived(r, o) {
-                return r + '/' + o;
+            function fmtArrivedLeft(r) {
+                return (r < 10 ? ' ' + r : '' + r);
+            }
+            function fmtArrivedRight(o) {
+                return (o < 10 ? ' ' + o : '' + o);
             }
 
             // Calculate tile width, then build + animate
@@ -825,6 +849,53 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             });
             // Recalculate on resize
             window.addEventListener('resize', calcTileWidth);
+
+            // Marquee rotation for long species names — starts after initial build completes
+            setTimeout(function() {
+                var specLen = COL_LENS[0]; // 20 tiles
+                var rows = document.querySelectorAll('.fh-ab-row');
+                rows.forEach(function(row, rIdx) {
+                    var specTiles = row.querySelector('.fh-ab-tiles[data-fh-col="0"]');
+                    if (!specTiles) return;
+                    var fullName = (specTiles.getAttribute('data-fh-full') || '').toUpperCase();
+                    if (fullName.length <= specLen) return; // no rotation needed
+                    // Build looping string: name + gap + name (so it scrolls seamlessly)
+                    var padded = fullName + '     ' + fullName;
+                    var offset = 0;
+                    // Stagger start per row so they don't all shift at once
+                    setTimeout(function() {
+                        // Hold initial view for 4s, then start scrolling
+                        setTimeout(function() {
+                            setInterval(function() {
+                                offset++;
+                                if (offset > fullName.length + 4) offset = 0;
+                                var chunk = padded.substring(offset, offset + specLen);
+                                specTiles.setAttribute('data-fh-ab', chunk);
+                                // Only flip the tiles that actually changed
+                                var flaps = specTiles.querySelectorAll('.fh-ab-flap');
+                                flaps.forEach(function(flap, fi) {
+                                    var newChar = chunk[fi] || ' ';
+                                    var oldChar = flap.getAttribute('data-char') || ' ';
+                                    if (newChar !== oldChar) {
+                                        flap.setAttribute('data-char', newChar);
+                                        // Quick 3-flip animation for changed tiles only
+                                        var step = 0;
+                                        var iv = setInterval(function() {
+                                            step++;
+                                            if (step >= 3) {
+                                                clearInterval(iv);
+                                                flap.textContent = newChar === ' ' ? '' : newChar;
+                                                return;
+                                            }
+                                            flap.textContent = CHARS[Math.floor(Math.random() * CHARS.length)];
+                                        }, 50);
+                                    }
+                                });
+                            }, 400); // scroll one char every 400ms
+                        }, 4000);
+                    }, rIdx * 200);
+                });
+            }, 3000); // wait for initial build+animate to finish
 
             // Polling maps
             var STATUS_LABELS = {
@@ -871,9 +942,8 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                                     badge.setAttribute('data-fh-status', sp.status);
                                 }
 
-                                // Re-animate changed tile columns (0=species, 1=arrived)
-                                var newArrived = fmtArrived(sp.qty_received, sp.qty_ordered);
-                                var newValues = [cn, newArrived];
+                                // Re-animate changed tile columns (0=species, 1=arrived-left, 2=arrived-right)
+                                var newValues = [cn, fmtArrivedLeft(sp.qty_received), fmtArrivedRight(sp.qty_ordered)];
                                 row.querySelectorAll('.fh-ab-tiles[data-fh-col]').forEach(function(t) {
                                     var col = parseInt(t.getAttribute('data-fh-col'));
                                     var oldText = t.getAttribute('data-fh-ab');
