@@ -293,6 +293,19 @@ trait FisHotel_WooCommerce {
     }
 
     public function add_wallet_menu_item( $items ) { $items['wallet'] = 'My Wallet'; return $items; }
+
+    public function wallet_endpoint_content() {
+        $user_id = get_current_user_id();
+        $balance = floatval( get_user_meta( $user_id, '_fishotel_deposit_balance', true ) );
+
+        echo '<h2 style="font-family:Teko,sans-serif;text-transform:uppercase;letter-spacing:1px;color:#96885f;font-size:28px;font-weight:500;">My Wallet</h2>';
+        echo '<div style="background:transparent;padding:20px 0;border:none;border-left:4px solid #96885f;padding-left:20px;margin-bottom:25px;box-shadow:none;border-radius:0;">';
+        echo '<h3 style="margin:0 0 8px 0;color:#96885f;font-family:Teko,sans-serif;font-size:20px;text-transform:uppercase;letter-spacing:1px;font-weight:500;">Current Balance</h3>';
+        echo '<p style="font-size:32px;font-weight:700;color:#fff;margin:0 0 16px 0;font-family:Montserrat,sans-serif;">$' . number_format( $balance, 2 ) . '</p>';
+        echo '<p style="color:#999;font-size:14px;margin:0;font-family:Montserrat,sans-serif;">Your wallet balance is applied automatically toward batch deposits and final invoices.</p>';
+        echo '</div>';
+    }
+
     public function add_custom_orders_menu_item( $items ) { $items['my-requests'] = 'Custom Orders'; return $items; }
 
     public function custom_orders_endpoint_content() {
@@ -301,11 +314,11 @@ trait FisHotel_WooCommerce {
 
         echo '<h2>Custom Orders</h2>';
 
-        echo '<div style="background:#2a2a2a;padding:25px;border:1px solid #444;border-radius:12px;margin-bottom:30px;box-shadow:0 4px 15px rgba(0,0,0,0.5);">';
-        echo '<h3 style="margin:0 0 15px 0;color:#e67e22;">Humble.Fish Username</h3>';
-        echo '<form id="hf-username-form-inline" style="display:flex;gap:15px;align-items:center;">';
-        echo '<input type="text" id="hf-username-input" value="' . esc_attr( $hf_username ) . '" placeholder="Humble.Fish Username" style="flex:1;padding:14px;background:#1e1e1e;border:2px solid #555;color:#fff;border-radius:8px;font-size:16px;">';
-        echo '<button type="submit" class="button button-primary" style="padding:14px 30px;background:#e67e22;color:#000;font-weight:700;border:none;border-radius:8px;">Save Username</button>';
+        echo '<div style="background:transparent;padding:20px 0;border:none;border-left:4px solid #96885f;padding-left:20px;margin-bottom:25px;box-shadow:none;border-radius:0;">';
+        echo '<h3 style="margin:0 0 12px 0;color:#96885f;font-family:Teko,sans-serif;font-size:22px;text-transform:uppercase;letter-spacing:1px;font-weight:500;">Humble.Fish Username</h3>';
+        echo '<form id="hf-username-form-inline" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">';
+        echo '<input type="text" id="hf-username-input" value="' . esc_attr( $hf_username ) . '" placeholder="Humble.Fish Username" style="flex:1 1 200px;padding:10px 14px;background:#1a1a1a;border:2px solid #96885f;color:#fff;border-radius:4px;font-size:15px;font-family:Montserrat,sans-serif;">';
+        echo '<button type="submit" class="button button-primary" style="padding:10px 24px;background:#96885f;color:#1a1a1a;font-weight:700;border:none;border-radius:4px;font-family:Montserrat,sans-serif;text-transform:uppercase;font-size:13px;letter-spacing:1px;cursor:pointer;">Save Username</button>';
         echo '<span id="hf-save-msg" style="margin-left:10px;color:#27ae60;font-weight:700;"></span>';
         echo '</form></div>';
 

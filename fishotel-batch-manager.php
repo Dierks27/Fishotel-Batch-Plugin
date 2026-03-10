@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.13 - Bigger tile text, centered status badge, MSP INTL header.
- * Version:           4.13
+ * Description:       v4.14 - Username card restyle, wallet endpoint fix.
+ * Version:           4.14
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
