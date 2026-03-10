@@ -850,52 +850,39 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             // Recalculate on resize
             window.addEventListener('resize', calcTileWidth);
 
-            // Marquee rotation for long species names — starts after initial build completes
+            // Flip-cycle for long species names: break into readable word-boundary chunks,
+            // pause on each chunk, then flip to the next like a real Solari board
             setTimeout(function() {
-                var specLen = COL_LENS[0]; // 20 tiles
-                var rows = document.querySelectorAll('.fh-ab-row');
-                rows.forEach(function(row, rIdx) {
+                var specLen = COL_LENS[0];
+                document.querySelectorAll('.fh-ab-row').forEach(function(row) {
                     var specTiles = row.querySelector('.fh-ab-tiles[data-fh-col="0"]');
                     if (!specTiles) return;
                     var fullName = (specTiles.getAttribute('data-fh-full') || '').toUpperCase();
-                    if (fullName.length <= specLen) return; // no rotation needed
-                    // Build looping string: name + gap + name (so it scrolls seamlessly)
-                    var padded = fullName + '     ' + fullName;
-                    var offset = 0;
-                    // Stagger start per row so they don't all shift at once
-                    setTimeout(function() {
-                        // Hold initial view for 4s, then start scrolling
-                        setTimeout(function() {
-                            setInterval(function() {
-                                offset++;
-                                if (offset > fullName.length + 4) offset = 0;
-                                var chunk = padded.substring(offset, offset + specLen);
-                                specTiles.setAttribute('data-fh-ab', chunk);
-                                // Only flip the tiles that actually changed
-                                var flaps = specTiles.querySelectorAll('.fh-ab-flap');
-                                flaps.forEach(function(flap, fi) {
-                                    var newChar = chunk[fi] || ' ';
-                                    var oldChar = flap.getAttribute('data-char') || ' ';
-                                    if (newChar !== oldChar) {
-                                        flap.setAttribute('data-char', newChar);
-                                        // Quick 3-flip animation for changed tiles only
-                                        var step = 0;
-                                        var iv = setInterval(function() {
-                                            step++;
-                                            if (step >= 3) {
-                                                clearInterval(iv);
-                                                flap.textContent = newChar === ' ' ? '' : newChar;
-                                                return;
-                                            }
-                                            flap.textContent = CHARS[Math.floor(Math.random() * CHARS.length)];
-                                        }, 50);
-                                    }
-                                });
-                            }, 400); // scroll one char every 400ms
-                        }, 4000);
-                    }, rIdx * 200);
+                    if (fullName.length <= specLen) return;
+                    // Build word-boundary chunks that fit the tile width
+                    var chunks = [];
+                    var words = fullName.split(' ');
+                    var line = '';
+                    for (var w = 0; w < words.length; w++) {
+                        var test = line ? line + ' ' + words[w] : words[w];
+                        if (test.length <= specLen) {
+                            line = test;
+                        } else {
+                            if (line) chunks.push(line);
+                            line = words[w].length <= specLen ? words[w] : words[w].substring(0, specLen);
+                        }
+                    }
+                    if (line) chunks.push(line);
+                    if (chunks.length < 2) return; // only one chunk, nothing to cycle
+                    var idx = 0; // chunk 0 is already displayed
+                    setInterval(function() {
+                        idx = (idx + 1) % chunks.length;
+                        var text = chunks[idx];
+                        specTiles.setAttribute('data-fh-ab', text);
+                        animateRowAB(specTiles, text, specLen);
+                    }, 4000);
                 });
-            }, 3000); // wait for initial build+animate to finish
+            }, 4000); // wait for initial build+animate to finish
 
             // Polling maps
             var STATUS_LABELS = {
