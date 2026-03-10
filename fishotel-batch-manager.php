@@ -566,11 +566,6 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             text-transform:uppercase; position:relative; flex-shrink:0;
         }
         .fh-ab-flap:nth-child(odd) { background:#0b0f14; }
-        /* Hide empty trailing filler tiles in species column */
-        .fh-ab-flap[data-char=" "] {
-            background:transparent; box-shadow:none;
-        }
-        .fh-ab-flap[data-char=" "]::after { display:none; }
 
         /* Arrived column: two tile groups with a board-painted slash divider */
         .fh-ab-arrived {
