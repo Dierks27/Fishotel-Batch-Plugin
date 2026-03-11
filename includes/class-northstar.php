@@ -341,6 +341,23 @@ trait FisHotel_NorthStar {
                 continue;
             }
 
+            // Find or create a fish_master for this common name
+            $master = get_posts( [
+                'post_type'   => 'fish_master',
+                'title'       => $name,
+                'numberposts' => 1,
+                'post_status' => 'publish',
+            ] );
+            if ( $master ) {
+                $master_id = $master[0]->ID;
+            } else {
+                $master_id = wp_insert_post( [
+                    'post_type'   => 'fish_master',
+                    'post_title'  => $name,
+                    'post_status' => 'publish',
+                ] );
+            }
+
             $post_id = wp_insert_post( [
                 'post_type'   => 'fish_batch',
                 'post_title'  => $name . ' - ' . $batch_name,
@@ -348,6 +365,9 @@ trait FisHotel_NorthStar {
             ] );
 
             if ( $post_id && ! is_wp_error( $post_id ) ) {
+                if ( $master_id && ! is_wp_error( $master_id ) ) {
+                    update_post_meta( $post_id, '_master_id', $master_id );
+                }
                 update_post_meta( $post_id, '_batch_name', $batch_name );
                 update_post_meta( $post_id, '_northstar_price', $price );
                 update_post_meta( $post_id, '_stock', 0 );
@@ -370,20 +390,16 @@ trait FisHotel_NorthStar {
     public function northstar_stock_html() {
         if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
 
-        // Auto-fix orphaned fish_batch posts missing _batch_name meta
-        $orphans = get_posts( [
+        // Auto-fix orphaned fish_batch posts missing _batch_name or _master_id meta
+        $orphan_count = 0;
+
+        // Fix missing _batch_name
+        $no_batch = get_posts( [
             'post_type'   => 'fish_batch',
             'numberposts' => -1,
-            'meta_query'  => [
-                [
-                    'key'     => '_batch_name',
-                    'compare' => 'NOT EXISTS',
-                ],
-            ],
+            'meta_query'  => [ [ 'key' => '_batch_name', 'compare' => 'NOT EXISTS' ] ],
         ] );
-        $orphan_count = 0;
-        foreach ( $orphans as $op ) {
-            // Parse batch name from title: everything after the last " - "
+        foreach ( $no_batch as $op ) {
             $last_sep = strrpos( $op->post_title, ' - ' );
             if ( $last_sep !== false ) {
                 $batch = trim( substr( $op->post_title, $last_sep + 3 ) );
@@ -394,6 +410,38 @@ trait FisHotel_NorthStar {
                     }
                     $orphan_count++;
                 }
+            }
+        }
+
+        // Fix missing _master_id — find or create fish_master by common name
+        $no_master = get_posts( [
+            'post_type'   => 'fish_batch',
+            'numberposts' => -1,
+            'meta_query'  => [ [ 'key' => '_master_id', 'compare' => 'NOT EXISTS' ] ],
+        ] );
+        foreach ( $no_master as $op ) {
+            $common = preg_replace( "/\s+[\x{2013}\x{2014}-]\s+.+$/u", '', $op->post_title );
+            $common = trim( $common );
+            if ( empty( $common ) ) continue;
+
+            $master = get_posts( [
+                'post_type'   => 'fish_master',
+                'title'       => $common,
+                'numberposts' => 1,
+                'post_status' => 'publish',
+            ] );
+            if ( $master ) {
+                $mid = $master[0]->ID;
+            } else {
+                $mid = wp_insert_post( [
+                    'post_type'   => 'fish_master',
+                    'post_title'  => $common,
+                    'post_status' => 'publish',
+                ] );
+            }
+            if ( $mid && ! is_wp_error( $mid ) ) {
+                update_post_meta( $op->ID, '_master_id', $mid );
+                $orphan_count++;
             }
         }
 

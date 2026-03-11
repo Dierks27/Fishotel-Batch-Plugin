@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.27 - Batch Fish menu item, auto-fix orphaned posts on page load.
- * Version:           4.27
+ * Description:       v4.28 - Link North Star imports to fish_master, retroactive master fix.
+ * Version:           4.28
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.27' );
+define( 'FISHOTEL_VERSION', '4.28' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
