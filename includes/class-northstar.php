@@ -51,7 +51,14 @@ trait FisHotel_NorthStar {
                 $url = add_query_arg( 'page_number', $page, $url );
             }
 
-            $response = wp_remote_get( $url, [ 'timeout' => 30 ] );
+            $response = wp_remote_get( $url, [
+                'timeout' => 30,
+                'headers' => [
+                    'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                    'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language' => 'en-US,en;q=0.9',
+                ],
+            ] );
 
             if ( is_wp_error( $response ) ) break;
 
@@ -164,7 +171,14 @@ trait FisHotel_NorthStar {
             $href = $products[ $i ]['href'];
             $url  = 'https://www.northstaraquatics.com' . $href;
 
-            $response = wp_remote_get( $url, [ 'timeout' => 15 ] );
+            $response = wp_remote_get( $url, [
+                'timeout' => 15,
+                'headers' => [
+                    'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                    'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language' => 'en-US,en;q=0.9',
+                ],
+            ] );
             $done++;
 
             if ( is_wp_error( $response ) ) {
