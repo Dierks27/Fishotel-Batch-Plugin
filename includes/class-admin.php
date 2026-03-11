@@ -28,6 +28,7 @@ trait FisHotel_Admin {
         add_submenu_page( 'fishotel-batch-hq', 'Batch HQ', 'Batch HQ', 'manage_options', 'fishotel-batch-hq' );
         add_submenu_page( 'fishotel-batch-hq', 'Arrival Entry', 'Arrival Entry', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Sourcing', 'Sourcing', 'manage_options', 'fishotel-sourcing', [$this, 'sourcing_html'] );
+        add_submenu_page( 'fishotel-batch-hq', 'Batch Fish', 'Batch Fish', 'manage_options', 'edit.php?post_type=fish_batch' );
 
         // Hidden backward-compat pages (old slugs still work via direct URL)
         add_submenu_page( null, 'FisHotel Settings', '', 'manage_options', 'fishotel-batch-settings', [$this, 'batch_settings_html'] );
@@ -37,15 +38,16 @@ trait FisHotel_Admin {
         add_submenu_page( null, 'Sync Quarantined Fish', '', 'manage_options', 'fishotel-sync', [$this, 'sync_page_html'] );
         add_submenu_page( null, 'North Star Stock', '', 'manage_options', 'fishotel-northstar', [$this, 'northstar_stock_html'] );
 
-        // fish_master CPT menu highlighting
+        // CPT menu highlighting
         add_filter( 'parent_file', function( $parent_file ) {
             global $typenow;
-            if ( $typenow === 'fish_master' ) return 'fishotel-batch-hq';
+            if ( $typenow === 'fish_master' || $typenow === 'fish_batch' ) return 'fishotel-batch-hq';
             return $parent_file;
         } );
         add_filter( 'submenu_file', function( $submenu_file ) {
             global $typenow;
             if ( $typenow === 'fish_master' ) return 'fishotel-sourcing';
+            if ( $typenow === 'fish_batch' ) return 'edit.php?post_type=fish_batch';
             return $submenu_file;
         } );
     }

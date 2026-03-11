@@ -370,6 +370,33 @@ trait FisHotel_NorthStar {
     public function northstar_stock_html() {
         if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
 
+        // Auto-fix orphaned fish_batch posts missing _batch_name meta
+        $orphans = get_posts( [
+            'post_type'   => 'fish_batch',
+            'numberposts' => -1,
+            'meta_query'  => [
+                [
+                    'key'     => '_batch_name',
+                    'compare' => 'NOT EXISTS',
+                ],
+            ],
+        ] );
+        $orphan_count = 0;
+        foreach ( $orphans as $op ) {
+            // Parse batch name from title: everything after the last " - "
+            $last_sep = strrpos( $op->post_title, ' - ' );
+            if ( $last_sep !== false ) {
+                $batch = trim( substr( $op->post_title, $last_sep + 3 ) );
+                if ( ! empty( $batch ) ) {
+                    update_post_meta( $op->ID, '_batch_name', $batch );
+                    if ( ! metadata_exists( 'post', $op->ID, '_stock' ) ) {
+                        update_post_meta( $op->ID, '_stock', 0 );
+                    }
+                    $orphan_count++;
+                }
+            }
+        }
+
         $categories = $this->get_northstar_categories();
         $cache = get_transient( 'fishotel_northstar_cache' );
         $cached_products = $cache ? $cache['products'] : [];
@@ -382,6 +409,11 @@ trait FisHotel_NorthStar {
         ?>
         <div class="wrap fishotel-admin">
         <h1 style="color:#b5a165;font-size:26px;font-weight:700;margin-bottom:20px;">North Star Stock</h1>
+        <?php if ( $orphan_count > 0 ) : ?>
+        <div style="background:#2a2a2a;border:1px solid #27ae60;border-radius:6px;padding:12px 18px;margin-bottom:16px;color:#27ae60;font-size:14px;">
+            Auto-fixed <?php echo $orphan_count; ?> batch fish post<?php echo $orphan_count > 1 ? 's' : ''; ?> with missing batch name meta.
+        </div>
+        <?php endif; ?>
 
         <!-- Category Selector -->
         <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;margin-bottom:20px;">
