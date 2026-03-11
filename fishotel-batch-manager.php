@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.35 - Include size suffix in boarding pass data-fish-name attribute.
- * Version:           4.35
+ * Description:       v4.36 - Compound size suffix stripping (Juv S, Adult ML, Wild M, IO XS, etc).
+ * Version:           4.36
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.35' );
+define( 'FISHOTEL_VERSION', '4.36' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

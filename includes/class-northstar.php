@@ -215,7 +215,18 @@ trait FisHotel_NorthStar {
         if ( $master ) return $master[0]->ID;
 
         // 2. Strip size suffixes and try again
-        $size_pattern = '/\s+(?:IO\s+\w+|Wild\s+\w+|Juv\s*\w*|Adult\s*\w*|Male\s*\w*|Female\s*\w*|XXL|XL|XS|SM|ML|Pair|Trio|S|M|L)$/i';
+        $size_pattern = '/\s+(?:'
+            . 'Half\s+Black\s+(?:XXL|XL|XS|SM|ML|S|M|L)|'  // Half Black M, etc.
+            . 'Juv\s+(?:XXL|XL|XS|SM|ML|S|M|L)|'           // Juv S, Juv ML, etc.
+            . 'Adult\s+(?:XXL|XL|XS|SM|ML|S|M|L)|'          // Adult S, Adult ML, etc.
+            . 'Male\s+(?:XXL|XL|XS|SM|ML|S|M|L)|'           // Male M, Male S, etc.
+            . 'Female\s+(?:XXL|XL|XS|SM|ML|S|M|L)|'         // Female M, Female ML, etc.
+            . 'Wild\s+(?:XXL|XL|XS|SM|ML|S|M|L)|'           // Wild M, Wild S, etc.
+            . 'IO\s+(?:XXL|XL|XS|SM|ML|S|M|L)|'             // IO M, IO XS, etc.
+            . 'Juv|Adult|Male|Female|Wild|'                  // Standalone modifiers
+            . 'Pair|Trio|'                                   // Group indicators
+            . 'XXL|XL|XS|SM|ML|S|M|L'                       // Single sizes (shortest last)
+            . ')$/i';
         $stripped = preg_replace( $size_pattern, '', $name );
         $stripped = trim( $stripped );
 

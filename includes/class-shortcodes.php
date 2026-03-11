@@ -1045,7 +1045,7 @@ trait FisHotel_Shortcodes {
                                     $mname = $master->post_title;
                                     if ( stripos( $batch_common, $mname ) === 0 && strlen( $batch_common ) > strlen( $mname ) ) {
                                         $sfx = trim( substr( $batch_common, strlen( $mname ) ) );
-                                        if ( preg_match( '/^(XXL|XL|XS|SM|ML|S|M|L|Juv|Adult|Male|Female|Pair|Trio)$/i', $sfx ) ) {
+                                        if ( preg_match( '/^((?:(?:Juv|Adult|Male|Female|Wild|IO|Half\s+Black)\s+)?(?:XXL|XL|XS|SM|ML|S|M|L)|Juv|Adult|Male|Female|Wild|Pair|Trio|XXL|XL|XS|SM|ML|S|M|L)$/i', $sfx ) ) {
                                             $size = strtoupper( $sfx );
                                         }
                                     }
@@ -1109,7 +1109,7 @@ trait FisHotel_Shortcodes {
                                 $mname = $master->post_title;
                                 if ( stripos( $batch_common, $mname ) === 0 && strlen( $batch_common ) > strlen( $mname ) ) {
                                     $sfx = trim( substr( $batch_common, strlen( $mname ) ) );
-                                    if ( preg_match( '/^(XXL|XL|XS|SM|ML|S|M|L|Juv|Adult|Male|Female|Pair|Trio)$/i', $sfx ) ) {
+                                    if ( preg_match( '/^((?:(?:Juv|Adult|Male|Female|Wild|IO|Half\s+Black)\s+)?(?:XXL|XL|XS|SM|ML|S|M|L)|Juv|Adult|Male|Female|Wild|Pair|Trio|XXL|XL|XS|SM|ML|S|M|L)$/i', $sfx ) ) {
                                         $size = strtoupper( $sfx );
                                     }
                                 }
