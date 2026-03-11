@@ -2764,7 +2764,7 @@ trait FisHotel_Shortcodes {
                     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='cn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23cn)' opacity='0.06'/%3E%3C/svg%3E");
                     background-size:200px 200px;
                 }
-                .fh-customs-inner { margin:8px; border:1px solid rgba(100,80,50,0.25); padding:12px 16px; position:relative; }
+                .fh-customs-inner { margin:8px; border:1px solid rgba(100,80,50,0.25); padding:12px 16px; position:relative; background:transparent; }
                 .fh-customs-edge { height:4px; background:repeating-linear-gradient(90deg,#8b0000 0,#8b0000 12px,transparent 12px,transparent 18px); }
                 .fh-customs-topline { display:flex; justify-content:space-between; margin-bottom:2px; font-family:'Courier New',monospace; font-size:10px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.06em; }
                 .fh-customs-title { text-align:center; margin-bottom:4px; }
@@ -2777,13 +2777,15 @@ trait FisHotel_Shortcodes {
                 .fh-customs-field-label { font-family:'Courier New',monospace; font-size:9px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:1px; }
                 .fh-customs-field-val { font-family:'Courier New',monospace; font-size:13px; color:#2e2418; font-weight:700; text-transform:uppercase; border-bottom:1px solid #6b5a3a; padding-bottom:1px; }
                 .fh-customs-section { font-family:'Oswald',sans-serif; font-weight:600; font-size:11px; color:#6b5a3a; letter-spacing:3px; text-transform:uppercase; margin:8px 0 4px 0; }
-                .fh-customs-table { width:100%; border-collapse:collapse; font-family:'Courier New',monospace; font-size:12px; color:#2e2418; }
-                .fh-customs-table th { font-size:9px; color:#8a7a5a; text-transform:uppercase; letter-spacing:2px; text-align:left; padding:3px 6px; border-bottom:2px solid #2e2418; font-weight:400; background:transparent; }
-                .fh-customs-table td { padding:4px 6px; border-bottom:1px dashed #a89878; vertical-align:middle; color:#2e2418; background:transparent; }
+                .fh-customs-table { width:100%; border-collapse:collapse; font-family:'Courier New',monospace; font-size:12px; color:#2e2418; background:transparent !important; }
+                .fh-customs-table thead tr { background:transparent !important; }
+                .fh-customs-table th { font-size:9px; color:#8a7a5a !important; text-transform:uppercase; letter-spacing:2px; text-align:left; padding:3px 6px; border-bottom:2px solid #6b5a3a; font-weight:400; background:transparent !important; }
+                .fh-customs-table td { padding:4px 6px; border-bottom:1px dashed #a89878; vertical-align:middle; color:#2e2418 !important; background:transparent !important; }
                 .fh-customs-table tr:last-child td { border-bottom:none; }
-                .fh-customs-table tbody tr { background:transparent; }
-                .fh-customs-table tbody tr:nth-child(odd) { background:transparent; }
-                .fh-customs-table tbody tr:nth-child(even) { background:transparent; }
+                .fh-customs-table tr { background:transparent !important; }
+                .fh-customs-table tbody tr { background:transparent !important; }
+                .fh-customs-table tbody tr:nth-child(odd) { background:transparent !important; }
+                .fh-customs-table tbody tr:nth-child(even) { background:transparent !important; }
                 .fh-customs-species { font-weight:700; text-transform:uppercase; }
                 .fh-customs-status-qt { color:#1a7a3a; font-weight:700; }
                 .fh-customs-status-pending { color:#b5750e; font-weight:700; }
