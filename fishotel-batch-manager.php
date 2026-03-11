@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.29 - Smart master matching with size-variant stripping, use NS qty as stock.
- * Version:           4.29
+ * Description:       v4.30 - Fix common name display to preserve size variants from batch title.
+ * Version:           4.30
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.29' );
+define( 'FISHOTEL_VERSION', '4.30' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -234,11 +234,19 @@ class FisHotel_Batch_Manager {
 
     /**
      * Resolve the clean common name for a fish_batch post.
-     * Tier 1: fish_master title via _master_id
-     * Tier 2: fish_batch post title (suffix stripped)
+     * Tier 1: fish_batch post title (suffix stripped) — preserves size variants like "Coral Beauty S"
+     * Tier 2: fish_master title via _master_id (fallback if batch title is empty)
      * Tier 3: if title looks like a scientific name, reverse-lookup fish_master by _scientific_name
      */
     public static function resolve_common_name( $batch_post_id, $batch_post_title = '' ) {
+        // Prefer the batch title — it preserves size variants (S, SM, M, etc.)
+        if ( ! empty( $batch_post_title ) ) {
+            $from_batch = preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $batch_post_title );
+            if ( ! empty( trim( $from_batch ) ) ) {
+                return trim( $from_batch );
+            }
+        }
+
         $master_id = get_post_meta( $batch_post_id, '_master_id', true );
         if ( $master_id && get_post( $master_id ) ) {
             return preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', get_the_title( $master_id ) );
