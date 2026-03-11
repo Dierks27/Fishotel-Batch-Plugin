@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.30 - Fix common name display to preserve size variants from batch title.
- * Version:           4.30
+ * Description:       v4.31 - Master name + size suffix from batch title for uniform display.
+ * Version:           4.31
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.30' );
+define( 'FISHOTEL_VERSION', '4.31' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -234,22 +234,29 @@ class FisHotel_Batch_Manager {
 
     /**
      * Resolve the clean common name for a fish_batch post.
-     * Tier 1: fish_batch post title (suffix stripped) — preserves size variants like "Coral Beauty S"
-     * Tier 2: fish_master title via _master_id (fallback if batch title is empty)
+     * Tier 1: fish_master title via _master_id (uniform naming) + size suffix from batch title
+     * Tier 2: fish_batch post title (suffix stripped)
      * Tier 3: if title looks like a scientific name, reverse-lookup fish_master by _scientific_name
      */
     public static function resolve_common_name( $batch_post_id, $batch_post_title = '' ) {
-        // Prefer the batch title — it preserves size variants (S, SM, M, etc.)
-        if ( ! empty( $batch_post_title ) ) {
-            $from_batch = preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $batch_post_title );
-            if ( ! empty( trim( $from_batch ) ) ) {
-                return trim( $from_batch );
-            }
-        }
-
         $master_id = get_post_meta( $batch_post_id, '_master_id', true );
         if ( $master_id && get_post( $master_id ) ) {
-            return preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', get_the_title( $master_id ) );
+            $master_name = preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', get_the_title( $master_id ) );
+
+            // Append size suffix from batch title if present
+            if ( ! empty( $batch_post_title ) ) {
+                $batch_common = preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $batch_post_title );
+                $batch_common = trim( $batch_common );
+                // If batch common name is longer than master name, extract the size suffix
+                if ( stripos( $batch_common, $master_name ) === 0 && strlen( $batch_common ) > strlen( $master_name ) ) {
+                    $suffix = trim( substr( $batch_common, strlen( $master_name ) ) );
+                    if ( ! empty( $suffix ) ) {
+                        return $master_name . ' ' . $suffix;
+                    }
+                }
+            }
+
+            return $master_name;
         }
 
         $resolved = preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $batch_post_title );
