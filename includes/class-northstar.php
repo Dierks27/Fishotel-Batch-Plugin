@@ -91,54 +91,46 @@ trait FisHotel_NorthStar {
 
         $xpath = new DOMXPath( $doc );
 
-        // Find all product name links: <a> with href containing /products/
-        $links = $xpath->query( "//a[contains(@href, '/products/')]" );
+        // Each product lives in a div.theme-prod-box
+        $cards = $xpath->query( "//*[contains(@class, 'theme-prod-box')]" );
 
-        foreach ( $links as $link ) {
-            $text = trim( $link->textContent );
-            $href = $link->getAttribute( 'href' );
+        foreach ( $cards as $card ) {
+            // Name: inside .theme-prod-name a
+            $name_links = $xpath->query( ".//*[contains(@class, 'theme-prod-name')]//a", $card );
+            if ( $name_links->length === 0 ) continue;
 
-            // Skip button-style links
-            if ( in_array( strtolower( $text ), [ 'out of stock', 'add to cart', '' ], true ) ) continue;
+            $name_el = $name_links->item( 0 );
+            $name = trim( $name_el->textContent );
+            $href = $name_el->getAttribute( 'href' );
+
+            if ( empty( $name ) || empty( $href ) ) continue;
 
             // Deduplicate by href
             if ( isset( $seen[ $href ] ) ) continue;
             $seen[ $href ] = true;
 
-            // Find the parent product card — walk up to find a common container
-            $card = $link;
-            for ( $i = 0; $i < 10; $i++ ) {
-                $card = $card->parentNode;
-                if ( ! $card || $card->nodeName === 'body' ) break;
-            }
-
-            // Stock status: look for theme-button text within the card's context
-            $stock = 'unknown';
+            // Stock: .theme-button text — if it contains "out of stock" (case-insensitive) → out_of_stock, otherwise → in_stock
+            $stock = 'in_stock';
             $buttons = $xpath->query( ".//*[contains(@class, 'theme-button')]", $card );
-            foreach ( $buttons as $btn ) {
-                $btn_text = strtolower( trim( $btn->textContent ) );
+            if ( $buttons->length > 0 ) {
+                $btn_text = strtolower( trim( $buttons->item( 0 )->textContent ) );
                 if ( strpos( $btn_text, 'out of stock' ) !== false ) {
                     $stock = 'out_of_stock';
-                    break;
-                } elseif ( strpos( $btn_text, 'add to cart' ) !== false ) {
-                    $stock = 'in_stock';
-                    break;
                 }
             }
 
-            // Price: look for elements with class containing "price"
+            // Price: .theme-prod-price — grab first $XX.XX pattern
             $price = '';
-            $price_nodes = $xpath->query( ".//*[contains(@class, 'price')]", $card );
-            foreach ( $price_nodes as $pn ) {
-                $pt = trim( $pn->textContent );
-                if ( ! empty( $pt ) && strpos( $pt, '$' ) !== false ) {
-                    $price = $pt;
-                    break;
+            $price_nodes = $xpath->query( ".//*[contains(@class, 'theme-prod-price')]", $card );
+            if ( $price_nodes->length > 0 ) {
+                $price_text = trim( $price_nodes->item( 0 )->textContent );
+                if ( preg_match( '/\$[\d,]+\.?\d*/', $price_text, $m ) ) {
+                    $price = $m[0];
                 }
             }
 
             $products[] = [
-                'name'   => $text,
+                'name'   => $name,
                 'href'   => $href,
                 'stock'  => $stock,
                 'price'  => $price,

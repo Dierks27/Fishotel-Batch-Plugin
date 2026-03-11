@@ -23,14 +23,105 @@ trait FisHotel_Admin {
 
     public function add_admin_menu() {
         $fish_icon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmgiIHZpZXdCb3g9IjAgMCAxMDAgNjAiPjxwYXRoIGZpbGw9IiNhN2FhYWQiIGQ9Ik02NSAzMEMxMCAzMCAwIDU1IDAgNTVzMzAtMTUgMzUtMzBDMTAgMjUgMCAxMCAwIDVjMCAwIDMwIDIwIDM1IDE1IDAtMTAgMjAtMjAgNDAtMjAgMjAgMCAzNSAxNSAzNSAzMCAwIDE1LTE1IDMwLTM1IDMwLTIwIDAtNDAtMTAtNDAtMjB6Ii8+PGVsbGlwc2UgZmlsbD0iIzIzMjgzMyIgY3g9Ijc4IiBjeT0iMjciIHJ4PSIzIiByeT0iMyIvPjwvc3ZnPg==';
-        add_menu_page( 'FisHotel Batch Manager', 'FisHotel Batch', 'manage_options', 'fishotel-batch-settings', [$this, 'batch_settings_html'], $fish_icon, 56 );
-        add_submenu_page( 'fishotel-batch-settings', 'Master Fish Library', 'Master Fish Library', 'manage_options', 'edit.php?post_type=fish_master' );
-        add_submenu_page( 'fishotel-batch-settings', 'Batch Requests', 'Batch Requests', 'manage_options', 'fishotel-batch-orders', [$this, 'batch_orders_html'] );
-        add_submenu_page( 'fishotel-batch-settings', 'Customer Wallets', 'Customer Wallets', 'manage_options', 'fishotel-wallets', [$this, 'wallets_html'] );
-        add_submenu_page( 'fishotel-batch-settings', 'Order Summary', 'Order Summary', 'manage_options', 'fishotel-order-summary', [$this, 'order_summary_html'] );
-        add_submenu_page( 'fishotel-batch-settings', 'Sync Quarantined Fish', 'Sync Quarantined Fish', 'manage_options', 'fishotel-sync', [$this, 'sync_page_html'] );
-        add_submenu_page( 'fishotel-batch-settings', 'Arrival Entry', 'Arrival Entry', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
-        add_submenu_page( 'fishotel-batch-settings', 'North Star Stock', 'North Star Stock', 'manage_options', 'fishotel-northstar', [$this, 'northstar_stock_html'] );
+        // 3 visible menu items
+        add_menu_page( 'FisHotel Batch Manager', 'FisHotel Batch', 'manage_options', 'fishotel-batch-hq', [$this, 'batch_hq_html'], $fish_icon, 56 );
+        add_submenu_page( 'fishotel-batch-hq', 'Batch HQ', 'Batch HQ', 'manage_options', 'fishotel-batch-hq' );
+        add_submenu_page( 'fishotel-batch-hq', 'Arrival Entry', 'Arrival Entry', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
+        add_submenu_page( 'fishotel-batch-hq', 'Sourcing', 'Sourcing', 'manage_options', 'fishotel-sourcing', [$this, 'sourcing_html'] );
+
+        // Hidden backward-compat pages (old slugs still work via direct URL)
+        add_submenu_page( null, 'FisHotel Settings', '', 'manage_options', 'fishotel-batch-settings', [$this, 'batch_settings_html'] );
+        add_submenu_page( null, 'Batch Requests', '', 'manage_options', 'fishotel-batch-orders', [$this, 'batch_orders_html'] );
+        add_submenu_page( null, 'Customer Wallets', '', 'manage_options', 'fishotel-wallets', [$this, 'wallets_html'] );
+        add_submenu_page( null, 'Order Summary', '', 'manage_options', 'fishotel-order-summary', [$this, 'order_summary_html'] );
+        add_submenu_page( null, 'Sync Quarantined Fish', '', 'manage_options', 'fishotel-sync', [$this, 'sync_page_html'] );
+        add_submenu_page( null, 'North Star Stock', '', 'manage_options', 'fishotel-northstar', [$this, 'northstar_stock_html'] );
+
+        // fish_master CPT menu highlighting
+        add_filter( 'parent_file', function( $parent_file ) {
+            global $typenow;
+            if ( $typenow === 'fish_master' ) return 'fishotel-batch-hq';
+            return $parent_file;
+        } );
+        add_filter( 'submenu_file', function( $submenu_file ) {
+            global $typenow;
+            if ( $typenow === 'fish_master' ) return 'fishotel-sourcing';
+            return $submenu_file;
+        } );
+    }
+
+    // ─── Tab wrapper: Batch HQ ────────────────────────────────────────
+
+    public function batch_hq_html() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
+        $tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'settings';
+        $tabs = [
+            'settings' => 'Settings',
+            'requests' => 'Requests',
+            'summary'  => 'Order Summary',
+            'wallets'  => 'Wallets',
+        ];
+        $this->render_admin_tabs( 'fishotel-batch-hq', 'Batch HQ', $tabs, $tab );
+
+        switch ( $tab ) {
+            case 'requests': $this->batch_orders_html(); break;
+            case 'summary':  $this->order_summary_html(); break;
+            case 'wallets':  $this->wallets_html(); break;
+            default:         $this->batch_settings_html(); break;
+        }
+    }
+
+    // ─── Tab wrapper: Sourcing ──────────────────────────────────────
+
+    public function sourcing_html() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
+        $tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'northstar';
+        $tabs = [
+            'northstar' => 'North Star Stock',
+            'library'   => 'Fish Library',
+            'sync'      => 'Sync QT Fish',
+        ];
+        $this->render_admin_tabs( 'fishotel-sourcing', 'Sourcing', $tabs, $tab );
+
+        switch ( $tab ) {
+            case 'library': $this->fish_library_tab_html(); break;
+            case 'sync':    $this->sync_page_html(); break;
+            default:        $this->northstar_stock_html(); break;
+        }
+    }
+
+    private function fish_library_tab_html() {
+        $count = wp_count_posts( 'fish_master' );
+        $total = isset( $count->publish ) ? intval( $count->publish ) : 0;
+        ?>
+        <div class="wrap fishotel-admin">
+            <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:30px;margin-top:20px;max-width:600px;">
+                <h2 style="color:#fff;font-size:20px;margin:0 0 12px 0;">Master Fish Library</h2>
+                <p style="color:#aaa;font-size:14px;line-height:1.6;margin:0 0 20px 0;">
+                    Your canonical library of <strong style="color:#fff;"><?php echo number_format( $total ); ?></strong> fish with scientific names and selling prices.
+                    Prices set here sync to WooCommerce products.
+                </p>
+                <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=fish_master' ) ); ?>" style="display:inline-block;background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:12px 28px;cursor:pointer;font-size:15px;text-decoration:none;">Open Fish Library</a>
+            </div>
+        </div>
+        <?php
+    }
+
+    // ─── Shared tab bar renderer ────────────────────────────────────
+
+    private function render_admin_tabs( string $page_slug, string $title, array $tabs, string $active ) {
+        echo '<div class="wrap fishotel-admin" style="margin-bottom:0;padding-bottom:0;">';
+        echo '<h1 style="color:#b5a165;font-size:26px;font-weight:700;margin-bottom:12px;">' . esc_html( $title ) . '</h1>';
+        echo '<nav class="nav-tab-wrapper" style="border-bottom:2px solid #555;margin-bottom:0;">';
+        foreach ( $tabs as $key => $label ) {
+            $url = admin_url( 'admin.php?page=' . $page_slug . '&tab=' . $key );
+            $class = ( $active === $key ) ? ' nav-tab-active' : '';
+            $style = ( $active === $key )
+                ? 'background:#1e1e1e;color:#b5a165;border:2px solid #555;border-bottom:2px solid #1e1e1e;margin-bottom:-2px;font-weight:700;'
+                : 'background:transparent;color:#aaa;border:2px solid transparent;';
+            echo '<a href="' . esc_url( $url ) . '" class="nav-tab' . $class . '" style="' . $style . 'padding:8px 18px;font-size:14px;text-decoration:none;">' . esc_html( $label ) . '</a>';
+        }
+        echo '</nav></div>';
     }
 
     public function register_settings() {

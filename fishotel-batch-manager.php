@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.15 - North Star Stock admin page.
- * Version:           4.15
+ * Description:       v4.16 - Parser fixes, tabbed admin menu (Batch HQ / Arrival / Sourcing).
+ * Version:           4.16
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.15' );
+define( 'FISHOTEL_VERSION', '4.16' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
