@@ -151,8 +151,15 @@ trait FisHotel_NorthStar {
         }
 
         $total = count( $in_stock_indices );
-        $done  = 0;
+        error_log( '[FisHotel NorthStar] Qty fetch: ' . $total . ' in-stock products to check' );
 
+        if ( $total === 0 ) return;
+
+        // Log the first URL we'll try
+        $first_href = $products[ $in_stock_indices[0] ]['href'];
+        error_log( '[FisHotel NorthStar] First URL: https://www.northstaraquatics.com' . $first_href );
+
+        $done = 0;
         foreach ( $in_stock_indices as $i ) {
             $href = $products[ $i ]['href'];
             $url  = 'https://www.northstaraquatics.com' . $href;
@@ -161,20 +168,41 @@ trait FisHotel_NorthStar {
             $done++;
 
             if ( is_wp_error( $response ) ) {
+                error_log( '[FisHotel NorthStar] Qty fetch #' . $done . '/' . $total . ' WP_Error: ' . $response->get_error_message() );
                 $products[ $i ]['qty'] = 0;
                 usleep( 300000 );
                 continue;
             }
 
+            $status_code = wp_remote_retrieve_response_code( $response );
             $body = wp_remote_retrieve_body( $response );
-            if ( preg_match( '/Stock Available\s*:\s*(\d+)/', $body, $m ) ) {
+
+            if ( $status_code !== 200 ) {
+                error_log( '[FisHotel NorthStar] Qty fetch #' . $done . '/' . $total . ' HTTP ' . $status_code . ' for ' . $url );
+                $products[ $i ]['qty'] = 0;
+                usleep( 300000 );
+                continue;
+            }
+
+            if ( preg_match( '/Stock\s*Available\s*:\s*(\d+)/i', $body, $m ) ) {
                 $products[ $i ]['qty'] = intval( $m[1] );
+                if ( $done <= 3 ) {
+                    error_log( '[FisHotel NorthStar] Qty fetch #' . $done . '/' . $total . ' MATCH qty=' . $m[1] . ' for ' . $products[ $i ]['name'] );
+                }
             } else {
                 $products[ $i ]['qty'] = 0;
+                if ( $done <= 3 ) {
+                    // Log a snippet of the body to see what we're getting
+                    $snippet = substr( $body, 0, 500 );
+                    $has_stock_text = strpos( $body, 'Stock' ) !== false ? 'YES' : 'NO';
+                    error_log( '[FisHotel NorthStar] Qty fetch #' . $done . '/' . $total . ' NO MATCH for ' . $products[ $i ]['name'] . ' | body contains "Stock": ' . $has_stock_text . ' | body length: ' . strlen( $body ) );
+                }
             }
 
             usleep( 300000 ); // 0.3s delay
         }
+
+        error_log( '[FisHotel NorthStar] Qty fetch complete: ' . $done . '/' . $total . ' processed' );
     }
 
     // ─── AJAX: Fetch categories ─────────────────────────────────────────

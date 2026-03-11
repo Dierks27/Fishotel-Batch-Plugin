@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.18 - Dark theme fix, emoji cleanup, qty column cache handling.
- * Version:           4.18
+ * Description:       v4.19 - Qty fetch debug logging, HTTP status check, relaxed regex.
+ * Version:           4.19
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.18' );
+define( 'FISHOTEL_VERSION', '4.19' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
