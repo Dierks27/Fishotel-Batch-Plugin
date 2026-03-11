@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.20 - Browser-like headers on North Star HTTP requests (fix 503s).
- * Version:           4.20
+ * Description:       v4.21 - Strip HTML before qty regex, debug Stock context logging.
+ * Version:           4.21
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.20' );
+define( 'FISHOTEL_VERSION', '4.21' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
