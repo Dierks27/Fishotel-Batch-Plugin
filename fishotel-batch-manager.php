@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.32 - Size badges for bare suffixes (North Star S/M/L/etc without parentheses).
- * Version:           4.32
+ * Description:       v4.33 - Sourcing tabs: Batch Fish tab, Fish Library links directly to CPT list.
+ * Version:           4.33
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.32' );
+define( 'FISHOTEL_VERSION', '4.33' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

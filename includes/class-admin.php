@@ -80,33 +80,16 @@ trait FisHotel_Admin {
         $tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'northstar';
         $tabs = [
             'northstar' => 'North Star Stock',
-            'library'   => 'Fish Library',
+            'library'   => [ 'label' => 'Fish Library', 'url' => admin_url( 'edit.php?post_type=fish_master' ) ],
+            'batch'     => [ 'label' => 'Batch Fish', 'url' => admin_url( 'edit.php?post_type=fish_batch' ) ],
             'sync'      => 'Sync QT Fish',
         ];
         $this->render_admin_tabs( 'fishotel-sourcing', 'Sourcing', $tabs, $tab );
 
         switch ( $tab ) {
-            case 'library': $this->fish_library_tab_html(); break;
             case 'sync':    $this->sync_page_html(); break;
             default:        $this->northstar_stock_html(); break;
         }
-    }
-
-    private function fish_library_tab_html() {
-        $count = wp_count_posts( 'fish_master' );
-        $total = isset( $count->publish ) ? intval( $count->publish ) : 0;
-        ?>
-        <div class="wrap fishotel-admin">
-            <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:30px;margin-top:20px;max-width:600px;">
-                <h2 style="color:#fff;font-size:20px;margin:0 0 12px 0;">Master Fish Library</h2>
-                <p style="color:#aaa;font-size:14px;line-height:1.6;margin:0 0 20px 0;">
-                    Your canonical library of <strong style="color:#fff;"><?php echo number_format( $total ); ?></strong> fish with scientific names and selling prices.
-                    Prices set here sync to WooCommerce products.
-                </p>
-                <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=fish_master' ) ); ?>" style="display:inline-block;background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:12px 28px;cursor:pointer;font-size:15px;text-decoration:none;">Open Fish Library</a>
-            </div>
-        </div>
-        <?php
     }
 
     // ─── Shared tab bar renderer ────────────────────────────────────
@@ -115,8 +98,14 @@ trait FisHotel_Admin {
         echo '<div class="wrap fishotel-admin" style="margin-bottom:0;padding-bottom:0;">';
         echo '<h1 style="color:#b5a165;font-size:26px;font-weight:700;margin-bottom:12px;">' . esc_html( $title ) . '</h1>';
         echo '<nav class="nav-tab-wrapper" style="border-bottom:2px solid #555;margin-bottom:0;">';
-        foreach ( $tabs as $key => $label ) {
-            $url = admin_url( 'admin.php?page=' . $page_slug . '&tab=' . $key );
+        foreach ( $tabs as $key => $tab_data ) {
+            if ( is_array( $tab_data ) ) {
+                $url   = $tab_data['url'];
+                $label = $tab_data['label'];
+            } else {
+                $url   = admin_url( 'admin.php?page=' . $page_slug . '&tab=' . $key );
+                $label = $tab_data;
+            }
             $class = ( $active === $key ) ? ' nav-tab-active' : '';
             $style = ( $active === $key )
                 ? 'background:#1e1e1e;color:#b5a165;border:2px solid #555;border-bottom:2px solid #1e1e1e;margin-bottom:-2px;font-weight:700;'
