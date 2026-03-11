@@ -158,13 +158,7 @@ trait FisHotel_NorthStar {
         }
 
         $total = count( $in_stock_indices );
-        error_log( '[FisHotel NorthStar] Qty fetch: ' . $total . ' in-stock products to check' );
-
         if ( $total === 0 ) return;
-
-        // Log the first URL we'll try
-        $first_href = $products[ $in_stock_indices[0] ]['href'];
-        error_log( '[FisHotel NorthStar] First URL: https://www.northstaraquatics.com' . $first_href );
 
         $done = 0;
         foreach ( $in_stock_indices as $i ) {
@@ -182,7 +176,6 @@ trait FisHotel_NorthStar {
             $done++;
 
             if ( is_wp_error( $response ) ) {
-                error_log( '[FisHotel NorthStar] Qty fetch #' . $done . '/' . $total . ' WP_Error: ' . $response->get_error_message() );
                 $products[ $i ]['qty'] = 0;
                 usleep( 300000 );
                 continue;
@@ -192,7 +185,6 @@ trait FisHotel_NorthStar {
             $body = wp_remote_retrieve_body( $response );
 
             if ( $status_code !== 200 ) {
-                error_log( '[FisHotel NorthStar] Qty fetch #' . $done . '/' . $total . ' HTTP ' . $status_code . ' for ' . $url );
                 $products[ $i ]['qty'] = 0;
                 usleep( 300000 );
                 continue;
@@ -201,21 +193,12 @@ trait FisHotel_NorthStar {
             // Stock qty lives in JSON variant data as "stock_available":N
             if ( preg_match( '/"stock_available"\s*:\s*(\d+)/', $body, $m ) ) {
                 $products[ $i ]['qty'] = intval( $m[1] );
-                if ( $done <= 3 ) {
-                    error_log( '[FisHotel NorthStar] Qty fetch #' . $done . '/' . $total . ' MATCH qty=' . $m[1] . ' for ' . $products[ $i ]['name'] );
-                }
             } else {
                 $products[ $i ]['qty'] = 0;
-                if ( $done <= 3 ) {
-                    $has_key = strpos( $body, 'stock_available' ) !== false ? 'YES' : 'NO';
-                    error_log( '[FisHotel NorthStar] Qty fetch #' . $done . '/' . $total . ' NO MATCH for ' . $products[ $i ]['name'] . ' | body contains "stock_available": ' . $has_key . ' | body length: ' . strlen( $body ) );
-                }
             }
 
             usleep( 300000 ); // 0.3s delay
         }
-
-        error_log( '[FisHotel NorthStar] Qty fetch complete: ' . $done . '/' . $total . ' processed' );
     }
 
     // ─── AJAX: Fetch categories ─────────────────────────────────────────
@@ -228,6 +211,18 @@ trait FisHotel_NorthStar {
         if ( empty( $cat_ids ) ) wp_send_json_error( 'No categories selected.' );
 
         $categories = $this->get_northstar_categories();
+        $all_marine_id = '4422867000000439035';
+
+        // Expand "All Marine Fish" into individual subcategory fetches for correct labeling
+        if ( in_array( $all_marine_id, $cat_ids, true ) ) {
+            $cat_ids = array_keys( $categories );
+            // Remove the parent "All Marine Fish" — only fetch the 20 subcategories
+            $cat_ids = array_filter( $cat_ids, function( $id ) use ( $all_marine_id ) {
+                return $id !== $all_marine_id;
+            } );
+            $cat_ids = array_values( $cat_ids );
+        }
+
         $all_products = [];
         $seen = [];
         $errors = [];

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.22 - Fix qty regex to match JSON stock_available from page source.
- * Version:           4.22
+ * Description:       v4.23 - Expand All Marine Fish to subcategory fetches, clean up debug logging.
+ * Version:           4.23
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.22' );
+define( 'FISHOTEL_VERSION', '4.23' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
