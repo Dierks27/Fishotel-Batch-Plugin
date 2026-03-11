@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.34 - Remove Batch Fish sidebar item, add breadcrumb back-nav on nested pages.
- * Version:           4.34
+ * Description:       v4.35 - Include size suffix in boarding pass data-fish-name attribute.
+ * Version:           4.35
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.34' );
+define( 'FISHOTEL_VERSION', '4.35' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

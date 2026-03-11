@@ -1078,7 +1078,8 @@ trait FisHotel_Shortcodes {
                                     echo '<input type="number" min="0" value="' . esc_attr( $prefill ) . '" class="qty-input">';
                                     echo '<button class="qty-plus">+</button>';
                                     echo '</div>';
-                                    echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $master->post_title ) . '">Request</button>';
+                                    $display_name = $master->post_title . ( $size ? ' ' . $size : '' );
+                                    echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $display_name ) . '">Request</button>';
                                 } else {
                                     echo '<span class="fh-closed-stamp">Void</span>';
                                 }
@@ -1133,7 +1134,8 @@ trait FisHotel_Shortcodes {
                                 echo '<input type="number" min="0" value="' . esc_attr( $card_prefill ) . '" class="qty-input" style="width:48px;padding:6px 0;">';
                                 echo '<button class="qty-plus" style="padding:6px 10px;">+</button>';
                                 echo '</div>';
-                                echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $master->post_title ) . '" style="flex:1;padding:10px;font-size:0.95em;">Request</button>';
+                                $display_name_m = $master->post_title . ( $size ? ' ' . $size : '' );
+                                echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $display_name_m ) . '" style="flex:1;padding:10px;font-size:0.95em;">Request</button>';
                                 echo '</div>';
                             } else {
                                 echo '<div style="margin-top:12px;"><span class="fh-closed-stamp">Void</span></div>';
