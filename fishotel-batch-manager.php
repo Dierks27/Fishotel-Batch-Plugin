@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.37 - Fuzzy master lookup (Emperor Angel → Emperor Angelfish, etc).
- * Version:           4.37
+ * Description:       v4.38 - Display batch name (with size) instead of master name on public fish list.
+ * Version:           4.38
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.37' );
+define( 'FISHOTEL_VERSION', '4.38' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

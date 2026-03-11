@@ -1035,25 +1035,11 @@ trait FisHotel_Shortcodes {
                                 $sci_name = get_post_meta( $master_id, '_scientific_name', true );
                                 $price = floatval( get_post_meta( $master_id, '_selling_price', true ) );
                                 $stock = floatval( get_post_meta( $bp->ID, '_stock', true ) );
-                                $size = '';
-                                $title_to_check = $master->post_title . ' ' . $bp->post_title;
-                                if ( preg_match( '/\((SM|MED|Lrg|XL|Nano|Tiny)\)/i', $title_to_check, $matches ) ) {
-                                    $size = strtoupper( $matches[1] );
-                                } else {
-                                    $batch_common = preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title );
-                                    $batch_common = trim( $batch_common );
-                                    $mname = $master->post_title;
-                                    if ( stripos( $batch_common, $mname ) === 0 && strlen( $batch_common ) > strlen( $mname ) ) {
-                                        $sfx = trim( substr( $batch_common, strlen( $mname ) ) );
-                                        if ( preg_match( '/^((?:(?:Juv|Adult|Male|Female|Wild|IO|Half\s+Black)\s+)?(?:XXL|XL|XS|SM|ML|S|M|L)|Juv|Adult|Male|Female|Wild|Pair|Trio|XXL|XL|XS|SM|ML|S|M|L)$/i', $sfx ) ) {
-                                            $size = strtoupper( $sfx );
-                                        }
-                                    }
-                                }
+                                $common_name = trim( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title ) );
                                 $stock_class = $stock > 10 ? 'fh-stock-green' : ( $stock > 0 ? 'fh-stock-orange' : 'fh-stock-red' );
                                 $low_class   = ( $stock > 0 && $stock <= 5 ) ? ' fh-stock-low' : '';
                                 $row_class   = $stock <= 0 ? ' class="fh-row-closed"' : '';
-                                echo '<tr' . $row_class . ' data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '" data-rownum="' . $row_num . '">';
+                                echo '<tr' . $row_class . ' data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $common_name ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '" data-rownum="' . $row_num . '">';
                                 $fish_total_qty = $total_qty_map[ $bp->ID ] ?? 0;
                                 echo '<td class="fh-row-num">';
                                 if ( $fish_total_qty > 0 ) {
@@ -1063,7 +1049,7 @@ trait FisHotel_Shortcodes {
                                     echo '<span class="fh-hw-qty" style="transform:translateX(-50%) rotate(' . $q_rot . 'deg);top:' . $q_top . 'px;">' . $fish_total_qty . '</span>';
                                 }
                                 echo '</td>';
-                                echo '<td class="fh-common-cell">' . esc_html( $master->post_title ) . ( $size ? ' <span class="fh-size-inline">' . esc_html( $size ) . '</span>' : '' ) . '</td>';
+                                echo '<td class="fh-common-cell">' . esc_html( $common_name ) . '</td>';
                                 echo '<td>' . esc_html( $sci_name ) . '</td>';
                                 echo '<td style="text-align:right;">' . number_format( $price, 2 ) . '</td>';
                                 echo '<td style="text-align:center;" class="' . $stock_class . $low_class . '">';
@@ -1078,8 +1064,7 @@ trait FisHotel_Shortcodes {
                                     echo '<input type="number" min="0" value="' . esc_attr( $prefill ) . '" class="qty-input">';
                                     echo '<button class="qty-plus">+</button>';
                                     echo '</div>';
-                                    $display_name = $master->post_title . ( $size ? ' ' . $size : '' );
-                                    echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $display_name ) . '">Request</button>';
+                                    echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $common_name ) . '">Request</button>';
                                 } else {
                                     echo '<span class="fh-closed-stamp">Void</span>';
                                 }
@@ -1099,29 +1084,14 @@ trait FisHotel_Shortcodes {
                             $sci_name = get_post_meta( $master_id, '_scientific_name', true );
                             $price = floatval( get_post_meta( $master_id, '_selling_price', true ) );
                             $stock = floatval( get_post_meta( $bp->ID, '_stock', true ) );
-                            $size = '';
-                            $title_to_check = $master->post_title . ' ' . $bp->post_title;
-                            if ( preg_match( '/\((SM|MED|Lrg|XL|Nano|Tiny)\)/i', $title_to_check, $matches ) ) {
-                                $size = strtoupper( $matches[1] );
-                            } else {
-                                $batch_common = preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title );
-                                $batch_common = trim( $batch_common );
-                                $mname = $master->post_title;
-                                if ( stripos( $batch_common, $mname ) === 0 && strlen( $batch_common ) > strlen( $mname ) ) {
-                                    $sfx = trim( substr( $batch_common, strlen( $mname ) ) );
-                                    if ( preg_match( '/^((?:(?:Juv|Adult|Male|Female|Wild|IO|Half\s+Black)\s+)?(?:XXL|XL|XS|SM|ML|S|M|L)|Juv|Adult|Male|Female|Wild|Pair|Trio|XXL|XL|XS|SM|ML|S|M|L)$/i', $sfx ) ) {
-                                        $size = strtoupper( $sfx );
-                                    }
-                                }
-                            }
+                            $common_name = trim( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title ) );
                             $stock_class = $stock > 10 ? 'fh-stock-green' : ( $stock > 0 ? 'fh-stock-orange' : 'fh-stock-red' );
                             $low_class_m = ( $stock > 0 && $stock <= 5 ) ? ' fh-stock-low' : '';
                             $card_class  = 'fish-card' . ( $stock <= 0 ? ' fh-row-closed' : '' );
-                            echo '<div class="' . $card_class . '" data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $master->post_title ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '">';
-                            echo '<h4>' . esc_html( $master->post_title ) . '</h4>';
+                            echo '<div class="' . $card_class . '" data-price="' . $price . '" data-stock="' . $stock . '" data-common="' . esc_attr( strtolower( $common_name ) ) . '" data-sci="' . esc_attr( strtolower( $sci_name ) ) . '">';
+                            echo '<h4>' . esc_html( $common_name ) . '</h4>';
                             echo '<div class="sci">' . esc_html( $sci_name ) . '</div>';
                             echo '<div style="margin:10px 0;">';
-                            if ( $size ) echo '<span class="fh-size-badge" style="margin-right:8px;">' . esc_html( $size ) . '</span>';
                             echo '<span class="price">$' . number_format( $price, 2 ) . '</span>';
                             echo ' <span class="stock ' . $stock_class . $low_class_m . '">';
                             echo 'Stock: ' . intval( $stock ) . '</span>';
@@ -1134,8 +1104,7 @@ trait FisHotel_Shortcodes {
                                 echo '<input type="number" min="0" value="' . esc_attr( $card_prefill ) . '" class="qty-input" style="width:48px;padding:6px 0;">';
                                 echo '<button class="qty-plus" style="padding:6px 10px;">+</button>';
                                 echo '</div>';
-                                $display_name_m = $master->post_title . ( $size ? ' ' . $size : '' );
-                                echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $display_name_m ) . '" style="flex:1;padding:10px;font-size:0.95em;">Request</button>';
+                                echo '<button class="add-to-request fh-req-btn" data-batch-id="' . $bp->ID . '" data-price="' . $price . '" data-fish-name="' . esc_attr( $common_name ) . '" style="flex:1;padding:10px;font-size:0.95em;">Request</button>';
                                 echo '</div>';
                             } else {
                                 echo '<div style="margin-top:12px;"><span class="fh-closed-stamp">Void</span></div>';
