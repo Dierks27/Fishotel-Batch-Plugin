@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.38 - Display batch name (with size) instead of master name on public fish list.
- * Version:           4.38
+ * Description:       v4.39 - Arrival board badge CSS: bigger text, dark gaps, natural height.
+ * Version:           4.39
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.38' );
+define( 'FISHOTEL_VERSION', '4.39' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -557,11 +557,11 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
 
         /* Status indicator — mechanical readout style */
         .fh-ab-badge {
-            flex:1 1 0; font-family:'Courier New',monospace; font-size:12px;
+            flex:1 1 0; font-family:'Courier New',monospace; font-size:14px;
             font-weight:700; text-transform:uppercase; letter-spacing:0.1em;
-            padding:3px 6px; border-radius:0; white-space:nowrap;
-            text-align:center; margin:0; box-sizing:border-box;
-            background:transparent;
+            padding:3px 8px; border-radius:0; white-space:nowrap;
+            text-align:center; margin:1px 6px; box-sizing:border-box;
+            background:transparent; line-height:26px; height:auto;
         }
         .fh-ab-badge-qt { color:#44ff88; border:1px solid rgba(68,255,136,0.3); }
         .fh-ab-badge-short { color:#ffaa33; border:1px solid rgba(255,170,51,0.3); }
