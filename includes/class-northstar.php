@@ -202,6 +202,46 @@ trait FisHotel_NorthStar {
         }
     }
 
+    // ─── Master fish lookup with size-variant stripping ────────────────
+
+    private function northstar_find_or_create_master( string $name ): int {
+        // 1. Exact match
+        $master = get_posts( [
+            'post_type'   => 'fish_master',
+            'title'       => $name,
+            'numberposts' => 1,
+            'post_status' => 'publish',
+        ] );
+        if ( $master ) return $master[0]->ID;
+
+        // 2. Strip size suffixes and try again
+        $size_pattern = '/\s+(?:IO\s+\w+|Wild\s+\w+|Juv\s*\w*|Adult\s*\w*|Male\s*\w*|Female\s*\w*|XXL|XL|XS|SM|ML|Pair|Trio|S|M|L)$/i';
+        $stripped = preg_replace( $size_pattern, '', $name );
+        $stripped = trim( $stripped );
+
+        if ( $stripped !== $name && ! empty( $stripped ) ) {
+            $master = get_posts( [
+                'post_type'   => 'fish_master',
+                'title'       => $stripped,
+                'numberposts' => 1,
+                'post_status' => 'publish',
+            ] );
+            if ( $master ) return $master[0]->ID;
+        }
+
+        // 3. No match — create new fish_master using the stripped name (or original if no strip)
+        $create_name = ( $stripped !== $name && ! empty( $stripped ) ) ? $stripped : $name;
+        error_log( '[FisHotel NorthStar] Created new fish_master: ' . $create_name . ( $create_name !== $name ? ' (from: ' . $name . ')' : '' ) );
+
+        $mid = wp_insert_post( [
+            'post_type'   => 'fish_master',
+            'post_title'  => $create_name,
+            'post_status' => 'publish',
+        ] );
+
+        return ( $mid && ! is_wp_error( $mid ) ) ? $mid : 0;
+    }
+
     // ─── AJAX: Fetch categories ─────────────────────────────────────────
 
     public function ajax_northstar_fetch() {
@@ -332,6 +372,7 @@ trait FisHotel_NorthStar {
         foreach ( $items as $item ) {
             $name  = sanitize_text_field( $item['name'] ?? '' );
             $price = sanitize_text_field( $item['price'] ?? '' );
+            $qty   = intval( $item['qty'] ?? 0 );
 
             if ( empty( $name ) ) continue;
 
@@ -341,22 +382,8 @@ trait FisHotel_NorthStar {
                 continue;
             }
 
-            // Find or create a fish_master for this common name
-            $master = get_posts( [
-                'post_type'   => 'fish_master',
-                'title'       => $name,
-                'numberposts' => 1,
-                'post_status' => 'publish',
-            ] );
-            if ( $master ) {
-                $master_id = $master[0]->ID;
-            } else {
-                $master_id = wp_insert_post( [
-                    'post_type'   => 'fish_master',
-                    'post_title'  => $name,
-                    'post_status' => 'publish',
-                ] );
-            }
+            // Find fish_master: exact match first, then try stripping size suffixes
+            $master_id = $this->northstar_find_or_create_master( $name );
 
             $post_id = wp_insert_post( [
                 'post_type'   => 'fish_batch',
@@ -370,7 +397,7 @@ trait FisHotel_NorthStar {
                 }
                 update_post_meta( $post_id, '_batch_name', $batch_name );
                 update_post_meta( $post_id, '_northstar_price', $price );
-                update_post_meta( $post_id, '_stock', 0 );
+                update_post_meta( $post_id, '_stock', $qty );
                 $imported++;
                 $existing_names[] = strtolower( $name );
             }
@@ -413,7 +440,7 @@ trait FisHotel_NorthStar {
             }
         }
 
-        // Fix missing _master_id — find or create fish_master by common name
+        // Fix missing _master_id — use smart matching with size-variant stripping
         $no_master = get_posts( [
             'post_type'   => 'fish_batch',
             'numberposts' => -1,
@@ -424,22 +451,8 @@ trait FisHotel_NorthStar {
             $common = trim( $common );
             if ( empty( $common ) ) continue;
 
-            $master = get_posts( [
-                'post_type'   => 'fish_master',
-                'title'       => $common,
-                'numberposts' => 1,
-                'post_status' => 'publish',
-            ] );
-            if ( $master ) {
-                $mid = $master[0]->ID;
-            } else {
-                $mid = wp_insert_post( [
-                    'post_type'   => 'fish_master',
-                    'post_title'  => $common,
-                    'post_status' => 'publish',
-                ] );
-            }
-            if ( $mid && ! is_wp_error( $mid ) ) {
+            $mid = $this->northstar_find_or_create_master( $common );
+            if ( $mid ) {
                 update_post_meta( $op->ID, '_master_id', $mid );
                 $orphan_count++;
             }
@@ -664,7 +677,7 @@ trait FisHotel_NorthStar {
                 var items = [];
                 checked.forEach(function(cb){
                     var p = products[ parseInt(cb.dataset.idx) ];
-                    items.push({ name: p.name, price: p.price });
+                    items.push({ name: p.name, price: p.price, qty: p.qty || 0 });
                 });
 
                 if ( ! confirm('Import ' + items.length + ' items into "' + batch + '"?') ) return;
@@ -681,6 +694,7 @@ trait FisHotel_NorthStar {
                 items.forEach(function(item, i){
                     fd.append('items[' + i + '][name]', item.name);
                     fd.append('items[' + i + '][price]', item.price);
+                    fd.append('items[' + i + '][qty]', item.qty);
                 });
 
                 fetch(ajaxUrl, { method:'POST', body: fd })
