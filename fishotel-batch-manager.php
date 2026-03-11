@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.14 - Username card restyle, wallet endpoint fix.
- * Version:           4.14
+ * Description:       v4.15 - North Star Stock admin page.
+ * Version:           4.15
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.13' );
+define( 'FISHOTEL_VERSION', '4.15' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -20,6 +20,7 @@ require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ajax.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-woocommerce.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-shortcodes.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-admin.php';
+require_once FISHOTEL_PLUGIN_DIR . 'includes/class-northstar.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-updater.php';
 
 // Stage-aware title helpers — shared by all title/heading filters
@@ -127,6 +128,7 @@ class FisHotel_Batch_Manager {
     use FisHotel_WooCommerce;
     use FisHotel_Shortcodes;
     use FisHotel_Admin;
+    use FisHotel_NorthStar;
 
     private $is_syncing = false;
 
@@ -221,6 +223,8 @@ class FisHotel_Batch_Manager {
         add_action( 'wp_ajax_fishotel_remove_request_item', [$this, 'ajax_remove_request_item'] );
         add_action( 'wp_ajax_fishotel_remove_from_order', [$this, 'ajax_remove_from_order'] );
         add_action( 'wp_ajax_fishotel_save_arrival_field', [$this, 'ajax_save_arrival_field'] );
+        add_action( 'wp_ajax_fishotel_northstar_fetch',  [$this, 'ajax_northstar_fetch'] );
+        add_action( 'wp_ajax_fishotel_northstar_import', [$this, 'ajax_northstar_import'] );
 
         add_action( 'woocommerce_after_checkout_form', [$this, 'add_return_to_fish_button'] );
         add_action( 'woocommerce_thankyou', [$this, 'add_return_to_fish_button'] );

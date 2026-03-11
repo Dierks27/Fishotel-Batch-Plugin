@@ -30,6 +30,7 @@ trait FisHotel_Admin {
         add_submenu_page( 'fishotel-batch-settings', 'Order Summary', 'Order Summary', 'manage_options', 'fishotel-order-summary', [$this, 'order_summary_html'] );
         add_submenu_page( 'fishotel-batch-settings', 'Sync Quarantined Fish', 'Sync Quarantined Fish', 'manage_options', 'fishotel-sync', [$this, 'sync_page_html'] );
         add_submenu_page( 'fishotel-batch-settings', 'Arrival Entry', 'Arrival Entry', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
+        add_submenu_page( 'fishotel-batch-settings', 'North Star Stock', 'North Star Stock', 'manage_options', 'fishotel-northstar', [$this, 'northstar_stock_html'] );
     }
 
     public function register_settings() {
