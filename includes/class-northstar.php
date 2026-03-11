@@ -140,6 +140,43 @@ trait FisHotel_NorthStar {
         return $products;
     }
 
+    private function northstar_fetch_stock_quantities( array &$products ): void {
+        $in_stock_indices = [];
+        foreach ( $products as $i => $p ) {
+            if ( $p['stock'] === 'in_stock' ) {
+                $in_stock_indices[] = $i;
+            } else {
+                $products[ $i ]['qty'] = 0;
+            }
+        }
+
+        $total = count( $in_stock_indices );
+        $done  = 0;
+
+        foreach ( $in_stock_indices as $i ) {
+            $href = $products[ $i ]['href'];
+            $url  = 'https://www.northstaraquatics.com' . $href;
+
+            $response = wp_remote_get( $url, [ 'timeout' => 15 ] );
+            $done++;
+
+            if ( is_wp_error( $response ) ) {
+                $products[ $i ]['qty'] = 0;
+                usleep( 300000 );
+                continue;
+            }
+
+            $body = wp_remote_retrieve_body( $response );
+            if ( preg_match( '/Stock Available\s*:\s*(\d+)/', $body, $m ) ) {
+                $products[ $i ]['qty'] = intval( $m[1] );
+            } else {
+                $products[ $i ]['qty'] = 0;
+            }
+
+            usleep( 300000 ); // 0.3s delay
+        }
+    }
+
     // ─── AJAX: Fetch categories ─────────────────────────────────────────
 
     public function ajax_northstar_fetch() {
@@ -173,6 +210,9 @@ trait FisHotel_NorthStar {
 
             if ( count( $cat_ids ) > 1 ) usleep( 500000 ); // 0.5s between categories
         }
+
+        // Second pass: fetch stock quantities for in-stock items only
+        $this->northstar_fetch_stock_quantities( $all_products );
 
         $fetched_at = current_time( 'mysql' );
         $cache = [ 'products' => $all_products, 'fetched_at' => $fetched_at ];
@@ -313,6 +353,7 @@ trait FisHotel_NorthStar {
                             <th style="padding:10px 8px;text-align:left;color:#b5a165;">Common Name</th>
                             <th style="padding:10px 8px;text-align:left;color:#b5a165;">Category</th>
                             <th style="padding:10px 8px;text-align:center;color:#b5a165;">Stock</th>
+                            <th style="padding:10px 8px;text-align:center;color:#b5a165;">Qty</th>
                             <th style="padding:10px 8px;text-align:right;color:#b5a165;">Price</th>
                         </tr>
                     </thead>
@@ -373,6 +414,8 @@ trait FisHotel_NorthStar {
                     html += '<td style="padding:8px;color:#fff;">' + escHtml(p.name) + '</td>';
                     html += '<td style="padding:8px;color:#aaa;">' + escHtml(p.category || '') + '</td>';
                     html += '<td style="padding:8px;text-align:center;">' + stockBadge + '</td>';
+                    var qtyDisplay = p.stock === 'in_stock' ? (p.qty || '—') : '—';
+                    html += '<td style="padding:8px;text-align:center;color:#fff;">' + qtyDisplay + '</td>';
                     html += '<td style="padding:8px;text-align:right;color:#fff;">' + escHtml(p.price) + '</td>';
                     html += '</tr>';
                 }
@@ -408,7 +451,7 @@ trait FisHotel_NorthStar {
                 var status = document.getElementById('ns-fetch-status');
                 btn.disabled = true;
                 btn.textContent = 'Fetching...';
-                status.textContent = 'Fetching: ' + labels.join(', ') + '...';
+                status.textContent = 'Fetching categories: ' + labels.join(', ') + '... then stock quantities for in-stock items.';
 
                 var fd = new FormData();
                 fd.append('action', 'fishotel_northstar_fetch');
