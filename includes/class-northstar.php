@@ -282,11 +282,27 @@ trait FisHotel_NorthStar {
             'meta_value'  => $batch_name,
         ] );
 
+        // One-time fix: update existing titles that use " - " (hyphen) to " – " (en dash)
+        $endash = "\xE2\x80\x93";
+        $fixed = 0;
+        foreach ( $existing as $ep ) {
+            $old_title = $ep->post_title;
+            // Only fix titles using " - " that don't already have an en dash
+            if ( strpos( $old_title, ' - ' ) !== false && strpos( $old_title, " {$endash} " ) === false ) {
+                $new_title = preg_replace( '/ - (?=[^-]*$)/', " {$endash} ", $old_title );
+                if ( $new_title !== $old_title ) {
+                    wp_update_post( [ 'ID' => $ep->ID, 'post_title' => $new_title ] );
+                    $ep->post_title = $new_title;
+                    $fixed++;
+                }
+            }
+        }
+
         $existing_names = [];
         foreach ( $existing as $ep ) {
-            // Extract common name from "Common Name - Batch Name" title
-            $parts = explode( ' - ', $ep->post_title, 2 );
-            $existing_names[] = strtolower( trim( $parts[0] ) );
+            // Extract common name — split on en dash or hyphen
+            $common = preg_replace( "/\s+[\x{2013}\x{2014}-]\s+.+$/u", '', $ep->post_title );
+            $existing_names[] = strtolower( trim( $common ) );
         }
 
         $imported = 0;
@@ -307,7 +323,7 @@ trait FisHotel_NorthStar {
 
             $post_id = wp_insert_post( [
                 'post_type'   => 'fish_batch',
-                'post_title'  => $name . ' - ' . $batch_name,
+                'post_title'  => $name . " {$endash} " . $batch_name,
                 'post_status' => 'publish',
             ] );
 
@@ -324,6 +340,7 @@ trait FisHotel_NorthStar {
             'imported'      => $imported,
             'skipped'       => $skipped,
             'skipped_names' => $skipped_names,
+            'titles_fixed'  => $fixed,
         ] );
     }
 
@@ -578,6 +595,9 @@ trait FisHotel_NorthStar {
                                 if ( res.data.skipped_names && res.data.skipped_names.length ) {
                                     msg += ' (' + res.data.skipped_names.join(', ') + ')';
                                 }
+                            }
+                            if ( res.data.titles_fixed ) {
+                                msg += ', fixed ' + res.data.titles_fixed + ' old titles';
                             }
                             status.textContent = msg;
                             status.style.color = '#27ae60';
