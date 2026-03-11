@@ -1037,7 +1037,19 @@ trait FisHotel_Shortcodes {
                                 $stock = floatval( get_post_meta( $bp->ID, '_stock', true ) );
                                 $size = '';
                                 $title_to_check = $master->post_title . ' ' . $bp->post_title;
-                                if ( preg_match( '/\((SM|MED|Lrg|XL|Nano|Tiny)\)/i', $title_to_check, $matches ) ) $size = strtoupper( $matches[1] );
+                                if ( preg_match( '/\((SM|MED|Lrg|XL|Nano|Tiny)\)/i', $title_to_check, $matches ) ) {
+                                    $size = strtoupper( $matches[1] );
+                                } else {
+                                    $batch_common = preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title );
+                                    $batch_common = trim( $batch_common );
+                                    $mname = $master->post_title;
+                                    if ( stripos( $batch_common, $mname ) === 0 && strlen( $batch_common ) > strlen( $mname ) ) {
+                                        $sfx = trim( substr( $batch_common, strlen( $mname ) ) );
+                                        if ( preg_match( '/^(XXL|XL|XS|SM|ML|S|M|L|Juv|Adult|Male|Female|Pair|Trio)$/i', $sfx ) ) {
+                                            $size = strtoupper( $sfx );
+                                        }
+                                    }
+                                }
                                 $stock_class = $stock > 10 ? 'fh-stock-green' : ( $stock > 0 ? 'fh-stock-orange' : 'fh-stock-red' );
                                 $low_class   = ( $stock > 0 && $stock <= 5 ) ? ' fh-stock-low' : '';
                                 $row_class   = $stock <= 0 ? ' class="fh-row-closed"' : '';
@@ -1088,7 +1100,19 @@ trait FisHotel_Shortcodes {
                             $stock = floatval( get_post_meta( $bp->ID, '_stock', true ) );
                             $size = '';
                             $title_to_check = $master->post_title . ' ' . $bp->post_title;
-                            if ( preg_match( '/\((SM|MED|Lrg|XL|Nano|Tiny)\)/i', $title_to_check, $matches ) ) $size = strtoupper( $matches[1] );
+                            if ( preg_match( '/\((SM|MED|Lrg|XL|Nano|Tiny)\)/i', $title_to_check, $matches ) ) {
+                                $size = strtoupper( $matches[1] );
+                            } else {
+                                $batch_common = preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title );
+                                $batch_common = trim( $batch_common );
+                                $mname = $master->post_title;
+                                if ( stripos( $batch_common, $mname ) === 0 && strlen( $batch_common ) > strlen( $mname ) ) {
+                                    $sfx = trim( substr( $batch_common, strlen( $mname ) ) );
+                                    if ( preg_match( '/^(XXL|XL|XS|SM|ML|S|M|L|Juv|Adult|Male|Female|Pair|Trio)$/i', $sfx ) ) {
+                                        $size = strtoupper( $sfx );
+                                    }
+                                }
+                            }
                             $stock_class = $stock > 10 ? 'fh-stock-green' : ( $stock > 0 ? 'fh-stock-orange' : 'fh-stock-red' );
                             $low_class_m = ( $stock > 0 && $stock <= 5 ) ? ' fh-stock-low' : '';
                             $card_class  = 'fish-card' . ( $stock <= 0 ? ' fh-row-closed' : '' );
