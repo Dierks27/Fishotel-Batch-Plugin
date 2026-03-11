@@ -240,7 +240,36 @@ trait FisHotel_NorthStar {
             if ( $master ) return $master[0]->ID;
         }
 
-        // 3. No match — create new fish_master using the stripped name (or original if no strip)
+        // 3. Fuzzy match — master title starts with our name, or our name starts with master title
+        $lookup = ( $stripped !== $name && ! empty( $stripped ) ) ? $stripped : $name;
+        if ( strlen( $lookup ) >= 8 ) {
+            global $wpdb;
+            // Forward: "Emperor Angel" matches "Emperor Angelfish"
+            $fuzzy_id = $wpdb->get_var( $wpdb->prepare(
+                "SELECT ID FROM {$wpdb->posts}
+                 WHERE post_type = 'fish_master' AND post_status = 'publish'
+                 AND post_title LIKE %s
+                 ORDER BY CHAR_LENGTH(post_title) ASC LIMIT 1",
+                $wpdb->esc_like( $lookup ) . '%'
+            ) );
+            if ( ! $fuzzy_id ) {
+                // Reverse: master "Foxface" matches our "Foxface Rabbitfish"
+                $fuzzy_id = $wpdb->get_var( $wpdb->prepare(
+                    "SELECT ID FROM {$wpdb->posts}
+                     WHERE post_type = 'fish_master' AND post_status = 'publish'
+                     AND %s LIKE CONCAT(post_title, '%%')
+                     AND CHAR_LENGTH(post_title) >= 8
+                     ORDER BY CHAR_LENGTH(post_title) DESC LIMIT 1",
+                    $lookup
+                ) );
+            }
+            if ( $fuzzy_id ) {
+                error_log( '[FisHotel NorthStar] Fuzzy matched "' . $lookup . '" to master "' . get_the_title( $fuzzy_id ) . '" (ID: ' . $fuzzy_id . ')' );
+                return intval( $fuzzy_id );
+            }
+        }
+
+        // 4. No match — create new fish_master using the stripped name (or original if no strip)
         $create_name = ( $stripped !== $name && ! empty( $stripped ) ) ? $stripped : $name;
         error_log( '[FisHotel NorthStar] Created new fish_master: ' . $create_name . ( $create_name !== $name ? ' (from: ' . $name . ')' : '' ) );
 
