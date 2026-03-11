@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.43 - Customs table: nuke dark backgrounds with !important, thead tr transparent.
- * Version:           4.43
+ * Description:       v4.44 - Customs form: official seal, tighter top spacing.
+ * Version:           4.44
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.43' );
+define( 'FISHOTEL_VERSION', '4.44' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

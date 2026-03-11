@@ -2766,12 +2766,14 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-customs-inner { margin:8px; border:1px solid rgba(100,80,50,0.25); padding:12px 16px; position:relative; background:transparent; }
                 .fh-customs-edge { height:4px; background:repeating-linear-gradient(90deg,#8b0000 0,#8b0000 12px,transparent 12px,transparent 18px); }
-                .fh-customs-topline { display:flex; justify-content:space-between; margin-bottom:2px; font-family:'Courier New',monospace; font-size:10px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.06em; }
-                .fh-customs-title { text-align:center; margin-bottom:4px; }
+                .fh-customs-topline { display:flex; justify-content:space-between; margin-bottom:0; font-family:'Courier New',monospace; font-size:10px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.06em; }
+                .fh-customs-seal { text-align:center; margin:2px 0 0 0; }
+                .fh-customs-seal svg { width:64px; height:64px; }
+                .fh-customs-title { text-align:center; margin-bottom:2px; }
                 .fh-customs-title h2 { font-family:'Oswald',sans-serif; font-weight:700; font-size:18px; color:#2e2418; letter-spacing:6px; text-transform:uppercase; margin:0 0 1px 0; }
                 .fh-customs-title p { font-family:'Oswald',sans-serif; font-weight:400; font-size:12px; color:#6b5a3a; letter-spacing:4px; text-transform:uppercase; margin:0; }
-                .fh-customs-hr { border:none; border-top:2px solid #2e2418; margin:4px 0 2px 0; }
-                .fh-customs-hr2 { border:none; border-top:1px solid #a89878; margin:0 0 8px 0; }
+                .fh-customs-hr { border:none; border-top:2px solid #2e2418; margin:3px 0 1px 0; }
+                .fh-customs-hr2 { border:none; border-top:1px solid #a89878; margin:0 0 6px 0; }
                 .fh-customs-fields { display:flex; gap:12px; margin-bottom:8px; flex-wrap:wrap; }
                 .fh-customs-field { flex:1; min-width:80px; }
                 .fh-customs-field-label { font-family:'Courier New',monospace; font-size:9px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:1px; }
@@ -2937,6 +2939,23 @@ trait FisHotel_Shortcodes {
                         <div class="fh-customs-topline">
                             <span>FORM FH-QT-001</span>
                             <span>COPY 1 &mdash; GUEST</span>
+                        </div>
+                        <div class="fh-customs-seal">
+                            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="50" cy="50" r="46" fill="none" stroke="#6b5a3a" stroke-width="2"/>
+                                <circle cx="50" cy="50" r="42" fill="none" stroke="#6b5a3a" stroke-width="0.5"/>
+                                <path d="M30 52 C30 52 35 40 50 42 C65 44 68 52 68 52 C68 52 65 60 50 58 C35 56 30 52 30 52 Z" fill="#6b5a3a" opacity="0.8"/>
+                                <path d="M68 52 L76 48 L76 56 Z" fill="#6b5a3a" opacity="0.6"/>
+                                <circle cx="37" cy="50" r="1.5" fill="#c8bfa0"/>
+                                <path id="fh-seal-top" d="M15 50 A35 35 0 0 1 85 50" fill="none"/>
+                                <text font-family="'Oswald',sans-serif" font-size="7" fill="#6b5a3a" letter-spacing="2" font-weight="600" text-anchor="middle">
+                                    <textPath href="#fh-seal-top" startOffset="50%">DEPT OF MARINE AFFAIRS</textPath>
+                                </text>
+                                <path id="fh-seal-bot" d="M20 58 A33 33 0 0 0 80 58" fill="none"/>
+                                <text font-family="'Oswald',sans-serif" font-size="6.5" fill="#8a7a5a" letter-spacing="2" font-weight="400" text-anchor="middle">
+                                    <textPath href="#fh-seal-bot" startOffset="50%">EST 2024</textPath>
+                                </text>
+                            </svg>
                         </div>
                         <div class="fh-customs-title">
                             <h2>FISHOTEL INTERNATIONAL</h2>
