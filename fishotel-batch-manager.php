@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.39 - Arrival board badge CSS: bigger text, dark gaps, natural height.
- * Version:           4.39
+ * Description:       v4.40 - Badge glow effects, 2px top/bottom margin.
+ * Version:           4.40
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.39' );
+define( 'FISHOTEL_VERSION', '4.40' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -560,16 +560,16 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             flex:1 1 0; font-family:'Courier New',monospace; font-size:14px;
             font-weight:700; text-transform:uppercase; letter-spacing:0.1em;
             padding:3px 8px; border-radius:0; white-space:nowrap;
-            text-align:center; margin:1px 6px; box-sizing:border-box;
+            text-align:center; margin:2px 6px; box-sizing:border-box;
             background:transparent; line-height:26px; height:auto;
         }
-        .fh-ab-badge-qt { color:#44ff88; border:1px solid rgba(68,255,136,0.3); }
-        .fh-ab-badge-short { color:#ffaa33; border:1px solid rgba(255,170,51,0.3); }
-        .fh-ab-badge-noarr { color:#ff5555; border:1px solid rgba(255,85,85,0.3); }
-        .fh-ab-badge-transit { color:#8a7a50; border:1px solid rgba(138,122,80,0.3); }
-        .fh-ab-badge-counting { color:#d4bc7e; border:1px solid rgba(212,188,126,0.3); }
-        .fh-ab-badge-landed { color:#66ccff; border:1px solid rgba(102,204,255,0.3); }
-        .fh-ab-badge-pending { color:#d4a017; border:1px solid rgba(212,160,23,0.3); }
+        .fh-ab-badge-qt { color:#44ff88; border:1px solid rgba(68,255,136,0.3); box-shadow:0 0 2px rgba(68,255,136,0.15); text-shadow:0 0 6px rgba(68,255,136,0.5); }
+        .fh-ab-badge-short { color:#ffaa33; border:1px solid rgba(255,170,51,0.3); box-shadow:0 0 2px rgba(255,170,51,0.15); text-shadow:0 0 6px rgba(255,170,51,0.5); }
+        .fh-ab-badge-noarr { color:#ff5555; border:1px solid rgba(255,85,85,0.3); box-shadow:0 0 2px rgba(255,85,85,0.15); text-shadow:0 0 6px rgba(255,85,85,0.5); }
+        .fh-ab-badge-transit { color:#8a7a50; border:1px solid rgba(138,122,80,0.3); box-shadow:0 0 2px rgba(138,122,80,0.15); text-shadow:0 0 6px rgba(138,122,80,0.5); }
+        .fh-ab-badge-counting { color:#d4bc7e; border:1px solid rgba(212,188,126,0.3); box-shadow:0 0 2px rgba(212,188,126,0.15); text-shadow:0 0 6px rgba(212,188,126,0.5); }
+        .fh-ab-badge-landed { color:#66ccff; border:1px solid rgba(102,204,255,0.3); box-shadow:0 0 2px rgba(102,204,255,0.15); text-shadow:0 0 6px rgba(102,204,255,0.5); }
+        .fh-ab-badge-pending { color:#d4a017; border:1px solid rgba(212,160,23,0.3); box-shadow:0 0 2px rgba(212,160,23,0.15); text-shadow:0 0 6px rgba(212,160,23,0.5); }
 
         /* Flap tile groups */
         .fh-ab-tiles {
