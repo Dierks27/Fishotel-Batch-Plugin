@@ -198,11 +198,8 @@ trait FisHotel_NorthStar {
                 continue;
             }
 
-            // Strip HTML tags and collapse whitespace so regex can match across elements
-            $stripped = wp_strip_all_tags( $body );
-            $stripped = preg_replace( '/\s+/', ' ', $stripped );
-
-            if ( preg_match( '/Stock\s*Available\s*:\s*(\d+)/i', $stripped, $m ) ) {
+            // Stock qty lives in JSON variant data as "stock_available":N
+            if ( preg_match( '/"stock_available"\s*:\s*(\d+)/', $body, $m ) ) {
                 $products[ $i ]['qty'] = intval( $m[1] );
                 if ( $done <= 3 ) {
                     error_log( '[FisHotel NorthStar] Qty fetch #' . $done . '/' . $total . ' MATCH qty=' . $m[1] . ' for ' . $products[ $i ]['name'] );
@@ -210,14 +207,8 @@ trait FisHotel_NorthStar {
             } else {
                 $products[ $i ]['qty'] = 0;
                 if ( $done <= 3 ) {
-                    $has_stock_text = strpos( $body, 'Stock' ) !== false ? 'YES' : 'NO';
-                    error_log( '[FisHotel NorthStar] Qty fetch #' . $done . '/' . $total . ' NO MATCH for ' . $products[ $i ]['name'] . ' | body contains "Stock": ' . $has_stock_text . ' | body length: ' . strlen( $body ) );
-                    // Log the context around "Stock" to see exact format
-                    $stock_pos = strpos( $stripped, 'Stock' );
-                    if ( $stock_pos !== false ) {
-                        $context = substr( $stripped, max( 0, $stock_pos - 50 ), 300 );
-                        error_log( '[FisHotel NorthStar] Stock context: ' . trim( $context ) );
-                    }
+                    $has_key = strpos( $body, 'stock_available' ) !== false ? 'YES' : 'NO';
+                    error_log( '[FisHotel NorthStar] Qty fetch #' . $done . '/' . $total . ' NO MATCH for ' . $products[ $i ]['name'] . ' | body contains "stock_available": ' . $has_key . ' | body length: ' . strlen( $body ) );
                 }
             }
 
