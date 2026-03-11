@@ -28,8 +28,6 @@ trait FisHotel_Admin {
         add_submenu_page( 'fishotel-batch-hq', 'Batch HQ', 'Batch HQ', 'manage_options', 'fishotel-batch-hq' );
         add_submenu_page( 'fishotel-batch-hq', 'Arrival Entry', 'Arrival Entry', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Sourcing', 'Sourcing', 'manage_options', 'fishotel-sourcing', [$this, 'sourcing_html'] );
-        add_submenu_page( 'fishotel-batch-hq', 'Batch Fish', 'Batch Fish', 'manage_options', 'edit.php?post_type=fish_batch' );
-
         // Hidden backward-compat pages (old slugs still work via direct URL)
         add_submenu_page( null, 'FisHotel Settings', '', 'manage_options', 'fishotel-batch-settings', [$this, 'batch_settings_html'] );
         add_submenu_page( null, 'Batch Requests', '', 'manage_options', 'fishotel-batch-orders', [$this, 'batch_orders_html'] );
@@ -46,10 +44,50 @@ trait FisHotel_Admin {
         } );
         add_filter( 'submenu_file', function( $submenu_file ) {
             global $typenow;
-            if ( $typenow === 'fish_master' ) return 'fishotel-sourcing';
-            if ( $typenow === 'fish_batch' ) return 'edit.php?post_type=fish_batch';
+            if ( $typenow === 'fish_master' || $typenow === 'fish_batch' ) return 'fishotel-sourcing';
             return $submenu_file;
         } );
+
+        // Back-navigation breadcrumb on nested pages
+        add_action( 'admin_notices', [ $this, 'render_back_breadcrumb' ] );
+    }
+
+    public function render_back_breadcrumb() {
+        if ( ! current_user_can( 'manage_options' ) ) return;
+        $screen = get_current_screen();
+        if ( ! $screen ) return;
+
+        $crumbs = [];
+        $sourcing_url = admin_url( 'admin.php?page=fishotel-sourcing' );
+
+        // CPT list pages
+        if ( $screen->base === 'edit' && $screen->post_type === 'fish_master' ) {
+            $crumbs = [ [ 'Sourcing', $sourcing_url ] ];
+        } elseif ( $screen->base === 'edit' && $screen->post_type === 'fish_batch' ) {
+            $crumbs = [ [ 'Sourcing', $sourcing_url ] ];
+        }
+        // Single post edit pages
+        elseif ( $screen->base === 'post' && $screen->post_type === 'fish_master' ) {
+            $crumbs = [
+                [ 'Sourcing', $sourcing_url ],
+                [ 'Fish Library', admin_url( 'edit.php?post_type=fish_master' ) ],
+            ];
+        } elseif ( $screen->base === 'post' && $screen->post_type === 'fish_batch' ) {
+            $crumbs = [
+                [ 'Sourcing', $sourcing_url ],
+                [ 'Batch Fish', admin_url( 'edit.php?post_type=fish_batch' ) ],
+            ];
+        }
+
+        if ( empty( $crumbs ) ) return;
+
+        echo '<div style="margin:8px 0 -8px 0;padding:0;">';
+        $parts = [];
+        foreach ( $crumbs as $c ) {
+            $parts[] = '<a href="' . esc_url( $c[1] ) . '" style="color:#b5a165;text-decoration:none;font-size:13px;">' . esc_html( $c[0] ) . '</a>';
+        }
+        echo implode( ' <span style="color:#666;font-size:13px;">&#8250;</span> ', $parts );
+        echo '</div>';
     }
 
     // ─── Tab wrapper: Batch HQ ────────────────────────────────────────
