@@ -134,13 +134,13 @@ trait FisHotel_Admin {
     }
 
     public function batch_settings_html() {
-        if ( isset( $_GET['updated'] ) ) echo '<div class="notice notice-success is-dismissible"><p>✅ All settings saved successfully!</p></div>';
-        if ( isset( $_GET['error'] ) ) echo '<div class="notice notice-error is-dismissible"><p>❌ Invalid parameters. Please try again.</p></div>';
+        if ( isset( $_GET['updated'] ) ) echo '<div class="notice notice-success is-dismissible"><p>All settings saved successfully!</p></div>';
+        if ( isset( $_GET['error'] ) ) echo '<div class="notice notice-error is-dismissible"><p>Invalid parameters. Please try again.</p></div>';
         if ( isset( $_GET['fishotel_update_checked'] ) ) {
             $v = sanitize_text_field( $_GET['fishotel_update_checked'] );
             echo $v === 'error'
-                ? '<div class="notice notice-error is-dismissible"><p>❌ Could not reach GitHub to check for updates.</p></div>'
-                : '<div class="notice notice-info is-dismissible"><p>🔄 GitHub version: <strong>' . esc_html( $v ) . '</strong> — Installed: <strong>' . FISHOTEL_VERSION . '</strong></p></div>';
+                ? '<div class="notice notice-error is-dismissible"><p>Could not reach GitHub to check for updates.</p></div>'
+                : '<div class="notice notice-info is-dismissible"><p>GitHub version: <strong>' . esc_html( $v ) . '</strong> — Installed: <strong>' . FISHOTEL_VERSION . '</strong></p></div>';
         }
 
         $price_import_result = get_transient( 'fishotel_price_import_result_' . get_current_user_id() );
@@ -150,8 +150,8 @@ trait FisHotel_Admin {
             $notfound = $price_import_result['not_found'];
             echo '<div class="notice notice-info is-dismissible" style="padding:16px 20px;">';
             echo '<p style="font-size:15px;margin:0 0 6px;"><strong>Import Master Prices — Results</strong></p>';
-            echo '<p style="margin:4px 0;">✅ <strong>' . $updated . '</strong> fish price' . ( $updated !== 1 ? 's' : '' ) . ' updated</p>';
-            echo '<p style="margin:4px 0;">❌ <strong>' . count( $notfound ) . '</strong> scientific name' . ( count( $notfound ) !== 1 ? 's' : '' ) . ' not found in Master Library</p>';
+            echo '<p style="margin:4px 0;"><strong>' . $updated . '</strong> fish price' . ( $updated !== 1 ? 's' : '' ) . ' updated</p>';
+            echo '<p style="margin:4px 0;"><strong>' . count( $notfound ) . '</strong> scientific name' . ( count( $notfound ) !== 1 ? 's' : '' ) . ' not found in Master Library</p>';
             if ( ! empty( $notfound ) ) {
                 echo '<ul style="margin:10px 0 0 20px;color:#c00;">';
                 foreach ( $notfound as $name ) {
@@ -241,7 +241,7 @@ trait FisHotel_Admin {
         ?>
         <div class="wrap fishotel-admin">
             <h1>FisHotel Batch Manager</h1>
-            <p class="page-description">Complete backend control for fishotel.com batch system &nbsp;·&nbsp; v<?php echo FISHOTEL_VERSION; ?> &nbsp;·&nbsp; <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-batch-settings&fishotel_force_update_check=1' ) ); ?>" style="color:#b5a165;">🔄 Check for updates</a></p>
+            <p class="page-description">Complete backend control for fishotel.com batch system &nbsp;·&nbsp; v<?php echo FISHOTEL_VERSION; ?> &nbsp;·&nbsp; <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-batch-settings&fishotel_force_update_check=1' ) ); ?>" style="color:#b5a165;">Check for updates</a></p>
 
             <!-- ===== ZONE 1: Import Card ===== -->
             <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;margin-top:24px;">
@@ -250,7 +250,7 @@ trait FisHotel_Admin {
                         <form method="post" enctype="multipart/form-data" action="<?php echo admin_url( 'admin-post.php' ); ?>">
                             <?php wp_nonce_field( 'fishotel_import_csv_nonce' ); ?>
                             <input type="hidden" name="action" value="fishotel_import_csv">
-                            <label style="display:block;font-weight:700;color:#fff;margin-bottom:10px;">📥 Import Exporter CSV</label>
+                            <label style="display:block;font-weight:700;color:#fff;margin-bottom:10px;">Import Exporter CSV</label>
                             <input type="file" name="fish_csv" accept=".csv" style="display:block;color:#ddd;margin-bottom:14px;">
                             <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-size:14px;">Upload &amp; Analyze</button>
                         </form>
@@ -353,7 +353,7 @@ trait FisHotel_Admin {
                                     <a href="<?php echo esc_url( $view_url ); ?>" target="_blank"
                                        class="fh-icon-btn" data-tip="View">👁</a>
                                     <button type="button" class="fh-icon-btn" data-tip="Copy Link"
-                                            onclick="fhCopyLink(this,'<?php echo esc_js( $embed_url ); ?>')">📋</button>
+                                            onclick="fhCopyLink(this,'<?php echo esc_js( $embed_url ); ?>')">Copy</button>
                                 <?php endif; ?>
                                 <?php
                                 $del_nonce  = wp_create_nonce( 'fishotel_delete_batch_' . sanitize_key( $batch ) );
@@ -401,14 +401,14 @@ trait FisHotel_Admin {
 
                 <!-- Save All Settings -->
                 <p style="text-align:center;margin:28px 0 12px 0;">
-                    <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:8px;padding:16px 60px;font-size:18px;cursor:pointer;">💾 Save All Settings</button>
+                    <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:8px;padding:16px 60px;font-size:18px;cursor:pointer;">Save All Settings</button>
                 </p>
 
             </form>
 
                 <!-- ===== ZONE 3: Advanced Settings ===== -->
                 <div style="margin-top:8px;padding-bottom:40px;text-align:center;">
-                    <button type="button" id="fishotel-advanced-toggle" style="background:none;border:none;color:#aaa;font-size:0.85em;cursor:pointer;text-decoration:underline;padding:6px 0;">⚙️ Advanced Settings ▾</button>
+                    <button type="button" id="fishotel-advanced-toggle" style="background:none;border:none;color:#aaa;font-size:0.85em;cursor:pointer;text-decoration:underline;padding:6px 0;">Advanced Settings ▾</button>
                     <div id="fishotel-advanced-body" style="display:none;margin-top:12px;background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:20px;text-align:left;">
                         <table class="form-table">
                             <tr>
@@ -443,7 +443,7 @@ trait FisHotel_Admin {
 
             <!-- ===== ZONE 3b: Ticker Messages ===== -->
             <div style="margin-top:8px;text-align:center;">
-                <button type="button" id="fishotel-ticker-toggle" style="background:none;border:none;color:#aaa;font-size:0.85em;cursor:pointer;text-decoration:underline;padding:6px 0;">📟 Ticker Messages ▾</button>
+                <button type="button" id="fishotel-ticker-toggle" style="background:none;border:none;color:#aaa;font-size:0.85em;cursor:pointer;text-decoration:underline;padding:6px 0;">Ticker Messages ▾</button>
                 <div id="fishotel-ticker-body" style="display:none;margin-top:12px;background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;text-align:left;">
                     <p style="color:#aaa;font-size:13px;margin:0 0 16px;">Messages rotate on the split-flap board on the live fish list. Use <code style="background:#333;padding:2px 5px;border-radius:3px;">{species}</code> and <code style="background:#333;padding:2px 5px;border-radius:3px;">{stock}</code> as tokens for live counts. Keep messages under 40 characters.</p>
                     <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" id="fishotel-ticker-form">
@@ -477,7 +477,7 @@ trait FisHotel_Admin {
 
             <!-- ===== ZONE 4: Origin Locations ===== -->
             <div style="margin-top:8px;text-align:center;">
-                <button type="button" id="fishotel-origins-toggle" style="background:none;border:none;color:#aaa;font-size:0.85em;cursor:pointer;text-decoration:underline;padding:6px 0;">🌍 Origin Locations ▾</button>
+                <button type="button" id="fishotel-origins-toggle" style="background:none;border:none;color:#aaa;font-size:0.85em;cursor:pointer;text-decoration:underline;padding:6px 0;">Origin Locations ▾</button>
             <div id="fishotel-origins-body" style="display:none;margin-top:12px;background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;text-align:left;">
                 <p style="color:#aaa;font-size:13px;margin:0 0 16px;">Library of origin cities used by the transit-page plane animation. The batch name is scanned for any word matching a location name (case-insensitive) to auto-detect origin.</p>
                 <table class="widefat" style="border-radius:8px;overflow:hidden;margin-bottom:16px;">
@@ -553,8 +553,8 @@ trait FisHotel_Admin {
             navigator.clipboard.writeText(url).then(function() {
                 var orig = btn.getAttribute('data-tip');
                 var origText = btn.textContent;
-                btn.setAttribute('data-tip', '✅ Copied!');
-                btn.textContent = '✅';
+                btn.setAttribute('data-tip', 'Copied!');
+                btn.textContent = 'OK';
                 setTimeout(function() {
                     btn.setAttribute('data-tip', orig);
                     btn.textContent = origText;
@@ -565,20 +565,20 @@ trait FisHotel_Admin {
             var body = document.getElementById('fishotel-advanced-body');
             if (body.style.display === 'none') {
                 body.style.display = 'block';
-                this.textContent = '⚙️ Advanced Settings ▴';
+                this.textContent = 'Advanced Settings ▴';
             } else {
                 body.style.display = 'none';
-                this.textContent = '⚙️ Advanced Settings ▾';
+                this.textContent = 'Advanced Settings ▾';
             }
         });
         document.getElementById('fishotel-ticker-toggle').addEventListener('click', function() {
             var body = document.getElementById('fishotel-ticker-body');
             if (body.style.display === 'none') {
                 body.style.display = 'block';
-                this.textContent = '📟 Ticker Messages ▴';
+                this.textContent = 'Ticker Messages ▴';
             } else {
                 body.style.display = 'none';
-                this.textContent = '📟 Ticker Messages ▾';
+                this.textContent = 'Ticker Messages ▾';
             }
         });
         document.getElementById('fishotel-ticker-add').addEventListener('click', function() {
@@ -595,10 +595,10 @@ trait FisHotel_Admin {
             var body = document.getElementById('fishotel-origins-body');
             if (body.style.display === 'none') {
                 body.style.display = 'block';
-                this.textContent = '🌍 Origin Locations ▴';
+                this.textContent = 'Origin Locations ▴';
             } else {
                 body.style.display = 'none';
-                this.textContent = '🌍 Origin Locations ▾';
+                this.textContent = 'Origin Locations ▾';
             }
         });
         </script>
@@ -773,7 +773,7 @@ trait FisHotel_Admin {
         $selected      = isset( $_GET['batch'] ) ? sanitize_text_field( wp_unslash( $_GET['batch'] ) ) : ( $batches_array[0] ?? '' );
 
         echo '<div class="wrap">';
-        echo '<h1>📋 Order Summary</h1>';
+        echo '<h1>Copy Order Summary</h1>';
         echo '<p style="color:#aaa;">Compiled view of all fish requested for a batch — use this to build your importer order.</p>';
 
         // Batch selector
@@ -850,7 +850,7 @@ trait FisHotel_Admin {
         <p style="margin-bottom:16px;">
             <a href="<?php echo esc_url( $export_url ); ?>"
                style="display:inline-block;background:#27ae60;color:#fff;font-weight:700;padding:9px 22px;border-radius:6px;text-decoration:none;font-size:14px;border:1px solid #1e8449;">
-                📥 Export Order to Excel
+                Export Order to Excel
             </a>
         </p>
 
@@ -948,7 +948,7 @@ trait FisHotel_Admin {
 
         // ===== Add My Order section =====
         if ( isset( $_GET['admin_order'] ) ) {
-            echo '<div class="notice notice-success is-dismissible" style="margin:16px 0;"><p>✅ Your order has been saved and stock reserved.</p></div>';
+            echo '<div class="notice notice-success is-dismissible" style="margin:16px 0;"><p>Your order has been saved and stock reserved.</p></div>';
         }
 
         $batch_fish = get_posts( [
@@ -1018,7 +1018,7 @@ trait FisHotel_Admin {
                     </tbody>
                 </table>
 
-                <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">💾 Save My Order</button>
+                <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Save My Order</button>
             </form>
             <?php endif; ?>
         </div>
@@ -1109,9 +1109,9 @@ trait FisHotel_Admin {
     }
 
     public function batch_orders_html() {
-        if ( isset( $_GET['updated'] ) ) echo '<div class="notice notice-success is-dismissible"><p>✅ Deposit status updated!</p></div>';
-        if ( isset( $_GET['error'] ) ) echo '<div class="notice notice-error is-dismissible"><p>❌ Invalid parameters.</p></div>';
-        if ( isset( $_GET['reset_done'] ) ) echo '<div class="notice notice-warning is-dismissible"><p>🔄 Test data reset — wallet balances and deposit flags cleared for ' . intval( $_GET['reset_done'] ) . ' users.</p></div>';
+        if ( isset( $_GET['updated'] ) ) echo '<div class="notice notice-success is-dismissible"><p>Deposit status updated!</p></div>';
+        if ( isset( $_GET['error'] ) ) echo '<div class="notice notice-error is-dismissible"><p>Invalid parameters.</p></div>';
+        if ( isset( $_GET['reset_done'] ) ) echo '<div class="notice notice-warning is-dismissible"><p>Test data reset — wallet balances and deposit flags cleared for ' . intval( $_GET['reset_done'] ) . ' users.</p></div>';
 
         $requests = get_posts( [ 'post_type' => 'fish_request', 'numberposts' => -1, 'orderby' => 'date', 'order' => 'DESC' ] );
 
@@ -1233,19 +1233,19 @@ trait FisHotel_Admin {
             </table>
 
             <div class="fishotel-danger-zone">
-                <button class="fishotel-danger-toggle" type="button" id="fishotel-danger-toggle">⚠️ Danger Zone</button>
+                <button class="fishotel-danger-toggle" type="button" id="fishotel-danger-toggle">Danger Zone</button>
                 <div class="fishotel-danger-body" id="fishotel-danger-body">
                     <p style="color:#e74c3c;font-weight:700;margin-top:0;">Destructive actions — cannot be undone.</p>
                     <p class="page-description">Clears ALL wallet balances, deposit flags, and deletes ALL fish requests for every user. Use only during testing.</p>
                     <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" style="display:inline-block;margin-right:12px;">
                         <input type="hidden" name="action" value="fishotel_reset_test_data">
                         <?php wp_nonce_field( 'fishotel_reset_test_data' ); ?>
-                        <button type="submit" style="background:#e74c3c;color:#fff;font-weight:700;padding:10px 24px;border:none;border-radius:6px;cursor:pointer;font-size:14px;" onclick="return confirm('RESET ALL wallet balances, deposit flags, and fish requests for every user? This cannot be undone.');">🔄 Reset Test Data</button>
+                        <button type="submit" style="background:#e74c3c;color:#fff;font-weight:700;padding:10px 24px;border:none;border-radius:6px;cursor:pointer;font-size:14px;" onclick="return confirm('RESET ALL wallet balances, deposit flags, and fish requests for every user? This cannot be undone.');">Reset Test Data</button>
                     </form>
                     <form method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>" style="display:inline-block;">
                         <input type="hidden" name="action" value="fishotel_create_test_requests">
                         <?php wp_nonce_field( 'fishotel_create_test_requests' ); ?>
-                        <button type="submit" style="background:#8e44ad;color:#fff;font-weight:700;padding:10px 24px;border:none;border-radius:6px;cursor:pointer;font-size:14px;" onclick="return confirm('Create 3 fake test requests for the active transit batch?');">🧪 Create Test Requests</button>
+                        <button type="submit" style="background:#8e44ad;color:#fff;font-weight:700;padding:10px 24px;border:none;border-radius:6px;cursor:pointer;font-size:14px;" onclick="return confirm('Create 3 fake test requests for the active transit batch?');">Create Test Requests</button>
                     </form>
                 </div>
             </div>
@@ -1489,10 +1489,14 @@ trait FisHotel_Admin {
 
     public function enqueue_batch_orders_scripts( $hook ) {
         $fishotel_pages = [
+            'fishotel-batch-hq',
+            'fishotel-sourcing',
             'fishotel-batch-orders',
             'fishotel-batch-settings',
             'fishotel-wallets',
+            'fishotel-order-summary',
             'fishotel-sync',
+            'fishotel-northstar',
             'fishotel-arrival-entry',
         ];
         $page = $_GET['page'] ?? '';
@@ -1518,7 +1522,7 @@ trait FisHotel_Admin {
     color: #ffffff;
 }
 .fishotel-admin .wrap > h1::before {
-    content: '🐠 ';
+    content: '';
 }
 
 /* Wrap background */
@@ -1699,7 +1703,7 @@ trait FisHotel_Admin {
     margin-bottom: 24px;
 }
 :is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .wrap h1::before {
-    content: '🐠 ';
+    content: '';
 }
 
 /* ===== Fix 2: Post type list page dark styling ===== */
@@ -2351,7 +2355,7 @@ trait FisHotel_Admin {
         return [
             'open_ordering' => [
                 'next_stage' => 'arrived',
-                'label'      => '🔒 Close Ordering',
+                'label'      => 'Close Ordering',
                 'style'      => 'background:#c0392b;color:#fff;border-color:#a93226;',
                 'confirm'    => "Close ordering for '%s'? This immediately sets the stage to Arrived.",
             ],

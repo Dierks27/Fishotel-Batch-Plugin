@@ -353,7 +353,7 @@ trait FisHotel_NorthStar {
                             <th style="padding:10px 8px;text-align:left;color:#b5a165;">Common Name</th>
                             <th style="padding:10px 8px;text-align:left;color:#b5a165;">Category</th>
                             <th style="padding:10px 8px;text-align:center;color:#b5a165;">Stock</th>
-                            <th style="padding:10px 8px;text-align:center;color:#b5a165;">Qty</th>
+                            <th style="padding:10px 8px;text-align:center;color:#b5a165;" id="ns-qty-header">Qty</th>
                             <th style="padding:10px 8px;text-align:right;color:#b5a165;">Price</th>
                         </tr>
                     </thead>
@@ -398,6 +398,13 @@ trait FisHotel_NorthStar {
                 var inStockOnly = document.getElementById('ns-instock-filter').checked;
                 var html = '';
                 var shown = 0;
+                var hasQtyData = products.some(function(p){ return typeof p.qty !== 'undefined'; });
+
+                // Show hint on Qty header if cached data lacks qty
+                var qtyHeader = document.getElementById('ns-qty-header');
+                if ( qtyHeader ) {
+                    qtyHeader.innerHTML = hasQtyData ? 'Qty' : 'Qty <span style="display:block;font-size:10px;font-weight:400;color:#888;">(re-fetch to update)</span>';
+                }
 
                 for ( var i = 0; i < products.length; i++ ) {
                     var p = products[i];
@@ -409,12 +416,16 @@ trait FisHotel_NorthStar {
                         ? '<span style="background:#27ae60;color:#fff;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:600;">In Stock</span>'
                         : '<span style="background:#c0392b;color:#fff;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:600;">Out of Stock</span>';
 
+                    var qtyDisplay = '—';
+                    if ( typeof p.qty !== 'undefined' ) {
+                        qtyDisplay = p.stock === 'in_stock' ? (p.qty > 0 ? p.qty : '—') : '0';
+                    }
+
                     html += '<tr style="border-bottom:1px solid #333;" data-idx="' + i + '">';
                     html += '<td style="padding:8px;"><input type="checkbox" class="ns-row-cb" data-idx="' + i + '" style="accent-color:#e67e22;"></td>';
                     html += '<td style="padding:8px;color:#fff;">' + escHtml(p.name) + '</td>';
                     html += '<td style="padding:8px;color:#aaa;">' + escHtml(p.category || '') + '</td>';
                     html += '<td style="padding:8px;text-align:center;">' + stockBadge + '</td>';
-                    var qtyDisplay = p.stock === 'in_stock' ? (p.qty || '—') : '—';
                     html += '<td style="padding:8px;text-align:center;color:#fff;">' + qtyDisplay + '</td>';
                     html += '<td style="padding:8px;text-align:right;color:#fff;">' + escHtml(p.price) + '</td>';
                     html += '</tr>';
