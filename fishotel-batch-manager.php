@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.25 - Use en dash in import titles, auto-fix existing hyphen titles.
- * Version:           4.25
+ * Description:       v4.26 - Hyphen titles, retroactive _batch_name meta fix for orphaned posts.
+ * Version:           4.26
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.25' );
+define( 'FISHOTEL_VERSION', '4.26' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

@@ -282,19 +282,39 @@ trait FisHotel_NorthStar {
             'meta_value'  => $batch_name,
         ] );
 
-        // One-time fix: update existing titles that use " - " (hyphen) to " – " (en dash)
+        // Retroactive fix: revert any en-dash titles back to regular hyphen
         $endash = "\xE2\x80\x93";
         $fixed = 0;
         foreach ( $existing as $ep ) {
             $old_title = $ep->post_title;
-            // Only fix titles using " - " that don't already have an en dash
-            if ( strpos( $old_title, ' - ' ) !== false && strpos( $old_title, " {$endash} " ) === false ) {
-                $new_title = preg_replace( '/ - (?=[^-]*$)/', " {$endash} ", $old_title );
-                if ( $new_title !== $old_title ) {
-                    wp_update_post( [ 'ID' => $ep->ID, 'post_title' => $new_title ] );
-                    $ep->post_title = $new_title;
-                    $fixed++;
-                }
+            if ( strpos( $old_title, " {$endash} " ) !== false ) {
+                $new_title = str_replace( " {$endash} ", ' - ', $old_title );
+                wp_update_post( [ 'ID' => $ep->ID, 'post_title' => $new_title ] );
+                $ep->post_title = $new_title;
+                $fixed++;
+            }
+        }
+
+        // Retroactive fix: find posts with batch name in title but missing _batch_name meta
+        $orphans = get_posts( [
+            'post_type'   => 'fish_batch',
+            'numberposts' => -1,
+            's'           => $batch_name,
+            'meta_query'  => [
+                [
+                    'key'     => '_batch_name',
+                    'compare' => 'NOT EXISTS',
+                ],
+            ],
+        ] );
+        $meta_fixed = 0;
+        foreach ( $orphans as $op ) {
+            // Confirm the batch name is actually in the title
+            if ( stripos( $op->post_title, $batch_name ) !== false ) {
+                update_post_meta( $op->ID, '_batch_name', $batch_name );
+                update_post_meta( $op->ID, '_stock', 0 );
+                $existing[] = $op;
+                $meta_fixed++;
             }
         }
 
@@ -323,7 +343,7 @@ trait FisHotel_NorthStar {
 
             $post_id = wp_insert_post( [
                 'post_type'   => 'fish_batch',
-                'post_title'  => $name . " {$endash} " . $batch_name,
+                'post_title'  => $name . ' - ' . $batch_name,
                 'post_status' => 'publish',
             ] );
 
@@ -341,6 +361,7 @@ trait FisHotel_NorthStar {
             'skipped'       => $skipped,
             'skipped_names' => $skipped_names,
             'titles_fixed'  => $fixed,
+            'meta_fixed'    => $meta_fixed,
         ] );
     }
 
@@ -597,7 +618,10 @@ trait FisHotel_NorthStar {
                                 }
                             }
                             if ( res.data.titles_fixed ) {
-                                msg += ', fixed ' + res.data.titles_fixed + ' old titles';
+                                msg += ', fixed ' + res.data.titles_fixed + ' titles';
+                            }
+                            if ( res.data.meta_fixed ) {
+                                msg += ', recovered ' + res.data.meta_fixed + ' orphaned posts';
                             }
                             status.textContent = msg;
                             status.style.color = '#27ae60';
