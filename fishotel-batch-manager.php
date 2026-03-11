@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.40 - Badge glow effects, 2px top/bottom margin.
- * Version:           4.40
+ * Description:       v4.41 - Livestock Customs Declaration, hide strip/detail, badge margin fix.
+ * Version:           4.41
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.40' );
+define( 'FISHOTEL_VERSION', '4.41' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -560,7 +560,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             flex:1 1 0; font-family:'Courier New',monospace; font-size:14px;
             font-weight:700; text-transform:uppercase; letter-spacing:0.1em;
             padding:3px 8px; border-radius:0; white-space:nowrap;
-            text-align:center; margin:2px 6px; box-sizing:border-box;
+            text-align:center; margin:1px 6px; box-sizing:border-box;
             background:transparent; line-height:26px; height:auto;
         }
         .fh-ab-badge-qt { color:#44ff88; border:1px solid rgba(68,255,136,0.3); box-shadow:0 0 2px rgba(68,255,136,0.15); text-shadow:0 0 6px rgba(68,255,136,0.5); }

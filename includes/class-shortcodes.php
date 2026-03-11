@@ -2755,58 +2755,55 @@ trait FisHotel_Shortcodes {
                 /* (Spa check-in card styles removed — replaced by welcome panel) */
 
                 /* ── Hotel Spa Check-In Card ── */
-                .fh-checkin-card { margin-bottom:24px; }
-                .fh-checkin-inner {
-                    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
-                              linear-gradient(165deg,#0c161f 0%,#0a1320 50%,#081018 100%);
-                    background-size:150px 150px,cover;
-                    border:2px solid rgba(181,161,101,0.5); border-radius:6px;
-                    border-top:4px solid #b5a165;
-                    overflow:hidden; position:relative;
-                    box-shadow:0 6px 24px rgba(0,0,0,0.5), inset 0 0 40px rgba(0,0,0,0.3);
+                /* ── Livestock Customs Declaration ── */
+                .fh-customs-card {
+                    margin-bottom:24px; position:relative;
+                    background:#c8bfa0; border:1px solid #9e9070; border-radius:2px;
+                    box-shadow:2px 3px 10px rgba(0,0,0,0.5);
+                    overflow:hidden;
+                    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='cn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23cn)' opacity='0.06'/%3E%3C/svg%3E");
+                    background-size:200px 200px;
                 }
-                .fh-checkin-inner::before {
-                    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
-                    opacity:0.04; mix-blend-mode:overlay;
-                    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='t'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23t)'/%3E%3C/svg%3E");
-                }
-                .fh-checkin-header {
-                    padding:12px 20px; background:rgba(181,161,101,0.12);
-                    border-bottom:1px solid rgba(181,161,101,0.3);
-                    font-family:'Oswald',sans-serif; font-weight:700;
-                    font-size:13px; letter-spacing:0.12em; color:#b5a165;
-                    text-transform:uppercase; position:relative; z-index:1;
-                }
-                .fh-checkin-body { padding:8px 20px 16px; position:relative; z-index:1; }
-                .fh-checkin-row {
-                    display:flex; justify-content:space-between; align-items:center;
-                    padding:10px 0; border-bottom:1px solid rgba(181,161,101,0.15);
-                }
-                .fh-checkin-row:last-child { border-bottom:none; }
-                .fh-checkin-fish { display:flex; align-items:baseline; gap:8px; }
-                .fh-checkin-name {
-                    font-family:'Oswald',sans-serif; font-weight:600;
-                    font-size:15px; color:#d4bc7e; text-transform:uppercase;
-                    letter-spacing:0.04em;
-                }
-                .fh-checkin-qty {
-                    font-family:'Oswald',sans-serif; font-weight:400;
-                    font-size:12px; color:#8a7a50;
-                }
-                .fh-checkin-pos {
-                    font-family:'Courier New',monospace; font-weight:400;
-                    font-size:12px; letter-spacing:0.06em; color:#8a9bae;
-                    text-transform:uppercase;
-                }
-                .fh-checkin-empty {
-                    padding:20px 0; text-align:center;
-                    font-family:'Oswald',sans-serif; font-weight:400;
-                    font-size:13px; letter-spacing:0.1em; color:#5a6a7a;
-                    text-transform:uppercase;
+                .fh-customs-inner { margin:8px; border:1px solid rgba(100,80,50,0.25); padding:20px 24px; position:relative; }
+                .fh-customs-edge { height:4px; background:repeating-linear-gradient(90deg,#8b0000 0,#8b0000 12px,transparent 12px,transparent 18px); }
+                .fh-customs-topline { display:flex; justify-content:space-between; margin-bottom:6px; font-family:'Courier New',monospace; font-size:10px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.06em; }
+                .fh-customs-title { text-align:center; margin-bottom:12px; }
+                .fh-customs-title h2 { font-family:'Oswald',sans-serif; font-weight:700; font-size:18px; color:#2e2418; letter-spacing:6px; text-transform:uppercase; margin:0 0 2px 0; }
+                .fh-customs-title p { font-family:'Oswald',sans-serif; font-weight:400; font-size:12px; color:#6b5a3a; letter-spacing:4px; text-transform:uppercase; margin:0; }
+                .fh-customs-hr { border:none; border-top:2px solid #2e2418; margin:8px 0 4px 0; }
+                .fh-customs-hr2 { border:none; border-top:1px solid #a89878; margin:0 0 16px 0; }
+                .fh-customs-fields { display:flex; gap:16px; margin-bottom:16px; flex-wrap:wrap; }
+                .fh-customs-field { flex:1; min-width:80px; }
+                .fh-customs-field-label { font-family:'Courier New',monospace; font-size:9px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px; }
+                .fh-customs-field-val { font-family:'Courier New',monospace; font-size:13px; color:#2e2418; font-weight:700; text-transform:uppercase; border-bottom:1px solid #6b5a3a; padding-bottom:2px; }
+                .fh-customs-section { font-family:'Oswald',sans-serif; font-weight:600; font-size:11px; color:#6b5a3a; letter-spacing:3px; text-transform:uppercase; margin:16px 0 8px 0; }
+                .fh-customs-table { width:100%; border-collapse:collapse; font-family:'Courier New',monospace; font-size:12px; color:#2e2418; }
+                .fh-customs-table th { font-size:9px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.08em; text-align:left; padding:4px 6px; border-bottom:1px solid #6b5a3a; font-weight:400; }
+                .fh-customs-table td { padding:6px 6px; border-bottom:1px dashed #a89878; vertical-align:middle; }
+                .fh-customs-table tr:last-child td { border-bottom:none; }
+                .fh-customs-species { font-weight:700; text-transform:uppercase; }
+                .fh-customs-status-qt { color:#1a7a3a; font-weight:700; }
+                .fh-customs-status-pending { color:#b5750e; font-weight:700; }
+                .fh-customs-status-doa { color:#8b0000; font-weight:700; }
+                .fh-customs-status-noarr { color:#6b5a3a; font-weight:700; }
+                .fh-customs-status-short { color:#b5750e; font-weight:700; }
+                .fh-customs-footer { display:flex; justify-content:space-between; align-items:flex-end; margin-top:16px; }
+                .fh-customs-facility { font-family:'Courier New',monospace; font-size:9px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.04em; line-height:1.5; }
+                .fh-customs-stamp { font-family:'Oswald',sans-serif; font-weight:700; font-size:16px; color:#8b0000; border:3px solid #8b0000; padding:6px 16px; transform:rotate(-4deg); opacity:0.7; text-transform:uppercase; letter-spacing:3px; display:inline-block; }
+                .fh-customs-empty { padding:20px 0; text-align:center; font-family:'Courier New',monospace; font-size:12px; color:#6b5a3a; text-transform:uppercase; letter-spacing:0.06em; }
+                @media (max-width:600px) {
+                    .fh-customs-inner { padding:14px 12px; }
+                    .fh-customs-fields { gap:10px; }
+                    .fh-customs-field { min-width:60px; }
+                    .fh-customs-table { font-size:11px; }
+                    .fh-customs-table th { font-size:8px; }
+                    .fh-customs-footer { flex-direction:column; align-items:center; gap:12px; text-align:center; }
                 }
 
-                /* ── Collapsible boarding pass strip ── */
-                .fh-ab-strip {
+                /* ── Collapsible boarding pass strip (hidden at arrived stage) ── */
+                .fh-ab-strip { display:none !important; }
+                .fh-ab-detail { display:none !important; }
+                .fh-ab-strip-visible {
                     display:flex; align-items:center; gap:16px;
                     background:#0c161f; border:2px solid #b5a165; border-radius:10px;
                     padding:12px 20px; margin-bottom:24px; cursor:pointer;
@@ -2902,56 +2899,148 @@ trait FisHotel_Shortcodes {
                 </div>
 
                 <?php else : ?>
-                <!-- ===== Hotel Spa Check-In Card ===== -->
+                <!-- ===== Livestock Customs Declaration ===== -->
+                <?php
+                $customs_stamp = 'QUARANTINE HOLD';
+                if ( $qt_days_left <= 0 && $arrival_date ) $customs_stamp = 'RELEASED';
+                $passenger_name = $uid ? strtoupper( wp_get_current_user()->display_name ) : '';
+                $customs_tank = '—';
+                if ( $uid && ! empty( $my_items ) ) {
+                    $first_bid = intval( $my_items[0]['batch_id'] ?? 0 );
+                    if ( isset( $fcfs[ $first_bid ] ) ) {
+                        foreach ( $fcfs[ $first_bid ] as $entry ) {
+                            if ( $entry['customer_id'] === $uid ) { $customs_tank = $entry['cum_end']; break; }
+                        }
+                    }
+                }
+                ?>
                 <?php if ( $uid && ! empty( $my_items ) ) : ?>
-                <div class="fh-checkin-card">
-                    <div class="fh-checkin-inner">
-                        <div class="fh-checkin-header">THE HOTEL SPA &middot; GUEST FOLIO</div>
-                        <div class="fh-checkin-body">
-                        <?php foreach ( $my_items as $item ) :
-                            $bid      = intval( $item['batch_id'] ?? 0 );
-                            $my_qty   = intval( $item['qty'] ?? 1 );
-                            $position = '—';
-                            if ( isset( $fcfs[ $bid ] ) ) {
-                                foreach ( $fcfs[ $bid ] as $entry ) {
-                                    if ( $entry['customer_id'] === $uid ) {
-                                        $position = $entry['cum_end'];
-                                        break;
-                                    }
-                                }
-                            }
-                            $fish_name = FisHotel_Batch_Manager::resolve_common_name( $bid, $item['fish_name'] ?? '' );
-                        ?>
-                        <div class="fh-checkin-row">
-                            <div class="fh-checkin-fish">
-                                <span class="fh-checkin-name"><?php echo esc_html( $fish_name ); ?></span>
-                                <span class="fh-checkin-qty">QTY: <?php echo $my_qty; ?></span>
-                            </div>
-                            <span class="fh-checkin-pos">STATEROOM NO. <?php echo esc_html( $position ); ?></span>
+                <div class="fh-customs-card">
+                    <div class="fh-customs-edge"></div>
+                    <div class="fh-customs-inner">
+                        <div class="fh-customs-topline">
+                            <span>FORM FH-QT-001</span>
+                            <span>COPY 1 &mdash; GUEST</span>
                         </div>
-                        <?php endforeach; ?>
+                        <div class="fh-customs-title">
+                            <h2>FISHOTEL INTERNATIONAL</h2>
+                            <p>LIVESTOCK CUSTOMS DECLARATION</p>
+                        </div>
+                        <hr class="fh-customs-hr"><hr class="fh-customs-hr2">
+                        <div class="fh-customs-fields">
+                            <div class="fh-customs-field">
+                                <div class="fh-customs-field-label">Passenger</div>
+                                <div class="fh-customs-field-val"><?php echo esc_html( $passenger_name ); ?></div>
+                            </div>
+                            <div class="fh-customs-field">
+                                <div class="fh-customs-field-label">Flight</div>
+                                <div class="fh-customs-field-val"><?php echo esc_html( $flight_number ); ?></div>
+                            </div>
+                            <div class="fh-customs-field">
+                                <div class="fh-customs-field-label">Batch</div>
+                                <div class="fh-customs-field-val"><?php echo esc_html( strtoupper( $batch_name ) ); ?></div>
+                            </div>
+                            <div class="fh-customs-field">
+                                <div class="fh-customs-field-label">QT Tank</div>
+                                <div class="fh-customs-field-val"><?php echo esc_html( $customs_tank ); ?></div>
+                            </div>
+                        </div>
+                        <div class="fh-customs-section">Declared Livestock</div>
+                        <table class="fh-customs-table">
+                            <thead><tr>
+                                <th>Species</th>
+                                <th>Qty Declared</th>
+                                <th>Qty Received</th>
+                                <th>Condition</th>
+                                <th>Queue Pos.</th>
+                            </tr></thead>
+                            <tbody>
+                            <?php foreach ( $my_items as $item ) :
+                                $bid      = intval( $item['batch_id'] ?? 0 );
+                                $my_qty   = intval( $item['qty'] ?? 1 );
+                                $sa_c     = $species_arrival[ $bid ] ?? [ 'received' => 0, 'doa' => 0, 'alive' => 0 ];
+                                $recv_c   = intval( $sa_c['received'] );
+                                $doa_c    = intval( $sa_c['doa'] );
+                                $c_status_raw = get_post_meta( $bid, '_arrival_status', true ) ?: 'pending';
+                                $c_status_map = [
+                                    'in_quarantine' => [ 'IN QT', 'fh-customs-status-qt' ],
+                                    'pending'       => [ 'PENDING', 'fh-customs-status-pending' ],
+                                    'no_arrival'    => [ 'NO ARRIVAL', 'fh-customs-status-noarr' ],
+                                    'short'         => [ 'SHORT', 'fh-customs-status-short' ],
+                                    'in_transit'    => [ 'IN TRANSIT', 'fh-customs-status-pending' ],
+                                    'landed'        => [ 'LANDED', 'fh-customs-status-pending' ],
+                                    'counting'      => [ 'COUNTING', 'fh-customs-status-pending' ],
+                                ];
+                                $c_stat   = $c_status_map[ $c_status_raw ] ?? [ strtoupper( $c_status_raw ), 'fh-customs-status-pending' ];
+                                if ( $doa_c > 0 && $recv_c === $doa_c ) $c_stat = [ 'DOA', 'fh-customs-status-doa' ];
+
+                                $position_c = '—';
+                                if ( isset( $fcfs[ $bid ] ) ) {
+                                    $total_demand = 0;
+                                    $my_pos = 0;
+                                    foreach ( $fcfs[ $bid ] as $entry ) {
+                                        $total_demand = $entry['cum_end'];
+                                        if ( $entry['customer_id'] === $uid ) $my_pos = $entry['cum_end'];
+                                    }
+                                    if ( $my_pos > 0 ) $position_c = $my_pos . ' of ' . $total_demand;
+                                }
+                                $fish_name = trim( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', get_the_title( $bid ) ) );
+                            ?>
+                            <tr>
+                                <td class="fh-customs-species"><?php echo esc_html( $fish_name ); ?></td>
+                                <td><?php echo $my_qty; ?></td>
+                                <td><?php echo $recv_c; ?></td>
+                                <td><span class="<?php echo esc_attr( $c_stat[1] ); ?>"><?php echo esc_html( $c_stat[0] ); ?></span></td>
+                                <td><?php echo esc_html( $position_c ); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                        <div class="fh-customs-footer">
+                            <div class="fh-customs-facility">
+                                QUARANTINE FACILITY: THE HOTEL SPA<br>
+                                CHAMPLIN, MN &middot; EST. 2024
+                            </div>
+                            <div class="fh-customs-stamp"><?php echo esc_html( $customs_stamp ); ?></div>
                         </div>
                     </div>
+                    <div class="fh-customs-edge"></div>
                 </div>
                 <?php elseif ( ! $uid ) : ?>
-                <div class="fh-checkin-card">
-                    <div class="fh-checkin-inner">
-                        <div class="fh-checkin-header">THE HOTEL SPA &middot; GUEST FOLIO</div>
-                        <div class="fh-checkin-body">
-                            <div class="fh-checkin-empty">
-                                <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="color:#b5a165;text-decoration:none;">PLEASE PRESENT YOUR CREDENTIALS AT THE FRONT DESK</a>
-                            </div>
+                <div class="fh-customs-card">
+                    <div class="fh-customs-edge"></div>
+                    <div class="fh-customs-inner">
+                        <div class="fh-customs-topline">
+                            <span>FORM FH-QT-001</span>
+                            <span>COPY 1 &mdash; GUEST</span>
+                        </div>
+                        <div class="fh-customs-title">
+                            <h2>FISHOTEL INTERNATIONAL</h2>
+                            <p>LIVESTOCK CUSTOMS DECLARATION</p>
+                        </div>
+                        <hr class="fh-customs-hr"><hr class="fh-customs-hr2">
+                        <div class="fh-customs-empty">
+                            <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="color:#6b5a3a;text-decoration:none;">PLEASE PRESENT YOUR CREDENTIALS AT THE FRONT DESK</a>
                         </div>
                     </div>
+                    <div class="fh-customs-edge"></div>
                 </div>
                 <?php elseif ( empty( $my_items ) ) : ?>
-                <div class="fh-checkin-card">
-                    <div class="fh-checkin-inner">
-                        <div class="fh-checkin-header">THE HOTEL SPA &middot; GUEST FOLIO</div>
-                        <div class="fh-checkin-body">
-                            <div class="fh-checkin-empty">NO RESERVATION ON FILE</div>
+                <div class="fh-customs-card">
+                    <div class="fh-customs-edge"></div>
+                    <div class="fh-customs-inner">
+                        <div class="fh-customs-topline">
+                            <span>FORM FH-QT-001</span>
+                            <span>COPY 1 &mdash; GUEST</span>
                         </div>
+                        <div class="fh-customs-title">
+                            <h2>FISHOTEL INTERNATIONAL</h2>
+                            <p>LIVESTOCK CUSTOMS DECLARATION</p>
+                        </div>
+                        <hr class="fh-customs-hr"><hr class="fh-customs-hr2">
+                        <div class="fh-customs-empty">NO DECLARATION ON FILE</div>
                     </div>
+                    <div class="fh-customs-edge"></div>
                 </div>
                 <?php endif; ?>
 
