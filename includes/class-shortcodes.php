@@ -2768,15 +2768,15 @@ trait FisHotel_Shortcodes {
                 }
                 .fh-customs-inner { margin:8px; border:1px solid rgba(100,80,50,0.25); padding:12px 16px; position:relative; background:transparent; }
                 .fh-customs-edge { height:4px; background:repeating-linear-gradient(90deg,#8b0000 0,#8b0000 12px,transparent 12px,transparent 18px); }
-                .fh-customs-topline { display:flex; justify-content:space-between; margin-bottom:0; font-family:'Courier New',monospace; font-size:10px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.06em; }
-                .fh-customs-seal { text-align:center; margin:0; padding:0; line-height:0; }
+                .fh-customs-topline { display:flex; justify-content:space-between; margin:0 !important; padding:0; font-family:'Courier New',monospace; font-size:10px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.06em; }
+                .fh-customs-seal { text-align:center; margin:0 !important; padding:0 !important; line-height:0; }
                 .fh-customs-seal svg { width:56px; height:56px; display:block; margin:0 auto; }
-                .fh-customs-title { text-align:center; margin:0 !important; padding:0; }
-                .fh-customs-title h2 { font-family:'Oswald',sans-serif; font-weight:700; font-size:18px; color:#2e2418; letter-spacing:6px; text-transform:uppercase; margin:0 !important; padding:0; }
-                .fh-customs-title p { font-family:'Oswald',sans-serif; font-weight:400; font-size:12px; color:#6b5a3a; letter-spacing:4px; text-transform:uppercase; margin:0 !important; padding:0; }
-                .fh-customs-hr { border:none; border-top:2px solid #2e2418; margin:4px 0; padding:0; }
-                .fh-customs-hr2 { border:none; border-top:1px solid #a89878; margin:4px 0; padding:0; }
-                .fh-customs-fields { display:flex; gap:12px; margin-bottom:8px; flex-wrap:wrap; }
+                .fh-customs-title { text-align:center; margin:0 !important; padding:0 !important; }
+                .fh-customs-title h2 { font-family:'Oswald',sans-serif; font-weight:700; font-size:18px; color:#2e2418; letter-spacing:6px; text-transform:uppercase; margin:0 !important; padding:0 !important; }
+                .fh-customs-title p { font-family:'Oswald',sans-serif; font-weight:400; font-size:12px; color:#6b5a3a; letter-spacing:4px; text-transform:uppercase; margin:0 !important; padding:0 !important; }
+                .fh-customs-hr { border:none; border-top:2px solid #2e2418; margin:2px 0 !important; padding:0 !important; height:0; }
+                .fh-customs-hr2 { border:none; border-top:1px solid #a89878; margin:2px 0 !important; padding:0 !important; height:0; }
+                .fh-customs-fields { display:flex; gap:12px; margin:0 0 8px 0 !important; padding:0; flex-wrap:wrap; }
                 .fh-customs-field { flex:1; min-width:80px; }
                 .fh-customs-field-label { font-family:'Courier New',monospace; font-size:9px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:1px; }
                 .fh-customs-field-val { font-family:'Courier New',monospace; font-size:13px; color:#2e2418; font-weight:700; text-transform:uppercase; border-bottom:1px solid #6b5a3a; padding-bottom:1px; }
@@ -3024,7 +3024,7 @@ trait FisHotel_Shortcodes {
                                 $fish_name = trim( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', get_the_title( $bid ) ) );
                             ?>
                             <tr>
-                                <td class="fh-customs-species"><?php echo esc_html( $fish_name ); ?></td>
+                                <td class="fh-customs-species"><?php echo esc_html( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $fish_name ) ); ?></td>
                                 <td><?php echo $my_qty; ?></td>
                                 <td><?php echo $recv_c; ?></td>
                                 <td><span class="<?php echo esc_attr( $c_stat[1] ); ?>"><?php echo esc_html( $c_stat[0] ); ?></span></td>
