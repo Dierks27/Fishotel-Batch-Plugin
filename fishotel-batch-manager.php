@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.61 - Restore clipboard icon on Copy button.
- * Version:           4.61
+ * Description:       v4.62 - Hotel Program framework (Stage 4 postcard, admin, schedule).
+ * Version:           4.62
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.61' );
+define( 'FISHOTEL_VERSION', '4.62' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -21,6 +21,7 @@ require_once FISHOTEL_PLUGIN_DIR . 'includes/class-woocommerce.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-shortcodes.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-admin.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-northstar.php';
+require_once FISHOTEL_PLUGIN_DIR . 'includes/class-hotel-program.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-updater.php';
 
 // Stage-aware title helpers — shared by all title/heading filters
@@ -129,11 +130,13 @@ class FisHotel_Batch_Manager {
     use FisHotel_Shortcodes;
     use FisHotel_Admin;
     use FisHotel_NorthStar;
+    use FisHotel_HotelProgram;
 
     private $is_syncing = false;
 
     public function __construct() {
         add_action( 'init', [$this, 'init'] );
+        $this->hotel_program_init();
         add_action( 'admin_menu', [$this, 'add_admin_menu'] );
         add_action( 'admin_init', [$this, 'register_settings'] );
         add_action( 'rest_api_init', [$this, 'register_rest_routes'] );

@@ -28,6 +28,7 @@ trait FisHotel_Admin {
         add_submenu_page( 'fishotel-batch-hq', 'Batch HQ', 'Batch HQ', 'manage_options', 'fishotel-batch-hq' );
         add_submenu_page( 'fishotel-batch-hq', 'Arrival Entry', 'Arrival Entry', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Sourcing', 'Sourcing', 'manage_options', 'fishotel-sourcing', [$this, 'sourcing_html'] );
+        add_submenu_page( 'fishotel-batch-hq', 'Hotel Program', 'Hotel Program', 'manage_options', 'fishotel-hotel-program', [$this, 'hotel_program_html'] );
         // Hidden backward-compat pages (old slugs still work via direct URL)
         add_submenu_page( null, 'FisHotel Settings', '', 'manage_options', 'fishotel-batch-settings', [$this, 'batch_settings_html'] );
         add_submenu_page( null, 'Batch Requests', '', 'manage_options', 'fishotel-batch-orders', [$this, 'batch_orders_html'] );
