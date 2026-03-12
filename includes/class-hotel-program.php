@@ -827,6 +827,7 @@ trait FisHotel_HotelProgram {
             'activities' => 'Activities',
             'schedule'   => 'Schedule',
             'layers'     => 'Layers',
+            'assets'     => 'Assets',
         ];
         ?>
         <div class="wrap" style="max-width:1100px;">
@@ -849,6 +850,8 @@ trait FisHotel_HotelProgram {
                 $this->hotel_tab_schedule();
             } elseif ( $tab === 'layers' ) {
                 $this->hotel_tab_layers();
+            } elseif ( $tab === 'assets' ) {
+                $this->hotel_tab_assets();
             }
             ?>
         </div>
@@ -1495,7 +1498,8 @@ trait FisHotel_HotelProgram {
         $animations  = [ 'none', 'drift-left-right', 'drift-up', 'sway', 'shimmer', 'pulse', 'float' ];
         $time_bands  = [ 'morning', 'afternoon', 'evening', 'dusk', 'night', 'all' ];
 
-        $nonce = wp_create_nonce( 'fishotel_layer_admin' );
+        $nonce       = wp_create_nonce( 'fishotel_layer_admin' );
+        $asset_nonce = wp_create_nonce( 'fishotel_asset_library' );
         ?>
         <style>
         .fh-layer-scene-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px}
@@ -1601,9 +1605,10 @@ trait FisHotel_HotelProgram {
 
         <script>
         (function(){
-            var ajaxurl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
-            var nonce   = '<?php echo esc_js( $nonce ); ?>';
-            var sceneType = '<?php echo esc_js( $current_st ); ?>';
+            var ajaxurl    = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
+            var nonce      = '<?php echo esc_js( $nonce ); ?>';
+            var assetNonce = '<?php echo esc_js( $asset_nonce ); ?>';
+            var sceneType  = '<?php echo esc_js( $current_st ); ?>';
             var assetsUrl = '<?php echo esc_js( $assets_url ); ?>';
 
             function notice(msg, type) {
@@ -1797,8 +1802,114 @@ trait FisHotel_HotelProgram {
                 var span = range.parentNode.querySelector('.fh-opacity-val');
                 if (span) span.textContent = range.value;
             };
+
+            /* ── Browse Library modal for asset selection ── */
+            var _browseTarget = null;
+
+            window.fhLayerBrowseLibrary = function(btn) {
+                _browseTarget = btn.closest('td');
+                var modal = document.getElementById('fh-browse-modal');
+                modal.classList.add('open');
+                fhBrowseLoad();
+            };
+
+            function fhBrowseLoad(search) {
+                var fd = new FormData();
+                fd.append('action', 'fishotel_get_assets');
+                fd.append('nonce', assetNonce);
+                fd.append('category', 'layer');
+                if (search) fd.append('search', search);
+                fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(r){
+                        if (!r.success) return;
+                        var grid = document.getElementById('fh-browse-grid');
+                        if (!r.data.assets.length) {
+                            grid.innerHTML = '<div style="color:#999;text-align:center;padding:40px;grid-column:1/-1;">No layer assets found. Upload assets in the Assets tab first.</div>';
+                            return;
+                        }
+                        var html = '';
+                        r.data.assets.forEach(function(a){
+                            html += '<div class="fha-modal-card" onclick="fhBrowseSelect(\'' + a.filename.replace(/'/g,"\\'") + '\')">'
+                                + '<div class="fha-modal-thumb"><img src="' + a.url + '" alt="" loading="lazy"></div>'
+                                + '<div class="fha-modal-label">' + (a.label || a.filename) + '</div>'
+                                + '<div class="fha-modal-fname">' + a.filename + '</div>'
+                                + '</div>';
+                        });
+                        grid.innerHTML = html;
+                    });
+            }
+
+            window.fhBrowseSelect = function(filename) {
+                if (_browseTarget) {
+                    _browseTarget.querySelector('input[name=layer_asset]').value = filename;
+                    _browseTarget.querySelector('.fh-layer-asset-display').textContent = filename;
+                }
+                document.getElementById('fh-browse-modal').classList.remove('open');
+                _browseTarget = null;
+            };
+
+            window.fhBrowseClose = function() {
+                document.getElementById('fh-browse-modal').classList.remove('open');
+                _browseTarget = null;
+            };
+
+            /* ── Prefill from Assets tab ── */
+            (function(){
+                var params = new URLSearchParams(window.location.search);
+                var prefill = params.get('prefill_asset');
+                if (prefill) {
+                    /* Click "Add Layer" and set the asset */
+                    fhLayerAdd();
+                    var forms = document.querySelectorAll('.fh-layer-edit-form');
+                    var last = forms[forms.length - 1];
+                    if (last) {
+                        last.classList.add('open');
+                        var inp = last.querySelector('input[name=layer_asset]');
+                        if (inp) inp.value = prefill;
+                        var disp = last.querySelector('.fh-layer-asset-display');
+                        if (disp) disp.textContent = prefill;
+                    }
+                }
+            })();
         })();
         </script>
+
+        <!-- Browse Library Modal -->
+        <div class="fha-modal-overlay" id="fh-browse-modal">
+            <div class="fha-modal">
+                <div class="fha-modal-header">
+                    <h3><span class="dashicons dashicons-images-alt2" style="margin-right:6px;"></span> Asset Library — Layers</h3>
+                    <button class="fha-modal-close" onclick="fhBrowseClose()">&times;</button>
+                </div>
+                <div class="fha-modal-filters">
+                    <input type="text" placeholder="Search…" style="padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;width:200px;" oninput="clearTimeout(this._t);var v=this.value;this._t=setTimeout(function(){fhBrowseLoad(v)},300)">
+                </div>
+                <div class="fha-modal-grid" id="fh-browse-grid">
+                    <div style="color:#999;text-align:center;padding:40px;grid-column:1/-1;">Loading…</div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+        .fha-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100000;align-items:center;justify-content:center}
+        .fha-modal-overlay.open{display:flex}
+        .fha-modal{background:#fff;border-radius:10px;width:90%;max-width:900px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+        .fha-modal-header{padding:14px 20px;border-bottom:1px solid #ddd;display:flex;align-items:center;justify-content:space-between}
+        .fha-modal-header h3{margin:0;font-size:16px;color:#1a3a5c}
+        .fha-modal-close{background:none;border:none;font-size:24px;cursor:pointer;color:#666;padding:0 4px}
+        .fha-modal-close:hover{color:#a00}
+        .fha-modal-filters{padding:10px 20px;border-bottom:1px solid #eee;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+        .fha-modal-grid{padding:20px;overflow-y:auto;flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+        .fha-modal-card{background:#fff;border:1px solid #ddd;border-radius:6px;padding:8px;cursor:pointer;transition:border-color .15s,box-shadow .15s;text-align:center}
+        .fha-modal-card:hover{border-color:#1a3a5c;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+        .fha-modal-thumb{width:80px;height:80px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;border-radius:4px;overflow:hidden;
+            background-image:linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%);
+            background-size:10px 10px;background-position:0 0,0 5px,5px -5px,-5px 0}
+        .fha-modal-thumb img{max-width:100%;max-height:100%;object-fit:contain}
+        .fha-modal-fname{font-size:10px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .fha-modal-label{font-size:12px;font-weight:600;color:#1a3a5c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        </style>
         <?php
     }
 
@@ -1822,12 +1933,11 @@ trait FisHotel_HotelProgram {
             <input type="hidden" name="layer_id" value="<?php echo esc_attr( $id ); ?>">
             <table class="form-table">
                 <tr><th>Asset</th><td>
-                    <select name="layer_asset">
-                        <option value="">— select —</option>
-                        <?php foreach ( $assets as $a ) : ?>
-                            <option value="<?php echo esc_attr( $a ); ?>" <?php selected( $asset, $a ); ?>><?php echo esc_html( $a ); ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <input type="hidden" name="layer_asset" value="<?php echo esc_attr( $asset ); ?>">
+                    <span class="fh-layer-asset-display"><?php echo $asset ? esc_html( $asset ) : '<em style="color:#999;">None selected</em>'; ?></span>
+                    <button type="button" class="button button-small" onclick="fhLayerBrowseLibrary(this)" style="margin-left:8px;">
+                        <span class="dashicons dashicons-images-alt2" style="margin-top:3px;font-size:14px;"></span> Browse Library
+                    </button>
                 </td></tr>
                 <tr><th>Label</th><td><input type="text" name="layer_label" value="<?php echo esc_attr( $label ); ?>" class="regular-text" placeholder="e.g. Light Shaft"></td></tr>
                 <tr><th>X position (%)</th><td><input type="number" name="layer_x" value="<?php echo esc_attr( $x ); ?>" min="0" max="100" class="small-text"></td></tr>
@@ -1867,5 +1977,753 @@ trait FisHotel_HotelProgram {
         </div>
         <?php
         return ob_get_clean();
+    }
+
+    /* ═════════════════════════════════════════════
+     *  TAB: Assets  (Asset Library)
+     * ═════════════════════════════════════════════ */
+
+    private function hotel_tab_assets() {
+        // Auto-scan on first load
+        $library = get_option( 'fishotel_asset_library', null );
+        if ( $library === null ) {
+            // First-time: trigger scan inline
+            $this->hotel_asset_auto_scan();
+            $library = get_option( 'fishotel_asset_library', [ 'assets' => [] ] );
+        }
+
+        $nonce       = wp_create_nonce( 'fishotel_asset_library' );
+        $scene_types = [ 'pool', 'lobby', 'spa', 'dining', 'beach', 'bar', 'suite', 'graduation', 'morning', 'night' ];
+        $time_bands  = [ 'morning', 'afternoon', 'evening', 'dusk', 'night' ];
+        $categories  = [ 'layer' => 'Layers', 'background' => 'Backgrounds', 'stamp' => 'Stamps' ];
+        $folder_map  = [ 'layer' => 'scene-layers', 'background' => 'scene-backgrounds', 'stamp' => 'stamps' ];
+        $folder_labels = [ 'scene-layers' => 'assists/scene-layers/', 'scene-backgrounds' => 'assists/scene/', 'stamps' => 'assists/stamps/' ];
+        ?>
+        <style>
+        /* ── Asset Library layout ── */
+        .fha-wrap{display:flex;gap:24px;min-height:600px}
+        .fha-main{flex:1;min-width:0}
+        .fha-side{width:320px;flex-shrink:0;position:relative}
+
+        /* ── Filter bar ── */
+        .fha-filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:18px}
+        .fha-search{padding:6px 10px;border:1px solid #ccc;border-radius:4px;width:220px;font-size:13px}
+        .fha-pills{display:flex;gap:4px}
+        .fha-pill{padding:5px 14px;background:#f0f0f0;border:1px solid #ccc;border-radius:20px;cursor:pointer;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#555;transition:all .15s}
+        .fha-pill:hover{background:#e4e4e4}
+        .fha-pill.active{background:#1a3a5c;color:#fff;border-color:#1a3a5c}
+        .fha-filter-select{padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px}
+
+        /* ── Asset grid ── */
+        .fha-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px}
+        .fha-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:10px;position:relative;transition:box-shadow .2s,transform .15s;cursor:default}
+        .fha-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1);transform:translateY(-1px)}
+        .fha-card.selected{border-color:#1a3a5c;box-shadow:0 0 0 2px rgba(26,58,92,.3)}
+        .fha-card-cb{position:absolute;top:6px;left:6px;z-index:2}
+        .fha-thumb{width:120px;height:120px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;border-radius:4px;overflow:hidden;
+            background-image:linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%);
+            background-size:10px 10px;background-position:0 0,0 5px,5px -5px,-5px 0}
+        .fha-thumb img{max-width:100%;max-height:100%;object-fit:contain}
+        .fha-fname{font-size:11px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+        .fha-label{font-size:13px;font-weight:600;color:#1a3a5c;text-align:center;margin:4px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:text;min-height:20px}
+        .fha-label-input{width:100%;text-align:center;font-size:13px;font-weight:600;color:#1a3a5c;border:1px solid #1a3a5c;border-radius:3px;padding:2px 4px;box-sizing:border-box}
+        .fha-chips{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-top:4px;min-height:20px}
+        .fha-chip{font-size:9px;background:#e8f0f8;color:#1a3a5c;padding:2px 6px;border-radius:10px;white-space:nowrap}
+        .fha-chip.time{background:#fdf3e7;color:#b45309}
+        .fha-card-actions{display:flex;gap:4px;justify-content:center;margin-top:6px;opacity:0;transition:opacity .15s}
+        .fha-card:hover .fha-card-actions{opacity:1}
+        .fha-card-btn{background:none;border:none;cursor:pointer;color:#666;padding:2px 4px;font-size:16px}
+        .fha-card-btn:hover{color:#1a3a5c}
+        .fha-card-btn.delete:hover{color:#a00}
+        .fha-meta-hover{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:4px 8px;border-radius:4px;font-size:10px;white-space:nowrap;z-index:10}
+        .fha-card:hover .fha-meta-hover{display:block}
+        .fha-empty{color:#999;text-align:center;padding:40px;grid-column:1/-1}
+
+        /* ── Bulk actions bar ── */
+        .fha-bulk{display:none;align-items:center;gap:10px;margin-bottom:14px;padding:8px 14px;background:#f0f6ff;border:1px solid #b8d4f0;border-radius:6px;font-size:13px}
+        .fha-bulk.visible{display:flex}
+        .fha-bulk-count{font-weight:600;color:#1a3a5c}
+
+        /* ── Side panel (upload / detail) ── */
+        .fha-panel{background:#fff;border:1px solid #ddd;border-radius:8px;padding:18px;position:sticky;top:40px}
+        .fha-panel h3{margin-top:0;font-size:15px;color:#1a3a5c}
+
+        /* Upload panel */
+        .fha-dropzone{border:2px dashed #bbb;border-radius:8px;padding:30px 16px;text-align:center;color:#888;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:14px}
+        .fha-dropzone:hover,.fha-dropzone.dragover{border-color:#1a3a5c;background:#f0f6ff;color:#1a3a5c}
+        .fha-dropzone .dashicons{font-size:32px;width:32px;height:32px;display:block;margin:0 auto 8px}
+        .fha-folder-radios label{display:block;margin:4px 0;font-size:13px}
+        .fha-pending-list{margin-top:14px;max-height:400px;overflow-y:auto}
+        .fha-pending-item{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:10px;margin-bottom:8px;font-size:12px}
+        .fha-pending-item .fname{font-weight:600;margin-bottom:6px}
+        .fha-pending-item input[type=text]{width:100%;margin:4px 0;padding:4px 6px;border:1px solid #ccc;border-radius:3px;font-size:12px;box-sizing:border-box}
+        .fha-progress{height:4px;background:#e0e0e0;border-radius:2px;margin-top:6px;overflow:hidden}
+        .fha-progress-bar{height:100%;background:#1a3a5c;width:0%;transition:width .3s}
+        .fha-pending-item.done{opacity:.5}
+        .fha-pending-item.error{border-color:#dc3232}
+
+        /* Detail panel */
+        .fha-detail{display:none}
+        .fha-detail.open{display:block}
+        .fha-detail-preview{width:200px;height:200px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;border-radius:6px;overflow:hidden;
+            background-image:linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%);
+            background-size:10px 10px;background-position:0 0,0 5px,5px -5px,-5px 0}
+        .fha-detail-preview img{max-width:100%;max-height:100%;object-fit:contain}
+        .fha-detail table{width:100%;font-size:13px}
+        .fha-detail table th{text-align:left;padding:5px 8px 5px 0;color:#555;width:90px;vertical-align:top;font-weight:normal}
+        .fha-detail table td{padding:4px 0}
+        .fha-detail input[type=text],.fha-detail select{width:100%;padding:4px 6px;border:1px solid #ccc;border-radius:3px;font-size:12px;box-sizing:border-box}
+        .fha-detail .fha-cb-group{display:flex;flex-wrap:wrap;gap:2px}
+        .fha-detail .fha-cb-group label{font-size:11px;white-space:nowrap}
+        .fha-detail-meta{font-size:11px;color:#888;margin-top:8px}
+        .fha-detail-actions{display:flex;gap:8px;margin-top:14px}
+
+        /* ── Asset Library modal (for Layer Designer) ── */
+        .fha-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100000;align-items:center;justify-content:center}
+        .fha-modal-overlay.open{display:flex}
+        .fha-modal{background:#fff;border-radius:10px;width:90%;max-width:900px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+        .fha-modal-header{padding:14px 20px;border-bottom:1px solid #ddd;display:flex;align-items:center;justify-content:space-between}
+        .fha-modal-header h3{margin:0;font-size:16px;color:#1a3a5c}
+        .fha-modal-close{background:none;border:none;font-size:24px;cursor:pointer;color:#666;padding:0 4px}
+        .fha-modal-close:hover{color:#a00}
+        .fha-modal-filters{padding:10px 20px;border-bottom:1px solid #eee;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+        .fha-modal-grid{padding:20px;overflow-y:auto;flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+        .fha-modal-card{background:#fff;border:1px solid #ddd;border-radius:6px;padding:8px;cursor:pointer;transition:border-color .15s,box-shadow .15s;text-align:center}
+        .fha-modal-card:hover{border-color:#1a3a5c;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+        .fha-modal-thumb{width:80px;height:80px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;border-radius:4px;overflow:hidden;
+            background-image:linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%);
+            background-size:10px 10px;background-position:0 0,0 5px,5px -5px,-5px 0}
+        .fha-modal-thumb img{max-width:100%;max-height:100%;object-fit:contain}
+        .fha-modal-fname{font-size:10px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .fha-modal-label{font-size:12px;font-weight:600;color:#1a3a5c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+        /* ── Re-scan button ── */
+        .fha-rescan{float:right}
+        </style>
+
+        <div class="fha-wrap">
+            <!-- LEFT: Main grid area -->
+            <div class="fha-main">
+                <!-- Filter bar -->
+                <div class="fha-filters">
+                    <input type="text" class="fha-search" id="fha-search" placeholder="Search filename or label…">
+                    <div class="fha-pills" id="fha-cat-pills">
+                        <span class="fha-pill active" data-cat="">All</span>
+                        <?php foreach ( $categories as $key => $lbl ) : ?>
+                            <span class="fha-pill" data-cat="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $lbl ); ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                    <select class="fha-filter-select" id="fha-scene-filter">
+                        <option value="">All Scenes</option>
+                        <?php foreach ( $scene_types as $st ) : ?>
+                            <option value="<?php echo esc_attr( $st ); ?>"><?php echo esc_html( ucfirst( $st ) ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <select class="fha-filter-select" id="fha-band-filter">
+                        <option value="">All Times</option>
+                        <?php foreach ( $time_bands as $tb ) : ?>
+                            <option value="<?php echo esc_attr( $tb ); ?>"><?php echo esc_html( ucfirst( $tb ) ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="button" class="button fha-rescan" onclick="fhaRescan()"><span class="dashicons dashicons-update" style="margin-top:3px;"></span> Re-scan Folders</button>
+                </div>
+
+                <!-- Bulk actions bar -->
+                <div class="fha-bulk" id="fha-bulk">
+                    <input type="checkbox" id="fha-select-all" onchange="fhaSelectAll(this.checked)">
+                    <span class="fha-bulk-count" id="fha-bulk-count">0 selected</span>
+                    <select id="fha-bulk-action" class="fha-filter-select">
+                        <option value="">Bulk Actions…</option>
+                        <option value="set_scene_types">Set Scene Types</option>
+                        <option value="set_time_bands">Set Time Bands</option>
+                        <option value="move_folder">Move Folder</option>
+                        <option value="delete">Delete</option>
+                    </select>
+                    <button type="button" class="button" onclick="fhaBulkApply()">Apply</button>
+                </div>
+
+                <!-- Asset grid -->
+                <div class="fha-grid" id="fha-grid">
+                    <div class="fha-empty" id="fha-empty">Loading assets…</div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Side panel -->
+            <div class="fha-side">
+                <!-- Upload panel -->
+                <div class="fha-panel" id="fha-upload-panel">
+                    <h3><span class="dashicons dashicons-upload" style="margin-right:4px;"></span> Upload Assets</h3>
+                    <div class="fha-dropzone" id="fha-dropzone">
+                        <span class="dashicons dashicons-cloud-upload"></span>
+                        Drop images here<br>or click to browse
+                        <input type="file" id="fha-file-input" multiple accept="image/*" style="display:none">
+                    </div>
+                    <div class="fha-folder-radios">
+                        <strong style="font-size:12px;color:#555;">Upload to:</strong>
+                        <label><input type="radio" name="fha_folder" value="scene-layers" checked> Layer Asset</label>
+                        <label><input type="radio" name="fha_folder" value="scene-backgrounds"> Scene Background</label>
+                        <label><input type="radio" name="fha_folder" value="stamps"> Stamp</label>
+                    </div>
+                    <div class="fha-pending-list" id="fha-pending-list"></div>
+                    <button type="button" class="button button-primary" id="fha-upload-all-btn" style="display:none;margin-top:10px;width:100%;" onclick="fhaUploadAll()">
+                        <span class="dashicons dashicons-upload" style="margin-top:3px;"></span> Upload All
+                    </button>
+                </div>
+
+                <!-- Detail panel (hidden by default) -->
+                <div class="fha-panel fha-detail" id="fha-detail-panel">
+                    <h3><span class="dashicons dashicons-edit" style="margin-right:4px;"></span> Edit Asset</h3>
+                    <div class="fha-detail-preview" id="fha-detail-preview"><img id="fha-detail-img" src="" alt=""></div>
+                    <table>
+                        <tr><th>File</th><td id="fha-detail-filename" style="font-size:12px;color:#666;word-break:break-all;"></td></tr>
+                        <tr><th>Label</th><td><input type="text" id="fha-detail-label"></td></tr>
+                        <tr><th>Category</th><td>
+                            <select id="fha-detail-category">
+                                <option value="layer">Layer</option>
+                                <option value="background">Background</option>
+                                <option value="stamp">Stamp</option>
+                            </select>
+                        </td></tr>
+                        <tr><th>Scenes</th><td class="fha-cb-group" id="fha-detail-scenes">
+                            <?php foreach ( $scene_types as $st ) : ?>
+                                <label><input type="checkbox" value="<?php echo esc_attr( $st ); ?>"> <?php echo esc_html( ucfirst( $st ) ); ?></label>
+                            <?php endforeach; ?>
+                        </td></tr>
+                        <tr><th>Times</th><td>
+                            <label style="font-size:11px;margin-bottom:4px;display:block;"><input type="checkbox" id="fha-detail-all-times" onchange="fhaToggleAllTimes(this.checked)"> <em>All times</em></label>
+                            <div class="fha-cb-group" id="fha-detail-times">
+                                <?php foreach ( $time_bands as $tb ) : ?>
+                                    <label><input type="checkbox" value="<?php echo esc_attr( $tb ); ?>"> <?php echo esc_html( ucfirst( $tb ) ); ?></label>
+                                <?php endforeach; ?>
+                            </div>
+                        </td></tr>
+                        <tr><th>Tags</th><td><input type="text" id="fha-detail-tags" placeholder="comma separated"></td></tr>
+                        <tr><th>Location</th><td id="fha-detail-location" style="font-size:11px;color:#888;"></td></tr>
+                    </table>
+                    <div class="fha-detail-meta" id="fha-detail-meta"></div>
+                    <div class="fha-detail-actions">
+                        <button type="button" class="button button-primary" onclick="fhaDetailSave()"><span class="dashicons dashicons-saved" style="margin-top:3px;"></span> Save</button>
+                        <button type="button" class="button" onclick="fhaDetailClose()">Cancel</button>
+                        <button type="button" class="button" onclick="fhaUseInLayerDesigner()" title="Use in Layer Designer" style="margin-left:auto"><span class="dashicons dashicons-art" style="margin-top:3px;"></span> Use in Layers</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk modal for scene types / time bands -->
+        <div class="fha-modal-overlay" id="fha-bulk-modal">
+            <div class="fha-modal" style="max-width:400px;">
+                <div class="fha-modal-header">
+                    <h3 id="fha-bulk-modal-title">Bulk Edit</h3>
+                    <button class="fha-modal-close" onclick="document.getElementById('fha-bulk-modal').classList.remove('open')">&times;</button>
+                </div>
+                <div style="padding:20px;" id="fha-bulk-modal-body">
+                    <div id="fha-bulk-scenes" style="display:none;">
+                        <p style="font-size:13px;margin-top:0;">Set scene types for selected assets:</p>
+                        <div class="fha-cb-group">
+                            <?php foreach ( $scene_types as $st ) : ?>
+                                <label><input type="checkbox" class="fha-bulk-scene-cb" value="<?php echo esc_attr( $st ); ?>"> <?php echo esc_html( ucfirst( $st ) ); ?></label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <div id="fha-bulk-times" style="display:none;">
+                        <p style="font-size:13px;margin-top:0;">Set time bands for selected assets:</p>
+                        <div class="fha-cb-group">
+                            <?php foreach ( $time_bands as $tb ) : ?>
+                                <label><input type="checkbox" class="fha-bulk-time-cb" value="<?php echo esc_attr( $tb ); ?>"> <?php echo esc_html( ucfirst( $tb ) ); ?></label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <div id="fha-bulk-folder" style="display:none;">
+                        <p style="font-size:13px;margin-top:0;">Move selected assets to folder:</p>
+                        <select id="fha-bulk-folder-select" class="fha-filter-select" style="width:100%;">
+                            <option value="scene-layers">Layer Assets (scene-layers)</option>
+                            <option value="scene-backgrounds">Scene Backgrounds (scene)</option>
+                            <option value="stamps">Stamps</option>
+                        </select>
+                    </div>
+                    <button type="button" class="button button-primary" style="margin-top:16px;width:100%;" onclick="fhaBulkConfirm()">Apply</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        (function(){
+            var ajaxurl   = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
+            var nonce     = '<?php echo esc_js( $nonce ); ?>';
+            var allAssets = [];
+            var editingId = null;
+            var selectedIds = [];
+            var pendingFiles = [];
+            var folderLabels = <?php echo wp_json_encode( $folder_labels ); ?>;
+
+            /* ── Helpers ── */
+            function fmtSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / 1048576).toFixed(1) + ' MB';
+            }
+
+            /* ── Load assets ── */
+            function loadAssets(cb) {
+                var fd = new FormData();
+                fd.append('action', 'fishotel_get_assets');
+                fd.append('nonce', nonce);
+                fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(r){
+                        if (r.success) {
+                            allAssets = r.data.assets;
+                            renderGrid();
+                            if (cb) cb();
+                        }
+                    });
+            }
+
+            /* ── Render grid ── */
+            function renderGrid() {
+                var search   = document.getElementById('fha-search').value.toLowerCase();
+                var cat      = document.querySelector('.fha-pill.active').dataset.cat || '';
+                var scene    = document.getElementById('fha-scene-filter').value;
+                var band     = document.getElementById('fha-band-filter').value;
+                var filtered = allAssets.filter(function(a){
+                    if (cat && a.category !== cat) return false;
+                    if (scene && a.scene_types && a.scene_types.length && a.scene_types.indexOf(scene) === -1) return false;
+                    if (band && a.time_bands && a.time_bands.length && a.time_bands.indexOf(band) === -1) return false;
+                    if (search) {
+                        var hay = (a.filename + ' ' + a.label + ' ' + (a.tags||[]).join(' ')).toLowerCase();
+                        if (hay.indexOf(search) === -1) return false;
+                    }
+                    return true;
+                });
+
+                var grid = document.getElementById('fha-grid');
+                if (!filtered.length) {
+                    grid.innerHTML = '<div class="fha-empty">No assets match your filters.</div>';
+                    return;
+                }
+
+                var html = '';
+                filtered.forEach(function(a){
+                    var sel = selectedIds.indexOf(a.id) !== -1;
+                    var chips = '';
+                    (a.scene_types||[]).forEach(function(s){ chips += '<span class="fha-chip">' + s + '</span>'; });
+                    (a.time_bands||[]).forEach(function(t){ chips += '<span class="fha-chip time">' + t + '</span>'; });
+                    html += '<div class="fha-card' + (sel ? ' selected' : '') + '" data-id="' + a.id + '">'
+                        + '<input type="checkbox" class="fha-card-cb" ' + (sel ? 'checked' : '') + ' onchange="fhaToggleSelect(\'' + a.id + '\',this.checked)">'
+                        + '<div class="fha-meta-hover">' + a.width + '×' + a.height + ' · ' + fmtSize(a.filesize) + '</div>'
+                        + '<div class="fha-thumb"><img src="' + a.url + '" alt="" loading="lazy"></div>'
+                        + '<div class="fha-fname" title="' + a.filename + '">' + a.filename + '</div>'
+                        + '<div class="fha-label" ondblclick="fhaInlineEdit(this,\'' + a.id + '\')" title="Double-click to edit">' + (a.label || a.filename) + '</div>'
+                        + '<div class="fha-chips">' + chips + '</div>'
+                        + '<div class="fha-card-actions">'
+                        + '<button class="fha-card-btn" onclick="fhaEditAsset(\'' + a.id + '\')" title="Edit"><span class="dashicons dashicons-edit"></span></button>'
+                        + '<button class="fha-card-btn delete" onclick="fhaDeleteAsset(\'' + a.id + '\')" title="Delete"><span class="dashicons dashicons-trash"></span></button>'
+                        + '</div></div>';
+                });
+                grid.innerHTML = html;
+            }
+
+            /* ── Filter events ── */
+            document.getElementById('fha-search').addEventListener('input', renderGrid);
+            document.getElementById('fha-scene-filter').addEventListener('change', renderGrid);
+            document.getElementById('fha-band-filter').addEventListener('change', renderGrid);
+            document.querySelectorAll('.fha-pill').forEach(function(pill){
+                pill.addEventListener('click', function(){
+                    document.querySelectorAll('.fha-pill').forEach(function(p){ p.classList.remove('active'); });
+                    pill.classList.add('active');
+                    renderGrid();
+                });
+            });
+
+            /* ── Inline label edit ── */
+            window.fhaInlineEdit = function(el, id) {
+                var current = el.textContent;
+                el.innerHTML = '<input type="text" class="fha-label-input" value="' + current.replace(/"/g,'&quot;') + '">';
+                var inp = el.querySelector('input');
+                inp.focus();
+                inp.select();
+                function save() {
+                    var val = inp.value.trim() || current;
+                    el.textContent = val;
+                    if (val !== current) {
+                        var fd = new FormData();
+                        fd.append('action', 'fishotel_save_asset_meta');
+                        fd.append('nonce', nonce);
+                        fd.append('asset_id', id);
+                        fd.append('label', val);
+                        fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                            .then(function(r){ return r.json(); })
+                            .then(function(r){
+                                if (r.success) {
+                                    var a = allAssets.find(function(x){ return x.id === id; });
+                                    if (a) a.label = val;
+                                }
+                            });
+                    }
+                }
+                inp.addEventListener('blur', save);
+                inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+            };
+
+            /* ── Selection ── */
+            window.fhaToggleSelect = function(id, checked) {
+                if (checked) {
+                    if (selectedIds.indexOf(id) === -1) selectedIds.push(id);
+                } else {
+                    selectedIds = selectedIds.filter(function(x){ return x !== id; });
+                }
+                updateBulkBar();
+                renderGrid();
+            };
+
+            window.fhaSelectAll = function(checked) {
+                if (checked) {
+                    selectedIds = allAssets.map(function(a){ return a.id; });
+                } else {
+                    selectedIds = [];
+                }
+                updateBulkBar();
+                renderGrid();
+            };
+
+            function updateBulkBar() {
+                var bar = document.getElementById('fha-bulk');
+                var cnt = document.getElementById('fha-bulk-count');
+                if (selectedIds.length > 0) {
+                    bar.classList.add('visible');
+                    cnt.textContent = selectedIds.length + ' selected';
+                } else {
+                    bar.classList.remove('visible');
+                }
+            }
+
+            /* ── Edit detail panel ── */
+            window.fhaEditAsset = function(id) {
+                var a = allAssets.find(function(x){ return x.id === id; });
+                if (!a) return;
+                editingId = id;
+                document.getElementById('fha-upload-panel').style.display = 'none';
+                var dp = document.getElementById('fha-detail-panel');
+                dp.classList.add('open');
+                document.getElementById('fha-detail-img').src = a.url;
+                document.getElementById('fha-detail-filename').textContent = a.filename;
+                document.getElementById('fha-detail-label').value = a.label || '';
+                document.getElementById('fha-detail-category').value = a.category || 'layer';
+                document.getElementById('fha-detail-tags').value = (a.tags || []).join(', ');
+                document.getElementById('fha-detail-location').textContent = folderLabels[a.folder] || a.folder;
+                document.getElementById('fha-detail-meta').textContent = a.width + '×' + a.height + ' · ' + fmtSize(a.filesize);
+
+                // Scene checkboxes
+                document.querySelectorAll('#fha-detail-scenes input').forEach(function(cb){
+                    cb.checked = (a.scene_types || []).indexOf(cb.value) !== -1;
+                });
+                // Time checkboxes
+                var tbs = a.time_bands || [];
+                document.querySelectorAll('#fha-detail-times input').forEach(function(cb){
+                    cb.checked = tbs.indexOf(cb.value) !== -1;
+                });
+                document.getElementById('fha-detail-all-times').checked = tbs.length === <?php echo count( $time_bands ); ?>;
+            };
+
+            window.fhaDetailClose = function() {
+                editingId = null;
+                document.getElementById('fha-detail-panel').classList.remove('open');
+                document.getElementById('fha-upload-panel').style.display = '';
+            };
+
+            window.fhaDetailSave = function() {
+                if (!editingId) return;
+                var fd = new FormData();
+                fd.append('action', 'fishotel_save_asset_meta');
+                fd.append('nonce', nonce);
+                fd.append('asset_id', editingId);
+                fd.append('label', document.getElementById('fha-detail-label').value);
+                fd.append('category', document.getElementById('fha-detail-category').value);
+                fd.append('tags', document.getElementById('fha-detail-tags').value);
+                document.querySelectorAll('#fha-detail-scenes input:checked').forEach(function(cb){
+                    fd.append('scene_types[]', cb.value);
+                });
+                document.querySelectorAll('#fha-detail-times input:checked').forEach(function(cb){
+                    fd.append('time_bands[]', cb.value);
+                });
+                fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(r){
+                        if (r.success) {
+                            loadAssets(function(){ fhaDetailClose(); });
+                        } else {
+                            alert(r.data && r.data.message || 'Save failed.');
+                        }
+                    });
+            };
+
+            window.fhaToggleAllTimes = function(checked) {
+                document.querySelectorAll('#fha-detail-times input').forEach(function(cb){ cb.checked = checked; });
+            };
+
+            window.fhaUseInLayerDesigner = function() {
+                if (!editingId) return;
+                var a = allAssets.find(function(x){ return x.id === editingId; });
+                if (a) {
+                    window.location.href = '<?php echo esc_url( admin_url( 'admin.php?page=fishotel-hotel-program&tab=layers' ) ); ?>&prefill_asset=' + encodeURIComponent(a.filename);
+                }
+            };
+
+            /* ── Delete asset ── */
+            window.fhaDeleteAsset = function(id) {
+                var a = allAssets.find(function(x){ return x.id === id; });
+                if (!a) return;
+                if (!confirm('Delete "' + a.filename + '"? This cannot be undone.')) return;
+                var fd = new FormData();
+                fd.append('action', 'fishotel_delete_asset');
+                fd.append('nonce', nonce);
+                fd.append('asset_id', id);
+                fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(r){
+                        if (r.success) {
+                            loadAssets();
+                            if (editingId === id) fhaDetailClose();
+                        } else if (r.data && r.data.confirm) {
+                            if (confirm('Warning: This asset is used in layer config(s): ' + r.data.references.join(', ') + '. Delete anyway?')) {
+                                fd.append('force', '1');
+                                fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                                    .then(function(r2){ return r2.json(); })
+                                    .then(function(r2){
+                                        if (r2.success) { loadAssets(); if (editingId === id) fhaDetailClose(); }
+                                    });
+                            }
+                        } else {
+                            alert(r.data && r.data.message || 'Delete failed.');
+                        }
+                    });
+            };
+
+            /* ── Re-scan ── */
+            window.fhaRescan = function() {
+                var fd = new FormData();
+                fd.append('action', 'fishotel_scan_assets');
+                fd.append('nonce', nonce);
+                fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(r){
+                        if (r.success) {
+                            alert('Scan complete. ' + r.data.added + ' new asset(s) found. Total: ' + r.data.total);
+                            loadAssets();
+                        }
+                    });
+            };
+
+            /* ── Dropzone / Upload ── */
+            var dropzone = document.getElementById('fha-dropzone');
+            var fileInput = document.getElementById('fha-file-input');
+
+            dropzone.addEventListener('click', function(){ fileInput.click(); });
+            dropzone.addEventListener('dragover', function(e){ e.preventDefault(); dropzone.classList.add('dragover'); });
+            dropzone.addEventListener('dragleave', function(){ dropzone.classList.remove('dragover'); });
+            dropzone.addEventListener('drop', function(e){
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+                addPendingFiles(e.dataTransfer.files);
+            });
+            fileInput.addEventListener('change', function(){
+                addPendingFiles(fileInput.files);
+                fileInput.value = '';
+            });
+
+            function addPendingFiles(files) {
+                for (var i = 0; i < files.length; i++) {
+                    pendingFiles.push({ file: files[i], label: files[i].name.replace(/\.[^.]+$/, ''), scene_types: [], time_bands: [] });
+                }
+                renderPending();
+            }
+
+            function renderPending() {
+                var list = document.getElementById('fha-pending-list');
+                var btn  = document.getElementById('fha-upload-all-btn');
+                if (!pendingFiles.length) {
+                    list.innerHTML = '';
+                    btn.style.display = 'none';
+                    return;
+                }
+                btn.style.display = '';
+                var html = '';
+                pendingFiles.forEach(function(pf, idx) {
+                    html += '<div class="fha-pending-item" id="fha-pending-' + idx + '">'
+                        + '<div class="fname">' + pf.file.name + ' <span style="color:#999;font-weight:normal;">(' + fmtSize(pf.file.size) + ')</span></div>'
+                        + '<input type="text" placeholder="Label" value="' + pf.label.replace(/"/g,'&quot;') + '" onchange="fhaPendingLabel(' + idx + ',this.value)">'
+                        + '<div class="fha-progress"><div class="fha-progress-bar" id="fha-prog-' + idx + '"></div></div>'
+                        + '</div>';
+                });
+                list.innerHTML = html;
+            }
+
+            window.fhaPendingLabel = function(idx, val) {
+                if (pendingFiles[idx]) pendingFiles[idx].label = val;
+            };
+
+            window.fhaUploadAll = function() {
+                var folder = document.querySelector('input[name=fha_folder]:checked').value;
+                var queue = pendingFiles.slice();
+                var idx = 0;
+                function next() {
+                    if (idx >= queue.length) {
+                        pendingFiles = [];
+                        renderPending();
+                        loadAssets();
+                        return;
+                    }
+                    var pf = queue[idx];
+                    var el = document.getElementById('fha-pending-' + idx);
+                    var bar = document.getElementById('fha-prog-' + idx);
+                    var fd = new FormData();
+                    fd.append('action', 'fishotel_upload_asset');
+                    fd.append('nonce', nonce);
+                    fd.append('asset_file', pf.file);
+                    fd.append('folder', folder);
+                    fd.append('label', pf.label);
+
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', ajaxurl);
+                    xhr.withCredentials = true;
+                    xhr.upload.addEventListener('progress', function(e){
+                        if (e.lengthComputable && bar) bar.style.width = Math.round(e.loaded / e.total * 100) + '%';
+                    });
+                    xhr.addEventListener('load', function(){
+                        if (el) el.classList.add('done');
+                        if (bar) bar.style.width = '100%';
+                        idx++;
+                        next();
+                    });
+                    xhr.addEventListener('error', function(){
+                        if (el) el.classList.add('error');
+                        idx++;
+                        next();
+                    });
+                    xhr.send(fd);
+                }
+                next();
+            };
+
+            /* ── Bulk actions ── */
+            window.fhaBulkApply = function() {
+                if (!selectedIds.length) return alert('No assets selected.');
+                var action = document.getElementById('fha-bulk-action').value;
+                if (!action) return alert('Select a bulk action.');
+
+                if (action === 'delete') {
+                    if (!confirm('Delete ' + selectedIds.length + ' asset(s)? This cannot be undone.')) return;
+                    var fd = new FormData();
+                    fd.append('action', 'fishotel_bulk_update_assets');
+                    fd.append('nonce', nonce);
+                    fd.append('bulk_action', 'delete');
+                    selectedIds.forEach(function(id){ fd.append('asset_ids[]', id); });
+                    fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                        .then(function(r){ return r.json(); })
+                        .then(function(r){
+                            if (r.success) { selectedIds = []; updateBulkBar(); loadAssets(); }
+                        });
+                    return;
+                }
+
+                // Show bulk modal
+                var modal = document.getElementById('fha-bulk-modal');
+                document.getElementById('fha-bulk-scenes').style.display = action === 'set_scene_types' ? '' : 'none';
+                document.getElementById('fha-bulk-times').style.display = action === 'set_time_bands' ? '' : 'none';
+                document.getElementById('fha-bulk-folder').style.display = action === 'move_folder' ? '' : 'none';
+                document.getElementById('fha-bulk-modal-title').textContent =
+                    action === 'set_scene_types' ? 'Set Scene Types' :
+                    action === 'set_time_bands' ? 'Set Time Bands' : 'Move Folder';
+                modal.classList.add('open');
+            };
+
+            window.fhaBulkConfirm = function() {
+                var action = document.getElementById('fha-bulk-action').value;
+                var fd = new FormData();
+                fd.append('action', 'fishotel_bulk_update_assets');
+                fd.append('nonce', nonce);
+                fd.append('bulk_action', action);
+                selectedIds.forEach(function(id){ fd.append('asset_ids[]', id); });
+
+                if (action === 'set_scene_types') {
+                    document.querySelectorAll('.fha-bulk-scene-cb:checked').forEach(function(cb){ fd.append('scene_types[]', cb.value); });
+                } else if (action === 'set_time_bands') {
+                    document.querySelectorAll('.fha-bulk-time-cb:checked').forEach(function(cb){ fd.append('time_bands[]', cb.value); });
+                } else if (action === 'move_folder') {
+                    fd.append('folder', document.getElementById('fha-bulk-folder-select').value);
+                }
+
+                fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(r){
+                        document.getElementById('fha-bulk-modal').classList.remove('open');
+                        if (r.success) { selectedIds = []; updateBulkBar(); loadAssets(); }
+                        else alert(r.data && r.data.message || 'Bulk action failed.');
+                    });
+            };
+
+            /* ── Init: auto-scan then load ── */
+            (function(){
+                var fd = new FormData();
+                fd.append('action', 'fishotel_scan_assets');
+                fd.append('nonce', nonce);
+                fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(){ loadAssets(); });
+            })();
+
+        })();
+        </script>
+        <?php
+    }
+
+    /**
+     * Auto-scan asset folders (used on first load).
+     */
+    private function hotel_asset_auto_scan() {
+        $base    = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/';
+        $folders = [
+            'scene-layers'      => $base . 'scene-layers/',
+            'scene-backgrounds' => $base . 'scene/',
+            'stamps'            => $base . 'stamps/',
+        ];
+        $cat_map = [
+            'scene-layers'      => 'layer',
+            'scene-backgrounds' => 'background',
+            'stamps'            => 'stamp',
+        ];
+
+        $library = [ 'assets' => [] ];
+
+        foreach ( $folders as $folder_key => $dir_path ) {
+            if ( ! is_dir( $dir_path ) ) {
+                wp_mkdir_p( $dir_path );
+                continue;
+            }
+            $files = glob( $dir_path . '*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE );
+            if ( ! $files ) continue;
+
+            foreach ( $files as $file ) {
+                $fname = basename( $file );
+                $info  = @getimagesize( $file );
+                $library['assets'][] = [
+                    'id'          => 'asset_' . wp_rand() . '_' . time(),
+                    'filename'    => $fname,
+                    'folder'      => $folder_key,
+                    'label'       => pathinfo( $fname, PATHINFO_FILENAME ),
+                    'category'    => $cat_map[ $folder_key ] ?? 'layer',
+                    'scene_types' => [],
+                    'time_bands'  => [],
+                    'tags'        => [],
+                    'uploaded'    => filemtime( $file ),
+                    'width'       => $info ? $info[0] : 0,
+                    'height'      => $info ? $info[1] : 0,
+                    'filesize'    => filesize( $file ),
+                ];
+            }
+        }
+
+        update_option( 'fishotel_asset_library', $library );
     }
 }

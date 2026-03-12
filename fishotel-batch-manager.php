@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.11 - Fix missing trait closing brace in class-hotel-program.php.
- * Version:           5.11
+ * Description:       v5.12 - Asset Library system for Hotel Program media management.
+ * Version:           5.12
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.11' );
+define( 'FISHOTEL_VERSION', '5.12' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -234,6 +234,14 @@ class FisHotel_Batch_Manager {
         add_action( 'wp_ajax_fishotel_upload_layer_asset',  [$this, 'ajax_upload_layer_asset'] );
         add_action( 'wp_ajax_fishotel_delete_layer_asset',  [$this, 'ajax_delete_layer_asset'] );
         add_action( 'wp_ajax_fishotel_get_layer_assets',    [$this, 'ajax_get_layer_assets'] );
+
+        // Asset Library AJAX
+        add_action( 'wp_ajax_fishotel_scan_assets',         [$this, 'ajax_scan_assets'] );
+        add_action( 'wp_ajax_fishotel_get_assets',          [$this, 'ajax_get_assets'] );
+        add_action( 'wp_ajax_fishotel_upload_asset',        [$this, 'ajax_upload_asset'] );
+        add_action( 'wp_ajax_fishotel_save_asset_meta',     [$this, 'ajax_save_asset_meta'] );
+        add_action( 'wp_ajax_fishotel_delete_asset',        [$this, 'ajax_delete_asset'] );
+        add_action( 'wp_ajax_fishotel_bulk_update_assets',  [$this, 'ajax_bulk_update_assets'] );
 
         add_action( 'woocommerce_after_checkout_form', [$this, 'add_return_to_fish_button'] );
         add_action( 'woocommerce_thankyou', [$this, 'add_return_to_fish_button'] );

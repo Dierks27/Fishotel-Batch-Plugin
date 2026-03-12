@@ -412,4 +412,441 @@ trait FisHotel_Ajax {
         wp_send_json_success( [ 'assets' => $assets ] );
     }
 
+    /* ─────────────────────────────────────────────
+     *  ASSET LIBRARY AJAX
+     * ───────────────────────────────────────────── */
+
+    private function asset_library_folders() {
+        $base = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/';
+        return [
+            'scene-layers'      => $base . 'scene-layers/',
+            'scene-backgrounds' => $base . 'scene/',
+            'stamps'            => $base . 'stamps/',
+        ];
+    }
+
+    private function asset_library_folder_to_category() {
+        return [
+            'scene-layers'      => 'layer',
+            'scene-backgrounds' => 'background',
+            'stamps'            => 'stamp',
+        ];
+    }
+
+    private function asset_library_get() {
+        return get_option( 'fishotel_asset_library', [ 'assets' => [] ] );
+    }
+
+    private function asset_library_save( $library ) {
+        update_option( 'fishotel_asset_library', $library );
+    }
+
+    /**
+     * Scan all asset folders and register any files not already in the library.
+     */
+    public function ajax_scan_assets() {
+        check_ajax_referer( 'fishotel_asset_library', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        $library     = $this->asset_library_get();
+        $existing    = array_column( $library['assets'], 'filename' );
+        $existing_map = [];
+        foreach ( $library['assets'] as $a ) {
+            $existing_map[ $a['folder'] . '/' . $a['filename'] ] = true;
+        }
+
+        $folders  = $this->asset_library_folders();
+        $cat_map  = $this->asset_library_folder_to_category();
+        $added    = 0;
+
+        foreach ( $folders as $folder_key => $dir_path ) {
+            if ( ! is_dir( $dir_path ) ) {
+                wp_mkdir_p( $dir_path );
+                continue;
+            }
+            $files = glob( $dir_path . '*.{png,jpg,jpeg,gif,webp}', GLOB_BRACE );
+            if ( ! $files ) continue;
+
+            foreach ( $files as $file ) {
+                $fname = basename( $file );
+                $key   = $folder_key . '/' . $fname;
+                if ( isset( $existing_map[ $key ] ) ) continue;
+
+                $info = @getimagesize( $file );
+                $library['assets'][] = [
+                    'id'          => 'asset_' . wp_rand() . '_' . time(),
+                    'filename'    => $fname,
+                    'folder'      => $folder_key,
+                    'label'       => pathinfo( $fname, PATHINFO_FILENAME ),
+                    'category'    => $cat_map[ $folder_key ] ?? 'layer',
+                    'scene_types' => [],
+                    'time_bands'  => [],
+                    'tags'        => [],
+                    'uploaded'    => filemtime( $file ),
+                    'width'       => $info ? $info[0] : 0,
+                    'height'      => $info ? $info[1] : 0,
+                    'filesize'    => filesize( $file ),
+                ];
+                $existing_map[ $key ] = true;
+                $added++;
+            }
+        }
+
+        $this->asset_library_save( $library );
+        wp_send_json_success( [ 'added' => $added, 'total' => count( $library['assets'] ) ] );
+    }
+
+    /**
+     * Return filtered asset list.
+     */
+    public function ajax_get_assets() {
+        check_ajax_referer( 'fishotel_asset_library', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        $library  = $this->asset_library_get();
+        $assets   = $library['assets'];
+        $category = sanitize_key( $_POST['category'] ?? '' );
+        $scene    = sanitize_key( $_POST['scene_type'] ?? '' );
+        $band     = sanitize_key( $_POST['time_band'] ?? '' );
+        $search   = sanitize_text_field( $_POST['search'] ?? '' );
+
+        if ( $category ) {
+            $assets = array_filter( $assets, function( $a ) use ( $category ) {
+                return $a['category'] === $category;
+            });
+        }
+        if ( $scene ) {
+            $assets = array_filter( $assets, function( $a ) use ( $scene ) {
+                return empty( $a['scene_types'] ) || in_array( $scene, $a['scene_types'], true );
+            });
+        }
+        if ( $band ) {
+            $assets = array_filter( $assets, function( $a ) use ( $band ) {
+                return empty( $a['time_bands'] ) || in_array( $band, $a['time_bands'], true );
+            });
+        }
+        if ( $search ) {
+            $search_lower = strtolower( $search );
+            $assets = array_filter( $assets, function( $a ) use ( $search_lower ) {
+                return strpos( strtolower( $a['filename'] ), $search_lower ) !== false
+                    || strpos( strtolower( $a['label'] ), $search_lower ) !== false
+                    || $this->asset_tags_match( $a, $search_lower );
+            });
+        }
+
+        // Add URLs for thumbnails
+        $folders = $this->asset_library_folders();
+        $base_url = plugins_url( 'assists/', FISHOTEL_PLUGIN_FILE );
+        $folder_url_map = [
+            'scene-layers'      => $base_url . 'scene-layers/',
+            'scene-backgrounds' => $base_url . 'scene/',
+            'stamps'            => $base_url . 'stamps/',
+        ];
+
+        $result = [];
+        foreach ( array_values( $assets ) as $a ) {
+            $a['url'] = ( $folder_url_map[ $a['folder'] ] ?? '' ) . $a['filename'];
+            $result[] = $a;
+        }
+
+        wp_send_json_success( [ 'assets' => $result ] );
+    }
+
+    private function asset_tags_match( $asset, $search ) {
+        if ( ! empty( $asset['tags'] ) ) {
+            foreach ( $asset['tags'] as $tag ) {
+                if ( strpos( strtolower( $tag ), $search ) !== false ) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Upload asset to correct folder and register in library.
+     */
+    public function ajax_upload_asset() {
+        check_ajax_referer( 'fishotel_asset_library', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        if ( empty( $_FILES['asset_file'] ) ) {
+            wp_send_json_error( [ 'message' => 'No file uploaded.' ] );
+        }
+
+        $file = $_FILES['asset_file'];
+        if ( $file['error'] !== UPLOAD_ERR_OK ) {
+            wp_send_json_error( [ 'message' => 'Upload error code ' . $file['error'] ] );
+        }
+
+        $ext = strtolower( pathinfo( $file['name'], PATHINFO_EXTENSION ) );
+        $allowed = [ 'png', 'jpg', 'jpeg', 'gif', 'webp' ];
+        if ( ! in_array( $ext, $allowed, true ) ) {
+            wp_send_json_error( [ 'message' => 'File type not allowed. Use: ' . implode( ', ', $allowed ) ] );
+        }
+
+        $folder = sanitize_key( $_POST['folder'] ?? 'scene-layers' );
+        $folders = $this->asset_library_folders();
+        if ( ! isset( $folders[ $folder ] ) ) {
+            wp_send_json_error( [ 'message' => 'Invalid folder.' ] );
+        }
+
+        $dest_dir = $folders[ $folder ];
+        if ( ! is_dir( $dest_dir ) ) {
+            wp_mkdir_p( $dest_dir );
+        }
+
+        $safe_name = sanitize_file_name( $file['name'] );
+        $dest      = $dest_dir . $safe_name;
+
+        // Avoid overwrite — append number if exists
+        $counter = 1;
+        while ( file_exists( $dest ) ) {
+            $name_part = pathinfo( $safe_name, PATHINFO_FILENAME );
+            $safe_name = $name_part . '-' . $counter . '.' . $ext;
+            $dest      = $dest_dir . $safe_name;
+            $counter++;
+        }
+
+        if ( ! move_uploaded_file( $file['tmp_name'], $dest ) ) {
+            wp_send_json_error( [ 'message' => 'Failed to write file.' ] );
+        }
+
+        $info        = @getimagesize( $dest );
+        $cat_map     = $this->asset_library_folder_to_category();
+        $label       = sanitize_text_field( $_POST['label'] ?? pathinfo( $safe_name, PATHINFO_FILENAME ) );
+        $scene_types = array_map( 'sanitize_key', (array) ( $_POST['scene_types'] ?? [] ) );
+        $time_bands  = array_map( 'sanitize_key', (array) ( $_POST['time_bands'] ?? [] ) );
+
+        $asset = [
+            'id'          => 'asset_' . wp_rand() . '_' . time(),
+            'filename'    => $safe_name,
+            'folder'      => $folder,
+            'label'       => $label,
+            'category'    => $cat_map[ $folder ] ?? 'layer',
+            'scene_types' => $scene_types,
+            'time_bands'  => $time_bands,
+            'tags'        => array_map( 'sanitize_text_field', array_filter( explode( ',', $_POST['tags'] ?? '' ) ) ),
+            'uploaded'    => time(),
+            'width'       => $info ? $info[0] : 0,
+            'height'      => $info ? $info[1] : 0,
+            'filesize'    => filesize( $dest ),
+        ];
+
+        $library = $this->asset_library_get();
+        $library['assets'][] = $asset;
+        $this->asset_library_save( $library );
+
+        $base_url = plugins_url( 'assists/', FISHOTEL_PLUGIN_FILE );
+        $folder_url_map = [
+            'scene-layers'      => $base_url . 'scene-layers/',
+            'scene-backgrounds' => $base_url . 'scene/',
+            'stamps'            => $base_url . 'stamps/',
+        ];
+        $asset['url'] = ( $folder_url_map[ $folder ] ?? '' ) . $safe_name;
+
+        wp_send_json_success( [ 'asset' => $asset ] );
+    }
+
+    /**
+     * Update asset metadata.
+     */
+    public function ajax_save_asset_meta() {
+        check_ajax_referer( 'fishotel_asset_library', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        $id = sanitize_text_field( $_POST['asset_id'] ?? '' );
+        if ( ! $id ) {
+            wp_send_json_error( [ 'message' => 'Missing asset ID.' ] );
+        }
+
+        $library = $this->asset_library_get();
+        $found   = false;
+
+        foreach ( $library['assets'] as &$asset ) {
+            if ( $asset['id'] !== $id ) continue;
+            $found = true;
+
+            if ( isset( $_POST['label'] ) ) {
+                $asset['label'] = sanitize_text_field( $_POST['label'] );
+            }
+            if ( isset( $_POST['category'] ) ) {
+                $cat = sanitize_key( $_POST['category'] );
+                if ( in_array( $cat, [ 'layer', 'background', 'stamp' ], true ) ) {
+                    // Move file if category implies different folder
+                    $new_folder = array_search( $cat, $this->asset_library_folder_to_category() );
+                    if ( $new_folder && $new_folder !== $asset['folder'] ) {
+                        $old_path = $this->asset_library_folders()[ $asset['folder'] ] . $asset['filename'];
+                        $new_dir  = $this->asset_library_folders()[ $new_folder ];
+                        if ( ! is_dir( $new_dir ) ) wp_mkdir_p( $new_dir );
+                        $new_path = $new_dir . $asset['filename'];
+                        if ( file_exists( $old_path ) && ! file_exists( $new_path ) ) {
+                            rename( $old_path, $new_path );
+                            $asset['folder'] = $new_folder;
+                        }
+                    }
+                    $asset['category'] = $cat;
+                }
+            }
+            if ( isset( $_POST['scene_types'] ) ) {
+                $asset['scene_types'] = array_map( 'sanitize_key', (array) $_POST['scene_types'] );
+            }
+            if ( isset( $_POST['time_bands'] ) ) {
+                $asset['time_bands'] = array_map( 'sanitize_key', (array) $_POST['time_bands'] );
+            }
+            if ( isset( $_POST['tags'] ) ) {
+                $asset['tags'] = array_map( 'sanitize_text_field', array_filter( explode( ',', $_POST['tags'] ) ) );
+            }
+            break;
+        }
+        unset( $asset );
+
+        if ( ! $found ) {
+            wp_send_json_error( [ 'message' => 'Asset not found.' ] );
+        }
+
+        $this->asset_library_save( $library );
+        wp_send_json_success( [ 'message' => 'Saved.' ] );
+    }
+
+    /**
+     * Delete asset file and remove from library.
+     */
+    public function ajax_delete_asset() {
+        check_ajax_referer( 'fishotel_asset_library', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        $id = sanitize_text_field( $_POST['asset_id'] ?? '' );
+        if ( ! $id ) {
+            wp_send_json_error( [ 'message' => 'Missing asset ID.' ] );
+        }
+
+        $library = $this->asset_library_get();
+        $folders = $this->asset_library_folders();
+
+        // Check if asset is used in any layer config
+        $references = [];
+        $target     = null;
+        foreach ( $library['assets'] as $a ) {
+            if ( $a['id'] === $id ) { $target = $a; break; }
+        }
+
+        if ( ! $target ) {
+            wp_send_json_error( [ 'message' => 'Asset not found.' ] );
+        }
+
+        $all_layers = get_option( 'fishotel_layer_configs', [] );
+        foreach ( $all_layers as $scene => $layers ) {
+            foreach ( $layers as $L ) {
+                if ( ( $L['asset'] ?? '' ) === $target['filename'] ) {
+                    $references[] = $scene;
+                }
+            }
+        }
+
+        $force = ! empty( $_POST['force'] );
+        if ( ! empty( $references ) && ! $force ) {
+            wp_send_json_error( [
+                'message'    => 'Asset is used in layer config(s): ' . implode( ', ', array_unique( $references ) ) . '. Send force=1 to delete anyway.',
+                'references' => array_unique( $references ),
+                'confirm'    => true,
+            ] );
+        }
+
+        // Delete file
+        $file_path = ( $folders[ $target['folder'] ] ?? '' ) . $target['filename'];
+        if ( file_exists( $file_path ) ) {
+            unlink( $file_path );
+        }
+
+        // Remove from library
+        $library['assets'] = array_values( array_filter( $library['assets'], function( $a ) use ( $id ) {
+            return $a['id'] !== $id;
+        }));
+        $this->asset_library_save( $library );
+
+        wp_send_json_success( [ 'message' => 'Deleted.' ] );
+    }
+
+    /**
+     * Bulk update scene_types/time_bands for multiple assets.
+     */
+    public function ajax_bulk_update_assets() {
+        check_ajax_referer( 'fishotel_asset_library', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        $ids         = array_map( 'sanitize_text_field', (array) ( $_POST['asset_ids'] ?? [] ) );
+        $action_type = sanitize_key( $_POST['bulk_action'] ?? '' );
+
+        if ( empty( $ids ) ) {
+            wp_send_json_error( [ 'message' => 'No assets selected.' ] );
+        }
+
+        $library = $this->asset_library_get();
+
+        if ( $action_type === 'delete' ) {
+            $folders = $this->asset_library_folders();
+            foreach ( $library['assets'] as $a ) {
+                if ( in_array( $a['id'], $ids, true ) ) {
+                    $path = ( $folders[ $a['folder'] ] ?? '' ) . $a['filename'];
+                    if ( file_exists( $path ) ) unlink( $path );
+                }
+            }
+            $library['assets'] = array_values( array_filter( $library['assets'], function( $a ) use ( $ids ) {
+                return ! in_array( $a['id'], $ids, true );
+            }));
+        } elseif ( $action_type === 'set_scene_types' ) {
+            $scene_types = array_map( 'sanitize_key', (array) ( $_POST['scene_types'] ?? [] ) );
+            foreach ( $library['assets'] as &$a ) {
+                if ( in_array( $a['id'], $ids, true ) ) {
+                    $a['scene_types'] = $scene_types;
+                }
+            }
+            unset( $a );
+        } elseif ( $action_type === 'set_time_bands' ) {
+            $time_bands = array_map( 'sanitize_key', (array) ( $_POST['time_bands'] ?? [] ) );
+            foreach ( $library['assets'] as &$a ) {
+                if ( in_array( $a['id'], $ids, true ) ) {
+                    $a['time_bands'] = $time_bands;
+                }
+            }
+            unset( $a );
+        } elseif ( $action_type === 'move_folder' ) {
+            $new_folder = sanitize_key( $_POST['folder'] ?? '' );
+            $folders    = $this->asset_library_folders();
+            $cat_map    = $this->asset_library_folder_to_category();
+            if ( ! isset( $folders[ $new_folder ] ) ) {
+                wp_send_json_error( [ 'message' => 'Invalid folder.' ] );
+            }
+            $new_dir = $folders[ $new_folder ];
+            if ( ! is_dir( $new_dir ) ) wp_mkdir_p( $new_dir );
+
+            foreach ( $library['assets'] as &$a ) {
+                if ( ! in_array( $a['id'], $ids, true ) ) continue;
+                if ( $a['folder'] === $new_folder ) continue;
+                $old_path = ( $folders[ $a['folder'] ] ?? '' ) . $a['filename'];
+                $new_path = $new_dir . $a['filename'];
+                if ( file_exists( $old_path ) && ! file_exists( $new_path ) ) {
+                    rename( $old_path, $new_path );
+                    $a['folder']   = $new_folder;
+                    $a['category'] = $cat_map[ $new_folder ] ?? $a['category'];
+                }
+            }
+            unset( $a );
+        }
+
+        $this->asset_library_save( $library );
+        wp_send_json_success( [ 'message' => 'Bulk action completed.', 'total' => count( $library['assets'] ) ] );
+    }
+
 }
