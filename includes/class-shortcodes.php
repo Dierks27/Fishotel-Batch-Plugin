@@ -2802,11 +2802,15 @@ trait FisHotel_Shortcodes {
                 .fh-customs-empty { padding:12px 0; text-align:center; font-family:'Courier New',monospace; font-size:12px; color:#6b5a3a; text-transform:uppercase; letter-spacing:0.06em; }
                 @media (max-width:600px) {
                     .fh-customs-inner { padding:10px 10px; }
-                    .fh-customs-fields { gap:8px; }
+                    .fh-customs-fields { display:grid !important; grid-template-columns:1fr 1fr !important; gap:8px !important; }
+                    .fh-customs-fields > div { flex:none !important; }
                     .fh-customs-field { min-width:60px; }
-                    .fh-customs-table { font-size:11px; }
+                    .fh-customs-table { font-size:10px !important; }
                     .fh-customs-table th { font-size:8px; }
+                    .fh-customs-table th,
+                    .fh-customs-table td { padding:4px 2px !important; }
                     .fh-customs-footer { flex-direction:column; align-items:center; gap:8px; text-align:center; }
+                    .fh-customs-stamp img { width:140px !important; }
                 }
 
                 /* ── Collapsible boarding pass strip (hidden at arrived stage) ── */
@@ -3086,7 +3090,7 @@ trait FisHotel_Shortcodes {
                 // Build species data for the Solari board
                 $board_raw = [];
                 foreach ( $batch_posts as $bp ) {
-                    $cname  = FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title );
+                    $cname  = trim( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title ) );
                     $sa     = $species_arrival[ $bp->ID ] ?? [ 'received' => 0, 'doa' => 0, 'alive' => 0 ];
                     $demand = 0;
                     if ( isset( $fcfs[ $bp->ID ] ) ) {

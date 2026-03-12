@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.51 - Replace CSS quarantine stamp with PNG images, rotate through 3 per batch.
- * Version:           4.51
+ * Description:       v4.52 - Arrivals board uses batch title not master title; customs form mobile responsive.
+ * Version:           4.52
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.51' );
+define( 'FISHOTEL_VERSION', '4.52' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
