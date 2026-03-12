@@ -289,31 +289,66 @@ trait FisHotel_HotelProgram {
         $postmark_city    = esc_html( $activity['postmark_city'] ?? 'CHAMPLIN, MN' );
         $postmark_date    = strtoupper( date_i18n( 'M j, Y' ) );
 
-        // Room strip data — species in QT for this batch
-        $batch_fish  = get_posts( [
+        // Building data — all rooms keyed by tank number
+        $all_room_ids = [ '101', '102', '103', '104', '201', '202', '203' ];
+        $room_map     = array_fill_keys( $all_room_ids, null ); // null = unassigned
+
+        $batch_fish = get_posts( [
             'post_type'   => 'fish_batch',
             'numberposts' => -1,
             'post_status' => 'any',
             'meta_key'    => '_batch_name',
             'meta_value'  => $batch_name,
         ] );
-        $rooms = [];
         foreach ( $batch_fish as $bf ) {
+            $tank       = get_post_meta( $bf->ID, '_arrival_tank', true );
+            if ( ! $tank || ! isset( $room_map[ $tank ] ) ) continue;
             $arr_status = get_post_meta( $bf->ID, '_arrival_status', true );
-            if ( $arr_status !== 'in_quarantine' ) continue;
-            $tank     = get_post_meta( $bf->ID, '_arrival_tank', true );
-            $qty_recv = intval( get_post_meta( $bf->ID, '_arrival_qty_received', true ) );
-            $master   = get_post_meta( $bf->ID, '_master_id', true );
-            $species  = $master ? get_the_title( $master ) : $bf->post_title;
-            if ( $qty_recv < 1 ) continue;
-            $rooms[] = [
-                'room'    => $tank ?: '—',
-                'species' => $species,
-                'qty'     => $qty_recv,
+            $qty_recv   = intval( get_post_meta( $bf->ID, '_arrival_qty_received', true ) );
+            $qty_doa    = intval( get_post_meta( $bf->ID, '_arrival_qty_doa', true ) );
+            $master_id  = get_post_meta( $bf->ID, '_master_id', true );
+            $common     = $master_id ? get_the_title( $master_id ) : $bf->post_title;
+            $sci_name   = $master_id ? get_post_meta( $master_id, '_scientific_name', true ) : '';
+            $room_map[ $tank ] = [
+                'fish_id'    => $bf->ID,
+                'species'    => $common,
+                'sci_name'   => $sci_name,
+                'qty'        => $qty_recv,
+                'qty_doa'    => $qty_doa,
+                'status'     => $arr_status,
+                'master_id'  => $master_id,
             ];
         }
 
-        $logged_in = is_user_logged_in();
+        // Determine which rooms belong to logged-in customer
+        $logged_in      = is_user_logged_in();
+        $customer_rooms = [];
+        if ( $logged_in ) {
+            $uid      = get_current_user_id();
+            $my_reqs  = get_posts( [
+                'post_type'   => 'fish_request',
+                'numberposts' => -1,
+                'post_status' => 'any',
+                'meta_query'  => [
+                    'relation' => 'AND',
+                    [ 'key' => '_customer_id', 'value' => $uid,        'compare' => '=' ],
+                    [ 'key' => '_batch_name',  'value' => $batch_name, 'compare' => '=' ],
+                ],
+            ] );
+            $my_batch_ids = [];
+            foreach ( $my_reqs as $req ) {
+                $items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
+                foreach ( $items as $item ) {
+                    $bid = intval( $item['batch_id'] ?? 0 );
+                    if ( $bid ) $my_batch_ids[ $bid ] = true;
+                }
+            }
+            foreach ( $room_map as $tank => $data ) {
+                if ( $data && isset( $my_batch_ids[ $data['fish_id'] ] ) ) {
+                    $customer_rooms[ $tank ] = true;
+                }
+            }
+        }
 
         ob_start();
         ?>
@@ -357,20 +392,39 @@ trait FisHotel_HotelProgram {
 .fh-hotel-postcard-address-label{font-family:'Courier New',monospace;font-size:11px;color:#2e2418 !important;margin-bottom:6px;letter-spacing:0.05em}
 .fh-hotel-postcard-address-line{height:1px;background:#96885f !important;margin:8px 0;opacity:0.5}
 
-/* ROOM STRIP */
-.fh-hotel-room-strip{display:flex;gap:10px;overflow-x:auto;padding:16px 4px;margin-top:12px;scrollbar-width:thin;scrollbar-color:#333 transparent}
-.fh-hotel-room-strip::-webkit-scrollbar{height:4px}
-.fh-hotel-room-strip::-webkit-scrollbar-thumb{background:#444;border-radius:2px}
-.fh-hotel-room-item{flex:0 0 auto;background:#1a1a1a !important;border:1px solid #333;border-radius:4px;padding:10px 14px;min-width:130px;text-align:center}
-.fh-hotel-room-number{font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:#96885f !important;letter-spacing:0.15em}
-.fh-hotel-room-species{font-family:'Oswald',sans-serif;font-size:13px;color:#fff !important;margin-top:4px;white-space:nowrap}
-.fh-hotel-room-qty{font-family:'Oswald',sans-serif;font-size:11px;color:#777 !important;margin-top:2px}
-
-/* BLURRED / LOGIN OVERLAY */
-.fh-hotel-room-blur{filter:blur(6px);pointer-events:none;user-select:none}
-.fh-hotel-login-overlay{position:relative;margin-top:12px}
-.fh-hotel-login-overlay .fh-hotel-login-cta{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;background:#1a3a5c !important;color:#d4bc7e !important;font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:0.1em;padding:10px 24px;border:1px solid #96885f;border-radius:3px;cursor:pointer;text-decoration:none;white-space:nowrap}
-.fh-hotel-login-overlay .fh-hotel-login-cta:hover{background:#244a6e !important}
+/* HOTEL BUILDING */
+.fh-hotel-building{background:#1a1a1a !important;border:1px solid #3a3a3a;border-radius:4px;margin-top:24px;overflow:hidden}
+.fh-hotel-building-roof{background:#1a3a5c !important;padding:10px 16px;text-align:center}
+.fh-hotel-building-sign{font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#c8a96e !important;letter-spacing:0.2em;text-transform:uppercase}
+.fh-hotel-floor{display:flex}
+.fh-hotel-floor + .fh-hotel-floor{border-top:2px solid #3a3a3a}
+.fh-hotel-room{flex:1;min-height:120px;border-right:1px solid #3a3a3a;padding:12px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background 0.2s;position:relative}
+.fh-hotel-room:last-child{border-right:none}
+.fh-hotel-room:hover{background:rgba(255,255,255,0.03) !important}
+.fh-floor-2 .fh-hotel-room{min-height:160px}
+.fh-hotel-room-number{font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:#96885f !important;letter-spacing:0.15em;position:absolute;top:8px;left:10px}
+.fh-hotel-room-species{font-family:'Oswald',sans-serif;font-size:13px;color:#e1e1e1 !important;text-align:center;margin-top:4px;word-break:break-word}
+.fh-hotel-room-fish{font-size:22px;margin-bottom:4px}
+.fh-hotel-room-qty{font-family:'Oswald',sans-serif;font-size:10px;color:#777 !important;margin-top:4px}
+.fh-hotel-room-yours{font-family:'Oswald',sans-serif;font-size:9px;color:#c8a96e !important;letter-spacing:0.1em;margin-bottom:2px}
+/* States */
+.fh-hotel-room--occupied{background:rgba(245,240,232,0.06) !important}
+.fh-hotel-room--noarrival{background:#2a2a2a !important}
+.fh-hotel-room--noarrival .fh-hotel-room-species{color:#cc4444 !important;font-size:10px}
+.fh-hotel-room--unassigned{background:#1a1a1a !important}
+.fh-hotel-room--unassigned .fh-hotel-room-species{color:#555 !important;font-size:16px}
+.fh-hotel-room--mine{box-shadow:inset 0 0 12px rgba(150,136,95,0.4) !important}
+.fh-hotel-room--mine .fh-hotel-room-number{color:#c8a96e !important}
+.fh-hotel-building-base{background:#0a0a0a !important;height:8px}
+/* Room detail expand */
+.fh-hotel-room-detail{display:none;background:#111 !important;border-top:1px solid #3a3a3a;padding:20px 24px}
+.fh-hotel-room-detail--open{display:block}
+.fh-hotel-room-detail-name{font-family:'Oswald',sans-serif;font-size:20px;color:#e1e1e1 !important;font-weight:600}
+.fh-hotel-room-detail-sci{font-family:'Oswald',sans-serif;font-size:13px;color:#888 !important;font-style:italic;margin-top:2px}
+.fh-hotel-room-detail-meta{font-family:'Oswald',sans-serif;font-size:12px;color:#aaa !important;margin-top:10px;line-height:1.8}
+.fh-hotel-room-detail-yours{font-family:'Oswald',sans-serif;font-size:13px;color:#c8a96e !important;margin-top:10px}
+.fh-hotel-room-detail-close{position:absolute;top:12px;right:16px;background:none;border:none;color:#666;font-size:20px;cursor:pointer;font-family:'Oswald',sans-serif}
+.fh-hotel-room-detail-close:hover{color:#fff}
 
 /* RESPONSIVE */
 @media(max-width:640px){
@@ -386,6 +440,11 @@ trait FisHotel_HotelProgram {
     .fh-hotel-postcard-back-left{padding:20px 16px}
     .fh-hotel-postcard-stamp{width:40px;height:48px;font-size:22px}
     .fh-hotel-postcard-postmark{width:70px;height:70px}
+    .fh-floor-1{flex-wrap:wrap}
+    .fh-floor-1 .fh-hotel-room{flex:1 1 48%;min-height:90px}
+    .fh-floor-2{flex-direction:column}
+    .fh-floor-2 .fh-hotel-room{min-height:120px;border-right:none;border-bottom:1px solid #3a3a3a}
+    .fh-floor-2 .fh-hotel-room:last-child{border-bottom:none}
 }
 </style>
 
@@ -439,31 +498,93 @@ trait FisHotel_HotelProgram {
         </div>
     </div>
 
-    <!-- ROOM STRIP -->
-    <?php if ( ! $logged_in ) : ?>
-        <div class="fh-hotel-login-overlay">
-            <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="fh-hotel-login-cta">LOG IN TO VIEW ROOMS</a>
-            <div class="fh-hotel-room-strip fh-hotel-room-blur">
-                <?php for ( $i = 0; $i < 4; $i++ ) : ?>
-                    <div class="fh-hotel-room-item">
-                        <div class="fh-hotel-room-number">ROOM —</div>
-                        <div class="fh-hotel-room-species">— — —</div>
-                        <div class="fh-hotel-room-qty">— guests</div>
-                    </div>
-                <?php endfor; ?>
-            </div>
+    <!-- HOTEL BUILDING -->
+    <div class="fh-hotel-building">
+        <div class="fh-hotel-building-roof">
+            <div class="fh-hotel-building-sign">THE FISHOTEL</div>
         </div>
-    <?php elseif ( ! empty( $rooms ) ) : ?>
-        <div class="fh-hotel-room-strip">
-            <?php foreach ( $rooms as $r ) : ?>
-                <div class="fh-hotel-room-item">
-                    <div class="fh-hotel-room-number">ROOM <?php echo esc_html( $r['room'] ); ?></div>
-                    <div class="fh-hotel-room-species"><?php echo esc_html( $r['species'] ); ?></div>
-                    <div class="fh-hotel-room-qty"><?php echo intval( $r['qty'] ); ?> guest<?php echo $r['qty'] !== 1 ? 's' : ''; ?></div>
+        <?php
+        $floors = [
+            1 => [ '101', '102', '103', '104' ],
+            2 => [ '201', '202', '203' ],
+        ];
+        $floor_labels = [ 1 => '20 Gallon', 2 => '40 Gallon' ];
+        foreach ( $floors as $fn => $floor_rooms ) :
+        ?>
+        <div class="fh-hotel-floor fh-floor-<?php echo $fn; ?>">
+            <?php foreach ( $floor_rooms as $tank_id ) :
+                $rd       = $room_map[ $tank_id ];
+                $is_mine  = isset( $customer_rooms[ $tank_id ] );
+                $state    = 'unassigned';
+                if ( $rd ) {
+                    $state = ( $rd['status'] === 'no_arrival' ) ? 'noarrival' : 'occupied';
+                }
+                $cls = 'fh-hotel-room fh-hotel-room--' . $state;
+                if ( $is_mine ) $cls .= ' fh-hotel-room--mine';
+            ?>
+                <div class="<?php echo esc_attr( $cls ); ?>" data-room="<?php echo esc_attr( $tank_id ); ?>" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>')">
+                    <div class="fh-hotel-room-number"><?php echo esc_html( $tank_id ); ?></div>
+                    <?php if ( $rd && $state === 'occupied' ) : ?>
+                        <?php if ( $is_mine ) : ?><div class="fh-hotel-room-yours">YOUR ROOM</div><?php endif; ?>
+                        <div class="fh-hotel-room-fish">&#x1F420;</div>
+                        <div class="fh-hotel-room-species"><?php echo esc_html( $rd['species'] ); ?></div>
+                        <div class="fh-hotel-room-qty"><?php echo intval( $rd['qty'] ); ?> guest<?php echo $rd['qty'] !== 1 ? 's' : ''; ?></div>
+                    <?php elseif ( $state === 'noarrival' ) : ?>
+                        <div class="fh-hotel-room-species">NO ARRIVAL</div>
+                    <?php else : ?>
+                        <div class="fh-hotel-room-species">&mdash;</div>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         </div>
-    <?php endif; ?>
+        <?php endforeach; ?>
+        <div class="fh-hotel-building-base"></div>
+
+        <?php /* Room detail panels — one per room, hidden */ ?>
+        <?php foreach ( $all_room_ids as $tank_id ) :
+            $rd = $room_map[ $tank_id ];
+            $is_mine  = isset( $customer_rooms[ $tank_id ] );
+            $floor_num = ( $tank_id[0] === '2' ) ? 2 : 1;
+            $floor_lbl = 'Floor ' . $floor_num . ' — ' . $floor_labels[ $floor_num ];
+        ?>
+        <div class="fh-hotel-room-detail" id="fh-room-detail-<?php echo esc_attr( $tank_id ); ?>" style="position:relative;">
+            <button class="fh-hotel-room-detail-close" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>')">&times;</button>
+            <?php if ( $rd ) : ?>
+                <div class="fh-hotel-room-detail-name"><?php echo esc_html( $rd['species'] ); ?></div>
+                <?php if ( ! empty( $rd['sci_name'] ) ) : ?>
+                    <div class="fh-hotel-room-detail-sci"><?php echo esc_html( $rd['sci_name'] ); ?></div>
+                <?php endif; ?>
+                <div class="fh-hotel-room-detail-meta">
+                    Tank: <?php echo esc_html( $tank_id ); ?> (<?php echo esc_html( $floor_lbl ); ?>)<br>
+                    Received: <?php echo intval( $rd['qty'] ); ?> &bull; DOA: <?php echo intval( $rd['qty_doa'] ); ?><br>
+                    Status: <?php echo esc_html( ucwords( str_replace( '_', ' ', $rd['status'] ) ) ); ?>
+                </div>
+                <?php if ( $is_mine ) : ?>
+                    <div class="fh-hotel-room-detail-yours">Your <?php echo esc_html( $rd['species'] ); ?> is staying in Room <?php echo esc_html( $tank_id ); ?></div>
+                <?php endif; ?>
+            <?php else : ?>
+                <div class="fh-hotel-room-detail-name">Room <?php echo esc_html( $tank_id ); ?></div>
+                <div class="fh-hotel-room-detail-meta"><?php echo esc_html( $floor_lbl ); ?><br>No guest assigned.</div>
+            <?php endif; ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+
+    <script>
+    var fishotelHotelOpenRoom = null;
+    function fishotelHotelToggleRoom(id) {
+        var panels = document.querySelectorAll('.fh-hotel-room-detail');
+        if (fishotelHotelOpenRoom === id) {
+            document.getElementById('fh-room-detail-' + id).classList.remove('fh-hotel-room-detail--open');
+            fishotelHotelOpenRoom = null;
+            return;
+        }
+        panels.forEach(function(p){ p.classList.remove('fh-hotel-room-detail--open'); });
+        var el = document.getElementById('fh-room-detail-' + id);
+        if (el) { el.classList.add('fh-hotel-room-detail--open'); }
+        fishotelHotelOpenRoom = id;
+    }
+    </script>
 </div>
         <?php
         return ob_get_clean();
