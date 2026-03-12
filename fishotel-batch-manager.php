@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.46 - Customs form: tighter seal/HR spacing, no inline SVG gap.
- * Version:           4.46
+ * Description:       v4.47 - Strip batch suffix from fish names everywhere, tighter customs spacing.
+ * Version:           4.47
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.46' );
+define( 'FISHOTEL_VERSION', '4.47' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

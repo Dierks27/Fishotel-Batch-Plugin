@@ -1858,6 +1858,7 @@ trait FisHotel_Shortcodes {
                     if ( get_post_meta( $req->ID, '_is_admin_order', true ) ) continue;
                     $req_items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
                     foreach ( $req_items as $item ) {
+                        $item['fish_name'] = trim( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $item['fish_name'] ?? '' ) );
                         $bp_items[] = $item;
                         $bp_total  += (float) $item['price'] * (int) $item['qty'];
                     }
@@ -1881,7 +1882,7 @@ trait FisHotel_Shortcodes {
                     if ( ! isset( $manifest_species[ $mbid ] ) ) {
                         $m_master_id = get_post_meta( $mbid, '_master_id', true );
                         $manifest_species[ $mbid ] = [
-                            'fish_name'       => $mitem['fish_name'],
+                            'fish_name'       => trim( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $mitem['fish_name'] ?? '' ) ),
                             'scientific_name' => $m_master_id ? (string) get_post_meta( $m_master_id, '_scientific_name', true ) : '',
                             'total_qty'       => 0,
                         ];
@@ -2614,6 +2615,7 @@ trait FisHotel_Shortcodes {
                     if ( intval( get_post_meta( $req->ID, '_customer_id', true ) ) !== $uid ) continue;
                     $req_items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
                     foreach ( $req_items as $item ) {
+                        $item['fish_name'] = trim( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $item['fish_name'] ?? '' ) );
                         $my_items[] = $item;
                     }
                 }
@@ -2769,11 +2771,11 @@ trait FisHotel_Shortcodes {
                 .fh-customs-topline { display:flex; justify-content:space-between; margin-bottom:0; font-family:'Courier New',monospace; font-size:10px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.06em; }
                 .fh-customs-seal { text-align:center; margin:0; padding:0; line-height:0; }
                 .fh-customs-seal svg { width:56px; height:56px; display:block; margin:0 auto; }
-                .fh-customs-title { text-align:center; margin-bottom:0; }
-                .fh-customs-title h2 { font-family:'Oswald',sans-serif; font-weight:700; font-size:18px; color:#2e2418; letter-spacing:6px; text-transform:uppercase; margin:0; }
-                .fh-customs-title p { font-family:'Oswald',sans-serif; font-weight:400; font-size:12px; color:#6b5a3a; letter-spacing:4px; text-transform:uppercase; margin:0; }
-                .fh-customs-hr { border:none; border-top:2px solid #2e2418; margin:4px 0 0 0; padding:0; }
-                .fh-customs-hr2 { border:none; border-top:1px solid #a89878; margin:0 0 4px 0; padding:0; }
+                .fh-customs-title { text-align:center; margin:0 !important; padding:0; }
+                .fh-customs-title h2 { font-family:'Oswald',sans-serif; font-weight:700; font-size:18px; color:#2e2418; letter-spacing:6px; text-transform:uppercase; margin:0 !important; padding:0; }
+                .fh-customs-title p { font-family:'Oswald',sans-serif; font-weight:400; font-size:12px; color:#6b5a3a; letter-spacing:4px; text-transform:uppercase; margin:0 !important; padding:0; }
+                .fh-customs-hr { border:none; border-top:2px solid #2e2418; margin:4px 0; padding:0; }
+                .fh-customs-hr2 { border:none; border-top:1px solid #a89878; margin:4px 0; padding:0; }
                 .fh-customs-fields { display:flex; gap:12px; margin-bottom:8px; flex-wrap:wrap; }
                 .fh-customs-field { flex:1; min-width:80px; }
                 .fh-customs-field-label { font-family:'Courier New',monospace; font-size:9px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:1px; }
@@ -3154,6 +3156,7 @@ trait FisHotel_Shortcodes {
                 if ( get_post_meta( $req->ID, '_is_admin_order', true ) ) continue;
                 $req_items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
                 foreach ( $req_items as $item ) {
+                    $item['fish_name'] = trim( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $item['fish_name'] ?? '' ) );
                     $my_items[] = $item;
                     $my_total  += (float) $item['price'] * (int) $item['qty'];
                 }
@@ -3175,7 +3178,7 @@ trait FisHotel_Shortcodes {
                 if ( ! isset( $species_totals[$bid] ) ) {
                     $master_id = get_post_meta( $bid, '_master_id', true );
                     $species_totals[$bid] = [
-                        'fish_name'       => $item['fish_name'],
+                        'fish_name'       => trim( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $item['fish_name'] ?? '' ) ),
                         'scientific_name' => $master_id ? (string) get_post_meta( $master_id, '_scientific_name', true ) : '',
                         'total_qty'       => 0,
                     ];
