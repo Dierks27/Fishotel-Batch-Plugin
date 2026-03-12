@@ -2769,8 +2769,8 @@ trait FisHotel_Shortcodes {
                 .fh-customs-inner { margin:8px; border:1px solid rgba(100,80,50,0.25); padding:12px 16px; position:relative; background:transparent; }
                 .fh-customs-edge { height:4px; background:repeating-linear-gradient(90deg,#8b0000 0,#8b0000 12px,transparent 12px,transparent 18px); }
                 .fh-customs-topline { display:flex; justify-content:space-between; margin:0 !important; padding:0; font-family:'Courier New',monospace; font-size:10px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.06em; }
-                .fh-customs-seal { text-align:center; margin:0 !important; padding:0 !important; line-height:0; }
-                .fh-customs-seal svg { width:56px; height:56px; display:block; margin:0 auto; }
+                .fh-customs-seal { text-align:center; margin:0 0 6px 0 !important; padding:0 !important; line-height:0; }
+                .fh-customs-seal img { width:80px; height:80px; display:block; margin:0 auto; opacity:0.85; }
                 .fh-customs-title { text-align:center; margin:0 !important; padding:0 !important; }
                 .fh-customs-title h2 { font-family:'Oswald',sans-serif; font-weight:700; font-size:18px; color:#2e2418; letter-spacing:6px; text-transform:uppercase; margin:0 !important; padding:0 !important; }
                 .fh-customs-title p { font-family:'Oswald',sans-serif; font-weight:400; font-size:12px; color:#6b5a3a; letter-spacing:4px; text-transform:uppercase; margin:0 !important; padding:0 !important; }
@@ -2942,22 +2942,13 @@ trait FisHotel_Shortcodes {
                             <span>FORM FH-QT-001</span>
                             <span>COPY 1 &mdash; GUEST</span>
                         </div>
+                        <?php
+                        $stamp_index = ( crc32( $batch_name ) % 6 ) + 1;
+                        $stamp_file  = 'top-stamp-' . str_pad( $stamp_index, 2, '0', STR_PAD_LEFT ) . '.png';
+                        $stamp_url   = plugins_url( 'assists/stamps/' . $stamp_file, dirname( __FILE__ ) );
+                        ?>
                         <div class="fh-customs-seal">
-                            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="50" cy="50" r="46" fill="none" stroke="#6b5a3a" stroke-width="2"/>
-                                <circle cx="50" cy="50" r="42" fill="none" stroke="#6b5a3a" stroke-width="0.5"/>
-                                <path d="M30 52 C30 52 35 40 50 42 C65 44 68 52 68 52 C68 52 65 60 50 58 C35 56 30 52 30 52 Z" fill="#6b5a3a" opacity="0.8"/>
-                                <path d="M68 52 L76 48 L76 56 Z" fill="#6b5a3a" opacity="0.6"/>
-                                <circle cx="37" cy="50" r="1.5" fill="#c8bfa0"/>
-                                <path id="fh-seal-top" d="M15 50 A35 35 0 0 1 85 50" fill="none"/>
-                                <text font-family="'Oswald',sans-serif" font-size="7" fill="#6b5a3a" letter-spacing="2" font-weight="600" text-anchor="middle">
-                                    <textPath href="#fh-seal-top" startOffset="50%">DEPT OF MARINE AFFAIRS</textPath>
-                                </text>
-                                <path id="fh-seal-bot" d="M20 58 A33 33 0 0 0 80 58" fill="none"/>
-                                <text font-family="'Oswald',sans-serif" font-size="6.5" fill="#8a7a5a" letter-spacing="2" font-weight="400" text-anchor="middle">
-                                    <textPath href="#fh-seal-bot" startOffset="50%">EST 2024</textPath>
-                                </text>
-                            </svg>
+                            <img src="<?php echo esc_url( $stamp_url ); ?>" alt="Dept of Marine Affairs">
                         </div>
                         <div class="fh-customs-title">
                             <h2>FISHOTEL INTERNATIONAL</h2>
