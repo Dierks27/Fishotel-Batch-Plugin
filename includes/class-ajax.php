@@ -292,4 +292,124 @@ trait FisHotel_Ajax {
         wp_send_json_success( [ 'fish_id' => $fish_id, 'field' => $field, 'value' => $value ] );
     }
 
+    /* ─────────────────────────────────────────────
+     *  LAYER DESIGNER AJAX
+     * ───────────────────────────────────────────── */
+
+    public function ajax_save_layer_config() {
+        check_ajax_referer( 'fishotel_layer_admin', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        $scene_type = sanitize_key( $_POST['scene_type'] ?? '' );
+        if ( ! $scene_type ) {
+            wp_send_json_error( [ 'message' => 'Missing scene type.' ] );
+        }
+
+        $raw    = json_decode( wp_unslash( $_POST['layers'] ?? '[]' ), true );
+        $layers = [];
+        if ( is_array( $raw ) ) {
+            foreach ( $raw as $L ) {
+                $layers[] = [
+                    'id'        => sanitize_key( $L['id'] ?? ( 'layer_' . wp_rand() ) ),
+                    'asset'     => sanitize_file_name( $L['asset'] ?? '' ),
+                    'label'     => sanitize_text_field( $L['label'] ?? '' ),
+                    'x'         => strval( max( 0, min( 100, intval( $L['x'] ?? 0 ) ) ) ),
+                    'y'         => strval( max( 0, min( 100, intval( $L['y'] ?? 0 ) ) ) ),
+                    'width'     => strval( max( 1, min( 100, intval( $L['width'] ?? 100 ) ) ) ),
+                    'blend'     => in_array( $L['blend'] ?? '', [ 'normal','screen','overlay','multiply','soft-light','hard-light','lighten','color-dodge' ], true ) ? $L['blend'] : 'normal',
+                    'opacity'   => strval( max( 0, min( 1, floatval( $L['opacity'] ?? 1 ) ) ) ),
+                    'animation' => in_array( $L['animation'] ?? '', [ 'none','drift-left-right','drift-up','sway','shimmer','pulse','float' ], true ) ? $L['animation'] : 'none',
+                    'speed'     => strval( max( 1, min( 60, intval( $L['speed'] ?? 10 ) ) ) ),
+                    'pause'     => strval( max( 0, min( 30, intval( $L['pause'] ?? 0 ) ) ) ),
+                    'z'         => strval( max( 1, min( 20, intval( $L['z'] ?? 1 ) ) ) ),
+                    'show_on'   => array_values( array_intersect( (array) ( $L['show_on'] ?? [] ), [ 'morning','afternoon','evening','dusk','night','all' ] ) ),
+                ];
+            }
+        }
+
+        $all = get_option( 'fishotel_layer_configs', [] );
+        $all[ $scene_type ] = $layers;
+        update_option( 'fishotel_layer_configs', $all );
+
+        wp_send_json_success( [ 'message' => 'Saved.' ] );
+    }
+
+    public function ajax_upload_layer_asset() {
+        check_ajax_referer( 'fishotel_layer_admin', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        if ( empty( $_FILES['layer_asset'] ) ) {
+            wp_send_json_error( [ 'message' => 'No file uploaded.' ] );
+        }
+
+        $file = $_FILES['layer_asset'];
+        if ( $file['error'] !== UPLOAD_ERR_OK ) {
+            wp_send_json_error( [ 'message' => 'Upload error code ' . $file['error'] ] );
+        }
+
+        $ext = strtolower( pathinfo( $file['name'], PATHINFO_EXTENSION ) );
+        if ( $ext !== 'png' ) {
+            wp_send_json_error( [ 'message' => 'Only PNG files allowed.' ] );
+        }
+
+        $dest_dir = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene-layers/';
+        if ( ! is_dir( $dest_dir ) ) {
+            wp_mkdir_p( $dest_dir );
+        }
+
+        $safe_name = sanitize_file_name( $file['name'] );
+        $dest      = $dest_dir . $safe_name;
+
+        if ( ! move_uploaded_file( $file['tmp_name'], $dest ) ) {
+            wp_send_json_error( [ 'message' => 'Failed to write file.' ] );
+        }
+
+        wp_send_json_success( [ 'filename' => $safe_name ] );
+    }
+
+    public function ajax_delete_layer_asset() {
+        check_ajax_referer( 'fishotel_layer_admin', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        $filename = sanitize_file_name( $_POST['filename'] ?? '' );
+        if ( ! $filename ) {
+            wp_send_json_error( [ 'message' => 'Missing filename.' ] );
+        }
+
+        $path = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene-layers/' . $filename;
+        if ( ! file_exists( $path ) ) {
+            wp_send_json_error( [ 'message' => 'File not found.' ] );
+        }
+
+        if ( ! unlink( $path ) ) {
+            wp_send_json_error( [ 'message' => 'Failed to delete file.' ] );
+        }
+
+        wp_send_json_success( [ 'filename' => $filename ] );
+    }
+
+    public function ajax_get_layer_assets() {
+        check_ajax_referer( 'fishotel_layer_admin', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        $dir    = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene-layers/';
+        $assets = [];
+        if ( is_dir( $dir ) ) {
+            foreach ( glob( $dir . '*.png' ) as $f ) {
+                $assets[] = basename( $f );
+            }
+            sort( $assets );
+        }
+
+        wp_send_json_success( [ 'assets' => $assets ] );
+    }
+
 }

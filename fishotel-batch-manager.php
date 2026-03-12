@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.9 - Postcard layer animation system with time-of-day scene awareness.
- * Version:           5.9
+ * Description:       v5.10 - Layer Designer admin UI for managing postcard animation layers.
+ * Version:           5.10
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.9' );
+define( 'FISHOTEL_VERSION', '5.10' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -228,6 +228,12 @@ class FisHotel_Batch_Manager {
         add_action( 'wp_ajax_fishotel_save_arrival_field', [$this, 'ajax_save_arrival_field'] );
         add_action( 'wp_ajax_fishotel_northstar_fetch',  [$this, 'ajax_northstar_fetch'] );
         add_action( 'wp_ajax_fishotel_northstar_import', [$this, 'ajax_northstar_import'] );
+
+        // Layer Designer AJAX
+        add_action( 'wp_ajax_fishotel_save_layer_config',   [$this, 'ajax_save_layer_config'] );
+        add_action( 'wp_ajax_fishotel_upload_layer_asset',  [$this, 'ajax_upload_layer_asset'] );
+        add_action( 'wp_ajax_fishotel_delete_layer_asset',  [$this, 'ajax_delete_layer_asset'] );
+        add_action( 'wp_ajax_fishotel_get_layer_assets',    [$this, 'ajax_get_layer_assets'] );
 
         add_action( 'woocommerce_after_checkout_form', [$this, 'add_return_to_fish_button'] );
         add_action( 'woocommerce_thankyou', [$this, 'add_return_to_fish_button'] );

@@ -171,86 +171,40 @@ trait FisHotel_HotelProgram {
         return $map;
     }
 
-    private function hotel_get_layer_config( $scene_type ) {
-        $configs = [
+    private function hotel_seed_layer_defaults() {
+        if ( false !== get_option( 'fishotel_layer_configs' ) ) return;
+        $defaults = [
             'pool' => [
-                [
-                    'asset'     => 'light-shaft.png',
-                    'x'         => '45%',
-                    'y'         => '0%',
-                    'width'     => '25%',
-                    'blend'     => 'screen',
-                    'opacity'   => 0.4,
-                    'animation' => 'shimmer',
-                    'speed'     => 20,
-                    'pause'     => 0,
-                    'z'         => 5,
-                    'show_on'   => [ 'afternoon', 'evening' ],
-                ],
-                [
-                    'asset'     => 'bubble-stream.png',
-                    'x'         => '20%',
-                    'y'         => '55%',
-                    'width'     => '8%',
-                    'blend'     => 'screen',
-                    'opacity'   => 0.5,
-                    'animation' => 'drift-up',
-                    'speed'     => 8,
-                    'pause'     => 12,
-                    'z'         => 10,
-                    'show_on'   => [ 'all' ],
-                ],
-                [
-                    'asset'     => 'pool-glow.png',
-                    'x'         => '0%',
-                    'y'         => '60%',
-                    'width'     => '100%',
-                    'blend'     => 'overlay',
-                    'opacity'   => 0.3,
-                    'animation' => 'pulse',
-                    'speed'     => 4,
-                    'pause'     => 0,
-                    'z'         => 3,
-                    'show_on'   => [ 'dusk', 'night' ],
-                ],
+                [ 'id' => 'pool_light_shaft', 'asset' => 'light-shaft.png', 'label' => 'Light Shaft', 'x' => '45', 'y' => '0', 'width' => '25', 'blend' => 'screen', 'opacity' => '0.4', 'animation' => 'shimmer', 'speed' => '20', 'pause' => '0', 'z' => '5', 'show_on' => [ 'afternoon', 'evening' ] ],
+                [ 'id' => 'pool_bubble_stream', 'asset' => 'bubble-stream.png', 'label' => 'Bubble Stream', 'x' => '20', 'y' => '55', 'width' => '8', 'blend' => 'screen', 'opacity' => '0.5', 'animation' => 'drift-up', 'speed' => '8', 'pause' => '12', 'z' => '10', 'show_on' => [ 'all' ] ],
+                [ 'id' => 'pool_glow', 'asset' => 'pool-glow.png', 'label' => 'Pool Glow', 'x' => '0', 'y' => '60', 'width' => '100', 'blend' => 'overlay', 'opacity' => '0.3', 'animation' => 'pulse', 'speed' => '4', 'pause' => '0', 'z' => '3', 'show_on' => [ 'dusk', 'night' ] ],
             ],
             'lobby' => [
-                [
-                    'asset'     => 'dust-motes.png',
-                    'x'         => '30%',
-                    'y'         => '5%',
-                    'width'     => '40%',
-                    'blend'     => 'screen',
-                    'opacity'   => 0.3,
-                    'animation' => 'drift-left-right',
-                    'speed'     => 25,
-                    'pause'     => 0,
-                    'z'         => 5,
-                    'show_on'   => [ 'morning', 'afternoon' ],
-                ],
-                [
-                    'asset'     => 'light-shaft.png',
-                    'x'         => '55%',
-                    'y'         => '0%',
-                    'width'     => '20%',
-                    'blend'     => 'screen',
-                    'opacity'   => 0.35,
-                    'animation' => 'shimmer',
-                    'speed'     => 18,
-                    'pause'     => 0,
-                    'z'         => 4,
-                    'show_on'   => [ 'morning', 'afternoon', 'evening' ],
-                ],
+                [ 'id' => 'lobby_dust_motes', 'asset' => 'dust-motes.png', 'label' => 'Dust Motes', 'x' => '30', 'y' => '5', 'width' => '40', 'blend' => 'screen', 'opacity' => '0.3', 'animation' => 'drift-left-right', 'speed' => '25', 'pause' => '0', 'z' => '5', 'show_on' => [ 'morning', 'afternoon' ] ],
+                [ 'id' => 'lobby_light_shaft', 'asset' => 'light-shaft.png', 'label' => 'Light Shaft', 'x' => '55', 'y' => '0', 'width' => '20', 'blend' => 'screen', 'opacity' => '0.35', 'animation' => 'shimmer', 'speed' => '18', 'pause' => '0', 'z' => '4', 'show_on' => [ 'morning', 'afternoon', 'evening' ] ],
             ],
         ];
-        $layers   = $configs[ $scene_type ] ?? [];
-        $base_dir = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene-layers/';
-        $base_url = plugins_url( 'assists/scene-layers/', FISHOTEL_PLUGIN_FILE );
-        $valid    = [];
+        update_option( 'fishotel_layer_configs', $defaults );
+    }
+
+    private function hotel_get_layer_config( $scene_type ) {
+        $this->hotel_seed_layer_defaults();
+        $all_configs = get_option( 'fishotel_layer_configs', [] );
+        $layers      = $all_configs[ $scene_type ] ?? [];
+        $base_dir    = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene-layers/';
+        $base_url    = plugins_url( 'assists/scene-layers/', FISHOTEL_PLUGIN_FILE );
+        $valid       = [];
         foreach ( $layers as $layer ) {
-            if ( file_exists( $base_dir . $layer['asset'] ) ) {
-                $layer['url'] = $base_url . $layer['asset'];
-                $valid[]      = $layer;
+            if ( ! empty( $layer['asset'] ) && file_exists( $base_dir . $layer['asset'] ) ) {
+                $layer['url']   = $base_url . $layer['asset'];
+                $layer['x']     = ( $layer['x'] ?? '0' ) . '%';
+                $layer['y']     = ( $layer['y'] ?? '0' ) . '%';
+                $layer['width'] = ( $layer['width'] ?? '100' ) . '%';
+                $layer['opacity'] = floatval( $layer['opacity'] ?? 1 );
+                $layer['speed']   = intval( $layer['speed'] ?? 10 );
+                $layer['pause']   = intval( $layer['pause'] ?? 0 );
+                $layer['z']       = intval( $layer['z'] ?? 1 );
+                $valid[]          = $layer;
             }
         }
         return $valid;
@@ -872,6 +826,7 @@ trait FisHotel_HotelProgram {
             'categories' => 'Categories',
             'activities' => 'Activities',
             'schedule'   => 'Schedule',
+            'layers'     => 'Layers',
         ];
         ?>
         <div class="wrap" style="max-width:1100px;">
@@ -892,6 +847,8 @@ trait FisHotel_HotelProgram {
                 $this->hotel_tab_activities();
             } elseif ( $tab === 'schedule' ) {
                 $this->hotel_tab_schedule();
+            } elseif ( $tab === 'layers' ) {
+                $this->hotel_tab_layers();
             }
             ?>
         </div>
@@ -1511,4 +1468,403 @@ trait FisHotel_HotelProgram {
         wp_redirect( admin_url( 'admin.php?page=fishotel-hotel-program&tab=schedule&batch=' . urlencode( $batch ) . '&schedule_saved=1' ) );
         exit;
     }
-}
+
+    /* ─────────────────────────────────────────────
+     *  TAB: Layers (Layer Designer)
+     * ───────────────────────────────────────────── */
+
+    private function hotel_tab_layers() {
+        $this->hotel_seed_layer_defaults();
+        $all_configs = get_option( 'fishotel_layer_configs', [] );
+        $scene_types = [ 'pool', 'lobby', 'spa', 'dining', 'beach', 'bar', 'suite', 'graduation', 'morning', 'night' ];
+        $current_st  = sanitize_key( $_GET['scene_type'] ?? 'pool' );
+        if ( ! in_array( $current_st, $scene_types, true ) ) $current_st = 'pool';
+        $layers      = $all_configs[ $current_st ] ?? [];
+
+        $assets_dir  = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene-layers/';
+        $assets_url  = plugins_url( 'assists/scene-layers/', FISHOTEL_PLUGIN_FILE );
+        $assets      = [];
+        if ( is_dir( $assets_dir ) ) {
+            foreach ( glob( $assets_dir . '*.png' ) as $f ) {
+                $assets[] = basename( $f );
+            }
+            sort( $assets );
+        }
+
+        $blend_modes = [ 'normal', 'screen', 'overlay', 'multiply', 'soft-light', 'hard-light', 'lighten', 'color-dodge' ];
+        $animations  = [ 'none', 'drift-left-right', 'drift-up', 'sway', 'shimmer', 'pulse', 'float' ];
+        $time_bands  = [ 'morning', 'afternoon', 'evening', 'dusk', 'night', 'all' ];
+
+        $nonce = wp_create_nonce( 'fishotel_layer_admin' );
+        ?>
+        <style>
+        .fh-layer-scene-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px}
+        .fh-layer-scene-tabs a{padding:6px 14px;background:#f0f0f0;border:1px solid #ccc;border-radius:4px;text-decoration:none;color:#333;font-size:13px;text-transform:uppercase;letter-spacing:0.05em}
+        .fh-layer-scene-tabs a.active{background:#1a3a5c;color:#fff;border-color:#1a3a5c}
+        .fh-layer-card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;position:relative}
+        .fh-layer-thumb{width:60px;height:60px;border-radius:4px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;border:1px solid #e0e0e0}
+        .fh-layer-thumb img{width:100%;height:100%;object-fit:cover}
+        .fh-layer-thumb-placeholder{font-size:10px;color:#999;text-align:center;word-break:break-all;padding:4px}
+        .fh-layer-info{flex:1;min-width:0}
+        .fh-layer-label{font-weight:600;font-size:14px;color:#1a3a5c}
+        .fh-layer-summary{font-size:12px;color:#888;margin-top:2px}
+        .fh-layer-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
+        .fh-layer-actions button{background:none;border:none;cursor:pointer;padding:4px;color:#666;font-size:16px}
+        .fh-layer-actions button:hover{color:#1a3a5c}
+        .fh-layer-edit-form{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:16px 20px;margin:8px 0 10px;display:none}
+        .fh-layer-edit-form.open{display:block}
+        .fh-layer-edit-form table.form-table th{width:160px;padding:8px 10px 8px 0;font-size:13px}
+        .fh-layer-edit-form table.form-table td{padding:6px 0}
+        .fh-layer-edit-form .regular-text{width:220px}
+        .fh-layer-edit-form .small-text{width:80px}
+        .fh-layer-show-on label{margin-right:10px;font-size:12px}
+        .fh-asset-grid{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+        .fh-asset-item{width:90px;text-align:center;background:#fff;border:1px solid #ddd;border-radius:6px;padding:8px 4px;position:relative}
+        .fh-asset-item img{width:60px;height:60px;object-fit:cover;border-radius:3px}
+        .fh-asset-item .fh-asset-name{font-size:10px;color:#666;margin-top:4px;word-break:break-all}
+        .fh-asset-item .fh-asset-del{position:absolute;top:2px;right:4px;background:none;border:none;color:#a00;cursor:pointer;font-size:14px}
+        .fh-layer-notice{padding:8px 14px;border-radius:4px;margin-bottom:12px;display:none;font-size:13px}
+        .fh-layer-notice.success{display:block;background:#ecf7ed;border:1px solid #46b450;color:#2e7d32}
+        .fh-layer-notice.error{display:block;background:#fbeaea;border:1px solid #dc3232;color:#8b0000}
+        </style>
+
+        <div class="fh-layer-scene-tabs">
+            <?php foreach ( $scene_types as $st ) : ?>
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-hotel-program&tab=layers&scene_type=' . $st ) ); ?>"
+                   class="<?php echo $st === $current_st ? 'active' : ''; ?>"><?php echo esc_html( ucfirst( $st ) ); ?></a>
+            <?php endforeach; ?>
+        </div>
+
+        <div id="fh-layer-notice" class="fh-layer-notice"></div>
+
+        <h3 style="margin-top:0;">Layers for <em><?php echo esc_html( ucfirst( $current_st ) ); ?></em> scene</h3>
+
+        <div id="fh-layer-list" data-scene-type="<?php echo esc_attr( $current_st ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>">
+        <?php if ( empty( $layers ) ) : ?>
+            <p id="fh-layer-empty" style="color:#999;">No layers configured for this scene type. Click "Add Layer" to create one.</p>
+        <?php else : ?>
+            <p id="fh-layer-empty" style="color:#999;display:none;">No layers configured for this scene type. Click "Add Layer" to create one.</p>
+        <?php endif; ?>
+        <?php foreach ( $layers as $idx => $L ) :
+            $asset_exists = ! empty( $L['asset'] ) && file_exists( $assets_dir . $L['asset'] );
+            $show_on_str  = implode( ', ', $L['show_on'] ?? [] );
+        ?>
+            <div class="fh-layer-card" data-index="<?php echo $idx; ?>">
+                <div class="fh-layer-thumb">
+                    <?php if ( $asset_exists ) : ?>
+                        <img src="<?php echo esc_url( $assets_url . $L['asset'] ); ?>" alt="">
+                    <?php else : ?>
+                        <div class="fh-layer-thumb-placeholder"><?php echo esc_html( $L['asset'] ?? '—' ); ?></div>
+                    <?php endif; ?>
+                </div>
+                <div class="fh-layer-info">
+                    <div class="fh-layer-label"><?php echo esc_html( $L['label'] ?? $L['asset'] ?? 'Untitled' ); ?></div>
+                    <div class="fh-layer-summary">
+                        <?php echo esc_html( ( $L['animation'] ?? 'none' ) . ' @ ' . ( $L['speed'] ?? '10' ) . 's | blend:' . ( $L['blend'] ?? 'normal' ) . ' | opacity:' . ( $L['opacity'] ?? '1' ) . ' | show:' . $show_on_str ); ?>
+                    </div>
+                </div>
+                <div class="fh-layer-actions">
+                    <button type="button" onclick="fhLayerMove(this,-1)" title="Move up"><span class="dashicons dashicons-arrow-up-alt2"></span></button>
+                    <button type="button" onclick="fhLayerMove(this,1)" title="Move down"><span class="dashicons dashicons-arrow-down-alt2"></span></button>
+                    <button type="button" onclick="fhLayerToggleEdit(this)" title="Edit"><span class="dashicons dashicons-edit"></span></button>
+                    <button type="button" onclick="fhLayerDelete(this)" title="Delete" style="color:#a00"><span class="dashicons dashicons-trash"></span></button>
+                </div>
+            </div>
+            <?php echo $this->hotel_layer_edit_form_html( $L, $idx, $assets, $blend_modes, $animations, $time_bands ); ?>
+        <?php endforeach; ?>
+        </div>
+
+        <p><button type="button" class="button button-primary" onclick="fhLayerAdd()"><span class="dashicons dashicons-plus-alt2" style="margin-top:3px;"></span> Add Layer</button></p>
+
+        <p><button type="button" class="button button-primary" onclick="fhLayerSaveAll()" style="margin-top:8px;">Save Layer Config</button></p>
+
+        <!-- Hidden template for new layers -->
+        <script type="text/html" id="fh-layer-edit-template">
+        <?php echo $this->hotel_layer_edit_form_html( [], '__INDEX__', $assets, $blend_modes, $animations, $time_bands ); ?>
+        </script>
+
+        <hr style="margin:30px 0;">
+        <h3><span class="dashicons dashicons-upload" style="margin-right:4px;"></span> Scene Layer Assets</h3>
+        <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;">
+            <input type="file" id="fh-layer-upload-file" accept=".png">
+            <button type="button" class="button" onclick="fhLayerUploadAsset()">Upload PNG</button>
+        </div>
+        <div id="fh-asset-grid" class="fh-asset-grid">
+            <?php foreach ( $assets as $a ) : ?>
+                <div class="fh-asset-item" data-filename="<?php echo esc_attr( $a ); ?>">
+                    <img src="<?php echo esc_url( $assets_url . $a ); ?>" alt="">
+                    <div class="fh-asset-name"><?php echo esc_html( $a ); ?></div>
+                    <button class="fh-asset-del" onclick="fhLayerDeleteAsset('<?php echo esc_js( $a ); ?>')" title="Delete asset"><span class="dashicons dashicons-trash"></span></button>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <script>
+        (function(){
+            var ajaxurl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
+            var nonce   = '<?php echo esc_js( $nonce ); ?>';
+            var sceneType = '<?php echo esc_js( $current_st ); ?>';
+            var assetsUrl = '<?php echo esc_js( $assets_url ); ?>';
+
+            function notice(msg, type) {
+                var el = document.getElementById('fh-layer-notice');
+                el.textContent = msg;
+                el.className = 'fh-layer-notice ' + type;
+                setTimeout(function(){ el.className = 'fh-layer-notice'; }, 4000);
+            }
+
+            function collectLayers() {
+                var list = document.getElementById('fh-layer-list');
+                var forms = list.querySelectorAll('.fh-layer-edit-form');
+                var layers = [];
+                for (var i = 0; i < forms.length; i++) {
+                    var f = forms[i];
+                    var showOn = [];
+                    f.querySelectorAll('.fh-show-on-cb:checked').forEach(function(cb){ showOn.push(cb.value); });
+                    layers.push({
+                        id:        f.querySelector('[name=layer_id]').value || ('layer_' + Date.now() + '_' + i),
+                        asset:     f.querySelector('[name=layer_asset]').value,
+                        label:     f.querySelector('[name=layer_label]').value,
+                        x:         f.querySelector('[name=layer_x]').value,
+                        y:         f.querySelector('[name=layer_y]').value,
+                        width:     f.querySelector('[name=layer_width]').value,
+                        blend:     f.querySelector('[name=layer_blend]').value,
+                        opacity:   f.querySelector('[name=layer_opacity]').value,
+                        animation: f.querySelector('[name=layer_animation]').value,
+                        speed:     f.querySelector('[name=layer_speed]').value,
+                        pause:     f.querySelector('[name=layer_pause]').value,
+                        z:         f.querySelector('[name=layer_z]').value,
+                        show_on:   showOn
+                    });
+                }
+                return layers;
+            }
+
+            window.fhLayerSaveAll = function() {
+                var layers = collectLayers();
+                var fd = new FormData();
+                fd.append('action', 'fishotel_save_layer_config');
+                fd.append('nonce', nonce);
+                fd.append('scene_type', sceneType);
+                fd.append('layers', JSON.stringify(layers));
+                fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(r){
+                        if (r.success) notice('Layer config saved.', 'success');
+                        else notice(r.data && r.data.message || 'Save failed.', 'error');
+                    })
+                    .catch(function(){ notice('Network error.', 'error'); });
+            };
+
+            window.fhLayerToggleEdit = function(btn) {
+                var card = btn.closest('.fh-layer-card');
+                var form = card.nextElementSibling;
+                if (form && form.classList.contains('fh-layer-edit-form')) {
+                    form.classList.toggle('open');
+                }
+            };
+
+            window.fhLayerDelete = function(btn) {
+                if (!confirm('Delete this layer?')) return;
+                var card = btn.closest('.fh-layer-card');
+                var form = card.nextElementSibling;
+                if (form && form.classList.contains('fh-layer-edit-form')) form.remove();
+                card.remove();
+                fhLayerSaveAll();
+                var remaining = document.querySelectorAll('#fh-layer-list .fh-layer-card');
+                if (!remaining.length) document.getElementById('fh-layer-empty').style.display = '';
+            };
+
+            window.fhLayerMove = function(btn, dir) {
+                var card = btn.closest('.fh-layer-card');
+                var form = card.nextElementSibling;
+                var list = document.getElementById('fh-layer-list');
+                var cards = Array.from(list.querySelectorAll('.fh-layer-card'));
+                var idx = cards.indexOf(card);
+                var target = idx + dir;
+                if (target < 0 || target >= cards.length) return;
+                var targetCard = cards[target];
+                var targetForm = targetCard.nextElementSibling;
+                if (dir === -1) {
+                    list.insertBefore(card, targetCard);
+                    list.insertBefore(form, targetCard);
+                } else {
+                    if (targetForm && targetForm.classList.contains('fh-layer-edit-form')) {
+                        list.insertBefore(card, targetForm.nextSibling);
+                        list.insertBefore(form, card.nextSibling === form ? card.nextSibling : card.nextSibling);
+                    } else {
+                        list.insertBefore(card, targetCard.nextSibling);
+                        list.insertBefore(form, card.nextSibling);
+                    }
+                }
+                fhLayerSaveAll();
+            };
+
+            window.fhLayerAdd = function() {
+                document.getElementById('fh-layer-empty').style.display = 'none';
+                var list = document.getElementById('fh-layer-list');
+                var tpl  = document.getElementById('fh-layer-edit-template').innerHTML;
+                var idx  = Date.now();
+                tpl = tpl.replace(/__INDEX__/g, idx);
+
+                /* Card */
+                var card = document.createElement('div');
+                card.className = 'fh-layer-card';
+                card.dataset.index = idx;
+                card.innerHTML = '<div class="fh-layer-thumb"><div class="fh-layer-thumb-placeholder">New</div></div>'
+                    + '<div class="fh-layer-info"><div class="fh-layer-label">New Layer</div><div class="fh-layer-summary">Configure below</div></div>'
+                    + '<div class="fh-layer-actions">'
+                    + '<button type="button" onclick="fhLayerMove(this,-1)" title="Move up"><span class="dashicons dashicons-arrow-up-alt2"></span></button>'
+                    + '<button type="button" onclick="fhLayerMove(this,1)" title="Move down"><span class="dashicons dashicons-arrow-down-alt2"></span></button>'
+                    + '<button type="button" onclick="fhLayerToggleEdit(this)" title="Edit"><span class="dashicons dashicons-edit"></span></button>'
+                    + '<button type="button" onclick="fhLayerDelete(this)" title="Delete" style="color:#a00"><span class="dashicons dashicons-trash"></span></button>'
+                    + '</div>';
+                list.appendChild(card);
+
+                var wrapper = document.createElement('div');
+                wrapper.innerHTML = tpl;
+                var formEl = wrapper.firstElementChild;
+                formEl.classList.add('open');
+                list.appendChild(formEl);
+            };
+
+            window.fhLayerUploadAsset = function() {
+                var fileInput = document.getElementById('fh-layer-upload-file');
+                if (!fileInput.files.length) { notice('Select a PNG file first.', 'error'); return; }
+                var fd = new FormData();
+                fd.append('action', 'fishotel_upload_layer_asset');
+                fd.append('nonce', nonce);
+                fd.append('layer_asset', fileInput.files[0]);
+                fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(r){
+                        if (r.success) {
+                            notice('Uploaded: ' + r.data.filename, 'success');
+                            fileInput.value = '';
+                            /* Add to asset grid */
+                            var grid = document.getElementById('fh-asset-grid');
+                            var item = document.createElement('div');
+                            item.className = 'fh-asset-item';
+                            item.dataset.filename = r.data.filename;
+                            item.innerHTML = '<img src="' + assetsUrl + r.data.filename + '" alt="">'
+                                + '<div class="fh-asset-name">' + r.data.filename + '</div>'
+                                + '<button class="fh-asset-del" onclick="fhLayerDeleteAsset(\'' + r.data.filename + '\')" title="Delete asset"><span class="dashicons dashicons-trash"></span></button>';
+                            grid.appendChild(item);
+                            /* Refresh asset dropdowns */
+                            var selects = document.querySelectorAll('select[name=layer_asset]');
+                            selects.forEach(function(sel){
+                                var opt = document.createElement('option');
+                                opt.value = r.data.filename;
+                                opt.textContent = r.data.filename;
+                                sel.appendChild(opt);
+                            });
+                        } else {
+                            notice(r.data && r.data.message || 'Upload failed.', 'error');
+                        }
+                    })
+                    .catch(function(){ notice('Network error.', 'error'); });
+            };
+
+            window.fhLayerDeleteAsset = function(filename) {
+                if (!confirm('Delete asset "' + filename + '"? This may break layers using it.')) return;
+                var fd = new FormData();
+                fd.append('action', 'fishotel_delete_layer_asset');
+                fd.append('nonce', nonce);
+                fd.append('filename', filename);
+                fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(r){
+                        if (r.success) {
+                            notice('Deleted: ' + filename, 'success');
+                            var item = document.querySelector('.fh-asset-item[data-filename="' + filename + '"]');
+                            if (item) item.remove();
+                            /* Remove from dropdowns */
+                            document.querySelectorAll('select[name=layer_asset] option[value="' + filename + '"]').forEach(function(o){ o.remove(); });
+                        } else {
+                            notice(r.data && r.data.message || 'Delete failed.', 'error');
+                        }
+                    })
+                    .catch(function(){ notice('Network error.', 'error'); });
+            };
+
+            window.fhLayerShowOnAll = function(cb) {
+                var form = cb.closest('.fh-layer-edit-form');
+                var boxes = form.querySelectorAll('.fh-show-on-cb');
+                boxes.forEach(function(b){ b.checked = cb.checked; });
+            };
+
+            window.fhLayerOpacitySync = function(range) {
+                var span = range.parentNode.querySelector('.fh-opacity-val');
+                if (span) span.textContent = range.value;
+            };
+        })();
+        </script>
+        <?php
+    }
+
+    private function hotel_layer_edit_form_html( $L, $idx, $assets, $blend_modes, $animations, $time_bands ) {
+        $id    = $L['id'] ?? '';
+        $asset = $L['asset'] ?? '';
+        $label = $L['label'] ?? '';
+        $x     = $L['x'] ?? '0';
+        $y     = $L['y'] ?? '0';
+        $w     = $L['width'] ?? '100';
+        $blend = $L['blend'] ?? 'normal';
+        $opa   = $L['opacity'] ?? '1';
+        $anim  = $L['animation'] ?? 'none';
+        $speed = $L['speed'] ?? '10';
+        $pause = $L['pause'] ?? '0';
+        $z     = $L['z'] ?? '1';
+        $show  = $L['show_on'] ?? [];
+        ob_start();
+        ?>
+        <div class="fh-layer-edit-form" data-index="<?php echo esc_attr( $idx ); ?>">
+            <input type="hidden" name="layer_id" value="<?php echo esc_attr( $id ); ?>">
+            <table class="form-table">
+                <tr><th>Asset</th><td>
+                    <select name="layer_asset">
+                        <option value="">— select —</option>
+                        <?php foreach ( $assets as $a ) : ?>
+                            <option value="<?php echo esc_attr( $a ); ?>" <?php selected( $asset, $a ); ?>><?php echo esc_html( $a ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </td></tr>
+                <tr><th>Label</th><td><input type="text" name="layer_label" value="<?php echo esc_attr( $label ); ?>" class="regular-text" placeholder="e.g. Light Shaft"></td></tr>
+                <tr><th>X position (%)</th><td><input type="number" name="layer_x" value="<?php echo esc_attr( $x ); ?>" min="0" max="100" class="small-text"></td></tr>
+                <tr><th>Y position (%)</th><td><input type="number" name="layer_y" value="<?php echo esc_attr( $y ); ?>" min="0" max="100" class="small-text"></td></tr>
+                <tr><th>Width (%)</th><td><input type="number" name="layer_width" value="<?php echo esc_attr( $w ); ?>" min="1" max="100" class="small-text"></td></tr>
+                <tr><th>Blend mode</th><td>
+                    <select name="layer_blend">
+                        <?php foreach ( $blend_modes as $bm ) : ?>
+                            <option value="<?php echo esc_attr( $bm ); ?>" <?php selected( $blend, $bm ); ?>><?php echo esc_html( $bm ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </td></tr>
+                <tr><th>Opacity</th><td>
+                    <input type="range" name="layer_opacity" value="<?php echo esc_attr( $opa ); ?>" min="0" max="1" step="0.05" oninput="fhLayerOpacitySync(this)">
+                    <span class="fh-opacity-val"><?php echo esc_html( $opa ); ?></span>
+                </td></tr>
+                <tr><th>Animation</th><td>
+                    <select name="layer_animation">
+                        <?php foreach ( $animations as $an ) : ?>
+                            <option value="<?php echo esc_attr( $an ); ?>" <?php selected( $anim, $an ); ?>><?php echo esc_html( $an ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </td></tr>
+                <tr><th>Speed (seconds)</th><td><input type="number" name="layer_speed" value="<?php echo esc_attr( $speed ); ?>" min="1" max="60" class="small-text"></td></tr>
+                <tr><th>Pause between loops (s)</th><td><input type="number" name="layer_pause" value="<?php echo esc_attr( $pause ); ?>" min="0" max="30" class="small-text"></td></tr>
+                <tr><th>Z-index</th><td><input type="number" name="layer_z" value="<?php echo esc_attr( $z ); ?>" min="1" max="20" class="small-text"></td></tr>
+                <tr><th>Show on</th><td class="fh-layer-show-on">
+                    <?php foreach ( $time_bands as $band ) :
+                        $checked = in_array( $band, $show, true );
+                        $extra   = $band === 'all' ? ' onchange="fhLayerShowOnAll(this)"' : '';
+                    ?>
+                        <label><input type="checkbox" class="fh-show-on-cb" value="<?php echo esc_attr( $band ); ?>" <?php checked( $checked ); ?><?php echo $extra; ?>> <?php echo esc_html( $band ); ?></label>
+                    <?php endforeach; ?>
+                </td></tr>
+            </table>
+            <button type="button" class="button" onclick="this.closest('.fh-layer-edit-form').classList.remove('open')">Close</button>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
