@@ -2798,7 +2798,7 @@ trait FisHotel_Shortcodes {
                 .fh-customs-status-short { color:#b5750e; font-weight:700; }
                 .fh-customs-footer { display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px; }
                 .fh-customs-facility { font-family:'Courier New',monospace; font-size:9px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.04em; line-height:1.5; }
-                .fh-customs-stamp { font-family:'Oswald',sans-serif; font-weight:700; font-size:16px; color:#8b0000; border:3px solid #8b0000; padding:6px 16px; transform:rotate(-4deg); opacity:0.7; text-transform:uppercase; letter-spacing:3px; display:inline-block; }
+                .fh-customs-stamp { display:inline-block; }
                 .fh-customs-empty { padding:12px 0; text-align:center; font-family:'Courier New',monospace; font-size:12px; color:#6b5a3a; text-transform:uppercase; letter-spacing:0.06em; }
                 @media (max-width:600px) {
                     .fh-customs-inner { padding:10px 10px; }
@@ -3030,7 +3030,15 @@ trait FisHotel_Shortcodes {
                                 QUARANTINE FACILITY: THE HOTEL SPA<br>
                                 CHAMPLIN, MN &middot; EST. 2024
                             </div>
-                            <div class="fh-customs-stamp"><?php echo esc_html( $customs_stamp ); ?></div>
+                            <?php
+                            $qt_stamp_index = ( crc32( $batch_name . 'qt' ) % 3 ) + 1;
+                            $qt_stamp_file  = 'qt-hold-' . str_pad( $qt_stamp_index, 2, '0', STR_PAD_LEFT ) . '.png';
+                            $qt_stamp_url   = plugins_url( 'assists/stamps/' . $qt_stamp_file, dirname( __FILE__ ) );
+                            ?>
+                            <div class="fh-customs-stamp">
+                                <img src="<?php echo esc_url( $qt_stamp_url ); ?>" alt="Quarantine Hold"
+                                     style="width:180px; height:auto; display:block; opacity:0.85; transform:rotate(-4deg);">
+                            </div>
                         </div>
                     </div>
                     <div class="fh-customs-edge"></div>

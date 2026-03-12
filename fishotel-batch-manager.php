@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.50 - Replace customs seal SVG with batch-assigned PNG stamps, add seal spacing.
- * Version:           4.50
+ * Description:       v4.51 - Replace CSS quarantine stamp with PNG images, rotate through 3 per batch.
+ * Version:           4.51
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.50' );
+define( 'FISHOTEL_VERSION', '4.51' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
