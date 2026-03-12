@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.0 - Hotel Program: Stage 4 postcard, admin, schedule framework.
- * Version:           5.0
+ * Description:       v5.1 - Batch shortcode routes in_quarantine to Hotel postcard.
+ * Version:           5.1
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.0' );
+define( 'FISHOTEL_VERSION', '5.1' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
