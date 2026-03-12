@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.57 - Revert v4.56 mobile board changes.
- * Version:           4.57
+ * Description:       v4.58 - Mobile badge fills available width.
+ * Version:           4.58
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.57' );
+define( 'FISHOTEL_VERSION', '4.58' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -622,9 +622,8 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 line-height:24px !important;
             }
             .fh-ab-badge {
-                flex:0 0 auto !important;
+                flex:1 1 auto !important;
                 width:auto !important;
-                max-width:65px !important;
                 font-size:8px !important;
                 padding:2px 4px !important;
                 margin:1px 2px !important;
