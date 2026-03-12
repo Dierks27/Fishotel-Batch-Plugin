@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.55 - Mobile board: compact badges, 18 species tiles.
- * Version:           4.55
+ * Description:       v4.56 - Mobile board: bigger tiles (16x28), 15 species, compact 55px badges.
+ * Version:           4.56
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.55' );
+define( 'FISHOTEL_VERSION', '4.56' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -610,37 +610,41 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
         /* ── Responsive: scale desktop board on mobile ── */
         @media (max-width:700px) {
             .fh-ab {
-                overflow-x:hidden;
+                overflow-x:hidden !important;
             }
             .fh-ab-row {
                 display:flex !important;
             }
             .fh-ab-flap {
-                width:13px !important;
-                height:24px !important;
-                font-size:12px !important;
-                line-height:24px !important;
+                width:16px !important;
+                height:28px !important;
+                font-size:14px !important;
+                line-height:28px !important;
             }
             .fh-ab-badge {
                 flex:0 0 auto !important;
                 width:auto !important;
-                max-width:65px !important;
+                max-width:55px !important;
                 font-size:8px !important;
-                padding:2px 4px !important;
+                padding:2px 3px !important;
                 margin:1px 2px !important;
-                line-height:20px !important;
+                line-height:22px !important;
             }
             .fh-ab-header {
                 font-size:11px !important;
+                padding:6px 8px !important;
             }
             .fh-ab-hl { font-size:13px; }
             .fh-ab-hr, .fh-ab-fl, .fh-ab-fr { font-size:10px; }
-            .fh-ab-header, .fh-ab-footer { padding:8px 12px; }
+            .fh-ab-footer {
+                font-size:8px !important;
+                padding:4px 8px !important;
+            }
             .fh-ab-col-hd {
-                font-size:9px !important;
+                font-size:8px !important;
             }
             .fh-ab-slash {
-                width:10px; padding:0 2px; font-size:12px;
+                font-size:12px !important; padding:0 1px !important;
             }
         }
         <?php
@@ -775,7 +779,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             var MOBILE_BP = 700;
             function updateColLens() {
                 var isMobile = window.innerWidth <= MOBILE_BP;
-                COL_LENS[0] = isMobile ? 18 : 20;
+                COL_LENS[0] = isMobile ? 15 : 20;
                 TOTAL_TILES = COL_LENS[0] + COL_LENS[1] + COL_LENS[2];
             }
             updateColLens();
