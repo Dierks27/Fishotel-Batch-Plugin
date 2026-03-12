@@ -2950,6 +2950,19 @@ trait FisHotel_Admin {
         echo '<input type="hidden" name="action" value="fishotel_save_arrival_data">';
         echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
 
+        // Split into demanded (has customer orders or arrival data) and surprise (no demand, no arrival data)
+        $demanded_fish = [];
+        $surprise_fish = [];
+        foreach ( $batch_fish as $bf ) {
+            $has_demand  = ( $demand[ $bf->ID ] ?? 0 ) > 0;
+            $has_arrival = intval( get_post_meta( $bf->ID, '_arrival_qty_received', true ) ) > 0 || get_post_meta( $bf->ID, '_arrival_tank', true ) !== '';
+            if ( $has_demand || $has_arrival ) {
+                $demanded_fish[] = $bf;
+            } else {
+                $surprise_fish[] = $bf;
+            }
+        }
+
         echo '<table style="width:100%;border-collapse:collapse;">';
         echo '<thead><tr style="border-bottom:2px solid #444;text-align:left;">';
         echo '<th style="padding:8px;color:#b5a165;">Common Name</th>';
@@ -2963,7 +2976,7 @@ trait FisHotel_Admin {
         echo '<th style="padding:8px;color:#b5a165;text-align:center;">Fill Rate</th>';
         echo '</tr></thead><tbody>';
 
-        foreach ( $batch_fish as $bp ) {
+        foreach ( $demanded_fish as $bp ) {
             $master_id = get_post_meta( $bp->ID, '_master_id', true );
             $common    = FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title );
             $sci_name  = $master_id ? get_post_meta( $master_id, '_scientific_name', true ) : '';
@@ -2994,7 +3007,15 @@ trait FisHotel_Admin {
             echo '<td style="padding:8px;text-align:center;color:#fff;font-weight:600;">' . intval( $cust_demand ) . '</td>';
             echo '<td style="padding:8px;text-align:center;"><input type="number" name="items[' . $bp->ID . '][qty_received]" value="' . esc_attr( $qty_received ) . '" min="0" class="fh-recv" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
             echo '<td style="padding:8px;text-align:center;"><input type="number" name="items[' . $bp->ID . '][qty_doa]" value="' . esc_attr( $qty_doa ) . '" min="0" class="fh-doa" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
-            echo '<td style="padding:8px;text-align:center;"><input type="text" name="items[' . $bp->ID . '][tank]" value="' . esc_attr( $tank ) . '" class="fh-tank" style="width:60px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;" placeholder="—"></td>';
+            $tank_options = [ '' => '— Assign Tank —', 'Floor 1 — 20 Gallon' => [ '101', '102', '103', '104' ], 'Floor 2 — 40 Gallon' => [ '201', '202', '203' ] ];
+            echo '<td style="padding:8px;text-align:center;"><select name="items[' . $bp->ID . '][tank]" class="fh-tank" style="background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;font-size:12px;">';
+            echo '<option value=""' . selected( $tank, '', false ) . '>— Assign Tank —</option>';
+            foreach ( [ 'Floor 1 — 20 Gallon' => [ '101', '102', '103', '104' ], 'Floor 2 — 40 Gallon' => [ '201', '202', '203' ] ] as $group => $tanks ) {
+                echo '<optgroup label="' . esc_attr( $group ) . '">';
+                foreach ( $tanks as $t ) { echo '<option value="' . $t . '"' . selected( $tank, $t, false ) . '>' . $t . '</option>'; }
+                echo '</optgroup>';
+            }
+            echo '</select></td>';
 
             $status_options = [ 'in_transit' => 'In Transit', 'counting' => 'Counting', 'in_quarantine' => "In Quarantine \xe2\x9c\x93", 'short' => "Short Supply \xe2\x9a\xa0", 'no_arrival' => "No Arrival \xe2\x9c\x97" ];
             echo '<td style="padding:8px;text-align:center;"><select name="items[' . $bp->ID . '][status]" class="fh-status" style="background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;font-size:12px;">';
@@ -3010,6 +3031,34 @@ trait FisHotel_Admin {
         }
 
         echo '</tbody></table>';
+
+        // ── Add Surprise Fish ──
+        if ( ! empty( $surprise_fish ) ) {
+            echo '<div style="margin-top:16px;border-top:1px solid #444;padding-top:16px;">';
+            echo '<button type="button" id="fh-surprise-toggle" style="background:#333;color:#b5a165;border:1px solid #555;border-radius:6px;padding:8px 20px;font-size:13px;cursor:pointer;" onclick="document.getElementById(\'fh-surprise-form\').style.display=document.getElementById(\'fh-surprise-form\').style.display===\'none\'?\'block\':\'none\'">+ Add Surprise Fish</button>';
+            echo '<div id="fh-surprise-form" style="display:none;margin-top:12px;background:#252525;border:1px solid #444;border-radius:6px;padding:16px;">';
+            echo '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">';
+            echo '<div><label style="color:#aaa;font-size:11px;display:block;margin-bottom:4px;">Species</label>';
+            echo '<select id="fh-surprise-species" style="background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:6px;min-width:200px;font-size:12px;">';
+            foreach ( $surprise_fish as $sf ) {
+                $sf_name = FisHotel_Batch_Manager::resolve_common_name( $sf->ID, $sf->post_title );
+                echo '<option value="' . $sf->ID . '">' . esc_html( $sf_name ) . '</option>';
+            }
+            echo '</select></div>';
+            echo '<div><label style="color:#aaa;font-size:11px;display:block;margin-bottom:4px;">Qty Received</label><input type="number" id="fh-surprise-recv" min="0" value="0" style="width:70px;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:6px;text-align:center;"></div>';
+            echo '<div><label style="color:#aaa;font-size:11px;display:block;margin-bottom:4px;">Qty DOA</label><input type="number" id="fh-surprise-doa" min="0" value="0" style="width:70px;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:6px;text-align:center;"></div>';
+            echo '<div><label style="color:#aaa;font-size:11px;display:block;margin-bottom:4px;">Tank</label><select id="fh-surprise-tank" style="background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:6px;font-size:12px;">';
+            echo '<option value="">— Assign —</option>';
+            echo '<optgroup label="Floor 1 — 20 Gallon"><option value="101">101</option><option value="102">102</option><option value="103">103</option><option value="104">104</option></optgroup>';
+            echo '<optgroup label="Floor 2 — 40 Gallon"><option value="201">201</option><option value="202">202</option><option value="203">203</option></optgroup>';
+            echo '</select></div>';
+            echo '<div><label style="color:#aaa;font-size:11px;display:block;margin-bottom:4px;">Status</label><select id="fh-surprise-status" style="background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:6px;font-size:12px;">';
+            echo '<option value="in_quarantine">In Quarantine</option><option value="no_arrival">No Arrival</option>';
+            echo '</select></div>';
+            echo '<div><button type="button" id="fh-surprise-add" style="background:#27ae60;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:13px;cursor:pointer;font-weight:600;">Add to Arrival</button></div>';
+            echo '</div></div></div>';
+        }
+
         echo '<div style="margin-top:16px;text-align:right;">';
         echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Save Arrival Data</button>';
         echo '</div></form></div>';
@@ -3157,6 +3206,32 @@ trait FisHotel_Admin {
             });
             $('.fh-arrival-row').on('change', '.fh-status', function(){
                 fhSaveField($(this), 'status', $(this).val());
+            });
+
+            // Surprise fish add
+            $('#fh-surprise-add').on('click', function(){
+                var fishId = $('#fh-surprise-species').val();
+                var fishName = $('#fh-surprise-species option:selected').text();
+                var recv = $('#fh-surprise-recv').val() || '0';
+                var doa = $('#fh-surprise-doa').val() || '0';
+                var tank = $('#fh-surprise-tank').val();
+                var status = $('#fh-surprise-status').val();
+                var btn = $(this);
+                btn.prop('disabled', true).text('Saving...');
+
+                // Save all four fields
+                var fields = {qty_received: recv, qty_doa: doa, tank: tank, status: status};
+                var done = 0, total = 4;
+                $.each(fields, function(field, value){
+                    $.post(fhArrival.ajax_url, {
+                        action: 'fishotel_save_arrival_field',
+                        nonce: fhArrival.nonce,
+                        fish_id: fishId,
+                        field: field,
+                        value: field === 'qty_received' || field === 'qty_doa' ? parseInt(value)||0 : value,
+                        batch_name: fhArrival.batch
+                    }, function(){ if (++done >= total) { location.reload(); } });
+                });
             });
         });
         </script>

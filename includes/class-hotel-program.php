@@ -320,11 +320,11 @@ trait FisHotel_HotelProgram {
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Klee+One&display=swap" rel="stylesheet">
 <style>
 /* ── FisHotel Postcard ─────────────────────────────────── */
-.fh-hotel-postcard-wrap{max-width:620px;margin:0 auto;font-family:'Oswald',sans-serif;-webkit-font-smoothing:antialiased}
+.fh-hotel-postcard-wrap{max-width:900px;width:100%;margin:0 auto;font-family:'Oswald',sans-serif;-webkit-font-smoothing:antialiased}
 .fh-hotel-postcard-wrap *{box-sizing:border-box}
 
 /* Card container */
-.fh-hotel-card{width:600px;height:400px;perspective:1200px;margin:0 auto;cursor:pointer}
+.fh-hotel-card{width:100%;aspect-ratio:3/2;perspective:1200px;margin:0 auto;cursor:pointer}
 .fh-hotel-card-inner{position:relative;width:100%;height:100%;transition:transform 0.6s ease;transform-style:preserve-3d}
 .fh-hotel-card[data-flipped="true"] .fh-hotel-card-inner{transform:rotateY(180deg)}
 .fh-hotel-postcard-front,.fh-hotel-postcard-back{position:absolute;top:0;left:0;width:100%;height:100%;-webkit-backface-visibility:hidden;backface-visibility:hidden;border-radius:6px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
@@ -337,7 +337,8 @@ trait FisHotel_HotelProgram {
 .fh-hotel-postcard-front-strip{height:25%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 16px;background:#f5f0e8 !important}
 .fh-hotel-postcard-hotel-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#96885f !important;letter-spacing:0.2em;text-transform:uppercase}
 .fh-hotel-postcard-activity-name{font-family:'Oswald',sans-serif;font-size:13px;color:#2e2418 !important;margin-top:4px;letter-spacing:0.05em}
-.fh-hotel-postcard-flip-hint{font-family:'Oswald',sans-serif;font-size:10px;color:#96885f !important;margin-top:6px;letter-spacing:0.1em;opacity:0.7}
+.fh-hotel-flip-btn{background:#1a3a5c !important;color:#fff !important;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:0.15em;padding:6px 16px;border:none;border-radius:20px;cursor:pointer;margin-top:8px}
+.fh-hotel-flip-btn:hover{background:#2a5a8c !important}
 
 /* BACK */
 .fh-hotel-postcard-back{transform:rotateY(180deg);background:#f5f0e8 !important;display:flex;flex-direction:row}
@@ -373,7 +374,8 @@ trait FisHotel_HotelProgram {
 
 /* RESPONSIVE */
 @media(max-width:640px){
-    .fh-hotel-card{width:100%;height:auto;aspect-ratio:3/2}
+    .fh-hotel-postcard-wrap{width:100%}
+    .fh-hotel-card{width:100%}
     .fh-hotel-card-inner{transform:none !important}
     .fh-hotel-postcard-front,.fh-hotel-postcard-back{position:relative;backface-visibility:visible;-webkit-backface-visibility:visible;transform:none !important}
     .fh-hotel-postcard-back{display:none;margin-top:0;border-radius:0 0 6px 6px}
@@ -405,7 +407,7 @@ trait FisHotel_HotelProgram {
                 <div class="fh-hotel-postcard-front-strip">
                     <div class="fh-hotel-postcard-hotel-name">THE FISHOTEL</div>
                     <div class="fh-hotel-postcard-activity-name"><?php echo $activity_name; ?></div>
-                    <div class="fh-hotel-postcard-flip-hint">[ click to read message ]</div>
+                    <button class="fh-hotel-flip-btn">TURN OVER</button>
                 </div>
             </div>
 
@@ -431,7 +433,7 @@ trait FisHotel_HotelProgram {
                         <div class="fh-hotel-postcard-address-line"></div>
                         <div class="fh-hotel-postcard-address-line"></div>
                     </div>
-                    <div class="fh-hotel-postcard-flip-hint">[ click to see scene ]</div>
+                    <button class="fh-hotel-flip-btn">TURN OVER</button>
                 </div>
             </div>
         </div>
