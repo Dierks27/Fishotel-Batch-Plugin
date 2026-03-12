@@ -289,6 +289,27 @@ trait FisHotel_HotelProgram {
         $postmark_city    = esc_html( $activity['postmark_city'] ?? 'CHAMPLIN, MN' );
         $postmark_date    = strtoupper( date_i18n( 'M j, Y' ) );
 
+        // ── Temporary debug (admin-only, visible in HTML source) ──
+        if ( current_user_can( 'manage_options' ) ) {
+            echo '<!-- FISHOTEL BATCH: ' . esc_html( $batch_name ) . ' -->' . "\n";
+            $debug_fish = get_posts( [
+                'post_type'   => 'fish_batch',
+                'numberposts' => -1,
+                'post_status' => 'any',
+                'meta_key'    => '_batch_name',
+                'meta_value'  => $batch_name,
+            ] );
+            foreach ( $debug_fish as $df ) {
+                $db_batch = get_post_meta( $df->ID, '_batch_name', true );
+                $db_tank  = get_post_meta( $df->ID, '_arrival_tank', true );
+                echo '<!-- FISHOTEL DEBUG: post_id=' . $df->ID
+                   . ' title=' . esc_html( $df->post_title )
+                   . ' _batch_name=' . esc_html( $db_batch )
+                   . ' _arrival_tank=' . esc_html( $db_tank )
+                   . ' -->' . "\n";
+            }
+        }
+
         // Building data — all rooms keyed by tank number
         // Must match exactly how class-admin.php save_arrival_data_handler() and
         // class-ajax.php ajax_save_arrival_field() write: post meta '_arrival_tank'
