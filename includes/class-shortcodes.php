@@ -2557,6 +2557,7 @@ trait FisHotel_Shortcodes {
 
         // ─── Stage 4: Hotel Program postcard (in_quarantine) ──
         if ( $status === 'in_quarantine' ) {
+            ob_end_clean();
             return $this->hotel_postcard_shortcode( $batch_name );
         }
 

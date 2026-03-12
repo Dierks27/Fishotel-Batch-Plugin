@@ -302,7 +302,7 @@ trait FisHotel_HotelProgram {
         ] );
         foreach ( $batch_fish as $bf ) {
             $tank = (string) get_post_meta( $bf->ID, '_arrival_tank', true );
-            if ( $tank === '' || ! isset( $room_map[ $tank ] ) ) continue;
+            if ( $tank === '' || ! array_key_exists( $tank, $room_map ) ) continue;
             $arr_status = get_post_meta( $bf->ID, '_arrival_status', true );
             $qty_recv   = intval( get_post_meta( $bf->ID, '_arrival_qty_received', true ) );
             $qty_doa    = intval( get_post_meta( $bf->ID, '_arrival_qty_doa', true ) );
