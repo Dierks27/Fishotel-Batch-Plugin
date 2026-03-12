@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.53 - Keep split-flap board on mobile, hide flat card view, scale tiles down.
- * Version:           4.53
+ * Description:       v4.54 - Mobile board: 14 species tiles, tighter flaps, no horizontal scroll.
+ * Version:           4.54
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.53' );
+define( 'FISHOTEL_VERSION', '4.54' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -610,20 +610,19 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
         /* ── Responsive: scale desktop board on mobile ── */
         @media (max-width:700px) {
             .fh-ab {
-                overflow-x:auto;
-                -webkit-overflow-scrolling:touch;
+                overflow-x:hidden;
             }
             .fh-ab-row {
                 display:flex !important;
             }
             .fh-ab-flap {
-                width:16px !important;
-                height:28px !important;
-                font-size:14px !important;
-                line-height:28px !important;
+                width:13px !important;
+                height:24px !important;
+                font-size:12px !important;
+                line-height:24px !important;
             }
             .fh-ab-badge {
-                font-size:10px !important;
+                font-size:9px !important;
                 padding:2px 4px !important;
                 margin:1px 3px !important;
             }
@@ -635,6 +634,9 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             .fh-ab-header, .fh-ab-footer { padding:8px 12px; }
             .fh-ab-col-hd {
                 font-size:9px !important;
+            }
+            .fh-ab-slash {
+                width:10px; padding:0 2px; font-size:12px;
             }
         }
         <?php
@@ -766,6 +768,13 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             var rowCounter = 0;
             var COL_LENS = [20, 2, 2]; // species, arrived-left, arrived-right
             var TOTAL_TILES = 24;
+            var MOBILE_BP = 700;
+            function updateColLens() {
+                var isMobile = window.innerWidth <= MOBILE_BP;
+                COL_LENS[0] = isMobile ? 14 : 20;
+                TOTAL_TILES = COL_LENS[0] + COL_LENS[1] + COL_LENS[2];
+            }
+            updateColLens();
 
             function tileHash(row, col) {
                 return ((row * 7 + col * 13 + row * col * 3 + 37) * 2654435761) >>> 0;
@@ -781,6 +790,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
 
             // Calculate tile width from container and set CSS variable
             function calcTileWidth() {
+                updateColLens();
                 var board = document.querySelector('.fh-ab');
                 if (!board) return;
                 var style = getComputedStyle(board);
