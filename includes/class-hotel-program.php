@@ -290,19 +290,28 @@ trait FisHotel_HotelProgram {
         $postmark_date    = strtoupper( date_i18n( 'M j, Y' ) );
 
         // Building data — all rooms keyed by tank number
+        // Must match exactly how class-admin.php save_arrival_data_handler() and
+        // class-ajax.php ajax_save_arrival_field() write: post meta '_arrival_tank'
+        // on post_type 'fish_batch', with values like '101', '102', etc.
         $all_room_ids = [ '101', '102', '103', '104', '201', '202', '203' ];
         $room_map     = array_fill_keys( $all_room_ids, null ); // null = unassigned
 
-        $batch_fish = get_posts( [
-            'post_type'   => 'fish_batch',
-            'numberposts' => -1,
-            'post_status' => 'any',
-            'meta_key'    => '_batch_name',
-            'meta_value'  => $batch_name,
+        $batch_name_trimmed = trim( $batch_name );
+        $batch_fish_q = new WP_Query( [
+            'post_type'              => 'fish_batch',
+            'posts_per_page'         => -1,
+            'post_status'            => 'publish',
+            'no_found_rows'          => true,
+            'update_post_term_cache' => false,
+            'meta_query'             => [
+                [ 'key' => '_batch_name', 'value' => $batch_name_trimmed, 'compare' => '=' ],
+            ],
         ] );
+        $batch_fish = $batch_fish_q->posts;
         foreach ( $batch_fish as $bf ) {
-            $tank       = get_post_meta( $bf->ID, '_arrival_tank', true );
-            if ( ! $tank || ! isset( $room_map[ $tank ] ) ) continue;
+            wp_cache_delete( $bf->ID, 'post_meta' );
+            $tank = trim( (string) get_post_meta( $bf->ID, '_arrival_tank', true ) );
+            if ( $tank === '' || ! isset( $room_map[ $tank ] ) ) continue;
             $arr_status = get_post_meta( $bf->ID, '_arrival_status', true );
             $qty_recv   = intval( get_post_meta( $bf->ID, '_arrival_qty_received', true ) );
             $qty_doa    = intval( get_post_meta( $bf->ID, '_arrival_qty_doa', true ) );
