@@ -129,12 +129,131 @@ trait FisHotel_HotelProgram {
      * ───────────────────────────────────────────── */
 
     private function hotel_scene_url( $scene_type, $scene_number ) {
-        $filename = 'hotel-' . sanitize_key( $scene_type ) . '-scene-' . $scene_number . '.jpg';
-        $path     = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene/' . $filename;
-        if ( file_exists( $path ) ) {
-            return plugins_url( 'assists/scene/' . $filename, FISHOTEL_PLUGIN_FILE );
+        $base     = sanitize_key( $scene_type );
+        $dir      = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene/';
+        $url_base = 'assists/scene/';
+        $bands    = [ 'morning', 'afternoon', 'evening', 'dusk', 'night' ];
+        foreach ( $bands as $band ) {
+            $fn = 'hotel-' . $base . '-scene-' . $scene_number . '-' . $band . '.jpg';
+            if ( file_exists( $dir . $fn ) ) {
+                return [
+                    'url'  => plugins_url( $url_base . $fn, FISHOTEL_PLUGIN_FILE ),
+                    'band' => $band,
+                ];
+            }
+        }
+        $fn = 'hotel-' . $base . '-scene-' . $scene_number . '.jpg';
+        if ( file_exists( $dir . $fn ) ) {
+            return [
+                'url'  => plugins_url( $url_base . $fn, FISHOTEL_PLUGIN_FILE ),
+                'band' => null,
+            ];
         }
         return false;
+    }
+
+    private function hotel_scene_urls_by_band( $scene_type, $scene_number ) {
+        $base     = sanitize_key( $scene_type );
+        $dir      = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene/';
+        $url_base = 'assists/scene/';
+        $bands    = [ 'morning', 'afternoon', 'evening', 'dusk', 'night' ];
+        $map      = [];
+        foreach ( $bands as $band ) {
+            $fn = 'hotel-' . $base . '-scene-' . $scene_number . '-' . $band . '.jpg';
+            if ( file_exists( $dir . $fn ) ) {
+                $map[ $band ] = plugins_url( $url_base . $fn, FISHOTEL_PLUGIN_FILE );
+            }
+        }
+        $fn_fallback = 'hotel-' . $base . '-scene-' . $scene_number . '.jpg';
+        if ( file_exists( $dir . $fn_fallback ) ) {
+            $map['_fallback'] = plugins_url( $url_base . $fn_fallback, FISHOTEL_PLUGIN_FILE );
+        }
+        return $map;
+    }
+
+    private function hotel_get_layer_config( $scene_type ) {
+        $configs = [
+            'pool' => [
+                [
+                    'asset'     => 'light-shaft.png',
+                    'x'         => '45%',
+                    'y'         => '0%',
+                    'width'     => '25%',
+                    'blend'     => 'screen',
+                    'opacity'   => 0.4,
+                    'animation' => 'shimmer',
+                    'speed'     => 20,
+                    'pause'     => 0,
+                    'z'         => 5,
+                    'show_on'   => [ 'afternoon', 'evening' ],
+                ],
+                [
+                    'asset'     => 'bubble-stream.png',
+                    'x'         => '20%',
+                    'y'         => '55%',
+                    'width'     => '8%',
+                    'blend'     => 'screen',
+                    'opacity'   => 0.5,
+                    'animation' => 'drift-up',
+                    'speed'     => 8,
+                    'pause'     => 12,
+                    'z'         => 10,
+                    'show_on'   => [ 'all' ],
+                ],
+                [
+                    'asset'     => 'pool-glow.png',
+                    'x'         => '0%',
+                    'y'         => '60%',
+                    'width'     => '100%',
+                    'blend'     => 'overlay',
+                    'opacity'   => 0.3,
+                    'animation' => 'pulse',
+                    'speed'     => 4,
+                    'pause'     => 0,
+                    'z'         => 3,
+                    'show_on'   => [ 'dusk', 'night' ],
+                ],
+            ],
+            'lobby' => [
+                [
+                    'asset'     => 'dust-motes.png',
+                    'x'         => '30%',
+                    'y'         => '5%',
+                    'width'     => '40%',
+                    'blend'     => 'screen',
+                    'opacity'   => 0.3,
+                    'animation' => 'drift-left-right',
+                    'speed'     => 25,
+                    'pause'     => 0,
+                    'z'         => 5,
+                    'show_on'   => [ 'morning', 'afternoon' ],
+                ],
+                [
+                    'asset'     => 'light-shaft.png',
+                    'x'         => '55%',
+                    'y'         => '0%',
+                    'width'     => '20%',
+                    'blend'     => 'screen',
+                    'opacity'   => 0.35,
+                    'animation' => 'shimmer',
+                    'speed'     => 18,
+                    'pause'     => 0,
+                    'z'         => 4,
+                    'show_on'   => [ 'morning', 'afternoon', 'evening' ],
+                ],
+            ],
+        ];
+        $layers   = $configs[ $scene_type ] ?? [];
+        $base_dir = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene-layers/';
+        $base_url = plugins_url( 'assists/scene-layers/', FISHOTEL_PLUGIN_FILE );
+        $valid    = [];
+        foreach ( $layers as $layer ) {
+            if ( file_exists( $base_dir . $layer['asset'] ) ) {
+                $layer['url'] = $base_url . $layer['asset'];
+                $valid[]      = $layer;
+            }
+        }
+        return $valid;
     }
 
     /* ─────────────────────────────────────────────
@@ -281,8 +400,13 @@ trait FisHotel_HotelProgram {
         $now_ts     = strtotime( current_time( 'Y-m-d' ) );
         $day_number = max( 1, min( 21, (int) floor( ( $now_ts - $start_ts ) / 86400 ) + 1 ) );
 
-        $activity  = $this->hotel_get_resolved_activity( $batch_name, $day_number );
-        $scene_url = $this->hotel_scene_url( $activity['scene_type'] ?? 'lobby', $activity['scene_number'] ?? '01' );
+        $activity   = $this->hotel_get_resolved_activity( $batch_name, $day_number );
+        $scene_type = $activity['scene_type'] ?? 'lobby';
+        $scene_num  = $activity['scene_number'] ?? '01';
+        $scene_data = $this->hotel_scene_url( $scene_type, $scene_num );
+        $scene_url  = $scene_data ? $scene_data['url'] : false;
+        $scene_urls_by_band = $this->hotel_scene_urls_by_band( $scene_type, $scene_num );
+        $layer_config = $this->hotel_get_layer_config( $scene_type );
 
         $postcard_message = esc_html( $activity['postcard_message'] ?? '' );
         $activity_name    = esc_html( $activity['name'] ?? '' );
@@ -367,9 +491,20 @@ trait FisHotel_HotelProgram {
 /* FRONT */
 .fh-hotel-postcard-front{background:#f5f0e8 !important}
 .fh-hotel-postcard-scene{width:100%;height:75%;background-size:cover !important;background-position:center !important;background-color:#2e2418 !important;position:relative}
-.fh-hotel-postcard-scene-placeholder{width:100%;height:75%;display:flex;align-items:center;justify-content:center;background:#f5f0e8 !important;color:#96885f !important;font-family:'Oswald',sans-serif;font-size:18px;letter-spacing:0.05em;border-bottom:1px solid #d6cfc2}
+.fh-hotel-postcard-scene-placeholder{width:100%;height:75%;display:flex;align-items:center;justify-content:center;background:#f5f0e8 !important;color:#96885f !important;font-family:'Oswald',sans-serif;font-size:18px;letter-spacing:0.05em;border-bottom:1px solid #d6cfc2;position:relative}
 .fh-hotel-postcard-day-badge{position:absolute;top:12px;left:12px;background:#1a3a5c !important;color:#fff !important;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;padding:4px 12px;letter-spacing:0.15em;border-radius:2px}
-.fh-hotel-postcard-front-strip{height:25%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 16px;background:#f5f0e8 !important}
+/* LAYER SYSTEM */
+.fh-hotel-postcard-layer-wrap{position:absolute !important;inset:0 !important;overflow:hidden !important;pointer-events:none !important;z-index:2 !important}
+.fh-postcard-layer{position:absolute !important;display:block !important;pointer-events:none !important}
+@keyframes fh-drift-left-right{0%,100%{transform:translateX(-8px)}50%{transform:translateX(8px)}}
+@keyframes fh-sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@keyframes fh-shimmer{0%,100%{opacity:0.2}50%{opacity:0.8}}
+@keyframes fh-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes fh-float{0%,100%{transform:translateY(-6px)}50%{transform:translateY(6px)}}
+@keyframes fh-drift-up{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-40px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.fh-postcard-layer{animation:none !important}}
+
+.fh-hotel-postcard-front-strip{height:25%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 16px;background:#f5f0e8 !important;position:relative !important;z-index:3 !important}
 .fh-hotel-postcard-hotel-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#96885f !important;letter-spacing:0.2em;text-transform:uppercase}
 .fh-hotel-postcard-activity-name{font-family:'Oswald',sans-serif;font-size:13px;color:#2e2418 !important;margin-top:4px;letter-spacing:0.05em}
 .fh-hotel-flip-btn{background:#1a3a5c !important;color:#fff !important;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:0.15em;padding:6px 16px;border:none;border-radius:20px;cursor:pointer;margin-top:8px}
@@ -449,18 +584,23 @@ trait FisHotel_HotelProgram {
 </style>
 
 <div class="fh-hotel-postcard-wrap">
-    <div class="fh-hotel-card" data-flipped="false" onclick="this.dataset.flipped=this.dataset.flipped==='true'?'false':'true'">
+    <div class="fh-hotel-card" data-flipped="false" onclick="fishotelHotelFlipCard(this)">
         <div class="fh-hotel-card-inner">
             <!-- FRONT -->
-            <div class="fh-hotel-postcard-front">
+            <div class="fh-hotel-postcard-front"
+                 data-layers="<?php echo esc_attr( wp_json_encode( $layer_config ) ); ?>"
+                 data-scene-urls="<?php echo esc_attr( wp_json_encode( $scene_urls_by_band ) ); ?>"
+                 data-scene-fallback="<?php echo $scene_url ? esc_url( $scene_url ) : ''; ?>">
                 <?php if ( $scene_url ) : ?>
                     <div class="fh-hotel-postcard-scene" style="background-image:url('<?php echo esc_url( $scene_url ); ?>');">
                         <div class="fh-hotel-postcard-day-badge">DAY <?php echo intval( $day_number ); ?></div>
+                        <div class="fh-hotel-postcard-layer-wrap"></div>
                     </div>
                 <?php else : ?>
                     <div class="fh-hotel-postcard-scene-placeholder">
                         <div class="fh-hotel-postcard-day-badge">DAY <?php echo intval( $day_number ); ?></div>
                         <span>Scene Coming Soon</span>
+                        <div class="fh-hotel-postcard-layer-wrap"></div>
                     </div>
                 <?php endif; ?>
                 <div class="fh-hotel-postcard-front-strip">
@@ -571,6 +711,7 @@ trait FisHotel_HotelProgram {
     </div>
 
     <script>
+    /* ── Room toggle ────────────────────────────────── */
     var fishotelHotelOpenRoom = null;
     function fishotelHotelToggleRoom(id) {
         var panels = document.querySelectorAll('.fh-hotel-room-detail');
@@ -584,6 +725,133 @@ trait FisHotel_HotelProgram {
         if (el) { el.classList.add('fh-hotel-room-detail--open'); }
         fishotelHotelOpenRoom = id;
     }
+
+    /* ── Flip handler with layer pause/resume ──────── */
+    function fishotelHotelFlipCard(card) {
+        var flipped = card.dataset.flipped === 'true' ? 'false' : 'true';
+        card.dataset.flipped = flipped;
+        var layers = card.querySelectorAll('.fh-postcard-layer');
+        var state = flipped === 'true' ? 'paused' : 'running';
+        for (var i = 0; i < layers.length; i++) {
+            layers[i].style.animationPlayState = state;
+        }
+    }
+
+    /* ── Time-of-day + Layer system ────────────────── */
+    (function(){
+        var h = new Date().getHours();
+        var band;
+        if (h >= 5 && h < 9) band = 'morning';
+        else if (h >= 9 && h < 16) band = 'afternoon';
+        else if (h >= 16 && h < 19) band = 'evening';
+        else if (h >= 19 && h < 22) band = 'dusk';
+        else band = 'night';
+
+        var wrap = document.querySelector('.fh-hotel-postcard-wrap');
+        if (!wrap) return;
+        wrap.setAttribute('data-time-of-day', band);
+        wrap.setAttribute('data-hour', String(h));
+
+        /* Swap scene background for time-of-day variant */
+        var front = wrap.querySelector('.fh-hotel-postcard-front');
+        if (!front) return;
+        var sceneUrls = {};
+        try { sceneUrls = JSON.parse(front.getAttribute('data-scene-urls') || '{}'); } catch(e){}
+        var sceneEl = front.querySelector('.fh-hotel-postcard-scene');
+        if (sceneEl) {
+            var todUrl = sceneUrls[band] || sceneUrls['_fallback'] || null;
+            if (todUrl) {
+                sceneEl.style.backgroundImage = "url('" + todUrl + "')";
+            }
+        }
+
+        /* Build layers */
+        var layers = [];
+        try { layers = JSON.parse(front.getAttribute('data-layers') || '[]'); } catch(e){}
+        if (!layers.length) return;
+
+        var container = front.querySelector('.fh-hotel-postcard-layer-wrap');
+        if (!container) return;
+
+        var animMap = {
+            'drift-left-right': 'fh-drift-left-right',
+            'drift-up':         'fh-drift-up',
+            'sway':             'fh-sway',
+            'shimmer':          'fh-shimmer',
+            'pulse':            'fh-pulse',
+            'float':            'fh-float'
+        };
+
+        for (var i = 0; i < layers.length; i++) {
+            var L = layers[i];
+            /* Check show_on */
+            var show = L.show_on || ['all'];
+            if (show.indexOf('all') === -1 && show.indexOf(band) === -1) continue;
+            if (!L.url) continue;
+
+            var img = document.createElement('img');
+            img.className = 'fh-postcard-layer';
+            img.src = L.url;
+            img.alt = '';
+            img.draggable = false;
+            img.style.left = L.x || '0%';
+            img.style.top = L.y || '0%';
+            img.style.width = L.width || 'auto';
+            img.style.height = 'auto';
+            img.style.zIndex = String(L.z || 1);
+            img.style.opacity = String(L.opacity != null ? L.opacity : 1);
+            img.style.mixBlendMode = L.blend || 'normal';
+
+            var animName = animMap[L.animation] || '';
+            var speed = L.speed || 10;
+            var pause = L.pause || 0;
+
+            if (animName) {
+                if (pause > 0) {
+                    /* Pause between loops: use longer duration with keyframe hold */
+                    var cycle = speed + pause;
+                    var pct = Math.round((speed / cycle) * 100);
+                    var kfName = 'fh-pause-' + L.animation + '-' + i;
+                    var kfBase = '';
+                    if (L.animation === 'drift-up') {
+                        kfBase = '0%{transform:translateY(0);opacity:1}' + pct + '%{transform:translateY(-40px);opacity:0}' + (pct+1) + '%,100%{transform:translateY(0);opacity:0}';
+                    } else if (L.animation === 'shimmer') {
+                        var half = Math.round(pct/2);
+                        kfBase = '0%,' + pct + '%{opacity:0.2}' + half + '%{opacity:0.8}' + (pct+1) + '%,100%{opacity:0.2}';
+                    } else if (L.animation === 'pulse') {
+                        var half = Math.round(pct/2);
+                        kfBase = '0%,' + pct + '%{transform:scale(1)}' + half + '%{transform:scale(1.06)}' + (pct+1) + '%,100%{transform:scale(1)}';
+                    } else if (L.animation === 'drift-left-right') {
+                        var half = Math.round(pct/2);
+                        kfBase = '0%,' + pct + '%{transform:translateX(-8px)}' + half + '%{transform:translateX(8px)}' + (pct+1) + '%,100%{transform:translateX(-8px)}';
+                    } else if (L.animation === 'sway') {
+                        var half = Math.round(pct/2);
+                        kfBase = '0%,' + pct + '%{transform:rotate(-3deg)}' + half + '%{transform:rotate(3deg)}' + (pct+1) + '%,100%{transform:rotate(-3deg)}';
+                    } else if (L.animation === 'float') {
+                        var half = Math.round(pct/2);
+                        kfBase = '0%,' + pct + '%{transform:translateY(-6px)}' + half + '%{transform:translateY(6px)}' + (pct+1) + '%,100%{transform:translateY(-6px)}';
+                    }
+                    if (kfBase) {
+                        var sheet = document.createElement('style');
+                        sheet.textContent = '@keyframes ' + kfName + '{' + kfBase + '}';
+                        document.head.appendChild(sheet);
+                        img.style.animation = kfName + ' ' + cycle + 's linear infinite';
+                    }
+                } else {
+                    var timing = 'ease-in-out';
+                    var dir = 'alternate';
+                    if (L.animation === 'drift-up') { timing = 'linear'; dir = 'normal'; }
+                    img.style.animation = animName + ' ' + speed + 's ' + timing + ' ' + dir + ' infinite';
+                }
+                if (L.animation === 'sway') {
+                    img.style.transformOrigin = 'bottom center';
+                }
+                img.style.animationDelay = (i * 0.5) + 's';
+            }
+
+            container.appendChild(img);
+        }
+    })();
     </script>
 </div>
         <?php
