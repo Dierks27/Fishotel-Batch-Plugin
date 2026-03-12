@@ -382,7 +382,7 @@ trait FisHotel_Admin {
                                     <a href="<?php echo esc_url( $view_url ); ?>" target="_blank"
                                        class="fh-icon-btn" data-tip="View">👁</a>
                                     <button type="button" class="fh-icon-btn" data-tip="Copy Link"
-                                            onclick="fhCopyLink(this,'<?php echo esc_js( $embed_url ); ?>')">Copy</button>
+                                            onclick="fhCopyLink(this,'<?php echo esc_js( $embed_url ); ?>')">📋</button>
                                 <?php endif; ?>
                                 <?php
                                 $del_nonce  = wp_create_nonce( 'fishotel_delete_batch_' . sanitize_key( $batch ) );
