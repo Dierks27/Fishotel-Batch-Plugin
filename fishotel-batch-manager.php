@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.62 - Hotel Program framework (Stage 4 postcard, admin, schedule).
- * Version:           4.62
+ * Description:       v4.63 - Hotel Program triggers on in_quarantine status.
+ * Version:           4.63
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.62' );
+define( 'FISHOTEL_VERSION', '4.63' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

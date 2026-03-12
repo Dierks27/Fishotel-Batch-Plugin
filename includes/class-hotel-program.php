@@ -229,7 +229,7 @@ trait FisHotel_HotelProgram {
 
         foreach ( $new_value as $batch_name => $stage ) {
             $prev = $old_value[ $batch_name ] ?? '';
-            if ( $stage === 'graduation' && $prev !== 'graduation' ) {
+            if ( $stage === 'in_quarantine' && $prev !== 'in_quarantine' ) {
                 $existing = $this->hotel_get_schedule( $batch_name );
                 if ( empty( $existing ) ) {
                     $this->hotel_create_default_schedule( $batch_name );
@@ -272,7 +272,7 @@ trait FisHotel_HotelProgram {
 
         if ( ! $batch_name ) return '';
         $status = $statuses[ $batch_name ] ?? '';
-        if ( $status !== 'graduation' ) return '';
+        if ( $status !== 'in_quarantine' ) return '';
 
         $schedule = $this->hotel_get_schedule( $batch_name );
         if ( empty( $schedule ) ) return '';
@@ -713,7 +713,7 @@ trait FisHotel_HotelProgram {
         if ( ! $selected && ! empty( $batches ) ) {
             // Default to first graduation batch, or first batch
             foreach ( $batches as $b ) {
-                if ( ( $statuses[ $b ] ?? '' ) === 'graduation' ) { $selected = $b; break; }
+                if ( ( $statuses[ $b ] ?? '' ) === 'in_quarantine' ) { $selected = $b; break; }
             }
             if ( ! $selected ) $selected = $batches[0];
         }
