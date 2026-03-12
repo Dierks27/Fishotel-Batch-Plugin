@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.44 - Customs form: official seal, tighter top spacing.
- * Version:           4.44
+ * Description:       v4.45 - Stage 3b polish: compact customs form, DOA badge glow.
+ * Version:           4.45
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.44' );
+define( 'FISHOTEL_VERSION', '4.45' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -570,6 +570,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
         .fh-ab-badge-counting { color:#d4bc7e; border:1px solid rgba(212,188,126,0.3); box-shadow:0 0 2px rgba(212,188,126,0.15); text-shadow:0 0 6px rgba(212,188,126,0.5); }
         .fh-ab-badge-landed { color:#66ccff; border:1px solid rgba(102,204,255,0.3); box-shadow:0 0 2px rgba(102,204,255,0.15); text-shadow:0 0 6px rgba(102,204,255,0.5); }
         .fh-ab-badge-pending { color:#d4a017; border:1px solid rgba(212,160,23,0.3); box-shadow:0 0 2px rgba(212,160,23,0.15); text-shadow:0 0 6px rgba(212,160,23,0.5); }
+        .fh-ab-badge-doa { color:#ff5555; border:1px solid rgba(255,85,85,0.3); box-shadow:0 0 2px rgba(255,85,85,0.15); text-shadow:0 0 6px rgba(255,85,85,0.5); }
 
         /* Flap tile groups */
         .fh-ab-tiles {
@@ -668,6 +669,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             'landed'        => 'fh-ab-badge-landed',
             'counting'      => 'fh-ab-badge-counting',
             'pending'       => 'fh-ab-badge-pending',
+            'doa'           => 'fh-ab-badge-doa',
         ];
         $origin = strtoupper( preg_split( '/[\s\-]/', $batch_name )[0] ?? $batch_name );
         $col_limit = 20; // species tile count
@@ -917,7 +919,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 'in_quarantine':'fh-ab-badge-qt','short':'fh-ab-badge-short',
                 'no_arrival':'fh-ab-badge-noarr','in_transit':'fh-ab-badge-transit',
                 'landed':'fh-ab-badge-landed','counting':'fh-ab-badge-counting',
-                'pending':'fh-ab-badge-pending'
+                'pending':'fh-ab-badge-pending','doa':'fh-ab-badge-doa'
             };
 
             // Auto-poll every 15 seconds

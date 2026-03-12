@@ -2767,13 +2767,13 @@ trait FisHotel_Shortcodes {
                 .fh-customs-inner { margin:8px; border:1px solid rgba(100,80,50,0.25); padding:12px 16px; position:relative; background:transparent; }
                 .fh-customs-edge { height:4px; background:repeating-linear-gradient(90deg,#8b0000 0,#8b0000 12px,transparent 12px,transparent 18px); }
                 .fh-customs-topline { display:flex; justify-content:space-between; margin-bottom:0; font-family:'Courier New',monospace; font-size:10px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.06em; }
-                .fh-customs-seal { text-align:center; margin:2px 0 0 0; }
-                .fh-customs-seal svg { width:64px; height:64px; }
-                .fh-customs-title { text-align:center; margin-bottom:2px; }
-                .fh-customs-title h2 { font-family:'Oswald',sans-serif; font-weight:700; font-size:18px; color:#2e2418; letter-spacing:6px; text-transform:uppercase; margin:0 0 1px 0; }
+                .fh-customs-seal { text-align:center; margin:0; }
+                .fh-customs-seal svg { width:56px; height:56px; }
+                .fh-customs-title { text-align:center; margin-bottom:0; }
+                .fh-customs-title h2 { font-family:'Oswald',sans-serif; font-weight:700; font-size:18px; color:#2e2418; letter-spacing:6px; text-transform:uppercase; margin:0; }
                 .fh-customs-title p { font-family:'Oswald',sans-serif; font-weight:400; font-size:12px; color:#6b5a3a; letter-spacing:4px; text-transform:uppercase; margin:0; }
-                .fh-customs-hr { border:none; border-top:2px solid #2e2418; margin:3px 0 1px 0; }
-                .fh-customs-hr2 { border:none; border-top:1px solid #a89878; margin:0 0 6px 0; }
+                .fh-customs-hr { border:none; border-top:2px solid #2e2418; margin:4px 0 1px 0; }
+                .fh-customs-hr2 { border:none; border-top:1px solid #a89878; margin:0 0 4px 0; }
                 .fh-customs-fields { display:flex; gap:12px; margin-bottom:8px; flex-wrap:wrap; }
                 .fh-customs-field { flex:1; min-width:80px; }
                 .fh-customs-field-label { font-family:'Courier New',monospace; font-size:9px; color:#8a7a5a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:1px; }
