@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.59 - Mobile badge 95% width, centered.
- * Version:           4.59
+ * Description:       v4.60 - Mobile badge: thin black frame, no overflow.
+ * Version:           4.60
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.59' );
+define( 'FISHOTEL_VERSION', '4.60' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -622,13 +622,10 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 line-height:24px !important;
             }
             .fh-ab-badge {
-                flex:0 0 95% !important;
-                width:95% !important;
-                margin:1px auto !important;
                 font-size:8px !important;
-                padding:2px 4px !important;
+                padding:2px 3px !important;
+                margin:1px 3px !important;
                 line-height:20px !important;
-                text-align:center !important;
             }
             .fh-ab-header {
                 font-size:11px !important;
