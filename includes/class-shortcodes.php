@@ -2557,7 +2557,7 @@ trait FisHotel_Shortcodes {
 
         // ─── Stage 4: Hotel Program postcard (in_quarantine) ──
         if ( $status === 'in_quarantine' ) {
-            return $this->hotel_postcard_shortcode();
+            return $this->hotel_postcard_shortcode( $batch_name );
         }
 
         // ─── Stage 3b: Arrival tracking view (arrived + all post-arrived stages) ──

@@ -260,18 +260,18 @@ trait FisHotel_HotelProgram {
      *  SHORTCODE — [fishotel_hotel_postcard]
      * ───────────────────────────────────────────── */
 
-    public function hotel_postcard_shortcode() {
+    public function hotel_postcard_shortcode( $batch_name = null ) {
         if ( is_admin() ) return '';
 
-        $obj = get_queried_object();
-        if ( ! $obj || ! isset( $obj->post_name ) ) return '';
-
-        $assignments = get_option( 'fishotel_batch_page_assignments', [] );
-        $statuses    = get_option( 'fishotel_batch_statuses', [] );
-        $batch_name  = array_search( $obj->post_name, $assignments, true );
+        if ( ! $batch_name ) {
+            $current_slug = get_post_field( 'post_name', get_the_ID() );
+            $assignments  = get_option( 'fishotel_batch_page_assignments', [] );
+            $batch_name   = array_search( $current_slug, $assignments );
+        }
 
         if ( ! $batch_name ) return '';
-        $status = $statuses[ $batch_name ] ?? '';
+        $statuses = get_option( 'fishotel_batch_statuses', [] );
+        $status   = $statuses[ $batch_name ] ?? '';
         if ( $status !== 'in_quarantine' ) return '';
 
         $schedule = $this->hotel_get_schedule( $batch_name );
