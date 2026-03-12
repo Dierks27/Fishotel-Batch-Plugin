@@ -3022,6 +3022,7 @@ trait FisHotel_Shortcodes {
                                     if ( $my_pos > 0 ) $position_c = $my_pos . ' of ' . $total_demand;
                                 }
                                 $fish_name = trim( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', get_the_title( $bid ) ) );
+                                error_log( '[FH Debug] customs fish_name: ' . $fish_name );
                             ?>
                             <tr>
                                 <td class="fh-customs-species"><?php echo esc_html( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $fish_name ) ); ?></td>
@@ -3131,6 +3132,13 @@ trait FisHotel_Shortcodes {
                     Quarantine ends <strong><?php echo esc_html( $qt_end_fmt ); ?></strong>
                 </div>
                 <?php endif; ?>
+
+                <script>
+                // Strip batch suffix from customs form species cells (JS fallback)
+                document.querySelectorAll('.fh-customs-species').forEach(function(td) {
+                    td.textContent = td.textContent.replace(/\s+[\u2013\u2014-]\s+.+$/, '');
+                });
+                </script>
 
             </div>
             <?php
