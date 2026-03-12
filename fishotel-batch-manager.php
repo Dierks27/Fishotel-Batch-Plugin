@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.54 - Mobile board: 14 species tiles, tighter flaps, no horizontal scroll.
- * Version:           4.54
+ * Description:       v4.55 - Mobile board: compact badges, 18 species tiles.
+ * Version:           4.55
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.54' );
+define( 'FISHOTEL_VERSION', '4.55' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -622,9 +622,13 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
                 line-height:24px !important;
             }
             .fh-ab-badge {
-                font-size:9px !important;
+                flex:0 0 auto !important;
+                width:auto !important;
+                max-width:65px !important;
+                font-size:8px !important;
                 padding:2px 4px !important;
-                margin:1px 3px !important;
+                margin:1px 2px !important;
+                line-height:20px !important;
             }
             .fh-ab-header {
                 font-size:11px !important;
@@ -771,7 +775,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             var MOBILE_BP = 700;
             function updateColLens() {
                 var isMobile = window.innerWidth <= MOBILE_BP;
-                COL_LENS[0] = isMobile ? 14 : 20;
+                COL_LENS[0] = isMobile ? 18 : 20;
                 TOTAL_TILES = COL_LENS[0] + COL_LENS[1] + COL_LENS[2];
             }
             updateColLens();
