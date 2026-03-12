@@ -1868,3 +1868,4 @@ trait FisHotel_HotelProgram {
         <?php
         return ob_get_clean();
     }
+}

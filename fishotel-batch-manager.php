@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.10 - Layer Designer admin UI for managing postcard animation layers.
- * Version:           5.10
+ * Description:       v5.11 - Fix missing trait closing brace in class-hotel-program.php.
+ * Version:           5.11
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.10' );
+define( 'FISHOTEL_VERSION', '5.11' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
