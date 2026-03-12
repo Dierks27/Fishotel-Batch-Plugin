@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v4.52 - Arrivals board uses batch title not master title; customs form mobile responsive.
- * Version:           4.52
+ * Description:       v4.53 - Keep split-flap board on mobile, hide flat card view, scale tiles down.
+ * Version:           4.53
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '4.52' );
+define( 'FISHOTEL_VERSION', '4.53' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -604,42 +604,38 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
             width:100%; height:1px; background:#000;
         }
 
-        /* Mobile card list — hidden on desktop */
-        .fh-ab-mobile { display:none; }
+        /* Mobile card list — hidden at all sizes; desktop board scales down instead */
+        .fh-ab-mobile { display:none !important; }
 
-        /* ── Responsive: mobile card list ── */
-        @media (max-width:768px) {
-            .fh-ab-cols { display:none !important; }
-            .fh-ab-row { display:none !important; }
+        /* ── Responsive: scale desktop board on mobile ── */
+        @media (max-width:700px) {
+            .fh-ab {
+                overflow-x:auto;
+                -webkit-overflow-scrolling:touch;
+            }
+            .fh-ab-row {
+                display:flex !important;
+            }
+            .fh-ab-flap {
+                width:16px !important;
+                height:28px !important;
+                font-size:14px !important;
+                line-height:28px !important;
+            }
+            .fh-ab-badge {
+                font-size:10px !important;
+                padding:2px 4px !important;
+                margin:1px 3px !important;
+            }
+            .fh-ab-header {
+                font-size:11px !important;
+            }
             .fh-ab-hl { font-size:13px; }
             .fh-ab-hr, .fh-ab-fl, .fh-ab-fr { font-size:10px; }
             .fh-ab-header, .fh-ab-footer { padding:8px 12px; }
-
-            /* Show mobile card list */
-            .fh-ab-mobile { display:block; position:relative; z-index:2; }
-            .fh-ab-mrow {
-                display:flex; align-items:center; justify-content:space-between;
-                padding:8px 12px; border-bottom:1px solid rgba(181,161,101,0.1);
+            .fh-ab-col-hd {
+                font-size:9px !important;
             }
-            .fh-ab-mrow:last-child { border-bottom:none; }
-            .fh-ab-mleft { display:flex; align-items:center; min-width:0; flex:1; }
-            .fh-ab-mname {
-                font-family:'Oswald',sans-serif; font-size:13px; color:#b5a165;
-                white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-            }
-            .fh-ab-mbadge {
-                flex-shrink:0; font-family:'Courier New',monospace; font-size:11px;
-                font-weight:700; text-transform:uppercase; letter-spacing:0.08em;
-                padding:3px 6px; border-radius:0; white-space:nowrap;
-                background:transparent;
-            }
-            .fh-ab-mbadge-qt { color:#44ff88; border:1px solid rgba(68,255,136,0.3); }
-            .fh-ab-mbadge-short { color:#ffaa33; border:1px solid rgba(255,170,51,0.3); }
-            .fh-ab-mbadge-noarr { color:#ff5555; border:1px solid rgba(255,85,85,0.3); }
-            .fh-ab-mbadge-transit { color:#8a7a50; border:1px solid rgba(138,122,80,0.3); }
-            .fh-ab-mbadge-counting { color:#d4bc7e; border:1px solid rgba(212,188,126,0.3); }
-            .fh-ab-mbadge-landed { color:#66ccff; border:1px solid rgba(102,204,255,0.3); }
-            .fh-ab-mbadge-pending { color:#d4a017; border:1px solid rgba(212,160,23,0.3); }
         }
         <?php
     }
