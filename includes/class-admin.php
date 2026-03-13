@@ -3007,10 +3007,10 @@ trait FisHotel_Admin {
             echo '<td style="padding:8px;text-align:center;color:#fff;font-weight:600;">' . intval( $cust_demand ) . '</td>';
             echo '<td style="padding:8px;text-align:center;"><input type="number" name="items[' . $bp->ID . '][qty_received]" value="' . esc_attr( $qty_received ) . '" min="0" class="fh-recv" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
             echo '<td style="padding:8px;text-align:center;"><input type="number" name="items[' . $bp->ID . '][qty_doa]" value="' . esc_attr( $qty_doa ) . '" min="0" class="fh-doa" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"></td>';
-            $tank_options = [ '' => '— Assign Tank —', 'Floor 1 — 20 Gallon' => [ '101', '102', '103', '104' ], 'Floor 2 — 40 Gallon' => [ '201', '202', '203' ] ];
+            $tank_options = [ '' => '— Assign Tank —', 'Floor 1 — 20 Gallon' => [ '201', '202', '203', '204' ], 'Floor 2 — 40 Gallon' => [ '101', '102', '103' ] ];
             echo '<td style="padding:8px;text-align:center;"><select name="items[' . $bp->ID . '][tank]" class="fh-tank" style="background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;font-size:12px;">';
             echo '<option value=""' . selected( $tank, '', false ) . '>— Assign Tank —</option>';
-            foreach ( [ 'Floor 1 — 20 Gallon' => [ '101', '102', '103', '104' ], 'Floor 2 — 40 Gallon' => [ '201', '202', '203' ] ] as $group => $tanks ) {
+            foreach ( [ 'Floor 1 — 20 Gallon' => [ '201', '202', '203', '204' ], 'Floor 2 — 40 Gallon' => [ '101', '102', '103' ] ] as $group => $tanks ) {
                 echo '<optgroup label="' . esc_attr( $group ) . '">';
                 foreach ( $tanks as $t ) { echo '<option value="' . $t . '"' . selected( $tank, $t, false ) . '>' . $t . '</option>'; }
                 echo '</optgroup>';
@@ -3049,8 +3049,8 @@ trait FisHotel_Admin {
             echo '<div><label style="color:#aaa;font-size:11px;display:block;margin-bottom:4px;">Qty DOA</label><input type="number" id="fh-surprise-doa" min="0" value="0" style="width:70px;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:6px;text-align:center;"></div>';
             echo '<div><label style="color:#aaa;font-size:11px;display:block;margin-bottom:4px;">Tank</label><select id="fh-surprise-tank" style="background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:6px;font-size:12px;">';
             echo '<option value="">— Assign —</option>';
-            echo '<optgroup label="Floor 1 — 20 Gallon"><option value="101">101</option><option value="102">102</option><option value="103">103</option><option value="104">104</option></optgroup>';
-            echo '<optgroup label="Floor 2 — 40 Gallon"><option value="201">201</option><option value="202">202</option><option value="203">203</option></optgroup>';
+            echo '<optgroup label="Floor 1 — 20 Gallon"><option value="201">201</option><option value="202">202</option><option value="203">203</option><option value="204">204</option></optgroup>';
+            echo '<optgroup label="Floor 2 — 40 Gallon"><option value="101">101</option><option value="102">102</option><option value="103">103</option></optgroup>';
             echo '</select></div>';
             echo '<div><label style="color:#aaa;font-size:11px;display:block;margin-bottom:4px;">Status</label><select id="fh-surprise-status" style="background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:6px;font-size:12px;">';
             echo '<option value="in_quarantine">In Quarantine</option><option value="no_arrival">No Arrival</option>';

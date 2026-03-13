@@ -10,6 +10,7 @@ trait FisHotel_HotelProgram {
      * ───────────────────────────────────────────── */
 
     public function hotel_program_init() {
+        add_action( 'admin_init', [ $this, 'hotel_migrate_tank_ids_v1' ] );
         add_shortcode( 'fishotel_hotel_postcard', [ $this, 'hotel_postcard_shortcode' ] );
         add_action( 'update_option_fishotel_batch_statuses', [ $this, 'hotel_maybe_init_schedule' ], 10, 2 );
         add_action( 'admin_post_fishotel_hotel_save_category',   [ $this, 'hotel_save_category' ] );
@@ -20,6 +21,38 @@ trait FisHotel_HotelProgram {
         add_action( 'admin_post_fishotel_hotel_init_schedule',   [ $this, 'hotel_init_schedule_handler' ] );
         add_action( 'admin_post_fishotel_hotel_save_graduation', [ $this, 'hotel_save_graduation_handler' ] );
         $this->hotel_seed_defaults();
+    }
+
+    /* ─────────────────────────────────────────────
+     *  TANK ID MIGRATION v1
+     *  Old: Floor 1 = 101-104 (20g), Floor 2 = 201-203 (40g)
+     *  New: Floor 1 = 201-204 (20g), Floor 2 = 101-103 (40g)
+     * ───────────────────────────────────────────── */
+
+    public function hotel_migrate_tank_ids_v1() {
+        if ( get_option( 'fishotel_tank_migration_v1' ) ) return;
+
+        $map = [
+            '101' => '201',
+            '102' => '202',
+            '103' => '203',
+            '104' => '204',
+        ];
+
+        foreach ( $map as $old_tank => $new_tank ) {
+            $posts = get_posts( [
+                'post_type'      => 'fish_batch',
+                'posts_per_page' => -1,
+                'meta_key'       => '_arrival_tank',
+                'meta_value'     => $old_tank,
+                'fields'         => 'ids',
+            ] );
+            foreach ( $posts as $pid ) {
+                update_post_meta( $pid, '_arrival_tank', $new_tank );
+            }
+        }
+
+        update_option( 'fishotel_tank_migration_v1', true );
     }
 
     /* ─────────────────────────────────────────────
@@ -387,7 +420,7 @@ trait FisHotel_HotelProgram {
         $postmark_date    = strtoupper( date_i18n( 'M j, Y' ) );
 
         // Building data — all rooms keyed by tank number
-        $all_room_ids = [ '101', '102', '103', '104', '201', '202', '203' ];
+        $all_room_ids = [ '201', '202', '203', '204', '101', '102', '103' ];
         $room_map     = array_fill_keys( $all_room_ids, [] ); // empty array = unassigned
 
         $batch_fish = get_posts( [
@@ -630,8 +663,8 @@ trait FisHotel_HotelProgram {
         </div>
         <?php
         $floors = [
-            1 => [ '101', '102', '103', '104' ],
-            2 => [ '201', '202', '203' ],
+            1 => [ '201', '202', '203', '204' ],  // Floor 1 — 20 Gallon tanks (top row)
+            2 => [ '101', '102', '103' ],          // Floor 2 — 40 Gallon tanks (bottom row)
         ];
         $floor_labels = [ 1 => '20 Gallon', 2 => '40 Gallon' ];
         foreach ( $floors as $fn => $floor_rooms ) :
@@ -677,7 +710,7 @@ trait FisHotel_HotelProgram {
         <?php foreach ( $all_room_ids as $tank_id ) :
             $fish_list = $room_map[ $tank_id ];
             $is_mine   = isset( $customer_rooms[ $tank_id ] );
-            $floor_num = ( $tank_id[0] === '2' ) ? 2 : 1;
+            $floor_num = ( $tank_id[0] === '1' ) ? 2 : 1;
             $floor_lbl = 'Floor ' . $floor_num . ' — ' . $floor_labels[ $floor_num ];
         ?>
         <div class="fh-hotel-room-detail" id="fh-room-detail-<?php echo esc_attr( $tank_id ); ?>" style="position:relative;">
