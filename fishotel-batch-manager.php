@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.24 - Guard --mine class and YOUR ROOM behind is_user_logged_in().
- * Version:           5.24
+ * Description:       v5.25 - Remove fish emoji, Special Elite typewriter font, sign glow effect.
+ * Version:           5.25
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.24' );
+define( 'FISHOTEL_VERSION', '5.25' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

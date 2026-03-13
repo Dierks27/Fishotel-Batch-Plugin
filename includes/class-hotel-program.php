@@ -584,12 +584,16 @@ trait FisHotel_HotelProgram {
 .fh-hotel-room--noarrival .fh-hotel-room-species{color:#ff6666 !important;font-size:10px !important;z-index:2 !important;position:relative !important}
 /* States — customer room (gold glow) */
 .fh-hotel-room--mine{box-shadow:0 0 0 3px #96885f,0 0 20px rgba(150,136,95,0.9),0 0 50px rgba(150,136,95,0.5) !important;z-index:2 !important}
-/* Text content — readable over illustration */
+/* Text content — typewriter font, white with black border */
 .fh-hotel-room-number{display:none !important}
-.fh-hotel-room-species{font-family:'Oswald',sans-serif;font-size:11px !important;color:#fff !important;text-shadow:0 1px 4px rgba(0,0,0,0.95),0 0 10px rgba(0,0,0,0.8) !important;text-align:center !important;max-width:100% !important;overflow:hidden !important;white-space:nowrap !important;text-overflow:ellipsis !important;font-weight:600 !important;margin-top:2px !important}
-.fh-hotel-room-fish{font-size:22px !important;margin-bottom:2px !important;text-shadow:0 1px 4px rgba(0,0,0,0.8) !important}
-.fh-hotel-room-qty{font-family:'Oswald',sans-serif;font-size:10px !important;color:rgba(255,255,255,0.85) !important;text-shadow:0 1px 3px rgba(0,0,0,0.95) !important}
-.fh-hotel-room-yours{font-family:'Courier New',monospace;font-size:8px !important;letter-spacing:3px !important;color:#f0d878 !important;text-shadow:0 0 8px rgba(150,136,95,0.9) !important;text-transform:uppercase !important;display:block !important;margin-bottom:4px !important}
+.fh-hotel-room-species,.fh-hotel-room-qty,.fh-hotel-room-yours{font-family:'Special Elite','Courier New',monospace !important;color:#ffffff !important;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 2px 3px rgba(0,0,0,0.8) !important;position:relative !important;z-index:2 !important}
+.fh-hotel-room-species{font-size:13px !important;font-weight:normal !important;letter-spacing:0.03em !important;text-align:center !important;max-width:100% !important;overflow:hidden !important;white-space:nowrap !important;text-overflow:ellipsis !important;margin-top:2px !important}
+.fh-hotel-room-qty{font-size:11px !important;opacity:0.85 !important}
+.fh-hotel-room-yours{font-size:9px !important;letter-spacing:0.12em !important;text-transform:uppercase !important;display:block !important;margin-bottom:4px !important}
+/* Sign glow effect */
+.fh-hotel-sign-glow{position:absolute !important;top:0 !important;left:10% !important;width:80% !important;height:40% !important;pointer-events:none !important;z-index:2 !important;opacity:0 !important;background:radial-gradient(ellipse 60% 50% at 50% 60%,rgba(255,220,120,0.22) 0%,rgba(255,180,60,0.10) 40%,transparent 70%) !important;transition:opacity 0.5s ease !important}
+.fh-hotel-building[data-band="sunset"] .fh-hotel-sign-glow,.fh-hotel-building[data-band="night"] .fh-hotel-sign-glow{opacity:1 !important}
+.fh-hotel-building[data-band="night"] .fh-hotel-sign-glow{background:radial-gradient(ellipse 60% 50% at 50% 60%,rgba(255,230,140,0.28) 0%,rgba(255,190,80,0.14) 40%,transparent 70%) !important}
 /* Slider for multiple buildings */
 .fh-hotel-slider{position:relative;max-width:1000px;margin:32px auto 0}
 .fh-hotel-slides{overflow:hidden}
@@ -729,6 +733,7 @@ trait FisHotel_HotelProgram {
         <!-- Slide 1: Main Building -->
         <div class="fh-hotel-slide fh-hotel-slide--active">
           <div class="fh-hotel-building" style="background-image:url('<?php echo esc_url( $building_bg_url ); ?>');" data-band="<?php echo esc_attr( $band ); ?>">
+            <div class="fh-hotel-sign-glow"></div>
             <div class="fh-hotel-building-roof">
                 <div class="fh-hotel-building-sign">THE FISHOTEL</div>
             </div>
@@ -754,7 +759,7 @@ trait FisHotel_HotelProgram {
                         <div class="fh-hotel-room-number"><?php echo esc_html( $tank_id ); ?></div>
                         <?php if ( ! empty( $fish_list ) && $state === 'occupied' ) : ?>
                             <?php if ( $is_mine ) : ?><div class="fh-hotel-room-yours">YOUR ROOM</div><?php endif; ?>
-                            <div class="fh-hotel-room-fish">&#x1F420;</div>
+    
                             <?php foreach ( $fish_list as $fd ) : ?>
                                 <div class="fh-hotel-room-species" style="font-size:<?php echo count( $fish_list ) > 1 ? '11' : '13'; ?>px;"><?php echo esc_html( $fd['species'] ); ?></div>
                             <?php endforeach; ?>
@@ -796,7 +801,7 @@ trait FisHotel_HotelProgram {
                     <div class="fh-hotel-room-number"><?php echo esc_html( $tank_id ); ?></div>
                     <?php if ( ! empty( $fish_list ) && $state === 'occupied' ) : ?>
                         <?php if ( $is_mine ) : ?><div class="fh-hotel-room-yours">YOUR ROOM</div><?php endif; ?>
-                        <div class="fh-hotel-room-fish">&#x1F420;</div>
+
                         <?php foreach ( $fish_list as $fd ) : ?>
                             <div class="fh-hotel-room-species" style="font-size:<?php echo count( $fish_list ) > 1 ? '11' : '13'; ?>px;"><?php echo esc_html( $fd['species'] ); ?></div>
                         <?php endforeach; ?>
