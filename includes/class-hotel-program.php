@@ -583,8 +583,10 @@ trait FisHotel_HotelProgram {
 .fh-hotel-room-fish{font-size:22px !important;margin-bottom:2px !important;text-shadow:0 1px 4px rgba(0,0,0,0.8) !important}
 .fh-hotel-room-qty{font-family:'Oswald',sans-serif;font-size:10px !important;color:rgba(255,255,255,0.85) !important;text-shadow:0 1px 3px rgba(0,0,0,0.95) !important}
 .fh-hotel-room-yours{font-family:'Courier New',monospace;font-size:8px !important;letter-spacing:3px !important;color:#f0d878 !important;text-shadow:0 0 8px rgba(150,136,95,0.9) !important;text-transform:uppercase !important;display:block !important;margin-bottom:4px !important}
-/* Room detail expand */
-.fh-hotel-room-detail{display:none;background:#111 !important;border-top:1px solid #3a3a3a;padding:20px 24px}
+/* Spacing between postcard and hotel */
+.fh-hotel-building{margin-top:32px !important}
+/* Room detail expand — outside building container */
+.fh-hotel-room-detail{display:none;position:relative;width:100%;max-width:1000px;margin:12px auto 0;box-sizing:border-box;background:#1a1a1a !important;border:1px solid #333;border-radius:4px;padding:16px 20px}
 .fh-hotel-room-detail--open{display:block}
 .fh-hotel-room-detail-name{font-family:'Oswald',sans-serif;font-size:20px;color:#e1e1e1 !important;font-weight:600}
 .fh-hotel-room-detail-sci{font-family:'Oswald',sans-serif;font-size:13px;color:#888 !important;font-style:italic;margin-top:2px}
@@ -722,39 +724,39 @@ trait FisHotel_HotelProgram {
         </div>
         <?php endforeach; ?>
         <div class="fh-hotel-building-base"></div>
-
-        <?php /* Room detail panels — one per room, hidden */ ?>
-        <?php foreach ( $all_room_ids as $tank_id ) :
-            $fish_list = $room_map[ $tank_id ];
-            $is_mine   = isset( $customer_rooms[ $tank_id ] );
-            $floor_num = ( $tank_id[0] === '1' ) ? 2 : 1;
-            $floor_lbl = 'Floor ' . $floor_num . ' — ' . $floor_labels[ $floor_num ];
-        ?>
-        <div class="fh-hotel-room-detail" id="fh-room-detail-<?php echo esc_attr( $tank_id ); ?>" style="position:relative;">
-            <button class="fh-hotel-room-detail-close" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>')">&times;</button>
-            <?php if ( ! empty( $fish_list ) ) : ?>
-                <?php foreach ( $fish_list as $fi => $rd ) : ?>
-                    <?php if ( $fi > 0 ) : ?><hr style="border:none;border-top:1px solid #3a3a3a;margin:12px 0;"><?php endif; ?>
-                    <div class="fh-hotel-room-detail-name"><?php echo esc_html( $rd['species'] ); ?></div>
-                    <?php if ( ! empty( $rd['sci_name'] ) ) : ?>
-                        <div class="fh-hotel-room-detail-sci"><?php echo esc_html( $rd['sci_name'] ); ?></div>
-                    <?php endif; ?>
-                    <div class="fh-hotel-room-detail-meta">
-                        Tank: <?php echo esc_html( $tank_id ); ?> (<?php echo esc_html( $floor_lbl ); ?>)<br>
-                        Received: <?php echo intval( $rd['qty'] ); ?> &bull; DOA: <?php echo intval( $rd['qty_doa'] ); ?><br>
-                        Status: <?php echo esc_html( ucwords( str_replace( '_', ' ', $rd['status'] ) ) ); ?>
-                    </div>
-                <?php endforeach; ?>
-                <?php if ( $is_mine ) : ?>
-                    <div class="fh-hotel-room-detail-yours">Your fish are staying in Room <?php echo esc_html( $tank_id ); ?></div>
-                <?php endif; ?>
-            <?php else : ?>
-                <div class="fh-hotel-room-detail-name">Room <?php echo esc_html( $tank_id ); ?></div>
-                <div class="fh-hotel-room-detail-meta"><?php echo esc_html( $floor_lbl ); ?><br>No guest assigned.</div>
-            <?php endif; ?>
-        </div>
-        <?php endforeach; ?>
     </div>
+
+    <?php /* Room detail panels — OUTSIDE the building container */ ?>
+    <?php foreach ( $all_room_ids as $tank_id ) :
+        $fish_list = $room_map[ $tank_id ];
+        $is_mine   = isset( $customer_rooms[ $tank_id ] );
+        $floor_num = ( $tank_id[0] === '1' ) ? 2 : 1;
+        $floor_lbl = 'Floor ' . $floor_num . ' — ' . $floor_labels[ $floor_num ];
+    ?>
+    <div class="fh-hotel-room-detail" id="fh-room-detail-<?php echo esc_attr( $tank_id ); ?>">
+        <button class="fh-hotel-room-detail-close" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>')">&times;</button>
+        <?php if ( ! empty( $fish_list ) ) : ?>
+            <?php foreach ( $fish_list as $fi => $rd ) : ?>
+                <?php if ( $fi > 0 ) : ?><hr style="border:none;border-top:1px solid #3a3a3a;margin:12px 0;"><?php endif; ?>
+                <div class="fh-hotel-room-detail-name"><?php echo esc_html( $rd['species'] ); ?></div>
+                <?php if ( ! empty( $rd['sci_name'] ) ) : ?>
+                    <div class="fh-hotel-room-detail-sci"><?php echo esc_html( $rd['sci_name'] ); ?></div>
+                <?php endif; ?>
+                <div class="fh-hotel-room-detail-meta">
+                    Tank: <?php echo esc_html( $tank_id ); ?> (<?php echo esc_html( $floor_lbl ); ?>)<br>
+                    Received: <?php echo intval( $rd['qty'] ); ?> &bull; DOA: <?php echo intval( $rd['qty_doa'] ); ?><br>
+                    Status: <?php echo esc_html( ucwords( str_replace( '_', ' ', $rd['status'] ) ) ); ?>
+                </div>
+            <?php endforeach; ?>
+            <?php if ( $is_mine ) : ?>
+                <div class="fh-hotel-room-detail-yours">Your fish are staying in Room <?php echo esc_html( $tank_id ); ?></div>
+            <?php endif; ?>
+        <?php else : ?>
+            <div class="fh-hotel-room-detail-name">Room <?php echo esc_html( $tank_id ); ?></div>
+            <div class="fh-hotel-room-detail-meta"><?php echo esc_html( $floor_lbl ); ?><br>No guest assigned.</div>
+        <?php endif; ?>
+    </div>
+    <?php endforeach; ?>
 
     <script>
     /* ── Room toggle ────────────────────────────────── */
