@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.26 - Remove species/qty from rooms, Righteous font, self-hosted font infrastructure.
- * Version:           5.26
+ * Description:       v5.27 - Room label pinned to bottom, Righteous font on detail panel.
+ * Version:           5.27
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.26' );
+define( 'FISHOTEL_VERSION', '5.27' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

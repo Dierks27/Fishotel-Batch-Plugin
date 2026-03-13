@@ -546,7 +546,7 @@ trait FisHotel_HotelProgram {
 .fh-hotel-building-roof,.fh-hotel-building-base,.fh-hotel-building-sign{display:none !important}
 .fh-hotel-floor{display:contents !important}
 /* Room base — absolute windows over illustration */
-.fh-hotel-room{position:absolute !important;background:transparent !important;border:none !important;margin:0 !important;padding:6px !important;box-sizing:border-box !important;overflow:hidden !important;display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;cursor:pointer !important;transition:box-shadow 0.2s ease !important;border-radius:2px !important;will-change:transform !important}
+.fh-hotel-room{position:absolute !important;background:transparent !important;border:none !important;margin:0 !important;padding-bottom:6px !important;box-sizing:border-box !important;overflow:hidden !important;display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:flex-end !important;cursor:pointer !important;transition:box-shadow 0.2s ease !important;border-radius:2px !important;will-change:transform !important}
 .fh-hotel-room::before{display:none !important}
 .fh-hotel-room::after{display:none !important}
 .fh-hotel-room:not(.fh-hotel-room--mine):hover::after{content:'' !important;display:block !important;position:absolute !important;inset:0 !important;background:rgba(255,255,255,0.10) !important;pointer-events:none !important;z-index:3 !important}
@@ -595,7 +595,7 @@ trait FisHotel_HotelProgram {
 */
 /* Text content — Righteous font, white with navy border */
 .fh-hotel-room-number{display:none !important}
-.fh-hotel-room-yours{font-family:'Righteous',sans-serif !important;font-size:9px !important;letter-spacing:0.15em !important;color:#ffffff !important;text-shadow:-1px -1px 0 #00008b,1px -1px 0 #00008b,-1px 1px 0 #00008b,1px 1px 0 #00008b,0 2px 4px rgba(0,0,30,0.7) !important;text-transform:uppercase !important;display:block !important;margin-bottom:4px !important;position:relative !important;z-index:2 !important}
+.fh-hotel-room-yours{font-family:'Righteous',sans-serif !important;font-size:9px !important;letter-spacing:0.15em !important;color:#ffffff !important;text-shadow:-1px -1px 0 #00008b,1px -1px 0 #00008b,-1px 1px 0 #00008b,1px 1px 0 #00008b,0 2px 4px rgba(0,0,30,0.7) !important;text-transform:uppercase !important;display:block !important;margin-top:auto !important;margin-bottom:4px !important;position:relative !important;z-index:2 !important}
 /* Sign glow effect */
 .fh-hotel-sign-glow{position:absolute !important;top:0 !important;left:10% !important;width:80% !important;height:40% !important;pointer-events:none !important;z-index:2 !important;opacity:0 !important;background:radial-gradient(ellipse 60% 50% at 50% 60%,rgba(255,220,120,0.22) 0%,rgba(255,180,60,0.10) 40%,transparent 70%) !important;transition:opacity 0.5s ease !important}
 .fh-hotel-building[data-band="sunset"] .fh-hotel-sign-glow,.fh-hotel-building[data-band="night"] .fh-hotel-sign-glow{opacity:1 !important}
@@ -620,11 +620,12 @@ trait FisHotel_HotelProgram {
 /* Room detail expand — outside building container */
 .fh-hotel-room-detail{display:none;position:relative;width:100%;max-width:1000px;margin:12px auto 0;box-sizing:border-box;background:#1a1a1a !important;border:1px solid #333;border-radius:4px;padding:16px 20px}
 .fh-hotel-room-detail--open{display:block}
-.fh-hotel-room-detail-name{font-family:'Oswald',sans-serif;font-size:20px;color:#e1e1e1 !important;font-weight:600}
-.fh-hotel-room-detail-sci{font-family:'Oswald',sans-serif;font-size:13px;color:#888 !important;font-style:italic;margin-top:2px}
-.fh-hotel-room-detail-meta{font-family:'Oswald',sans-serif;font-size:12px;color:#aaa !important;margin-top:10px;line-height:1.8}
-.fh-hotel-room-detail-yours{font-family:'Oswald',sans-serif;font-size:13px;color:#c8a96e !important;margin-top:10px}
-.fh-hotel-room-detail-close{position:absolute;top:12px;right:16px;background:none;border:none;color:#666;font-size:20px;cursor:pointer;font-family:'Oswald',sans-serif}
+.fh-hotel-room-detail,.fh-hotel-room-detail-name,.fh-hotel-room-detail-sci,.fh-hotel-room-detail-meta,.fh-hotel-room-detail-yours,.fh-hotel-room-detail-close{font-family:'Righteous',sans-serif !important;letter-spacing:0.05em !important}
+.fh-hotel-room-detail-name{font-size:20px;color:#e1e1e1 !important;font-weight:600}
+.fh-hotel-room-detail-sci{font-size:13px;color:#888 !important;font-style:italic;margin-top:2px}
+.fh-hotel-room-detail-meta{font-size:12px;color:#aaa !important;margin-top:10px;line-height:1.8}
+.fh-hotel-room-detail-yours{font-size:13px;color:#c8a96e !important;margin-top:10px}
+.fh-hotel-room-detail-close{position:absolute;top:12px;right:16px;background:none;border:none;color:#666;font-size:20px;cursor:pointer}
 .fh-hotel-room-detail-close:hover{color:#fff}
 
 /* RESPONSIVE */
