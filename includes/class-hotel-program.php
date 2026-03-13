@@ -544,35 +544,38 @@ trait FisHotel_HotelProgram {
 .fh-hotel-building{background:repeating-linear-gradient(to bottom,transparent,transparent 17px,rgba(0,0,0,0.18) 17px,rgba(0,0,0,0.18) 18px),#2a2620 !important;border-radius:0;margin-top:24px;overflow:visible;padding:0 12px;box-shadow:0 8px 40px rgba(0,0,0,0.7),0 2px 0px #1a1612}
 .fh-hotel-building-roof{background:#1a3a5c !important;padding:14px 16px;text-align:center;min-height:48px;display:flex;align-items:center;justify-content:center;border-bottom:3px solid #96885f;box-shadow:0 4px 12px rgba(0,0,0,0.5);position:relative;z-index:2;margin:0 -12px}
 .fh-hotel-building-sign{font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#c8a96e !important;letter-spacing:6px;text-transform:uppercase}
-.fh-hotel-floor{display:flex;gap:10px}
+.fh-hotel-floor{display:flex;gap:20px}
 .fh-hotel-floor + .fh-hotel-floor{border-top:none}
-.fh-floor-1{position:relative;border-bottom:16px solid #3d3830;padding-top:10px}
-.fh-floor-1::after{content:'';position:absolute;bottom:-22px;left:0;right:0;height:6px;background:linear-gradient(to bottom,rgba(0,0,0,0.4),transparent);z-index:1;pointer-events:none}
-.fh-floor-1 .fh-hotel-room{min-height:110px}
+.fh-floor-1{position:relative;border-bottom:22px solid #3a3428;padding-top:10px}
+.fh-floor-1::after{content:'';position:absolute;bottom:-25px;left:0;right:0;height:3px;background:linear-gradient(to right,#2a2620,#5a5040 20%,#5a5040 80%,#2a2620);z-index:1;pointer-events:none}
+.fh-floor-1 .fh-hotel-room{min-height:130px}
 .fh-floor-2{padding-top:10px;padding-bottom:10px}
-.fh-floor-2 .fh-hotel-room{min-height:160px}
-.fh-hotel-room{flex:1;padding:28px 10px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:box-shadow 0.2s ease,filter 0.2s ease;position:relative;border-right:none}
+.fh-floor-2 .fh-hotel-room{min-height:170px}
+/* Room base — 3D box depth */
+.fh-hotel-room{flex:1;padding:28px 10px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:box-shadow 0.2s ease,filter 0.2s ease;position:relative;border-right:none;overflow:hidden}
+.fh-hotel-room::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(to right,transparent,rgba(150,136,95,0.3) 20%,rgba(150,136,95,0.3) 80%,transparent);z-index:2;pointer-events:none}
+.fh-hotel-room::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,rgba(0,0,0,0.4) 20%,rgba(0,0,0,0.4) 80%,transparent);z-index:2;pointer-events:none}
 .fh-hotel-room:last-child{border-right:none}
 .fh-hotel-room:hover:not(.fh-hotel-room--mine){filter:brightness(1.15)}
-.fh-hotel-room-number{font-family:'Courier New',monospace;font-size:10px;font-weight:700;color:#96885f !important;letter-spacing:1px;position:absolute;top:-20px;left:8px}
+.fh-hotel-room-number{font-family:'Courier New',monospace;font-size:10px;font-weight:700;color:#96885f !important;letter-spacing:1px;position:absolute;top:-20px;left:8px;z-index:3}
 .fh-hotel-room-species{font-family:'Oswald',sans-serif;font-size:13px;color:#e1e1e1 !important;text-align:center;margin-top:4px;word-break:break-word}
 .fh-hotel-room-fish{font-size:28px;margin-bottom:4px}
 .fh-hotel-room-qty{font-family:'Oswald',sans-serif;font-size:10px;color:#777 !important;margin-top:4px}
-.fh-hotel-room-yours{font-family:'Courier New',monospace;font-size:9px;color:#96885f !important;letter-spacing:3px;margin-bottom:6px;text-transform:uppercase;display:block}
+.fh-hotel-room-yours{font-family:'Courier New',monospace;font-size:9px;color:#96885f !important;letter-spacing:3px;margin-bottom:8px;text-transform:uppercase;display:block}
 /* States — unassigned (dark, lights off) */
-.fh-hotel-room--unassigned{background:#0e0e12 !important;box-shadow:inset 0 0 30px rgba(0,0,0,0.8),inset 0 -2px 8px rgba(0,0,0,0.5)}
-.fh-hotel-room--unassigned .fh-hotel-room-species{color:#2a2a35 !important;font-size:16px}
+.fh-hotel-room--unassigned{background:radial-gradient(ellipse at 50% 60%,#12121a 0%,#0a0a10 100%) !important;box-shadow:inset 12px 0 20px rgba(0,0,0,0.5),inset -12px 0 20px rgba(0,0,0,0.5),inset 0 10px 16px rgba(0,0,0,0.4),inset 0 -8px 14px rgba(0,0,0,0.35)}
+.fh-hotel-room--unassigned .fh-hotel-room-species{color:#1e1e2a !important;font-size:16px}
 /* States — occupied (warm lamp glow) */
-.fh-hotel-room--occupied{background:radial-gradient(ellipse at 50% 30%,#f5e8c8 0%,#e8d5a0 40%,#c8b870 100%) !important;box-shadow:inset 0 0 20px rgba(150,100,20,0.2),inset 0 -4px 12px rgba(80,50,0,0.3)}
+.fh-hotel-room--occupied{background:radial-gradient(ellipse at 50% 55%,#fff8e0 0%,#f5e4a0 35%,#d4b855 70%,#8a6820 100%) !important;box-shadow:inset 12px 0 20px rgba(0,0,0,0.5),inset -12px 0 20px rgba(0,0,0,0.5),inset 0 10px 16px rgba(0,0,0,0.4),inset 0 -8px 14px rgba(0,0,0,0.35)}
 .fh-hotel-room--occupied .fh-hotel-room-species{color:#3d2a0a !important;font-size:12px}
 .fh-hotel-room--occupied .fh-hotel-room-fish{font-size:28px}
 .fh-hotel-room--occupied .fh-hotel-room-qty{color:#7a5a2a !important;font-size:10px}
 .fh-hotel-room--occupied .fh-hotel-room-number{color:#7a5a2a !important}
 /* States — no arrival (dark with red warmth) */
-.fh-hotel-room--noarrival{background:#110a0a !important;box-shadow:inset 0 0 20px rgba(80,0,0,0.3)}
+.fh-hotel-room--noarrival{background:radial-gradient(ellipse at 50% 60%,#1a0e0e 0%,#110a0a 100%) !important;box-shadow:inset 12px 0 20px rgba(0,0,0,0.5),inset -12px 0 20px rgba(0,0,0,0.5),inset 0 10px 16px rgba(0,0,0,0.4),inset 0 -8px 14px rgba(0,0,0,0.35),inset 0 0 20px rgba(80,0,0,0.3)}
 .fh-hotel-room--noarrival .fh-hotel-room-species{color:#5a2a2a !important;font-size:10px}
 /* States — customer's room (gold frame glow) */
-.fh-hotel-room--mine{background:radial-gradient(ellipse at 50% 25%,#fff5d6 0%,#f5e8a8 40%,#d4c070 100%) !important;box-shadow:0 0 0 2px #96885f,0 0 20px rgba(150,136,95,0.5),0 0 45px rgba(150,136,95,0.2) !important}
+.fh-hotel-room--mine{background:radial-gradient(ellipse at 50% 50%,#fffce8 0%,#fef0a0 30%,#e8cc60 65%,#9a7830 100%) !important;box-shadow:0 0 0 3px #96885f,0 0 25px rgba(150,136,95,0.7),0 0 55px rgba(150,136,95,0.35),0 0 80px rgba(150,136,95,0.15),inset 12px 0 20px rgba(0,0,0,0.5),inset -12px 0 20px rgba(0,0,0,0.5),inset 0 10px 16px rgba(0,0,0,0.4),inset 0 -8px 14px rgba(0,0,0,0.35) !important}
 .fh-hotel-room--mine .fh-hotel-room-number{color:#96885f !important}
 .fh-hotel-building-base{height:10px;background:linear-gradient(to bottom,#1a1612,#0d0b09) !important;margin:0 -12px}
 /* Room detail expand */
@@ -601,11 +604,11 @@ trait FisHotel_HotelProgram {
     .fh-hotel-postcard-stamp-text{font-size:7px}
     .fh-hotel-postcard-postmark{width:65px;height:65px}
     .fh-hotel-postcard-vertical-text{display:none}
-    .fh-floor-1{flex-wrap:wrap;gap:6px;border-bottom-width:10px}
-    .fh-floor-1 .fh-hotel-room{flex:1 1 48%;min-height:90px}
-    .fh-floor-2{flex-direction:column;gap:6px}
-    .fh-floor-2 .fh-hotel-room{min-height:120px}
-    .fh-hotel-room-number{top:-16px;font-size:8px}
+    .fh-floor-1{flex-wrap:wrap;gap:10px;border-bottom-width:14px}
+    .fh-floor-1 .fh-hotel-room{flex:1 1 48%;min-height:100px}
+    .fh-floor-2{flex-direction:column;gap:10px}
+    .fh-floor-2 .fh-hotel-room{min-height:130px}
+    .fh-hotel-room-number{top:-14px;font-size:8px}
 }
 </style>
 

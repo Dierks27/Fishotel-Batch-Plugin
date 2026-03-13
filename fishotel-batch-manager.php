@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.17 - Dollhouse cutaway hotel building CSS redesign.
- * Version:           5.17
+ * Description:       v5.18 - Dollhouse depth: thick walls, 3D room interiors, floor/ceiling lines.
+ * Version:           5.18
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.17' );
+define( 'FISHOTEL_VERSION', '5.18' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
