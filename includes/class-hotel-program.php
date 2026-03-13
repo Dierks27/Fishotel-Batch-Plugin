@@ -1479,9 +1479,9 @@ trait FisHotel_HotelProgram {
     private function hotel_tab_layers() {
         $this->hotel_seed_layer_defaults();
         $all_configs = get_option( 'fishotel_layer_configs', [] );
-        $scene_types = [ 'pool', 'lobby', 'spa', 'dining', 'beach', 'bar', 'suite', 'graduation', 'morning', 'night' ];
+        $scene_types = $this->hotel_get_scene_types();
         $current_st  = sanitize_key( $_GET['scene_type'] ?? 'pool' );
-        if ( ! in_array( $current_st, $scene_types, true ) ) $current_st = 'pool';
+        if ( ! in_array( $current_st, $scene_types, true ) ) $current_st = $scene_types[0] ?? 'pool';
         $layers      = $all_configs[ $current_st ] ?? [];
 
         $assets_dir  = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene-layers/';
@@ -1530,7 +1530,36 @@ trait FisHotel_HotelProgram {
         .fh-layer-notice{padding:8px 14px;border-radius:4px;margin-bottom:12px;display:none;font-size:13px}
         .fh-layer-notice.success{display:block;background:#ecf7ed;border:1px solid #46b450;color:#2e7d32}
         .fh-layer-notice.error{display:block;background:#fbeaea;border:1px solid #dc3232;color:#8b0000}
+        .fh-st-manager{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:14px 18px;margin-bottom:18px;display:none}
+        .fh-st-manager.open{display:block}
+        .fh-st-toggle{font-size:12px;color:#1a3a5c;cursor:pointer;margin-bottom:10px;display:inline-block}
+        .fh-st-toggle:hover{text-decoration:underline}
+        .fh-st-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+        .fh-st-tag{display:inline-flex;align-items:center;gap:4px;background:#e8f0f8;color:#1a3a5c;padding:4px 10px;border-radius:14px;font-size:12px}
+        .fh-st-tag button{background:none;border:none;color:#a00;cursor:pointer;font-size:14px;padding:0 2px;line-height:1}
+        .fh-st-tag button:hover{color:#d00}
+        .fh-st-add{display:flex;gap:6px;align-items:center;margin-bottom:10px}
+        .fh-st-add input{padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;width:180px}
         </style>
+
+        <!-- Scene Types Manager -->
+        <a class="fh-st-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'▾ Hide Scene Types':'▸ Manage Scene Types'">▸ Manage Scene Types</a>
+        <div class="fh-st-manager" id="fh-st-manager" data-nonce="<?php echo esc_attr( wp_create_nonce( 'fishotel_scene_types' ) ); ?>">
+            <div class="fh-st-list" id="fh-st-list">
+                <?php foreach ( $scene_types as $st ) : ?>
+                    <span class="fh-st-tag" data-type="<?php echo esc_attr( $st ); ?>">
+                        <?php echo esc_html( $st ); ?>
+                        <button type="button" onclick="fhStRemove(this)" title="Remove">&times;</button>
+                    </span>
+                <?php endforeach; ?>
+            </div>
+            <div class="fh-st-add">
+                <input type="text" id="fh-st-new" placeholder="new-scene-type" pattern="[a-z0-9\-]+">
+                <button type="button" class="button button-small" onclick="fhStAdd()">Add Scene Type</button>
+            </div>
+            <button type="button" class="button button-primary button-small" onclick="fhStSave()">Save Scene Types</button>
+            <span id="fh-st-status" style="margin-left:10px;font-size:12px;color:#46b450;display:none;"></span>
+        </div>
 
         <div class="fh-layer-scene-tabs">
             <?php foreach ( $scene_types as $st ) : ?>
@@ -1588,20 +1617,7 @@ trait FisHotel_HotelProgram {
         </script>
 
         <hr style="margin:30px 0;">
-        <h3><span class="dashicons dashicons-upload" style="margin-right:4px;"></span> Scene Layer Assets</h3>
-        <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;">
-            <input type="file" id="fh-layer-upload-file" accept=".png">
-            <button type="button" class="button" onclick="fhLayerUploadAsset()">Upload PNG</button>
-        </div>
-        <div id="fh-asset-grid" class="fh-asset-grid">
-            <?php foreach ( $assets as $a ) : ?>
-                <div class="fh-asset-item" data-filename="<?php echo esc_attr( $a ); ?>">
-                    <img src="<?php echo esc_url( $assets_url . $a ); ?>" alt="">
-                    <div class="fh-asset-name"><?php echo esc_html( $a ); ?></div>
-                    <button class="fh-asset-del" onclick="fhLayerDeleteAsset('<?php echo esc_js( $a ); ?>')" title="Delete asset"><span class="dashicons dashicons-trash"></span></button>
-                </div>
-            <?php endforeach; ?>
-        </div>
+        <p style="color:#666;font-size:13px;">To upload and manage assets, visit the <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-hotel-program&tab=assets' ) ); ?>">Assets tab</a>.</p>
 
         <script>
         (function(){
@@ -1609,7 +1625,6 @@ trait FisHotel_HotelProgram {
             var nonce      = '<?php echo esc_js( $nonce ); ?>';
             var assetNonce = '<?php echo esc_js( $asset_nonce ); ?>';
             var sceneType  = '<?php echo esc_js( $current_st ); ?>';
-            var assetsUrl = '<?php echo esc_js( $assets_url ); ?>';
 
             function notice(msg, type) {
                 var el = document.getElementById('fh-layer-notice');
@@ -1733,63 +1748,51 @@ trait FisHotel_HotelProgram {
                 list.appendChild(formEl);
             };
 
-            window.fhLayerUploadAsset = function() {
-                var fileInput = document.getElementById('fh-layer-upload-file');
-                if (!fileInput.files.length) { notice('Select a PNG file first.', 'error'); return; }
-                var fd = new FormData();
-                fd.append('action', 'fishotel_upload_layer_asset');
-                fd.append('nonce', nonce);
-                fd.append('layer_asset', fileInput.files[0]);
-                fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
-                    .then(function(r){ return r.json(); })
-                    .then(function(r){
-                        if (r.success) {
-                            notice('Uploaded: ' + r.data.filename, 'success');
-                            fileInput.value = '';
-                            /* Add to asset grid */
-                            var grid = document.getElementById('fh-asset-grid');
-                            var item = document.createElement('div');
-                            item.className = 'fh-asset-item';
-                            item.dataset.filename = r.data.filename;
-                            item.innerHTML = '<img src="' + assetsUrl + r.data.filename + '" alt="">'
-                                + '<div class="fh-asset-name">' + r.data.filename + '</div>'
-                                + '<button class="fh-asset-del" onclick="fhLayerDeleteAsset(\'' + r.data.filename + '\')" title="Delete asset"><span class="dashicons dashicons-trash"></span></button>';
-                            grid.appendChild(item);
-                            /* Refresh asset dropdowns */
-                            var selects = document.querySelectorAll('select[name=layer_asset]');
-                            selects.forEach(function(sel){
-                                var opt = document.createElement('option');
-                                opt.value = r.data.filename;
-                                opt.textContent = r.data.filename;
-                                sel.appendChild(opt);
-                            });
-                        } else {
-                            notice(r.data && r.data.message || 'Upload failed.', 'error');
-                        }
-                    })
-                    .catch(function(){ notice('Network error.', 'error'); });
+            /* ── Scene Types manager ── */
+            window.fhStRemove = function(btn) {
+                var tag = btn.closest('.fh-st-tag');
+                var type = tag.dataset.type;
+                var configs = <?php echo wp_json_encode( $all_configs ); ?>;
+                if (configs[type] && configs[type].length) {
+                    if (!confirm('Scene type "' + type + '" has ' + configs[type].length + ' layer(s). Remove anyway?')) return;
+                }
+                tag.remove();
             };
 
-            window.fhLayerDeleteAsset = function(filename) {
-                if (!confirm('Delete asset "' + filename + '"? This may break layers using it.')) return;
+            window.fhStAdd = function() {
+                var inp = document.getElementById('fh-st-new');
+                var val = inp.value.trim().toLowerCase().replace(/[^a-z0-9\-]/g, '');
+                if (!val) { alert('Enter a valid scene type (lowercase, alphanumeric, hyphens).'); return; }
+                var existing = Array.from(document.querySelectorAll('.fh-st-tag')).map(function(t){ return t.dataset.type; });
+                if (existing.indexOf(val) !== -1) { alert('Scene type "' + val + '" already exists.'); return; }
+                var list = document.getElementById('fh-st-list');
+                var span = document.createElement('span');
+                span.className = 'fh-st-tag';
+                span.dataset.type = val;
+                span.innerHTML = val + ' <button type="button" onclick="fhStRemove(this)" title="Remove">&times;</button>';
+                list.appendChild(span);
+                inp.value = '';
+            };
+
+            window.fhStSave = function() {
+                var types = Array.from(document.querySelectorAll('.fh-st-tag')).map(function(t){ return t.dataset.type; });
+                if (!types.length) { alert('Must have at least one scene type.'); return; }
                 var fd = new FormData();
-                fd.append('action', 'fishotel_delete_layer_asset');
-                fd.append('nonce', nonce);
-                fd.append('filename', filename);
+                fd.append('action', 'fishotel_save_scene_types');
+                fd.append('nonce', document.getElementById('fh-st-manager').dataset.nonce);
+                fd.append('scene_types', JSON.stringify(types));
                 fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
                     .then(function(r){ return r.json(); })
                     .then(function(r){
                         if (r.success) {
-                            notice('Deleted: ' + filename, 'success');
-                            var item = document.querySelector('.fh-asset-item[data-filename="' + filename + '"]');
-                            if (item) item.remove();
-                            /* Remove from dropdowns */
-                            document.querySelectorAll('select[name=layer_asset] option[value="' + filename + '"]').forEach(function(o){ o.remove(); });
+                            var st = document.getElementById('fh-st-status');
+                            st.textContent = 'Saved! Reloading…';
+                            st.style.display = '';
+                            setTimeout(function(){ window.location.reload(); }, 800);
                         } else {
-                            notice(r.data && r.data.message || 'Delete failed.', 'error');
+                            alert(r.data && r.data.message || 'Save failed.');
                         }
-                    })
-                    .catch(function(){ notice('Network error.', 'error'); });
+                    });
             };
 
             window.fhLayerShowOnAll = function(cb) {
@@ -1979,6 +1982,19 @@ trait FisHotel_HotelProgram {
         return ob_get_clean();
     }
 
+    /* ─────────────────────────────────────────────
+     *  Scene Types (dynamic, stored in WP option)
+     * ───────────────────────────────────────────── */
+
+    private function hotel_get_scene_types() {
+        $defaults = [ 'pool', 'lobby', 'spa', 'dining', 'beach', 'bar', 'suite', 'graduation', 'morning', 'night' ];
+        $types = get_option( 'fishotel_scene_types', $defaults );
+        if ( ! is_array( $types ) || empty( $types ) ) {
+            return $defaults;
+        }
+        return array_values( $types );
+    }
+
     /* ═════════════════════════════════════════════
      *  TAB: Assets  (Asset Library)
      * ═════════════════════════════════════════════ */
@@ -1993,7 +2009,7 @@ trait FisHotel_HotelProgram {
         }
 
         $nonce       = wp_create_nonce( 'fishotel_asset_library' );
-        $scene_types = [ 'pool', 'lobby', 'spa', 'dining', 'beach', 'bar', 'suite', 'graduation', 'morning', 'night' ];
+        $scene_types = $this->hotel_get_scene_types();
         $time_bands  = [ 'morning', 'afternoon', 'evening', 'dusk', 'night' ];
         $categories  = [ 'layer' => 'Layers', 'background' => 'Backgrounds', 'stamp' => 'Stamps' ];
         $folder_map  = [ 'layer' => 'scene-layers', 'background' => 'scene-backgrounds', 'stamp' => 'stamps' ];

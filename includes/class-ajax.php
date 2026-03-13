@@ -413,6 +413,37 @@ trait FisHotel_Ajax {
     }
 
     /* ─────────────────────────────────────────────
+     *  SCENE TYPES AJAX
+     * ───────────────────────────────────────────── */
+
+    public function ajax_save_scene_types() {
+        check_ajax_referer( 'fishotel_scene_types', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+
+        $raw = json_decode( wp_unslash( $_POST['scene_types'] ?? '[]' ), true );
+        if ( ! is_array( $raw ) || empty( $raw ) ) {
+            wp_send_json_error( [ 'message' => 'Must have at least one scene type.' ] );
+        }
+
+        $types = [];
+        foreach ( $raw as $t ) {
+            $clean = preg_replace( '/[^a-z0-9\-]/', '', strtolower( trim( $t ) ) );
+            if ( $clean && ! in_array( $clean, $types, true ) ) {
+                $types[] = $clean;
+            }
+        }
+
+        if ( empty( $types ) ) {
+            wp_send_json_error( [ 'message' => 'No valid scene types after sanitization.' ] );
+        }
+
+        update_option( 'fishotel_scene_types', $types );
+        wp_send_json_success( [ 'scene_types' => $types ] );
+    }
+
+    /* ─────────────────────────────────────────────
      *  ASSET LIBRARY AJAX
      * ───────────────────────────────────────────── */
 

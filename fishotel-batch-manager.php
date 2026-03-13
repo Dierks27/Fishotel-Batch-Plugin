@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.12 - Asset Library system for Hotel Program media management.
- * Version:           5.12
+ * Description:       v5.13 - Dynamic scene types, remove old layer uploader, cleanup.
+ * Version:           5.13
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.12' );
+define( 'FISHOTEL_VERSION', '5.13' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -234,6 +234,9 @@ class FisHotel_Batch_Manager {
         add_action( 'wp_ajax_fishotel_upload_layer_asset',  [$this, 'ajax_upload_layer_asset'] );
         add_action( 'wp_ajax_fishotel_delete_layer_asset',  [$this, 'ajax_delete_layer_asset'] );
         add_action( 'wp_ajax_fishotel_get_layer_assets',    [$this, 'ajax_get_layer_assets'] );
+
+        // Scene Types AJAX
+        add_action( 'wp_ajax_fishotel_save_scene_types',    [$this, 'ajax_save_scene_types'] );
 
         // Asset Library AJAX
         add_action( 'wp_ajax_fishotel_scan_assets',         [$this, 'ajax_scan_assets'] );
