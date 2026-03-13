@@ -613,10 +613,13 @@ trait FisHotel_HotelProgram {
 .fh-hotel-dots{text-align:center;padding:10px 0 0}
 .fh-hotel-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#444;margin:0 4px;cursor:pointer}
 .fh-hotel-dot--active{background:#c9a84c}
-/* Building 2 — placeholder */
-.fh-hotel-building-2{background:#111827;border:1px solid #2a2a2a;border-radius:4px;aspect-ratio:1360/768;max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:16px;padding:40px;position:relative;box-shadow:0 8px 48px rgba(0,0,0,0.8)}
-.fh-hotel-building-2::before{content:'ILLUSTRATION COMING SOON';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:0.2em;color:#222;pointer-events:none}
-.fh-hotel-building-2 .fh-hotel-room{position:relative !important;width:calc(50% - 8px);aspect-ratio:4/3}
+/* Building 2 — Beach Hut illustration */
+.fh-hotel-building-2{position:relative !important;background-size:100% 100% !important;background-repeat:no-repeat !important;aspect-ratio:1360/768 !important;width:100% !important;max-width:1000px !important;margin:0 auto !important;padding:0 !important;border:none !important;box-shadow:0 8px 48px rgba(0,0,0,0.8) !important;overflow:hidden !important;border-radius:4px !important}
+.fh-hotel-building-2 .fh-hotel-room{position:absolute !important}
+.fh-hotel-building-2 .fh-hotel-room[data-room="301"]{left:15.51% !important;top:54.43% !important;width:21.76% !important;height:26.56% !important}
+.fh-hotel-building-2 .fh-hotel-room[data-room="302"]{left:62.21% !important;top:54.43% !important;width:22.13% !important;height:26.56% !important}
+.fh-hotel-building-2[data-band="sunset"] .fh-hotel-sign-glow,.fh-hotel-building-2[data-band="night"] .fh-hotel-sign-glow{opacity:1 !important}
+.fh-hotel-building-2[data-band="night"] .fh-hotel-sign-glow{background:radial-gradient(ellipse 60% 50% at 50% 60%,rgba(255,230,140,0.28) 0%,rgba(255,190,80,0.14) 40%,transparent 70%) !important}
 /* Room detail expand — outside building container */
 .fh-hotel-room-detail{display:none;position:relative;width:100%;max-width:1000px;margin:12px auto 0;box-sizing:border-box;background:#1a1a1a !important;border:1px solid #333;border-radius:4px;padding:16px 20px}
 .fh-hotel-room-detail--open{display:block}
@@ -772,10 +775,29 @@ trait FisHotel_HotelProgram {
           </div>
           <div class="fh-hotel-slide-label">MAIN BUILDING &middot; TANKS 101&ndash;204</div>
         </div>
-        <!-- Slide 2: QT Annex -->
+        <!-- Slide 2: QT Annex — Beach Huts -->
+        <?php
+        // Beach Hut time-band image swap
+        $b2_band = 'day';
+        $b2_file = 'Beach-Hut-Day.png';
+        if ( $hour >= 5 && $hour < 16 ) {
+            $b2_band = 'day';
+            $b2_file = 'Beach-Hut-Day.png';
+        } elseif ( $hour >= 16 && $hour < 20 ) {
+            $b2_band = 'sunset';
+            $b2_file = 'Beach-Hut-Sunset.png';
+        } else {
+            $b2_band = 'night';
+            $b2_file = 'Beach-Hut-Night.png';
+        }
+        if ( ! file_exists( $img_path . $b2_file ) ) {
+            $b2_file = 'Beach-Hut-Night.png';
+        }
+        $b2_bg_url = $hotel_img_url . $b2_file;
+        ?>
         <div class="fh-hotel-slide">
-          <div class="fh-hotel-building-2">
-            <?php /* Building 2 — $band is available when illustration images are ready */ ?>
+          <div class="fh-hotel-building-2" style="background-image:url('<?php echo esc_url( $b2_bg_url ); ?>');" data-band="<?php echo esc_attr( $b2_band ); ?>">
+            <div class="fh-hotel-sign-glow"></div>
             <?php foreach ( $qt_rooms as $tank_id ) :
                 $fish_list = $room_map[ $tank_id ];
                 $is_mine   = $logged_in && isset( $customer_rooms[ $tank_id ] );
@@ -797,7 +819,7 @@ trait FisHotel_HotelProgram {
                 </div>
             <?php endforeach; ?>
           </div>
-          <div class="fh-hotel-slide-label">QT ANNEX &middot; TANKS 301&ndash;302</div>
+          <div class="fh-hotel-slide-label">QT ANNEX &middot; BEACH HUTS 301&ndash;302</div>
         </div>
       </div>
       <button class="fh-hotel-prev" aria-label="Previous">&#8249;</button>
