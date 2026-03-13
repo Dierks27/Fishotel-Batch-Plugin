@@ -573,8 +573,8 @@ trait FisHotel_HotelProgram {
 .fh-hotel-room--occupied[data-room="101"],.fh-hotel-room--mine[data-room="101"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-101-on.jpg') !important}
 .fh-hotel-room--occupied[data-room="102"],.fh-hotel-room--mine[data-room="102"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-102-on.jpg') !important}
 .fh-hotel-room--occupied[data-room="103"],.fh-hotel-room--mine[data-room="103"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-103-on.jpg') !important}
-.fh-hotel-room--occupied[data-room="301"],.fh-hotel-room--mine[data-room="301"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-101-on.jpg') !important}
-.fh-hotel-room--occupied[data-room="302"],.fh-hotel-room--mine[data-room="302"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-102-on.jpg') !important}
+.fh-hotel-room--occupied[data-room="301"],.fh-hotel-room--mine[data-room="301"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-301-on.jpg') !important}
+.fh-hotel-room--occupied[data-room="302"],.fh-hotel-room--mine[data-room="302"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-302-on.jpg') !important}
 /* States — unassigned (transparent, dark building shows through) */
 .fh-hotel-room--unassigned{background-color:transparent !important;box-shadow:none !important}
 .fh-hotel-room--unassigned .fh-hotel-room-species{display:none !important}
