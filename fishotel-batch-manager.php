@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.18 - Dollhouse depth: thick walls, 3D room interiors, floor/ceiling lines.
- * Version:           5.18
+ * Description:       v5.19 - Image-based hotel building with sprite-sheet lit rooms.
+ * Version:           5.19
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.18' );
+define( 'FISHOTEL_VERSION', '5.19' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
