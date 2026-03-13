@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.28 - Beach Hut illustration for Building 2 (QT Annex).
- * Version:           5.28
+ * Description:       v5.29 - Disable lazy-load transition on building backgrounds.
+ * Version:           5.29
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.28' );
+define( 'FISHOTEL_VERSION', '5.29' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
