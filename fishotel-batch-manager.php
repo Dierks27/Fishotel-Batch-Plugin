@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.21 - Fix lit rooms (individual images), fix hover flash.
- * Version:           5.21
+ * Description:       v5.22 - Two-building slider, dim overlay, QT Annex 301-302, time-band images.
+ * Version:           5.22
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.21' );
+define( 'FISHOTEL_VERSION', '5.22' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
