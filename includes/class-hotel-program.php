@@ -618,9 +618,7 @@ trait FisHotel_HotelProgram {
 .fh-hotel-building-2 .fh-hotel-room{position:absolute !important}
 .fh-hotel-building-2 .fh-hotel-room[data-room="301"]{left:15.51% !important;top:54.43% !important;width:21.76% !important;height:26.56% !important}
 .fh-hotel-building-2 .fh-hotel-room[data-room="302"]{left:62.21% !important;top:54.43% !important;width:22.13% !important;height:26.56% !important}
-.fh-hotel-building-2[data-band="sunset"] .fh-hotel-sign-glow,.fh-hotel-building-2[data-band="night"] .fh-hotel-sign-glow{opacity:1 !important}
-.fh-hotel-building-2[data-band="night"] .fh-hotel-sign-glow{background:radial-gradient(ellipse 60% 50% at 50% 60%,rgba(255,230,140,0.28) 0%,rgba(255,190,80,0.14) 40%,transparent 70%) !important}
-.fh-hotel-building,.fh-hotel-building-2,.fh-hotel-building .fh-hotel-sign-glow,.fh-hotel-building-2 .fh-hotel-sign-glow{transition:none !important}
+.fh-hotel-building,.fh-hotel-building-2,.fh-hotel-building .fh-hotel-sign-glow{transition:none !important}
 /* Room detail expand — outside building container */
 .fh-hotel-room-detail{display:none;position:relative;width:100%;max-width:1000px;margin:12px auto 0;box-sizing:border-box;background:#1a1a1a !important;border:1px solid #333;border-radius:4px;padding:16px 20px}
 .fh-hotel-room-detail--open{display:block}
@@ -798,7 +796,6 @@ trait FisHotel_HotelProgram {
         ?>
         <div class="fh-hotel-slide">
           <div class="fh-hotel-building-2" style="background-image:url('<?php echo esc_url( $b2_bg_url ); ?>');" data-band="<?php echo esc_attr( $b2_band ); ?>">
-            <div class="fh-hotel-sign-glow"></div>
             <?php foreach ( $qt_rooms as $tank_id ) :
                 $fish_list = $room_map[ $tank_id ];
                 $is_mine   = $logged_in && isset( $customer_rooms[ $tank_id ] );
