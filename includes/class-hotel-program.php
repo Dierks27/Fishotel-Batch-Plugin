@@ -492,20 +492,20 @@ trait FisHotel_HotelProgram {
 .fh-hotel-postcard-back::before{content:'';position:absolute;inset:0;opacity:0.05;pointer-events:none;z-index:1;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")}
 .fh-hotel-postcard-back-left{flex:2;padding:28px 24px;display:flex;flex-direction:column;border-right:3px double #8b6914;position:relative;z-index:2}
-.fh-hotel-postcard-back-correspondence{font-family:'Courier New',monospace;font-size:9px;color:#8b6914 !important;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px}
-.fh-hotel-postcard-back-message{font-family:'Special Elite',cursive;font-size:13px;color:#2e2418 !important;line-height:1.8;flex:1}
-.fh-hotel-postcard-back-signature{font-family:'Klee One',cursive;font-size:13px;color:#8b6914 !important;margin-top:16px}
+.fh-hotel-postcard-back-correspondence{font-family:'Courier New',monospace;font-size:12px;color:#8b6914 !important;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px}
+.fh-hotel-postcard-back-message{font-family:'Special Elite',cursive;font-size:16px;color:#2e2418 !important;line-height:1.8;flex:1}
+.fh-hotel-postcard-back-signature{font-family:'Klee One',cursive;font-size:15px;color:#8b6914 !important;margin-top:16px}
 .fh-hotel-postcard-back-right{width:240px;padding:20px;display:flex;flex-direction:column;position:relative;z-index:2}
 .fh-hotel-postcard-stamp-area{display:flex;justify-content:flex-end}
-.fh-hotel-postcard-stamp{width:50px;height:60px;border:2px dashed #8b6914;display:flex;align-items:center;justify-content:center;font-size:28px;background:#faf7f0 !important;flex-direction:column;gap:2px}
-.fh-hotel-postcard-stamp-text{font-family:'Courier New',monospace;font-size:7px;color:#8b6914 !important;letter-spacing:1px;text-transform:uppercase;text-align:center;line-height:1.2}
+.fh-hotel-postcard-stamp{width:100px;height:120px;border:2px dashed #8b6914;display:flex;align-items:center;justify-content:center;font-size:28px;background:#faf7f0 !important;flex-direction:column;gap:2px}
+.fh-hotel-postcard-stamp-text{font-family:'Courier New',monospace;font-size:10px;color:#8b6914 !important;letter-spacing:1px;text-transform:uppercase;text-align:center;line-height:1.2}
 .fh-hotel-postcard-postmark{margin-top:12px;width:90px;height:90px;border:2px solid #8b0000;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-12deg);opacity:0.8}
-.fh-hotel-postcard-postmark-city{font-family:'Courier New',monospace;font-size:8px;font-weight:700;color:#8b0000 !important;letter-spacing:0.08em;text-align:center}
-.fh-hotel-postcard-postmark-date{font-family:'Courier New',monospace;font-size:7px;color:#8b0000 !important;margin-top:2px}
+.fh-hotel-postcard-postmark-city{font-family:'Courier New',monospace;font-size:10px;font-weight:700;color:#8b0000 !important;letter-spacing:0.08em;text-align:center}
+.fh-hotel-postcard-postmark-date{font-family:'Courier New',monospace;font-size:9px;color:#8b0000 !important;margin-top:2px}
 .fh-hotel-postcard-address-lines{margin-top:auto}
-.fh-hotel-postcard-address-label{font-family:'Courier New',monospace;font-size:9px;color:#8b6914 !important;margin-bottom:8px;letter-spacing:2px;text-transform:uppercase}
+.fh-hotel-postcard-address-label{font-family:'Courier New',monospace;font-size:12px;color:#8b6914 !important;margin-bottom:8px;letter-spacing:2px;text-transform:uppercase}
 .fh-hotel-postcard-address-line{height:1px;background:#8b6914 !important;margin:10px 0;opacity:0.4}
-.fh-hotel-postcard-vertical-text{position:absolute;right:6px;top:50%;transform:rotate(90deg) translateX(-50%);transform-origin:center;font-family:'Courier New',monospace;font-size:9px;color:#8b6914 !important;letter-spacing:4px;text-transform:uppercase;white-space:nowrap;opacity:0.6}
+.fh-hotel-postcard-vertical-text{position:absolute;right:6px;top:50%;transform:rotate(90deg) translateX(-50%);transform-origin:center;font-family:'Courier New',monospace;font-size:11px;color:#8b6914 !important;letter-spacing:4px;text-transform:uppercase;white-space:nowrap;opacity:0.6}
 
 /* HOTEL BUILDING */
 .fh-hotel-building{background:#1a1a1a !important;border:1px solid #3a3a3a;border-radius:4px;margin-top:24px;overflow:hidden}
@@ -553,9 +553,8 @@ trait FisHotel_HotelProgram {
     .fh-hotel-card[data-flipped="true"] .fh-hotel-postcard-back{display:flex;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
     .fh-hotel-postcard-back-right{width:160px;padding:14px}
     .fh-hotel-postcard-back-left{padding:20px 16px}
-    .fh-hotel-postcard-stamp{width:38px;height:46px}
-    .fh-hotel-postcard-stamp-text{font-size:5px}
-    .fh-hotel-postcard-stamp span:last-child{font-size:16px !important}
+    .fh-hotel-postcard-stamp{width:76px;height:92px}
+    .fh-hotel-postcard-stamp-text{font-size:7px}
     .fh-hotel-postcard-postmark{width:65px;height:65px}
     .fh-hotel-postcard-vertical-text{display:none}
     .fh-floor-1{flex-wrap:wrap}
@@ -604,7 +603,7 @@ trait FisHotel_HotelProgram {
                     <div class="fh-hotel-postcard-stamp-area">
                         <div class="fh-hotel-postcard-stamp">
                             <span class="fh-hotel-postcard-stamp-text">PLACE<br>STAMP<br>HERE</span>
-                            <span style="font-size:22px;">&#x1F420;</span>
+
                         </div>
                     </div>
                     <div class="fh-hotel-postcard-postmark">
