@@ -132,7 +132,7 @@ trait FisHotel_HotelProgram {
         $base     = sanitize_key( $scene_type );
         $dir      = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene/';
         $url_base = 'assists/scene/';
-        $bands    = [ 'morning', 'afternoon', 'evening', 'dusk', 'night' ];
+        $bands    = [ 'morning', 'afternoon', 'sunset', 'night' ];
         foreach ( $bands as $band ) {
             $fn = 'hotel-' . $base . '-scene-' . $scene_number . '-' . $band . '.jpg';
             if ( file_exists( $dir . $fn ) ) {
@@ -156,7 +156,7 @@ trait FisHotel_HotelProgram {
         $base     = sanitize_key( $scene_type );
         $dir      = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene/';
         $url_base = 'assists/scene/';
-        $bands    = [ 'morning', 'afternoon', 'evening', 'dusk', 'night' ];
+        $bands    = [ 'morning', 'afternoon', 'sunset', 'night' ];
         $map      = [];
         foreach ( $bands as $band ) {
             $fn = 'hotel-' . $base . '-scene-' . $scene_number . '-' . $band . '.jpg';
@@ -172,25 +172,43 @@ trait FisHotel_HotelProgram {
     }
 
     private function hotel_seed_layer_defaults() {
-        if ( false !== get_option( 'fishotel_layer_configs' ) ) return;
-        $defaults = [
-            'pool' => [
-                [ 'id' => 'pool_light_shaft', 'asset' => 'light-shaft.png', 'label' => 'Light Shaft', 'x' => '45', 'y' => '0', 'width' => '25', 'blend' => 'screen', 'opacity' => '0.4', 'animation' => 'shimmer', 'speed' => '20', 'pause' => '0', 'z' => '5', 'show_on' => [ 'afternoon', 'evening' ] ],
-                [ 'id' => 'pool_bubble_stream', 'asset' => 'bubble-stream.png', 'label' => 'Bubble Stream', 'x' => '20', 'y' => '55', 'width' => '8', 'blend' => 'screen', 'opacity' => '0.5', 'animation' => 'drift-up', 'speed' => '8', 'pause' => '12', 'z' => '10', 'show_on' => [ 'all' ] ],
-                [ 'id' => 'pool_glow', 'asset' => 'pool-glow.png', 'label' => 'Pool Glow', 'x' => '0', 'y' => '60', 'width' => '100', 'blend' => 'overlay', 'opacity' => '0.3', 'animation' => 'pulse', 'speed' => '4', 'pause' => '0', 'z' => '3', 'show_on' => [ 'dusk', 'night' ] ],
-            ],
-            'lobby' => [
-                [ 'id' => 'lobby_dust_motes', 'asset' => 'dust-motes.png', 'label' => 'Dust Motes', 'x' => '30', 'y' => '5', 'width' => '40', 'blend' => 'screen', 'opacity' => '0.3', 'animation' => 'drift-left-right', 'speed' => '25', 'pause' => '0', 'z' => '5', 'show_on' => [ 'morning', 'afternoon' ] ],
-                [ 'id' => 'lobby_light_shaft', 'asset' => 'light-shaft.png', 'label' => 'Light Shaft', 'x' => '55', 'y' => '0', 'width' => '20', 'blend' => 'screen', 'opacity' => '0.35', 'animation' => 'shimmer', 'speed' => '18', 'pause' => '0', 'z' => '4', 'show_on' => [ 'morning', 'afternoon', 'evening' ] ],
-            ],
-        ];
-        update_option( 'fishotel_layer_configs', $defaults );
+        $existing = get_option( 'fishotel_layer_configs' );
+        if ( $existing === false ) {
+            $defaults = [
+                'pool-scene-01' => [
+                    [ 'id' => 'pool_light_shaft', 'asset' => 'light-shaft.png', 'label' => 'Light Shaft', 'x' => '45', 'y' => '0', 'width' => '25', 'blend' => 'screen', 'opacity' => '0.4', 'animation' => 'shimmer', 'speed' => '20', 'pause' => '0', 'z' => '5', 'show_on' => [ 'afternoon', 'sunset' ] ],
+                    [ 'id' => 'pool_bubble_stream', 'asset' => 'bubble-stream.png', 'label' => 'Bubble Stream', 'x' => '20', 'y' => '55', 'width' => '8', 'blend' => 'screen', 'opacity' => '0.5', 'animation' => 'drift-up', 'speed' => '8', 'pause' => '12', 'z' => '10', 'show_on' => [ 'all' ] ],
+                    [ 'id' => 'pool_glow', 'asset' => 'pool-glow.png', 'label' => 'Pool Glow', 'x' => '0', 'y' => '60', 'width' => '100', 'blend' => 'overlay', 'opacity' => '0.3', 'animation' => 'pulse', 'speed' => '4', 'pause' => '0', 'z' => '3', 'show_on' => [ 'sunset', 'night' ] ],
+                ],
+                'lobby-scene-01' => [
+                    [ 'id' => 'lobby_dust_motes', 'asset' => 'dust-motes.png', 'label' => 'Dust Motes', 'x' => '30', 'y' => '5', 'width' => '40', 'blend' => 'screen', 'opacity' => '0.3', 'animation' => 'drift-left-right', 'speed' => '25', 'pause' => '0', 'z' => '5', 'show_on' => [ 'morning', 'afternoon' ] ],
+                    [ 'id' => 'lobby_light_shaft', 'asset' => 'light-shaft.png', 'label' => 'Light Shaft', 'x' => '55', 'y' => '0', 'width' => '20', 'blend' => 'screen', 'opacity' => '0.35', 'animation' => 'shimmer', 'speed' => '18', 'pause' => '0', 'z' => '4', 'show_on' => [ 'morning', 'afternoon', 'sunset' ] ],
+                ],
+            ];
+            update_option( 'fishotel_layer_configs', $defaults );
+            return;
+        }
+        // Migration: move old scene-type keys (e.g. "pool") to scene-slug keys (e.g. "pool-scene-01")
+        $migrated = false;
+        foreach ( $existing as $key => $layers ) {
+            if ( ! empty( $layers ) && strpos( $key, '-scene-' ) === false ) {
+                $new_key = $key . '-scene-01';
+                if ( ! isset( $existing[ $new_key ] ) ) {
+                    $existing[ $new_key ] = $layers;
+                }
+                unset( $existing[ $key ] );
+                $migrated = true;
+            }
+        }
+        if ( $migrated ) {
+            update_option( 'fishotel_layer_configs', $existing );
+        }
     }
 
-    private function hotel_get_layer_config( $scene_type ) {
+    private function hotel_get_layer_config( $scene_slug ) {
         $this->hotel_seed_layer_defaults();
         $all_configs = get_option( 'fishotel_layer_configs', [] );
-        $layers      = $all_configs[ $scene_type ] ?? [];
+        $layers      = $all_configs[ $scene_slug ] ?? [];
         $base_dir    = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene-layers/';
         $base_url    = plugins_url( 'assists/scene-layers/', FISHOTEL_PLUGIN_FILE );
         $valid       = [];
@@ -360,7 +378,8 @@ trait FisHotel_HotelProgram {
         $scene_data = $this->hotel_scene_url( $scene_type, $scene_num );
         $scene_url  = $scene_data ? $scene_data['url'] : false;
         $scene_urls_by_band = $this->hotel_scene_urls_by_band( $scene_type, $scene_num );
-        $layer_config = $this->hotel_get_layer_config( $scene_type );
+        $scene_slug   = $scene_type . '-scene-' . $scene_num;
+        $layer_config = $this->hotel_get_layer_config( $scene_slug );
 
         $postcard_message = esc_html( $activity['postcard_message'] ?? '' );
         $activity_name    = esc_html( $activity['name'] ?? '' );
@@ -369,7 +388,7 @@ trait FisHotel_HotelProgram {
 
         // Building data — all rooms keyed by tank number
         $all_room_ids = [ '101', '102', '103', '104', '201', '202', '203' ];
-        $room_map     = array_fill_keys( $all_room_ids, null ); // null = unassigned
+        $room_map     = array_fill_keys( $all_room_ids, [] ); // empty array = unassigned
 
         $batch_fish = get_posts( [
             'post_type'   => 'fish_batch',
@@ -387,7 +406,7 @@ trait FisHotel_HotelProgram {
             $master_id  = get_post_meta( $bf->ID, '_master_id', true );
             $common     = $master_id ? get_the_title( $master_id ) : $bf->post_title;
             $sci_name   = $master_id ? get_post_meta( $master_id, '_scientific_name', true ) : '';
-            $room_map[ $tank ] = [
+            $room_map[ $tank ][] = [
                 'fish_id'    => $bf->ID,
                 'species'    => $common,
                 'sci_name'   => $sci_name,
@@ -421,16 +440,19 @@ trait FisHotel_HotelProgram {
                     if ( $bid ) $my_batch_ids[ $bid ] = true;
                 }
             }
-            foreach ( $room_map as $tank => $data ) {
-                if ( $data && isset( $my_batch_ids[ $data['fish_id'] ] ) ) {
-                    $customer_rooms[ $tank ] = true;
+            foreach ( $room_map as $tank => $fish_list ) {
+                foreach ( $fish_list as $data ) {
+                    if ( isset( $my_batch_ids[ $data['fish_id'] ] ) ) {
+                        $customer_rooms[ $tank ] = true;
+                        break;
+                    }
                 }
             }
         }
 
         ob_start();
         ?>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Klee+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Klee+One&family=Special+Elite&display=swap" rel="stylesheet">
 <style>
 /* ── FisHotel Postcard ─────────────────────────────────── */
 .fh-hotel-postcard-wrap{max-width:900px;width:100%;margin:0 auto;font-family:'Oswald',sans-serif;-webkit-font-smoothing:antialiased}
@@ -444,7 +466,7 @@ trait FisHotel_HotelProgram {
 
 /* FRONT */
 .fh-hotel-postcard-front{background:#f5f0e8 !important}
-.fh-hotel-postcard-scene{width:100%;height:75%;background-size:cover !important;background-position:center !important;background-color:#2e2418 !important;position:relative}
+.fh-hotel-postcard-scene{width:100%;height:75%;background-size:cover !important;background-position:center !important;background-color:#2e2418 !important;position:relative;transition:background-image 2s ease}
 .fh-hotel-postcard-scene-placeholder{width:100%;height:75%;display:flex;align-items:center;justify-content:center;background:#f5f0e8 !important;color:#96885f !important;font-family:'Oswald',sans-serif;font-size:18px;letter-spacing:0.05em;border-bottom:1px solid #d6cfc2;position:relative}
 .fh-hotel-postcard-day-badge{position:absolute;top:12px;left:12px;background:#1a3a5c !important;color:#fff !important;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;padding:4px 12px;letter-spacing:0.15em;border-radius:2px}
 /* LAYER SYSTEM */
@@ -465,21 +487,25 @@ trait FisHotel_HotelProgram {
 .fh-hotel-flip-btn:hover{background:#2a5a8c !important}
 
 /* BACK */
-.fh-hotel-postcard-back{transform:rotateY(180deg);background:#f5f0e8 !important;display:flex;flex-direction:row}
-.fh-hotel-postcard-back-left{flex:1;padding:28px 24px;display:flex;flex-direction:column;border-right:1px solid #96885f}
-.fh-hotel-postcard-back-header{font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:#1a3a5c !important;letter-spacing:0.15em;text-transform:uppercase}
-.fh-hotel-postcard-back-divider{width:60px;height:2px;background:linear-gradient(90deg,#96885f,transparent) !important;margin:10px 0 16px}
-.fh-hotel-postcard-back-message{font-family:'Klee One',cursive;font-size:15px;color:#2e2418 !important;line-height:1.7;flex:1}
-.fh-hotel-postcard-back-signature{font-family:'Klee One',cursive;font-size:13px;color:#96885f !important;margin-top:12px}
-.fh-hotel-postcard-back-right{width:240px;padding:20px;display:flex;flex-direction:column;position:relative}
+.fh-hotel-postcard-back{transform:rotateY(180deg);background:#fdf8f0 !important;display:flex;flex-direction:row;position:relative;overflow:hidden;
+    box-shadow:inset 0 0 40px rgba(139,90,43,0.08),inset 0 0 80px rgba(139,90,43,0.04)}
+.fh-hotel-postcard-back::before{content:'';position:absolute;inset:0;opacity:0.05;pointer-events:none;z-index:1;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")}
+.fh-hotel-postcard-back-left{flex:2;padding:28px 24px;display:flex;flex-direction:column;border-right:3px double #8b6914;position:relative;z-index:2}
+.fh-hotel-postcard-back-correspondence{font-family:'Courier New',monospace;font-size:9px;color:#8b6914 !important;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px}
+.fh-hotel-postcard-back-message{font-family:'Special Elite',cursive;font-size:13px;color:#2e2418 !important;line-height:1.8;flex:1}
+.fh-hotel-postcard-back-signature{font-family:'Klee One',cursive;font-size:13px;color:#8b6914 !important;margin-top:16px}
+.fh-hotel-postcard-back-right{width:240px;padding:20px;display:flex;flex-direction:column;position:relative;z-index:2}
 .fh-hotel-postcard-stamp-area{display:flex;justify-content:flex-end}
-.fh-hotel-postcard-stamp{width:52px;height:60px;border:2px solid #96885f;display:flex;align-items:center;justify-content:center;font-size:28px;background:#faf7f0 !important}
-.fh-hotel-postcard-postmark{margin-top:12px;width:90px;height:90px;border:2px solid #8b0000;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-12deg);opacity:0.7}
-.fh-hotel-postcard-postmark-city{font-family:'Oswald',sans-serif;font-size:8px;font-weight:700;color:#8b0000 !important;letter-spacing:0.08em;text-align:center}
-.fh-hotel-postcard-postmark-date{font-family:'Oswald',sans-serif;font-size:7px;color:#8b0000 !important;margin-top:2px}
+.fh-hotel-postcard-stamp{width:50px;height:60px;border:2px dashed #8b6914;display:flex;align-items:center;justify-content:center;font-size:28px;background:#faf7f0 !important;flex-direction:column;gap:2px}
+.fh-hotel-postcard-stamp-text{font-family:'Courier New',monospace;font-size:7px;color:#8b6914 !important;letter-spacing:1px;text-transform:uppercase;text-align:center;line-height:1.2}
+.fh-hotel-postcard-postmark{margin-top:12px;width:90px;height:90px;border:2px solid #8b0000;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-12deg);opacity:0.8}
+.fh-hotel-postcard-postmark-city{font-family:'Courier New',monospace;font-size:8px;font-weight:700;color:#8b0000 !important;letter-spacing:0.08em;text-align:center}
+.fh-hotel-postcard-postmark-date{font-family:'Courier New',monospace;font-size:7px;color:#8b0000 !important;margin-top:2px}
 .fh-hotel-postcard-address-lines{margin-top:auto}
-.fh-hotel-postcard-address-label{font-family:'Courier New',monospace;font-size:11px;color:#2e2418 !important;margin-bottom:6px;letter-spacing:0.05em}
-.fh-hotel-postcard-address-line{height:1px;background:#96885f !important;margin:8px 0;opacity:0.5}
+.fh-hotel-postcard-address-label{font-family:'Courier New',monospace;font-size:9px;color:#8b6914 !important;margin-bottom:8px;letter-spacing:2px;text-transform:uppercase}
+.fh-hotel-postcard-address-line{height:1px;background:#8b6914 !important;margin:10px 0;opacity:0.4}
+.fh-hotel-postcard-vertical-text{position:absolute;right:6px;top:50%;transform:rotate(90deg) translateX(-50%);transform-origin:center;font-family:'Courier New',monospace;font-size:9px;color:#8b6914 !important;letter-spacing:4px;text-transform:uppercase;white-space:nowrap;opacity:0.6}
 
 /* HOTEL BUILDING */
 .fh-hotel-building{background:#1a1a1a !important;border:1px solid #3a3a3a;border-radius:4px;margin-top:24px;overflow:hidden}
@@ -525,10 +551,13 @@ trait FisHotel_HotelProgram {
     .fh-hotel-card[data-flipped="true"] .fh-hotel-postcard-front .fh-hotel-postcard-scene,
     .fh-hotel-card[data-flipped="true"] .fh-hotel-postcard-front .fh-hotel-postcard-front-strip{display:none}
     .fh-hotel-card[data-flipped="true"] .fh-hotel-postcard-back{display:flex;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
-    .fh-hotel-postcard-back-right{width:180px;padding:14px}
+    .fh-hotel-postcard-back-right{width:160px;padding:14px}
     .fh-hotel-postcard-back-left{padding:20px 16px}
-    .fh-hotel-postcard-stamp{width:40px;height:48px;font-size:22px}
-    .fh-hotel-postcard-postmark{width:70px;height:70px}
+    .fh-hotel-postcard-stamp{width:38px;height:46px}
+    .fh-hotel-postcard-stamp-text{font-size:5px}
+    .fh-hotel-postcard-stamp span:last-child{font-size:16px !important}
+    .fh-hotel-postcard-postmark{width:65px;height:65px}
+    .fh-hotel-postcard-vertical-text{display:none}
     .fh-floor-1{flex-wrap:wrap}
     .fh-floor-1 .fh-hotel-room{flex:1 1 48%;min-height:90px}
     .fh-floor-2{flex-direction:column}
@@ -567,14 +596,16 @@ trait FisHotel_HotelProgram {
             <!-- BACK -->
             <div class="fh-hotel-postcard-back">
                 <div class="fh-hotel-postcard-back-left">
-                    <div class="fh-hotel-postcard-back-header">GREETINGS FROM THE FISHOTEL</div>
-                    <div class="fh-hotel-postcard-back-divider"></div>
+                    <div class="fh-hotel-postcard-back-correspondence">CORRESPONDENCE</div>
                     <div class="fh-hotel-postcard-back-message"><?php echo $postcard_message; ?></div>
                     <div class="fh-hotel-postcard-back-signature">— The FisHotel Concierge</div>
                 </div>
                 <div class="fh-hotel-postcard-back-right">
                     <div class="fh-hotel-postcard-stamp-area">
-                        <div class="fh-hotel-postcard-stamp">&#x1F420;</div>
+                        <div class="fh-hotel-postcard-stamp">
+                            <span class="fh-hotel-postcard-stamp-text">PLACE<br>STAMP<br>HERE</span>
+                            <span style="font-size:22px;">&#x1F420;</span>
+                        </div>
                     </div>
                     <div class="fh-hotel-postcard-postmark">
                         <div class="fh-hotel-postcard-postmark-city"><?php echo $postmark_city; ?></div>
@@ -587,6 +618,7 @@ trait FisHotel_HotelProgram {
                         <div class="fh-hotel-postcard-address-line"></div>
                     </div>
                     <button class="fh-hotel-flip-btn">TURN OVER</button>
+                    <div class="fh-hotel-postcard-vertical-text">POST CARD</div>
                 </div>
             </div>
         </div>
@@ -607,22 +639,30 @@ trait FisHotel_HotelProgram {
         ?>
         <div class="fh-hotel-floor fh-floor-<?php echo $fn; ?>">
             <?php foreach ( $floor_rooms as $tank_id ) :
-                $rd       = $room_map[ $tank_id ];
-                $is_mine  = isset( $customer_rooms[ $tank_id ] );
-                $state    = 'unassigned';
-                if ( $rd ) {
-                    $state = ( $rd['status'] === 'no_arrival' ) ? 'noarrival' : 'occupied';
+                $fish_list = $room_map[ $tank_id ];
+                $is_mine   = isset( $customer_rooms[ $tank_id ] );
+                $state     = 'unassigned';
+                if ( ! empty( $fish_list ) ) {
+                    $all_no_arrival = true;
+                    foreach ( $fish_list as $fd ) {
+                        if ( $fd['status'] !== 'no_arrival' ) { $all_no_arrival = false; break; }
+                    }
+                    $state = $all_no_arrival ? 'noarrival' : 'occupied';
                 }
                 $cls = 'fh-hotel-room fh-hotel-room--' . $state;
                 if ( $is_mine ) $cls .= ' fh-hotel-room--mine';
+                $total_qty = 0;
+                foreach ( $fish_list as $fd ) { $total_qty += intval( $fd['qty'] ); }
             ?>
                 <div class="<?php echo esc_attr( $cls ); ?>" data-room="<?php echo esc_attr( $tank_id ); ?>" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>')">
                     <div class="fh-hotel-room-number"><?php echo esc_html( $tank_id ); ?></div>
-                    <?php if ( $rd && $state === 'occupied' ) : ?>
+                    <?php if ( ! empty( $fish_list ) && $state === 'occupied' ) : ?>
                         <?php if ( $is_mine ) : ?><div class="fh-hotel-room-yours">YOUR ROOM</div><?php endif; ?>
                         <div class="fh-hotel-room-fish">&#x1F420;</div>
-                        <div class="fh-hotel-room-species"><?php echo esc_html( $rd['species'] ); ?></div>
-                        <div class="fh-hotel-room-qty"><?php echo intval( $rd['qty'] ); ?> guest<?php echo $rd['qty'] !== 1 ? 's' : ''; ?></div>
+                        <?php foreach ( $fish_list as $fd ) : ?>
+                            <div class="fh-hotel-room-species" style="font-size:<?php echo count( $fish_list ) > 1 ? '11' : '13'; ?>px;"><?php echo esc_html( $fd['species'] ); ?></div>
+                        <?php endforeach; ?>
+                        <div class="fh-hotel-room-qty"><?php echo $total_qty; ?> guest<?php echo $total_qty !== 1 ? 's' : ''; ?></div>
                     <?php elseif ( $state === 'noarrival' ) : ?>
                         <div class="fh-hotel-room-species">NO ARRIVAL</div>
                     <?php else : ?>
@@ -636,25 +676,28 @@ trait FisHotel_HotelProgram {
 
         <?php /* Room detail panels — one per room, hidden */ ?>
         <?php foreach ( $all_room_ids as $tank_id ) :
-            $rd = $room_map[ $tank_id ];
-            $is_mine  = isset( $customer_rooms[ $tank_id ] );
+            $fish_list = $room_map[ $tank_id ];
+            $is_mine   = isset( $customer_rooms[ $tank_id ] );
             $floor_num = ( $tank_id[0] === '2' ) ? 2 : 1;
             $floor_lbl = 'Floor ' . $floor_num . ' — ' . $floor_labels[ $floor_num ];
         ?>
         <div class="fh-hotel-room-detail" id="fh-room-detail-<?php echo esc_attr( $tank_id ); ?>" style="position:relative;">
             <button class="fh-hotel-room-detail-close" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>')">&times;</button>
-            <?php if ( $rd ) : ?>
-                <div class="fh-hotel-room-detail-name"><?php echo esc_html( $rd['species'] ); ?></div>
-                <?php if ( ! empty( $rd['sci_name'] ) ) : ?>
-                    <div class="fh-hotel-room-detail-sci"><?php echo esc_html( $rd['sci_name'] ); ?></div>
-                <?php endif; ?>
-                <div class="fh-hotel-room-detail-meta">
-                    Tank: <?php echo esc_html( $tank_id ); ?> (<?php echo esc_html( $floor_lbl ); ?>)<br>
-                    Received: <?php echo intval( $rd['qty'] ); ?> &bull; DOA: <?php echo intval( $rd['qty_doa'] ); ?><br>
-                    Status: <?php echo esc_html( ucwords( str_replace( '_', ' ', $rd['status'] ) ) ); ?>
-                </div>
+            <?php if ( ! empty( $fish_list ) ) : ?>
+                <?php foreach ( $fish_list as $fi => $rd ) : ?>
+                    <?php if ( $fi > 0 ) : ?><hr style="border:none;border-top:1px solid #3a3a3a;margin:12px 0;"><?php endif; ?>
+                    <div class="fh-hotel-room-detail-name"><?php echo esc_html( $rd['species'] ); ?></div>
+                    <?php if ( ! empty( $rd['sci_name'] ) ) : ?>
+                        <div class="fh-hotel-room-detail-sci"><?php echo esc_html( $rd['sci_name'] ); ?></div>
+                    <?php endif; ?>
+                    <div class="fh-hotel-room-detail-meta">
+                        Tank: <?php echo esc_html( $tank_id ); ?> (<?php echo esc_html( $floor_lbl ); ?>)<br>
+                        Received: <?php echo intval( $rd['qty'] ); ?> &bull; DOA: <?php echo intval( $rd['qty_doa'] ); ?><br>
+                        Status: <?php echo esc_html( ucwords( str_replace( '_', ' ', $rd['status'] ) ) ); ?>
+                    </div>
+                <?php endforeach; ?>
                 <?php if ( $is_mine ) : ?>
-                    <div class="fh-hotel-room-detail-yours">Your <?php echo esc_html( $rd['species'] ); ?> is staying in Room <?php echo esc_html( $tank_id ); ?></div>
+                    <div class="fh-hotel-room-detail-yours">Your fish are staying in Room <?php echo esc_html( $tank_id ); ?></div>
                 <?php endif; ?>
             <?php else : ?>
                 <div class="fh-hotel-room-detail-name">Room <?php echo esc_html( $tank_id ); ?></div>
@@ -695,10 +738,9 @@ trait FisHotel_HotelProgram {
     (function(){
         var h = new Date().getHours();
         var band;
-        if (h >= 5 && h < 9) band = 'morning';
-        else if (h >= 9 && h < 16) band = 'afternoon';
-        else if (h >= 16 && h < 19) band = 'evening';
-        else if (h >= 19 && h < 22) band = 'dusk';
+        if (h >= 5 && h < 11) band = 'morning';
+        else if (h >= 11 && h < 16) band = 'afternoon';
+        else if (h >= 16 && h < 20) band = 'sunset';
         else band = 'night';
 
         var wrap = document.querySelector('.fh-hotel-postcard-wrap');
@@ -1480,9 +1522,52 @@ trait FisHotel_HotelProgram {
         $this->hotel_seed_layer_defaults();
         $all_configs = get_option( 'fishotel_layer_configs', [] );
         $scene_types = $this->hotel_get_scene_types();
-        $current_st  = sanitize_key( $_GET['scene_type'] ?? 'pool' );
-        if ( ! in_array( $current_st, $scene_types, true ) ) $current_st = $scene_types[0] ?? 'pool';
-        $layers      = $all_configs[ $current_st ] ?? [];
+
+        // Scan assists/scene/ for background images and build scene slugs per category
+        $scene_dir    = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene/';
+        $scene_slugs  = []; // category => [ 'pool-scene-01', 'pool-scene-02', ... ]
+        foreach ( $scene_types as $st ) {
+            $scene_slugs[ $st ] = [];
+        }
+        if ( is_dir( $scene_dir ) ) {
+            foreach ( glob( $scene_dir . 'hotel-*-scene-*.jpg' ) as $f ) {
+                $bn = basename( $f, '.jpg' );
+                // Parse: hotel-{type}-scene-{num}[-{band}]
+                if ( preg_match( '/^hotel-(.+)-scene-(\d+)/', $bn, $m ) ) {
+                    $cat  = $m[1];
+                    $num  = $m[2];
+                    $slug = $cat . '-scene-' . $num;
+                    if ( isset( $scene_slugs[ $cat ] ) && ! in_array( $slug, $scene_slugs[ $cat ], true ) ) {
+                        $scene_slugs[ $cat ][] = $slug;
+                    }
+                }
+            }
+        }
+        foreach ( $scene_slugs as &$slugs ) {
+            sort( $slugs );
+        }
+        unset( $slugs );
+
+        // Also include any slugs that have layer configs but no background yet
+        foreach ( $all_configs as $key => $layers_arr ) {
+            if ( strpos( $key, '-scene-' ) !== false && ! empty( $layers_arr ) ) {
+                $parts = explode( '-scene-', $key );
+                $cat = $parts[0];
+                if ( isset( $scene_slugs[ $cat ] ) && ! in_array( $key, $scene_slugs[ $cat ], true ) ) {
+                    $scene_slugs[ $cat ][] = $key;
+                    sort( $scene_slugs[ $cat ] );
+                }
+            }
+        }
+
+        $current_cat  = sanitize_key( $_GET['scene_type'] ?? $scene_types[0] ?? 'pool' );
+        if ( ! in_array( $current_cat, $scene_types, true ) ) $current_cat = $scene_types[0] ?? 'pool';
+        $current_slug = sanitize_text_field( $_GET['scene_slug'] ?? '' );
+        if ( $current_slug && strpos( $current_slug, $current_cat ) !== 0 ) $current_slug = '';
+        if ( ! $current_slug && ! empty( $scene_slugs[ $current_cat ] ) ) {
+            $current_slug = $scene_slugs[ $current_cat ][0];
+        }
+        $layers = $current_slug ? ( $all_configs[ $current_slug ] ?? [] ) : [];
 
         $assets_dir  = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene-layers/';
         $assets_url  = plugins_url( 'assists/scene-layers/', FISHOTEL_PLUGIN_FILE );
@@ -1496,7 +1581,7 @@ trait FisHotel_HotelProgram {
 
         $blend_modes = [ 'normal', 'screen', 'overlay', 'multiply', 'soft-light', 'hard-light', 'lighten', 'color-dodge' ];
         $animations  = [ 'none', 'drift-left-right', 'drift-up', 'sway', 'shimmer', 'pulse', 'float' ];
-        $time_bands  = [ 'morning', 'afternoon', 'evening', 'dusk', 'night', 'all' ];
+        $time_bands  = [ 'morning', 'afternoon', 'sunset', 'night', 'all' ];
 
         $nonce       = wp_create_nonce( 'fishotel_layer_admin' );
         $asset_nonce = wp_create_nonce( 'fishotel_asset_library' );
@@ -1564,15 +1649,26 @@ trait FisHotel_HotelProgram {
         <div class="fh-layer-scene-tabs">
             <?php foreach ( $scene_types as $st ) : ?>
                 <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-hotel-program&tab=layers&scene_type=' . $st ) ); ?>"
-                   class="<?php echo $st === $current_st ? 'active' : ''; ?>"><?php echo esc_html( ucfirst( $st ) ); ?></a>
+                   class="<?php echo $st === $current_cat ? 'active' : ''; ?>"><?php echo esc_html( ucfirst( $st ) ); ?></a>
+            <?php endforeach; ?>
+        </div>
+
+        <?php if ( empty( $scene_slugs[ $current_cat ] ) ) : ?>
+            <p style="color:#999;">No scene backgrounds uploaded yet for <strong><?php echo esc_html( ucfirst( $current_cat ) ); ?></strong>. Upload backgrounds in the <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-hotel-program&tab=assets' ) ); ?>">Assets tab</a> first.</p>
+        <?php else : ?>
+
+        <div class="fh-layer-scene-tabs" style="margin-bottom:14px;">
+            <?php foreach ( $scene_slugs[ $current_cat ] as $slug ) : ?>
+                <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-hotel-program&tab=layers&scene_type=' . $current_cat . '&scene_slug=' . $slug ) ); ?>"
+                   class="<?php echo $slug === $current_slug ? 'active' : ''; ?>" style="font-size:12px;padding:4px 10px;"><?php echo esc_html( $slug ); ?></a>
             <?php endforeach; ?>
         </div>
 
         <div id="fh-layer-notice" class="fh-layer-notice"></div>
 
-        <h3 style="margin-top:0;">Layers for <em><?php echo esc_html( ucfirst( $current_st ) ); ?></em> scene</h3>
+        <h3 style="margin-top:0;">Layers for <em><?php echo esc_html( $current_slug ); ?></em></h3>
 
-        <div id="fh-layer-list" data-scene-type="<?php echo esc_attr( $current_st ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>">
+        <div id="fh-layer-list" data-scene-type="<?php echo esc_attr( $current_slug ); ?>" data-nonce="<?php echo esc_attr( $nonce ); ?>">
         <?php if ( empty( $layers ) ) : ?>
             <p id="fh-layer-empty" style="color:#999;">No layers configured for this scene type. Click "Add Layer" to create one.</p>
         <?php else : ?>
@@ -1624,7 +1720,7 @@ trait FisHotel_HotelProgram {
             var ajaxurl    = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
             var nonce      = '<?php echo esc_js( $nonce ); ?>';
             var assetNonce = '<?php echo esc_js( $asset_nonce ); ?>';
-            var sceneType  = '<?php echo esc_js( $current_st ); ?>';
+            var sceneType  = '<?php echo esc_js( $current_slug ); ?>';
 
             function notice(msg, type) {
                 var el = document.getElementById('fh-layer-notice');
@@ -1913,6 +2009,7 @@ trait FisHotel_HotelProgram {
         .fha-modal-fname{font-size:10px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .fha-modal-label{font-size:12px;font-weight:600;color:#1a3a5c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         </style>
+        <?php endif; // end: scene_slugs not empty ?>
         <?php
     }
 
@@ -2010,7 +2107,7 @@ trait FisHotel_HotelProgram {
 
         $nonce       = wp_create_nonce( 'fishotel_asset_library' );
         $scene_types = $this->hotel_get_scene_types();
-        $time_bands  = [ 'morning', 'afternoon', 'evening', 'dusk', 'night' ];
+        $time_bands  = [ 'morning', 'afternoon', 'sunset', 'night' ];
         $categories  = [ 'layer' => 'Layers', 'background' => 'Backgrounds', 'stamp' => 'Stamps' ];
         $folder_map  = [ 'layer' => 'scene-layers', 'background' => 'scene-backgrounds', 'stamp' => 'stamps' ];
         $folder_labels = [ 'scene-layers' => 'assists/scene-layers/', 'scene-backgrounds' => 'assists/scene/', 'stamps' => 'assists/stamps/' ];

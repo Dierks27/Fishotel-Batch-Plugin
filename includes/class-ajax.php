@@ -324,7 +324,7 @@ trait FisHotel_Ajax {
                     'speed'     => strval( max( 1, min( 60, intval( $L['speed'] ?? 10 ) ) ) ),
                     'pause'     => strval( max( 0, min( 30, intval( $L['pause'] ?? 0 ) ) ) ),
                     'z'         => strval( max( 1, min( 20, intval( $L['z'] ?? 1 ) ) ) ),
-                    'show_on'   => array_values( array_intersect( (array) ( $L['show_on'] ?? [] ), [ 'morning','afternoon','evening','dusk','night','all' ] ) ),
+                    'show_on'   => array_values( array_intersect( (array) ( $L['show_on'] ?? [] ), [ 'morning','afternoon','sunset','night','all' ] ) ),
                 ];
             }
         }
