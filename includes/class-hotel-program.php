@@ -546,10 +546,10 @@ trait FisHotel_HotelProgram {
 .fh-hotel-building-roof,.fh-hotel-building-base,.fh-hotel-building-sign{display:none !important}
 .fh-hotel-floor{display:contents !important}
 /* Room base — absolute windows over illustration */
-.fh-hotel-room{position:absolute !important;background:transparent !important;border:none !important;margin:0 !important;padding:6px !important;box-sizing:border-box !important;overflow:hidden !important;display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;cursor:pointer !important;transition:filter 0.2s ease,box-shadow 0.2s ease !important;border-radius:2px !important}
-.fh-hotel-room::before,.fh-hotel-room::after{display:none !important}
-.fh-hotel-room:hover{filter:brightness(1.12) !important}
-.fh-hotel-room--mine:hover{filter:brightness(1.08) !important}
+.fh-hotel-room{position:absolute !important;background:transparent !important;border:none !important;margin:0 !important;padding:6px !important;box-sizing:border-box !important;overflow:hidden !important;display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;cursor:pointer !important;transition:box-shadow 0.2s ease !important;border-radius:2px !important;will-change:transform !important}
+.fh-hotel-room::before{display:none !important}
+.fh-hotel-room::after{display:none !important}
+.fh-hotel-room:not(.fh-hotel-room--mine):hover::after{content:'' !important;display:block !important;position:absolute !important;inset:0 !important;background:rgba(255,255,255,0.10) !important;pointer-events:none !important;z-index:1 !important}
 /* Room positions — Floor 1 (20 gallon, top) */
 .fh-hotel-room[data-room="201"]{left:calc(198/1360*100%) !important;top:calc(216/768*100%) !important;width:calc(211/1360*100%) !important;height:calc(203/768*100%) !important}
 .fh-hotel-room[data-room="202"]{left:calc(409/1360*100%) !important;top:calc(216/768*100%) !important;width:calc(269/1360*100%) !important;height:calc(203/768*100%) !important}
@@ -559,15 +559,15 @@ trait FisHotel_HotelProgram {
 .fh-hotel-room[data-room="101"]{left:calc(198/1360*100%) !important;top:calc(435/768*100%) !important;width:calc(323/1360*100%) !important;height:calc(218/768*100%) !important}
 .fh-hotel-room[data-room="102"]{left:calc(521/1360*100%) !important;top:calc(435/768*100%) !important;width:calc(316/1360*100%) !important;height:calc(218/768*100%) !important}
 .fh-hotel-room[data-room="103"]{left:calc(837/1360*100%) !important;top:calc(435/768*100%) !important;width:calc(324/1360*100%) !important;height:calc(218/768*100%) !important}
-/* Sprite — occupied/customer rooms reveal lit image */
-.fh-hotel-room--occupied,.fh-hotel-room--mine{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>Hotel-LightsOn.png') !important;background-repeat:no-repeat !important}
-.fh-hotel-room--occupied[data-room="201"],.fh-hotel-room--mine[data-room="201"]{background-size:calc(1360/211*100%) calc(768/203*100%) !important;background-position:calc(-198/211*100%) calc(-216/203*100%) !important}
-.fh-hotel-room--occupied[data-room="202"],.fh-hotel-room--mine[data-room="202"]{background-size:calc(1360/269*100%) calc(768/203*100%) !important;background-position:calc(-409/269*100%) calc(-216/203*100%) !important}
-.fh-hotel-room--occupied[data-room="203"],.fh-hotel-room--mine[data-room="203"]{background-size:calc(1360/254*100%) calc(768/203*100%) !important;background-position:calc(-678/254*100%) calc(-216/203*100%) !important}
-.fh-hotel-room--occupied[data-room="204"],.fh-hotel-room--mine[data-room="204"]{background-size:calc(1360/229*100%) calc(768/203*100%) !important;background-position:calc(-932/229*100%) calc(-216/203*100%) !important}
-.fh-hotel-room--occupied[data-room="101"],.fh-hotel-room--mine[data-room="101"]{background-size:calc(1360/323*100%) calc(768/218*100%) !important;background-position:calc(-198/323*100%) calc(-435/218*100%) !important}
-.fh-hotel-room--occupied[data-room="102"],.fh-hotel-room--mine[data-room="102"]{background-size:calc(1360/316*100%) calc(768/218*100%) !important;background-position:calc(-521/316*100%) calc(-435/218*100%) !important}
-.fh-hotel-room--occupied[data-room="103"],.fh-hotel-room--mine[data-room="103"]{background-size:calc(1360/324*100%) calc(768/218*100%) !important;background-position:calc(-837/324*100%) calc(-435/218*100%) !important}
+/* Occupied/customer rooms — individual lit room images */
+.fh-hotel-room--occupied,.fh-hotel-room--mine{background-size:cover !important;background-position:center !important;background-repeat:no-repeat !important}
+.fh-hotel-room--occupied[data-room="201"],.fh-hotel-room--mine[data-room="201"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-201-on.jpg') !important}
+.fh-hotel-room--occupied[data-room="202"],.fh-hotel-room--mine[data-room="202"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-202-on.jpg') !important}
+.fh-hotel-room--occupied[data-room="203"],.fh-hotel-room--mine[data-room="203"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-203-on.jpg') !important}
+.fh-hotel-room--occupied[data-room="204"],.fh-hotel-room--mine[data-room="204"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-204-on.jpg') !important}
+.fh-hotel-room--occupied[data-room="101"],.fh-hotel-room--mine[data-room="101"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-101-on.jpg') !important}
+.fh-hotel-room--occupied[data-room="102"],.fh-hotel-room--mine[data-room="102"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-102-on.jpg') !important}
+.fh-hotel-room--occupied[data-room="103"],.fh-hotel-room--mine[data-room="103"]{background-image:url('<?php echo esc_url( $hotel_img_url ); ?>rooms/room-103-on.jpg') !important}
 /* States — unassigned (transparent, dark building shows through) */
 .fh-hotel-room--unassigned{background-color:transparent !important;box-shadow:none !important}
 .fh-hotel-room--unassigned .fh-hotel-room-species{display:none !important}
