@@ -736,7 +736,7 @@ trait FisHotel_HotelProgram {
             <div class="fh-hotel-floor fh-floor-<?php echo $fn; ?>">
                 <?php foreach ( $floor_rooms as $tank_id ) :
                     $fish_list = $room_map[ $tank_id ];
-                    $is_mine   = isset( $customer_rooms[ $tank_id ] );
+                    $is_mine   = $logged_in && isset( $customer_rooms[ $tank_id ] );
                     $state     = 'unassigned';
                     if ( ! empty( $fish_list ) ) {
                         $all_no_arrival = true;
@@ -778,7 +778,7 @@ trait FisHotel_HotelProgram {
             <?php /* Building 2 — $band is available when illustration images are ready */ ?>
             <?php foreach ( $qt_rooms as $tank_id ) :
                 $fish_list = $room_map[ $tank_id ];
-                $is_mine   = isset( $customer_rooms[ $tank_id ] );
+                $is_mine   = $logged_in && isset( $customer_rooms[ $tank_id ] );
                 $state     = 'unassigned';
                 if ( ! empty( $fish_list ) ) {
                     $all_no_arrival = true;
