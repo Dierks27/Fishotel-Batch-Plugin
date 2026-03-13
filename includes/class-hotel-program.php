@@ -620,7 +620,7 @@ trait FisHotel_HotelProgram {
 .fh-hotel-building-2 .fh-hotel-room[data-room="302"]{left:62.21% !important;top:54.43% !important;width:22.13% !important;height:26.56% !important}
 .fh-hotel-building-2[data-band="sunset"] .fh-hotel-sign-glow,.fh-hotel-building-2[data-band="night"] .fh-hotel-sign-glow{opacity:1 !important}
 .fh-hotel-building-2[data-band="night"] .fh-hotel-sign-glow{background:radial-gradient(ellipse 60% 50% at 50% 60%,rgba(255,230,140,0.28) 0%,rgba(255,190,80,0.14) 40%,transparent 70%) !important}
-.fh-hotel-building,.fh-hotel-building-2{transition:none !important}
+.fh-hotel-building,.fh-hotel-building-2,.fh-hotel-building .fh-hotel-sign-glow,.fh-hotel-building-2 .fh-hotel-sign-glow{transition:none !important}
 /* Room detail expand — outside building container */
 .fh-hotel-room-detail{display:none;position:relative;width:100%;max-width:1000px;margin:12px auto 0;box-sizing:border-box;background:#1a1a1a !important;border:1px solid #333;border-radius:4px;padding:16px 20px}
 .fh-hotel-room-detail--open{display:block}
