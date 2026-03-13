@@ -616,8 +616,8 @@ trait FisHotel_HotelProgram {
 /* Building 2 — Beach Hut illustration */
 .fh-hotel-building-2{position:relative !important;background-size:100% 100% !important;background-repeat:no-repeat !important;aspect-ratio:1360/768 !important;width:100% !important;max-width:1000px !important;margin:0 auto !important;padding:0 !important;border:none !important;box-shadow:0 8px 48px rgba(0,0,0,0.8) !important;overflow:hidden !important;border-radius:4px !important}
 .fh-hotel-building-2 .fh-hotel-room{position:absolute !important}
-.fh-hotel-building-2 .fh-hotel-room[data-room="301"]{left:15.51% !important;top:54.43% !important;width:21.76% !important;height:26.56% !important}
-.fh-hotel-building-2 .fh-hotel-room[data-room="302"]{left:62.21% !important;top:54.43% !important;width:22.13% !important;height:26.56% !important}
+.fh-hotel-building-2 .fh-hotel-room[data-room="301"]{left:14.72% !important;top:56.51% !important;width:22.45% !important;height:24.74% !important}
+.fh-hotel-building-2 .fh-hotel-room[data-room="302"]{left:62.97% !important;top:56.25% !important;width:21.57% !important;height:24.87% !important}
 .fh-hotel-building,.fh-hotel-building-2,.fh-hotel-building .fh-hotel-sign-glow{transition:none !important}
 /* Room detail expand — outside building container */
 .fh-hotel-room-detail{display:none;position:relative;width:100%;max-width:1000px;margin:12px auto 0;box-sizing:border-box;background:#1a1a1a !important;border:1px solid #333;border-radius:4px;padding:16px 20px}
