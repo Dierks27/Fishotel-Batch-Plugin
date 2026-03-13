@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.37 - Beach Hut room positions and inset shadow overlay.
- * Version:           5.37
+ * Description:       v5.38 - Subtle gold border for YOUR ROOM in Beach Huts.
+ * Version:           5.38
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.37' );
+define( 'FISHOTEL_VERSION', '5.38' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
