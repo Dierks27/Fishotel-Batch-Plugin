@@ -583,7 +583,7 @@ trait FisHotel_HotelProgram {
 .fh-hotel-room--noarrival::before{content:'' !important;display:block !important;position:absolute !important;inset:0 !important;background:rgba(80,0,0,0.4) !important;pointer-events:none !important;z-index:1 !important}
 .fh-hotel-room--noarrival .fh-hotel-room-species{color:#ff6666 !important;font-size:10px !important;z-index:2 !important;position:relative !important}
 /* States — customer room (gold glow) */
-.fh-hotel-room--mine{box-shadow:0 0 0 3px #96885f,0 0 20px rgba(150,136,95,0.9),0 0 50px rgba(150,136,95,0.5) !important;z-index:2 !important}
+.fh-hotel-room--mine{box-shadow:none !important;border:1.5px solid rgba(150,136,95,0.7) !important;z-index:2 !important}
 /* Self-hosted font stub — uncomment when .woff2 is provided
 @font-face {
   font-family: 'FisHotelCustom';
@@ -619,7 +619,6 @@ trait FisHotel_HotelProgram {
 .fh-hotel-building-2 .fh-hotel-room::after{content:'' !important;position:absolute !important;inset:0 !important;box-shadow:inset 0 0 18px 6px rgba(0,0,0,0.65) !important;pointer-events:none !important;z-index:3 !important;border-radius:inherit !important}
 .fh-hotel-building-2 .fh-hotel-room[data-room="301"]{left:15.05% !important;top:57.70% !important;width:22.45% !important;height:24.74% !important}
 .fh-hotel-building-2 .fh-hotel-room[data-room="302"]{left:63.94% !important;top:57.39% !important;width:21.57% !important;height:24.87% !important}
-.fh-hotel-building-2 .fh-hotel-room--mine{border:1.5px solid rgba(150,136,95,0.7) !important;box-shadow:none !important}
 .fh-hotel-building,.fh-hotel-building-2,.fh-hotel-building .fh-hotel-sign-glow{transition:none !important}
 /* Room detail expand — outside building container */
 .fh-hotel-room-detail{display:none;position:relative;width:100%;max-width:1000px;margin:12px auto 0;box-sizing:border-box;background:#1a1a1a !important;border:1px solid #333;border-radius:4px;padding:16px 20px}
