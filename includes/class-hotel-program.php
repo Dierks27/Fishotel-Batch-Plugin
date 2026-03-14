@@ -636,7 +636,9 @@ trait FisHotel_HotelProgram {
     .fh-hotel-postcard-wrap{width:100%}
     .fh-hotel-card{width:100%}
     .fh-hotel-card-inner{transform:none !important}
-    .fh-hotel-postcard-front,.fh-hotel-postcard-back{position:relative;backface-visibility:visible;-webkit-backface-visibility:visible;transform:none !important}
+    .fh-hotel-postcard-front,.fh-hotel-postcard-back{backface-visibility:visible;-webkit-backface-visibility:visible;transform:none !important}
+    .fh-hotel-postcard-front{position:relative !important;height:auto !important}
+    .fh-hotel-postcard-back{position:relative !important;height:auto !important;min-height:300px;width:100%}
     .fh-hotel-postcard-back{display:none;margin-top:0;border-radius:0 0 6px 6px}
     .fh-hotel-card[data-flipped="true"] .fh-hotel-postcard-front .fh-hotel-postcard-scene,
     .fh-hotel-card[data-flipped="true"] .fh-hotel-postcard-front .fh-hotel-postcard-front-strip{display:none}
@@ -911,6 +913,15 @@ trait FisHotel_HotelProgram {
     function fishotelHotelFlipCard(card) {
         var flipped = card.dataset.flipped === 'true' ? 'false' : 'true';
         card.dataset.flipped = flipped;
+        var front = card.querySelector('.fh-hotel-postcard-front');
+        var back  = card.querySelector('.fh-hotel-postcard-back');
+        if (flipped === 'true') {
+            front.style.display = 'none';
+            back.style.display  = 'flex';
+        } else {
+            front.style.display = 'block';
+            back.style.display  = 'none';
+        }
         var layers = card.querySelectorAll('.fh-postcard-layer');
         var state = flipped === 'true' ? 'paused' : 'running';
         for (var i = 0; i < layers.length; i++) {
