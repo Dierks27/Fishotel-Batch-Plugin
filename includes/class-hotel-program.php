@@ -633,15 +633,17 @@ trait FisHotel_HotelProgram {
 
 /* ZOOM */
 .fh-hotel-building,.fh-hotel-building-2{transition:transform 0.4s ease-in-out}
-.fh-hotel-building--zoomed,.fh-hotel-building-2--zoomed{overflow:hidden;position:relative}
-.fh-hotel-zoom-overlay{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:#fdf8f0;font-family:'Oswald',sans-serif;padding:10px 14px;z-index:20;display:flex;flex-direction:column;gap:2px}
-.fh-hotel-zoom-overlay-species{font-size:16px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase}
-.fh-hotel-zoom-overlay-meta{font-size:12px;letter-spacing:0.05em;opacity:0.85}
-.fh-hotel-zoom-overlay-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;letter-spacing:0.1em;margin-top:4px;width:fit-content}
-.fh-hotel-zoom-overlay-badge--qt{background:#27ae60;color:#fff}
-.fh-hotel-zoom-overlay-badge--none{background:#888;color:#fff}
-.fh-hotel-zoom-close{position:absolute;top:10px;right:10px;z-index:25;width:28px;height:28px;border-radius:50%;background:#1a3a5c;color:#fff;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif}
-.fh-hotel-zoom-close:hover{background:#2a5a8c}
+.fh-hotel-building--zoomed .fh-hotel-room{cursor:default}
+.fh-zoom-overlay{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);border-radius:12px;padding:20px 32px;color:#f5f0e8;font-family:'Oswald',sans-serif;text-align:center;z-index:10000;pointer-events:none;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.fh-zoom-overlay-room{font-size:13px;font-variant:small-caps;letter-spacing:2px;color:#96885f;margin-bottom:4px}
+.fh-zoom-overlay-species{font-size:22px;font-weight:700;margin-bottom:6px}
+.fh-zoom-overlay-meta{font-size:15px;opacity:0.8;margin-bottom:6px}
+.fh-zoom-overlay-badge{display:inline-block;font-size:11px;padding:3px 12px;border-radius:10px;letter-spacing:0.1em}
+.fh-zoom-overlay-badge--qt{background:#2d5a2d;color:#fff}
+.fh-zoom-overlay-badge--pending{background:#8b6914;color:#fff}
+.fh-zoom-overlay-badge--none{background:#888;color:#fff}
+.fh-zoom-close{position:fixed;top:20px;right:20px;z-index:10001;width:40px;height:40px;border-radius:50%;background:#1a3a5c;color:#fff;border:2px solid rgba(255,255,255,0.3);cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif}
+.fh-zoom-close:hover{background:#2a4f75 !important}
 
 /* RESPONSIVE */
 @media(max-width:640px){
@@ -674,7 +676,7 @@ trait FisHotel_HotelProgram {
     .fh-hotel-room-species{font-size:9px !important}
     .fh-hotel-room-qty{font-size:8px !important}
     .fh-hotel-room-fish{font-size:18px !important}
-    .fh-hotel-zoom-overlay,.fh-hotel-zoom-close{display:none !important}
+    .fh-zoom-overlay,.fh-zoom-close{display:none !important}
     .fh-hotel-building--zoomed,.fh-hotel-building-2--zoomed{transform:none !important;overflow:visible !important}
 }
 </style>
@@ -900,26 +902,35 @@ trait FisHotel_HotelProgram {
     /* ── Room toggle + Desktop zoom ────────────────── */
     var fishotelHotelOpenRoom = null;
     var fishotelHotelZoomedRoom = null;
+    var _fhZoomEscHandler = null;
 
-    function fishotelHotelZoomOut() {
+    function fishotelHotelZoomDismiss() {
         if (!fishotelHotelZoomedRoom) return;
-        var oldOverlay = document.querySelector('.fh-hotel-zoom-overlay');
-        var oldClose = document.querySelector('.fh-hotel-zoom-close');
-        if (oldOverlay) oldOverlay.remove();
-        if (oldClose) oldClose.remove();
+        /* Remove overlay + close button from document.body */
+        var ov = document.querySelector('.fh-zoom-overlay');
+        var cb = document.querySelector('.fh-zoom-close');
+        if (ov) ov.remove();
+        if (cb) cb.remove();
+        /* Reset building transform */
         document.querySelectorAll('.fh-hotel-building--zoomed,.fh-hotel-building-2--zoomed').forEach(function(b) {
-            b.classList.remove('fh-hotel-building--zoomed', 'fh-hotel-building-2--zoomed');
             b.style.transform = '';
             b.style.transformOrigin = '';
+            b.classList.remove('fh-hotel-building--zoomed', 'fh-hotel-building-2--zoomed');
+            /* Remove overflow:hidden from parent slide */
+            var slide = b.closest('.fh-hotel-slide');
+            if (slide) slide.style.overflow = '';
         });
+        /* Unbind Escape listener */
+        if (_fhZoomEscHandler) {
+            document.removeEventListener('keydown', _fhZoomEscHandler);
+            _fhZoomEscHandler = null;
+        }
         fishotelHotelZoomedRoom = null;
     }
 
     function fishotelHotelToggleRoom(id, roomEl) {
-        var isMobile = window.innerWidth <= 700;
-
         /* ── Mobile: existing detail panel behavior ── */
-        if (isMobile) {
+        if (window.innerWidth <= 700) {
             var panels = document.querySelectorAll('.fh-hotel-room-detail');
             if (fishotelHotelOpenRoom === id) {
                 document.getElementById('fh-room-detail-' + id).classList.remove('fh-hotel-room-detail--open');
@@ -934,11 +945,13 @@ trait FisHotel_HotelProgram {
         }
 
         /* ── Desktop: CSS zoom ── */
+        /* Clicking same room toggles off */
         if (fishotelHotelZoomedRoom === id) {
-            fishotelHotelZoomOut();
+            fishotelHotelZoomDismiss();
             return;
         }
-        fishotelHotelZoomOut();
+        /* Dismiss any current zoom first */
+        fishotelHotelZoomDismiss();
 
         if (!roomEl) roomEl = document.querySelector('[data-room="' + id + '"]');
         if (!roomEl) return;
@@ -949,61 +962,81 @@ trait FisHotel_HotelProgram {
         var isBeachHut = building.classList.contains('fh-hotel-building-2');
         var scale = isBeachHut ? 2 : 2.5;
 
-        /* Calculate room center as percentage of building */
-        var bRect = building.getBoundingClientRect();
-        var rRect = roomEl.getBoundingClientRect();
-        var cx = ((rRect.left + rRect.width / 2) - bRect.left) / bRect.width * 100;
-        var cy = ((rRect.top + rRect.height / 2) - bRect.top) / bRect.height * 100;
+        /* Calculate room center using offset (not getBoundingClientRect) */
+        var cx = roomEl.offsetLeft + roomEl.offsetWidth / 2;
+        var cy = roomEl.offsetTop + roomEl.offsetHeight / 2;
 
-        building.style.transformOrigin = cx + '% ' + cy + '%';
+        /* Set overflow hidden on parent slide BEFORE zoom */
+        var slide = building.closest('.fh-hotel-slide');
+        if (slide) slide.style.overflow = 'hidden';
+
+        building.style.transformOrigin = cx + 'px ' + cy + 'px';
         building.style.transform = 'scale(' + scale + ')';
         building.classList.add(isBeachHut ? 'fh-hotel-building-2--zoomed' : 'fh-hotel-building--zoomed');
 
-        /* Build overlay */
-        var state = roomEl.dataset.roomState || 'unassigned';
+        /* ── Build overlay (appended to body, outside transform context) ── */
+        var state   = roomEl.dataset.roomState || 'unassigned';
         var species = roomEl.dataset.roomSpecies || '';
-        var qty = roomEl.dataset.roomQty || '0';
-        var status = roomEl.dataset.roomStatus || '';
+        var qty     = roomEl.dataset.roomQty || '0';
+        var status  = roomEl.dataset.roomStatus || '';
 
         var overlay = document.createElement('div');
-        overlay.className = 'fh-hotel-zoom-overlay';
+        overlay.className = 'fh-zoom-overlay';
+
+        var roomLabel = '<div class="fh-zoom-overlay-room">ROOM ' + id + '</div>';
 
         if (state === 'unassigned') {
-            overlay.innerHTML = '<div class="fh-hotel-zoom-overlay-species">UNASSIGNED</div>' +
-                '<div class="fh-hotel-zoom-overlay-meta">Room ' + id + '</div>' +
-                '<div class="fh-hotel-zoom-overlay-badge fh-hotel-zoom-overlay-badge--none">NO GUEST</div>';
+            overlay.innerHTML = roomLabel +
+                '<div class="fh-zoom-overlay-species">UNASSIGNED</div>' +
+                '<div class="fh-zoom-overlay-badge fh-zoom-overlay-badge--none">NO GUEST</div>';
         } else if (state === 'noarrival') {
-            overlay.innerHTML = '<div class="fh-hotel-zoom-overlay-species">NO ARRIVAL</div>' +
-                '<div class="fh-hotel-zoom-overlay-meta">Room ' + id + '</div>' +
-                '<div class="fh-hotel-zoom-overlay-badge fh-hotel-zoom-overlay-badge--none">NO ARRIVAL</div>';
+            overlay.innerHTML = roomLabel +
+                '<div class="fh-zoom-overlay-species">NO ARRIVAL</div>' +
+                '<div class="fh-zoom-overlay-badge fh-zoom-overlay-badge--none">NO ARRIVAL</div>';
         } else {
-            var statusLabel = status === 'in_qt' ? 'IN QT' : status.replace(/_/g, ' ').toUpperCase();
-            var badgeClass = status === 'in_qt' ? 'fh-hotel-zoom-overlay-badge--qt' : 'fh-hotel-zoom-overlay-badge--none';
-            overlay.innerHTML = '<div class="fh-hotel-zoom-overlay-species">' + species + '</div>' +
-                '<div class="fh-hotel-zoom-overlay-meta">Room ' + id + ' &bull; Qty: ' + qty + '</div>' +
-                '<div class="fh-hotel-zoom-overlay-badge ' + badgeClass + '">' + statusLabel + '</div>';
+            var statusLabel, badgeClass;
+            if (status === 'in_qt' || status === 'in_quarantine') {
+                statusLabel = 'IN QT';
+                badgeClass = 'fh-zoom-overlay-badge--qt';
+            } else if (status === 'pending') {
+                statusLabel = 'PENDING';
+                badgeClass = 'fh-zoom-overlay-badge--pending';
+            } else {
+                statusLabel = status.replace(/_/g, ' ').toUpperCase();
+                badgeClass = 'fh-zoom-overlay-badge--none';
+            }
+            overlay.innerHTML = roomLabel +
+                '<div class="fh-zoom-overlay-species">' + species + '</div>' +
+                '<div class="fh-zoom-overlay-meta">Qty: ' + qty + ' &bull; Tank: ' + id + '</div>' +
+                '<div class="fh-zoom-overlay-badge ' + badgeClass + '">' + statusLabel + '</div>';
         }
+        document.body.appendChild(overlay);
 
-        building.appendChild(overlay);
-
-        /* Close button */
+        /* ── Close button (appended to body) ── */
         var closeBtn = document.createElement('button');
-        closeBtn.className = 'fh-hotel-zoom-close';
-        closeBtn.innerHTML = '&times;';
+        closeBtn.className = 'fh-zoom-close';
+        closeBtn.innerHTML = '\u00D7';
         closeBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            fishotelHotelZoomOut();
+            fishotelHotelZoomDismiss();
         });
-        building.appendChild(closeBtn);
+        document.body.appendChild(closeBtn);
+
+        /* ── Escape key handler ── */
+        _fhZoomEscHandler = function(e) {
+            if (e.key === 'Escape') fishotelHotelZoomDismiss();
+        };
+        document.addEventListener('keydown', _fhZoomEscHandler);
 
         fishotelHotelZoomedRoom = id;
     }
 
-    /* Click on building background (not a room) zooms out */
+    /* Click on building background (not a room) dismisses zoom */
     document.querySelectorAll('.fh-hotel-building, .fh-hotel-building-2').forEach(function(b) {
         b.addEventListener('click', function(e) {
-            if (fishotelHotelZoomedRoom && !e.target.closest('.fh-hotel-room') && !e.target.closest('.fh-hotel-zoom-close')) {
-                fishotelHotelZoomOut();
+            if (!fishotelHotelZoomedRoom) return;
+            if (!e.target.closest('.fh-hotel-room')) {
+                fishotelHotelZoomDismiss();
             }
         });
     });
@@ -1014,7 +1047,7 @@ trait FisHotel_HotelProgram {
         var dots = slider.querySelectorAll('.fh-hotel-dot');
         var current = 0;
         function goTo(n) {
-            fishotelHotelZoomOut();
+            fishotelHotelZoomDismiss();
             slides[current].classList.remove('fh-hotel-slide--active');
             dots[current].classList.remove('fh-hotel-dot--active');
             current = n;
