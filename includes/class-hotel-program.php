@@ -453,6 +453,7 @@ trait FisHotel_HotelProgram {
         // Determine which rooms belong to logged-in customer
         $logged_in      = is_user_logged_in();
         $customer_rooms = [];
+        $my_batch_ids   = [];
         if ( $logged_in ) {
             $uid      = get_current_user_id();
             $my_reqs  = get_posts( [
@@ -639,15 +640,20 @@ trait FisHotel_HotelProgram {
 .fh-room-card{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(420px,88vw);background:#111;border:1px solid rgba(150,136,95,0.35);padding:28px 32px;box-sizing:border-box;z-index:10001;opacity:0;transition:opacity 200ms ease;font-family:'Oswald',sans-serif;color:#f5f0e8;text-align:center}
 .fh-room-card--visible{opacity:1}
 .fh-room--zooming .fh-hotel-room-yours{display:none !important}
-.fh-room-card-room{font-size:12px;font-variant:small-caps;letter-spacing:2px;color:#96885f;margin-bottom:4px}
-.fh-room-card-species{font-size:26px;font-weight:700;color:#f5f0e8;margin:6px 0;line-height:1.15}
-.fh-room-card-info{font-size:13px;color:#999;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
-.fh-room-card-badge{display:inline-block;font-size:11px;padding:3px 12px;border-radius:10px;letter-spacing:0.1em}
+.fh-room-card-room{font-size:12px;font-variant:small-caps;letter-spacing:2px;color:#96885f;margin-bottom:6px}
+.fh-room-card-rule{height:1px;background:rgba(150,136,95,0.25);margin:8px 0}
+.fh-room-card-list{display:flex;flex-direction:column;gap:6px}
+.fh-room-card--scroll .fh-room-card-list{max-height:60vh;overflow-y:auto}
+.fh-room-card-row{display:flex;align-items:center;gap:8px}
+.fh-room-card-row-name{flex:1;font-size:15px;color:#f5f0e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fh-room-card-row-qty{font-size:12px;color:#888;white-space:nowrap}
+.fh-room-card-star{color:#96885f;font-size:12px}
+.fh-room-card-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:8px;letter-spacing:0.1em;white-space:nowrap}
 .fh-room-card-badge--qt{background:#2d5a2d;color:#fff}
 .fh-room-card-badge--pending{background:#8b6914;color:#fff}
 .fh-room-card-badge--doa{background:#8b1414;color:#fff}
 .fh-room-card-badge--none{background:#888;color:#fff}
-.fh-room-card-yours{margin-top:12px;padding-top:10px;border-top:1px solid rgba(150,136,95,0.3);font-size:13px;color:#96885f;letter-spacing:1px}
+.fh-room-card-summary{font-size:11px;color:#777;letter-spacing:0.5px}
 
 /* RESPONSIVE */
 @media(max-width:640px){
@@ -793,12 +799,17 @@ trait FisHotel_HotelProgram {
                     }
                     $cls = 'fh-hotel-room fh-hotel-room--' . $state;
                     if ( $is_mine ) $cls .= ' fh-hotel-room--mine';
-                    $total_qty = 0;
-                    foreach ( $fish_list as $fd ) { $total_qty += intval( $fd['qty'] ); }
-                    $first_species = ! empty( $fish_list ) ? $fish_list[0]['species'] : '';
-                    $first_status  = ! empty( $fish_list ) ? $fish_list[0]['status']  : '';
+                    $tank_fish = [];
+                    foreach ( $fish_list as $fd ) {
+                        $tank_fish[] = [
+                            'species' => $fd['species'],
+                            'qty'     => (int) $fd['qty'],
+                            'status'  => $fd['status'],
+                            'mine'    => isset( $my_batch_ids[ $fd['fish_id'] ] ),
+                        ];
+                    }
                 ?>
-                    <div class="<?php echo esc_attr( $cls ); ?>" data-room="<?php echo esc_attr( $tank_id ); ?>" data-room-state="<?php echo esc_attr( $state ); ?>" data-room-species="<?php echo esc_attr( $first_species ); ?>" data-room-qty="<?php echo intval( $total_qty ); ?>" data-room-status="<?php echo esc_attr( $first_status ); ?>" data-room-mine="<?php echo $is_mine ? '1' : '0'; ?>" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>', this)">
+                    <div class="<?php echo esc_attr( $cls ); ?>" data-room="<?php echo esc_attr( $tank_id ); ?>" data-room-state="<?php echo esc_attr( $state ); ?>" data-room-fish="<?php echo esc_attr( wp_json_encode( $tank_fish ) ); ?>" data-room-mine="<?php echo $is_mine ? '1' : '0'; ?>" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>', this)">
                         <?php if ( $is_mine ) : ?><div class="fh-hotel-room-yours">YOUR ROOM</div><?php endif; ?>
                     </div>
                 <?php endforeach; ?>
@@ -843,12 +854,17 @@ trait FisHotel_HotelProgram {
                 }
                 $cls = 'fh-hotel-room fh-hotel-room--' . $state;
                 if ( $is_mine ) $cls .= ' fh-hotel-room--mine';
-                $total_qty = 0;
-                foreach ( $fish_list as $fd ) { $total_qty += intval( $fd['qty'] ); }
-                $first_species = ! empty( $fish_list ) ? $fish_list[0]['species'] : '';
-                $first_status  = ! empty( $fish_list ) ? $fish_list[0]['status']  : '';
+                $tank_fish = [];
+                foreach ( $fish_list as $fd ) {
+                    $tank_fish[] = [
+                        'species' => $fd['species'],
+                        'qty'     => (int) $fd['qty'],
+                        'status'  => $fd['status'],
+                        'mine'    => isset( $my_batch_ids[ $fd['fish_id'] ] ),
+                    ];
+                }
             ?>
-                <div class="<?php echo esc_attr( $cls ); ?>" data-room="<?php echo esc_attr( $tank_id ); ?>" data-room-state="<?php echo esc_attr( $state ); ?>" data-room-species="<?php echo esc_attr( $first_species ); ?>" data-room-qty="<?php echo intval( $total_qty ); ?>" data-room-status="<?php echo esc_attr( $first_status ); ?>" data-room-mine="<?php echo $is_mine ? '1' : '0'; ?>" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>', this)">
+                <div class="<?php echo esc_attr( $cls ); ?>" data-room="<?php echo esc_attr( $tank_id ); ?>" data-room-state="<?php echo esc_attr( $state ); ?>" data-room-fish="<?php echo esc_attr( wp_json_encode( $tank_fish ) ); ?>" data-room-mine="<?php echo $is_mine ? '1' : '0'; ?>" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>', this)">
                     <?php if ( $is_mine ) : ?><div class="fh-hotel-room-yours">YOUR ROOM</div><?php endif; ?>
                 </div>
             <?php endforeach; ?>
@@ -1000,38 +1016,39 @@ trait FisHotel_HotelProgram {
         document.body.appendChild(backdrop);
         requestAnimationFrame(function() { backdrop.classList.add('fh-zoom-backdrop--visible'); });
 
-        /* After zoom finishes, inject info card */
-        var species = roomEl.dataset.roomSpecies || '';
-        var qty     = roomEl.dataset.roomQty || '0';
-        var status  = roomEl.dataset.roomStatus || '';
-        var isMine  = roomEl.dataset.roomMine === '1';
+        /* Build info card from multi-species data */
+        var fishList = [];
+        try { fishList = JSON.parse(roomEl.dataset.roomFish || '[]'); } catch(e) {}
 
-        var statusLabel, badgeClass;
-        if (status === 'in_qt' || status === 'in_quarantine') {
-            statusLabel = 'IN QT'; badgeClass = 'fh-room-card-badge--qt';
-        } else if (status === 'pending') {
-            statusLabel = 'PENDING'; badgeClass = 'fh-room-card-badge--pending';
-        } else if (status === 'doa') {
-            statusLabel = 'DOA'; badgeClass = 'fh-room-card-badge--doa';
-        } else {
-            statusLabel = status.replace(/_/g, ' ').toUpperCase();
-            badgeClass = 'fh-room-card-badge--none';
+        function fhBadge(st) {
+            var lbl, cls;
+            if (st === 'in_qt' || st === 'in_quarantine') { lbl = 'IN QT'; cls = 'fh-room-card-badge--qt'; }
+            else if (st === 'pending') { lbl = 'PENDING'; cls = 'fh-room-card-badge--pending'; }
+            else if (st === 'doa') { lbl = 'DOA'; cls = 'fh-room-card-badge--doa'; }
+            else { lbl = st.replace(/_/g, ' ').toUpperCase(); cls = 'fh-room-card-badge--none'; }
+            return '<span class="fh-room-card-badge ' + cls + '">' + lbl + '</span>';
         }
 
-        var yoursHtml = isMine ? '<div class="fh-room-card-yours">YOUR ROOM</div>' : '';
+        var rowsHtml = '';
+        for (var i = 0; i < fishList.length; i++) {
+            var f = fishList[i];
+            var star = f.mine ? '<span class="fh-room-card-star">\u2605</span> ' : '';
+            rowsHtml += '<div class="fh-room-card-row">' +
+                '<span class="fh-room-card-row-name">' + star + f.species + '</span>' +
+                '<span class="fh-room-card-row-qty">Qty: ' + f.qty + '</span>' +
+                fhBadge(f.status) +
+            '</div>';
+        }
 
         var card = document.createElement('div');
         card.className = 'fh-room-card';
+        if (fishList.length > 6) card.classList.add('fh-room-card--scroll');
         card.innerHTML =
             '<div class="fh-room-card-room">ROOM ' + id + '</div>' +
-            '<div class="fh-room-card-species">' + species + '</div>' +
-            '<div class="fh-room-card-info">' +
-                '<span>Qty: ' + qty + '</span>' +
-                '<span>&middot;</span>' +
-                '<span>Tank #' + id + '</span>' +
-                '<span class="fh-room-card-badge ' + badgeClass + '">' + statusLabel + '</span>' +
-            '</div>' +
-            yoursHtml;
+            '<div class="fh-room-card-rule"></div>' +
+            '<div class="fh-room-card-list">' + rowsHtml + '</div>' +
+            '<div class="fh-room-card-rule"></div>' +
+            '<div class="fh-room-card-summary">' + fishList.length + ' species &middot; Tank ' + id + '</div>';
         document.body.appendChild(card);
         requestAnimationFrame(function() { card.classList.add('fh-room-card--visible'); });
 
