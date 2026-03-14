@@ -880,4 +880,20 @@ trait FisHotel_Ajax {
         wp_send_json_success( [ 'message' => 'Bulk action completed.', 'total' => count( $library['assets'] ) ] );
     }
 
+    /* ─────────────────────────────────────────────
+     *  Verification AJAX stubs (Stage 5)
+     * ───────────────────────────────────────────── */
+
+    public function ajax_verification_accept() {
+        check_ajax_referer( 'fishotel_verification_nonce', 'nonce' );
+        // TODO: queue mutation implemented in Stage 5 Prompt 3
+        wp_send_json_success();
+    }
+
+    public function ajax_verification_pass() {
+        check_ajax_referer( 'fishotel_verification_nonce', 'nonce' );
+        // TODO: queue mutation implemented in Stage 5 Prompt 3
+        wp_send_json_success();
+    }
+
 }

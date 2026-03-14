@@ -2555,6 +2555,12 @@ trait FisHotel_Shortcodes {
             return ob_get_clean();
         }
 
+        // ─── Stage 5: Verification page ──
+        if ( $status === 'verification' ) {
+            ob_end_clean();
+            return $this->render_verification_page( $batch_name );
+        }
+
         // ─── Stage 4: Hotel Program postcard (in_quarantine) ──
         if ( $status === 'in_quarantine' ) {
             ob_end_clean();
@@ -3413,6 +3419,285 @@ trait FisHotel_Shortcodes {
         <?php endif; ?>
         <?php
         return ob_get_clean();
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Stage 5: Customer Verification Page
+     * ───────────────────────────────────────────── */
+
+    public function render_verification_page( $batch_name ) {
+        ob_start();
+
+        // ── Guest state ──
+        if ( ! is_user_logged_in() ) {
+            ?>
+            <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+            <div style="max-width:700px;margin:0 auto;font-family:'Oswald',sans-serif;">
+                <div style="background:linear-gradient(165deg,#0c161f 0%,#0a1320 50%,#081018 100%);border:2px solid #b5a165;border-radius:12px;padding:48px 28px;text-align:center;position:relative;overflow:hidden;">
+                    <div style="filter:blur(6px);opacity:0.3;pointer-events:none;position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 20px,rgba(181,161,101,0.05) 20px,rgba(181,161,101,0.05) 21px);"></div>
+                    <p style="color:#b5a165;font-size:1.4rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 12px;position:relative;">Order Verification</p>
+                    <p style="color:#8a9bae;font-size:0.95rem;margin:0 0 20px;position:relative;">Log in to view your order status.</p>
+                    <button type="button" onclick="document.getElementById('fishotel-login-modal').style.display='flex'" style="background:#b5a165;color:#0c161f;font-family:'Oswald',sans-serif;font-weight:700;font-size:0.95rem;padding:12px 36px;border:none;border-radius:6px;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;position:relative;">Log In</button>
+                </div>
+            </div>
+            <?php
+            return ob_get_clean();
+        }
+
+        $uid = get_current_user_id();
+
+        // ── Load verification queue ──
+        $option_key = 'fishotel_verification_queue_' . sanitize_title( $batch_name );
+        $queue_data = get_option( $option_key, [] );
+
+        // ── Find current user's species entries ──
+        $my_species = [];
+        if ( ! empty( $queue_data['species'] ) ) {
+            foreach ( $queue_data['species'] as $fish_id => $sp ) {
+                foreach ( $sp['queue'] as $pos => $entry ) {
+                    if ( intval( $entry['user_id'] ) !== $uid ) continue;
+
+                    // Determine display status
+                    $display_status = $this->verification_display_status( $sp, $pos );
+
+                    // Count pending ahead
+                    $pending_ahead = 0;
+                    for ( $i = 0; $i < $pos; $i++ ) {
+                        if ( $sp['queue'][ $i ]['status'] === 'pending' ) $pending_ahead++;
+                    }
+
+                    $my_species[] = [
+                        'fish_id'        => $fish_id,
+                        'name'           => $sp['name'],
+                        'graduated_qty'  => $sp['graduated_qty'],
+                        'requested_qty'  => $entry['requested_qty'],
+                        'display_status' => $display_status,
+                        'pending_ahead'  => $pending_ahead,
+                        'entry_status'   => $entry['status'],
+                        'accepted_qty'   => $entry['accepted_qty'],
+                    ];
+                }
+            }
+        }
+
+        // ── No fish in this batch ──
+        if ( empty( $my_species ) ) {
+            ?>
+            <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+            <div style="max-width:700px;margin:0 auto;font-family:'Oswald',sans-serif;">
+                <div style="background:linear-gradient(165deg,#0c161f 0%,#0a1320 50%,#081018 100%);border:2px solid #b5a165;border-radius:12px;padding:48px 28px;text-align:center;">
+                    <p style="color:#b5a165;font-size:1.3rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 12px;"><?php echo esc_html( strtoupper( $batch_name ) ); ?> &middot; ORDER VERIFICATION</p>
+                    <p style="color:#8a9bae;font-size:0.95rem;margin:0;">You don't have any requests on file for this batch.</p>
+                </div>
+            </div>
+            <?php
+            return ob_get_clean();
+        }
+
+        // ── Status summary ──
+        $has_waiting   = false;
+        $has_action    = false;
+        foreach ( $my_species as $ms ) {
+            if ( $ms['display_status'] === 'waiting' ) $has_waiting = true;
+            if ( in_array( $ms['display_status'], [ 'pending_decision', 'passed_to_you' ], true ) ) $has_action = true;
+        }
+
+        $nonce = wp_create_nonce( 'fishotel_verification_nonce' );
+        ?>
+        <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+        <style>
+            .fhv-wrap{max-width:800px;margin:0 auto;font-family:'Oswald',sans-serif;color:#fff;}
+            .fhv-card{background:linear-gradient(165deg,#0c161f 0%,#0a1320 50%,#081018 100%);border:2px solid #b5a165;border-radius:12px;padding:32px 24px 24px;position:relative;overflow:hidden;}
+            .fhv-title{font-weight:700;font-size:clamp(1.2rem,3vw,1.6rem);color:#b5a165;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 6px;text-align:center;}
+            .fhv-sub{color:#8a9bae;font-size:clamp(0.78rem,1.8vw,0.9rem);text-align:center;margin:0 0 24px;font-weight:400;}
+            .fhv-table{width:100%;border-collapse:collapse;}
+            .fhv-table th{padding:10px 8px;text-align:left;color:#b5a165;font-weight:600;font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;border-bottom:2px solid #b5a165;}
+            .fhv-table td{padding:12px 8px;border-bottom:1px solid #1e2a38;vertical-align:middle;font-size:0.9rem;}
+            .fhv-table td:nth-child(2),.fhv-table td:nth-child(3),.fhv-table th:nth-child(2),.fhv-table th:nth-child(3){text-align:center;}
+            .fhv-badge{display:inline-block;padding:4px 12px;border-radius:4px;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap;}
+            .fhv-badge-confirmed{background:#1a3a1a;color:#27ae60;border:1px solid #27ae60;}
+            .fhv-badge-your-turn{background:#3a2a0a;color:#e07b2a;border:1px solid #e07b2a;animation:fhv-pulse-amber 2.5s ease-in-out infinite;}
+            .fhv-badge-waiting{background:#1a1a2a;color:#6a7a8a;border:1px solid #3a4a5a;}
+            .fhv-badge-passed{background:#1a1a1a;color:#555;border:1px solid #333;}
+            @keyframes fhv-pulse-amber{0%,100%{box-shadow:0 0 4px #e07b2a,0 0 10px rgba(224,123,42,0.3);}50%{box-shadow:0 0 2px #e07b2a,0 0 4px rgba(224,123,42,0.1);}}
+            .fhv-action-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+            .fhv-qty-input{width:56px;padding:5px 6px;text-align:center;background:#1a2a3a;border:1px solid #3a4a5a;color:#fff;border-radius:4px;font-family:'Oswald',sans-serif;font-size:0.9rem;}
+            .fhv-btn-accept{background:#27ae60;color:#fff;border:none;border-radius:4px;padding:6px 16px;font-family:'Oswald',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;}
+            .fhv-btn-accept:hover{background:#2ecc71;}
+            .fhv-btn-pass{background:transparent;color:#8b3a3a;border:1px solid #5a2a2a;border-radius:4px;padding:6px 16px;font-family:'Oswald',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;}
+            .fhv-btn-pass:hover{background:#2a1515;color:#c0504d;}
+            .fhv-summary{text-align:center;margin-top:20px;padding:16px;border-top:1px solid #1e2a38;font-size:0.9rem;}
+            .fhv-error{color:#e74c3c;font-size:0.78rem;margin-top:4px;display:none;}
+            @media(max-width:600px){.fhv-table th:nth-child(2),.fhv-table td:nth-child(2){display:none;}.fhv-action-row{gap:6px;}}
+        </style>
+        <div class="fhv-wrap">
+            <div class="fhv-card">
+                <p class="fhv-title"><?php echo esc_html( strtoupper( $batch_name ) ); ?> &middot; ORDER VERIFICATION</p>
+                <p class="fhv-sub">Review your order below. Accept what you'd like to keep.</p>
+
+                <table class="fhv-table">
+                    <thead><tr><th>Species</th><th>Qty Available</th><th>Your Request</th><th>Action</th></tr></thead>
+                    <tbody>
+                    <?php foreach ( $my_species as $ms ) : ?>
+                        <tr>
+                            <td><?php echo esc_html( $ms['name'] ); ?></td>
+                            <td><?php echo intval( $ms['graduated_qty'] ); ?></td>
+                            <td><?php echo intval( $ms['requested_qty'] ); ?></td>
+                            <td class="fhv-action-cell" data-fish-id="<?php echo intval( $ms['fish_id'] ); ?>">
+                                <?php
+                                $ds = $ms['display_status'];
+                                if ( $ds === 'confirmed' ) {
+                                    echo '<span class="fhv-badge fhv-badge-confirmed">CONFIRMED</span>';
+                                } elseif ( $ds === 'pending_decision' || $ds === 'passed_to_you' ) {
+                                    $badge_label = ( $ds === 'passed_to_you' ) ? 'OFFERED TO YOU' : 'YOUR TURN';
+                                    $default_qty = min( $ms['requested_qty'], $ms['graduated_qty'] );
+                                    ?>
+                                    <div class="fhv-action-row">
+                                        <span class="fhv-badge fhv-badge-your-turn"><?php echo $badge_label; ?></span>
+                                        <input type="number" class="fhv-qty-input" value="<?php echo $default_qty; ?>" min="1" max="<?php echo intval( $ms['requested_qty'] ); ?>" data-fish="<?php echo intval( $ms['fish_id'] ); ?>">
+                                        <button type="button" class="fhv-btn-accept" onclick="fhvAccept(this)">Accept</button>
+                                        <button type="button" class="fhv-btn-pass" onclick="fhvPass(this)">Pass</button>
+                                    </div>
+                                    <div class="fhv-error"></div>
+                                    <?php
+                                } elseif ( $ds === 'waiting' ) {
+                                    echo '<span class="fhv-badge fhv-badge-waiting">WAITING</span>';
+                                    echo '<span style="color:#6a7a8a;font-size:0.78rem;margin-left:8px;">(' . intval( $ms['pending_ahead'] ) . ' ahead of you)</span>';
+                                } elseif ( $ds === 'passed' ) {
+                                    echo '<span class="fhv-badge fhv-badge-passed">PASSED</span>';
+                                }
+                                ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+
+                <div class="fhv-summary" style="color:<?php echo $has_action ? '#e07b2a' : ( $has_waiting ? '#8a9bae' : '#27ae60' ); ?>;">
+                    <?php
+                    if ( $has_action ) {
+                        echo 'Action required &mdash; please respond to the items above.';
+                    } elseif ( $has_waiting ) {
+                        echo 'Hang tight &mdash; we\'re working through the queue on some of your fish.';
+                    } else {
+                        echo 'Your order is complete &mdash; we\'ll be in touch soon.';
+                    }
+                    ?>
+                </div>
+            </div>
+        </div>
+        <script>
+        (function(){
+            var ajaxUrl = '<?php echo admin_url( "admin-ajax.php" ); ?>';
+            var nonce   = '<?php echo $nonce; ?>';
+            var batch   = '<?php echo esc_js( $batch_name ); ?>';
+
+            window.fhvAccept = function(btn) {
+                var cell    = btn.closest('.fhv-action-cell');
+                var fishId  = cell.getAttribute('data-fish-id');
+                var qtyEl   = cell.querySelector('.fhv-qty-input');
+                var errEl   = cell.querySelector('.fhv-error');
+                var qty     = parseInt(qtyEl.value, 10);
+                if (!qty || qty < 1) { errEl.textContent = 'Enter a valid quantity.'; errEl.style.display = 'block'; return; }
+                btn.disabled = true;
+                errEl.style.display = 'none';
+
+                var fd = new FormData();
+                fd.append('action', 'fishotel_verification_accept');
+                fd.append('fish_id', fishId);
+                fd.append('batch_name', batch);
+                fd.append('qty', qty);
+                fd.append('nonce', nonce);
+
+                fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(data){
+                        if (data.success) {
+                            cell.innerHTML = '<span class="fhv-badge fhv-badge-confirmed">CONFIRMED</span>';
+                        } else {
+                            errEl.textContent = data.data && data.data.message ? data.data.message : 'Something went wrong.';
+                            errEl.style.display = 'block';
+                            btn.disabled = false;
+                        }
+                    })
+                    .catch(function(){
+                        errEl.textContent = 'Network error — please try again.';
+                        errEl.style.display = 'block';
+                        btn.disabled = false;
+                    });
+            };
+
+            window.fhvPass = function(btn) {
+                var cell   = btn.closest('.fhv-action-cell');
+                var fishId = cell.getAttribute('data-fish-id');
+                var errEl  = cell.querySelector('.fhv-error');
+                btn.disabled = true;
+                errEl.style.display = 'none';
+
+                var fd = new FormData();
+                fd.append('action', 'fishotel_verification_pass');
+                fd.append('fish_id', fishId);
+                fd.append('batch_name', batch);
+                fd.append('nonce', nonce);
+
+                fetch(ajaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(data){
+                        if (data.success) {
+                            cell.innerHTML = '<span class="fhv-badge fhv-badge-passed">PASSED</span>';
+                        } else {
+                            errEl.textContent = data.data && data.data.message ? data.data.message : 'Something went wrong.';
+                            errEl.style.display = 'block';
+                            btn.disabled = false;
+                        }
+                    })
+                    .catch(function(){
+                        errEl.textContent = 'Network error — please try again.';
+                        errEl.style.display = 'block';
+                        btn.disabled = false;
+                    });
+            };
+        })();
+        </script>
+        <?php
+        return ob_get_clean();
+    }
+
+    private function verification_display_status( $species_data, $position ) {
+        $queue = $species_data['queue'];
+        $entry = $queue[ $position ];
+
+        // Already passed
+        if ( $entry['status'] === 'passed' ) return 'passed';
+
+        // Already accepted
+        if ( $entry['status'] === 'accepted' ) return 'confirmed';
+
+        // Check if confirmed by supply — sum requested_qty of all entries at or before this position
+        $cumulative = 0;
+        for ( $i = 0; $i <= $position; $i++ ) {
+            $cumulative += $queue[ $i ]['requested_qty'];
+        }
+        if ( $cumulative <= $species_data['graduated_qty'] ) return 'confirmed';
+
+        // Check if passed_to_you — entry before them has status passed
+        if ( $position > 0 && $queue[ $position - 1 ]['status'] === 'passed' && $entry['status'] === 'pending' ) {
+            return 'passed_to_you';
+        }
+
+        // Check if pending_decision — first pending entry with all before accepted/passed
+        if ( $entry['status'] === 'pending' ) {
+            $all_before_resolved = true;
+            for ( $i = 0; $i < $position; $i++ ) {
+                if ( ! in_array( $queue[ $i ]['status'], [ 'accepted', 'passed' ], true ) ) {
+                    $all_before_resolved = false;
+                    break;
+                }
+            }
+            if ( $all_before_resolved ) return 'pending_decision';
+        }
+
+        return 'waiting';
     }
 
 }
