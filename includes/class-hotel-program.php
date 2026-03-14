@@ -603,6 +603,11 @@ trait FisHotel_HotelProgram {
 .fh-hotel-building[data-band="night"] .fh-hotel-sign-glow{background:radial-gradient(ellipse 60% 50% at 50% 60%,rgba(255,230,140,0.28) 0%,rgba(255,190,80,0.14) 40%,transparent 70%) !important}
 /* Slider for multiple buildings */
 .fh-hotel-slider{position:relative;max-width:1000px;margin:32px auto 0}
+.fh-hotel-table-view th{cursor:pointer;user-select:none}
+.fh-hotel-table-view th:hover{color:#c9a84c}
+.fh-hotel-table-view th.fh-sort-active{color:#c9a84c}
+.fh-hotel-table-view .fh-sort-arrow{font-size:10px;margin-left:4px;opacity:0.5}
+.fh-hotel-table-view th.fh-sort-active .fh-sort-arrow{opacity:1}
 .fh-hotel-slides{overflow:hidden}
 .fh-hotel-slide{display:none}
 .fh-hotel-slide--active{display:block}
@@ -655,7 +660,7 @@ trait FisHotel_HotelProgram {
 .fh-room-card-summary{font-size:11px;color:#777;letter-spacing:0.5px}
 
 /* VIEW TOGGLE */
-.fh-hotel-view-toggle{text-align:right;margin-bottom:8px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px}
+.fh-hotel-view-toggle{position:absolute;top:10px;right:12px;z-index:10;margin:0;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px}
 .fh-toggle-opt{cursor:pointer;color:rgba(225,225,225,0.35)}
 .fh-toggle-opt.fh-toggle-active{color:#96885f}
 .fh-toggle-sep{color:rgba(225,225,225,0.2);margin:0 8px}
@@ -791,13 +796,13 @@ trait FisHotel_HotelProgram {
     $floor_labels = [ 1 => '20 Gallon', 2 => '40 Gallon', 3 => 'QT Annex — 40 Gallon' ];
     $qt_rooms = [ '301', '302' ];
     ?>
-    <div class="fh-hotel-view-toggle">
-      <span class="fh-toggle-opt fh-toggle-building fh-toggle-active" data-view="building">&#8862; Building</span>
-      <span class="fh-toggle-sep">&middot;</span>
-      <span class="fh-toggle-opt fh-toggle-table" data-view="table">&#8801; Table View</span>
-    </div>
     <div class="fh-hotel-table-view" style="display:none"></div>
     <div class="fh-hotel-slider">
+      <div class="fh-hotel-view-toggle">
+        <span class="fh-toggle-opt fh-toggle-building fh-toggle-active" data-view="building">&#8862; Building</span>
+        <span class="fh-toggle-sep">&middot;</span>
+        <span class="fh-toggle-opt fh-toggle-table" data-view="table">&#8801; Table View</span>
+      </div>
       <div class="fh-hotel-slides">
         <!-- Slide 1: Main Building -->
         <div class="fh-hotel-slide fh-hotel-slide--active">
@@ -1108,27 +1113,87 @@ trait FisHotel_HotelProgram {
         var toggles = document.querySelectorAll('.fh-toggle-opt');
         if (!slider || !tableWrap || !toggles.length) return;
 
-        function buildTableView() {
-            var rooms = document.querySelectorAll('[data-room-fish]');
-            var rows = [];
-            rooms.forEach(function(r) {
+        var statusLabel = {
+            'in_quarantine': 'In Quarantine',
+            'pending': 'Pending',
+            'doa': 'DOA',
+            'no_arrival': 'No Arrival',
+            'qt': 'In Quarantine'
+        };
+        var columns = [
+            { key: 'room',    label: 'ROOM' },
+            { key: 'species', label: 'SPECIES' },
+            { key: 'qty',     label: 'QTY' },
+            { key: 'status',  label: 'STATUS' }
+        ];
+        var sortCol = 'room';
+        var sortDir = 'asc'; /* asc, desc, or null (default=room asc) */
+        var allRows = [];
+
+        function gatherRows() {
+            allRows = [];
+            document.querySelectorAll('[data-room-fish]').forEach(function(r) {
                 var room = r.getAttribute('data-room');
                 var fish;
                 try { fish = JSON.parse(r.getAttribute('data-room-fish')); } catch(e) { return; }
                 if (!fish || !fish.length) return;
                 fish.forEach(function(f) {
-                    rows.push({ room: room, species: f.species, qty: f.qty, status: f.status, mine: f.mine });
+                    allRows.push({ room: room, species: f.species, qty: f.qty, status: f.status, mine: f.mine });
                 });
             });
-            rows.sort(function(a, b) { return a.room.localeCompare(b.room, undefined, {numeric: true}); });
-            var html = '<table><thead><tr><th>ROOM</th><th>SPECIES</th><th>QTY</th><th>STATUS</th></tr></thead><tbody>';
-            rows.forEach(function(r) {
+        }
+
+        function sortRows() {
+            var key = sortCol;
+            var dir = sortDir === 'desc' ? -1 : 1;
+            allRows.sort(function(a, b) {
+                var av = a[key], bv = b[key];
+                if (key === 'qty') return (av - bv) * dir;
+                if (key === 'room') return a.room.localeCompare(b.room, undefined, {numeric: true}) * dir;
+                var al = (statusLabel[av] || av).toLowerCase();
+                var bl = (statusLabel[bv] || bv).toLowerCase();
+                if (typeof av === 'string') return al.localeCompare(bl) * dir;
+                return 0;
+            });
+        }
+
+        function renderTable() {
+            var html = '<table><thead><tr>';
+            columns.forEach(function(c) {
+                var active = sortCol === c.key;
+                var arrow = !active ? '&#x21C5;' : (sortDir === 'asc' ? '&#x2191;' : '&#x2193;');
+                var cls = active ? ' class="fh-sort-active"' : '';
+                html += '<th' + cls + ' data-sort="' + c.key + '">' + c.label + '<span class="fh-sort-arrow">' + arrow + '</span></th>';
+            });
+            html += '</tr></thead><tbody>';
+            allRows.forEach(function(r) {
                 var cls = r.mine ? ' class="fh-table-mine"' : '';
-                var badge = r.status === 'qt' ? 'QT' : r.status === 'pending' ? 'PENDING' : r.status === 'doa' ? 'DOA' : r.status.toUpperCase();
-                html += '<tr' + cls + '><td>' + r.room + '</td><td>' + r.species + '</td><td>' + r.qty + '</td><td>' + badge + '</td></tr>';
+                var display = statusLabel[r.status] || r.status.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+                html += '<tr' + cls + '><td>' + r.room + '</td><td>' + r.species + '</td><td>' + r.qty + '</td><td>' + display + '</td></tr>';
             });
             html += '</tbody></table>';
             tableWrap.innerHTML = html;
+
+            tableWrap.querySelectorAll('th[data-sort]').forEach(function(th) {
+                th.addEventListener('click', function() {
+                    var col = th.getAttribute('data-sort');
+                    if (sortCol === col) {
+                        if (sortDir === 'asc') { sortDir = 'desc'; }
+                        else { sortCol = 'room'; sortDir = 'asc'; } /* reset to default */
+                    } else {
+                        sortCol = col;
+                        sortDir = 'asc';
+                    }
+                    sortRows();
+                    renderTable();
+                });
+            });
+        }
+
+        function buildTableView() {
+            gatherRows();
+            sortRows();
+            renderTable();
         }
 
         function showView(view) {
