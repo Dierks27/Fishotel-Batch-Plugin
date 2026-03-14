@@ -161,6 +161,7 @@ trait FisHotel_Admin {
         register_setting( 'fishotel_batch_settings', 'fishotel_admin_test_mode' );
         register_setting( 'fishotel_batch_settings', 'fishotel_deposit_product_id', [ 'default' => 31985 ] );
         register_setting( 'fishotel_batch_settings', 'fishotel_batch_deposit_amounts' );
+        register_setting( 'fishotel_batch_settings', 'fishotel_verification_response_hours', [ 'default' => 24 ] );
     }
 
     public function batch_settings_html() {
@@ -210,6 +211,9 @@ trait FisHotel_Admin {
             update_option( 'fishotel_deposit_product_id', intval( $_POST['deposit_product_id'] ?? 31985 ) );
             update_option( 'fishotel_current_batch', sanitize_text_field( $_POST['fishotel_current_batch'] ?? '' ) );
             update_option( 'fishotel_admin_test_mode', isset( $_POST['admin_test_mode'] ) ? 1 : 0 );
+            if ( isset( $_POST['verification_response_hours'] ) ) {
+                update_option( 'fishotel_verification_response_hours', max( 1, intval( $_POST['verification_response_hours'] ) ) );
+            }
 
             $new_assignments = [];
             $new_statuses = [];
@@ -451,6 +455,13 @@ trait FisHotel_Admin {
                             <tr>
                                 <th style="color:#ddd;">Admin Test Mode</th>
                                 <td><label style="color:#ddd;"><input type="checkbox" name="admin_test_mode" form="fishotel-save-all-form" <?php checked( $admin_test_mode, 1 ); ?>> Bypass deposit check for admins</label></td>
+                            </tr>
+                            <tr>
+                                <th style="color:#ddd;">Verification Response Window</th>
+                                <td>
+                                    <input type="number" name="verification_response_hours" form="fishotel-save-all-form" value="<?php echo esc_attr( get_option( 'fishotel_verification_response_hours', 24 ) ); ?>" min="1" style="width:80px;padding:5px 8px;border-radius:4px;"> <span style="color:#aaa;">hours</span>
+                                    <small style="display:block;margin-top:5px;color:#aaa;">Time customers have to accept or pass before auto-pass kicks in</small>
+                                </td>
                             </tr>
                             <tr>
                                 <th style="color:#ddd;vertical-align:top;padding-top:14px;">💲 Import Master Prices</th>
@@ -3443,6 +3454,13 @@ trait FisHotel_Admin {
 
             update_post_meta( $batch_id, '_graduation_qty', intval( $qty ) );
         }
+
+        // Advance batch status to graduation and build verification queue
+        $statuses = get_option( 'fishotel_batch_statuses', [] );
+        $statuses[ $batch_name ] = 'graduation';
+        update_option( 'fishotel_batch_statuses', $statuses );
+
+        $this->build_verification_queue( $batch_name );
 
         wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=graduation&graduation_saved=1' ) );
         exit;

@@ -3346,4 +3346,130 @@ trait FisHotel_HotelProgram {
 
         update_option( 'fishotel_asset_library', $library );
     }
+
+    /* ─────────────────────────────────────────────
+     *  Verification Queue Builder (Stage 5)
+     * ───────────────────────────────────────────── */
+
+    public function build_verification_queue( $batch_name ) {
+        // Step 1 — Gather species data
+        $batch_fish = get_posts( [
+            'post_type'        => 'fish_batch',
+            'numberposts'      => -1,
+            'post_status'      => 'any',
+            'suppress_filters' => true,
+            'meta_query'       => [
+                [
+                    'key'   => '_batch_name',
+                    'value' => $batch_name,
+                ],
+            ],
+        ] );
+
+        $species = [];
+        foreach ( $batch_fish as $bp ) {
+            if ( get_post_meta( $bp->ID, '_is_admin_order', true ) ) continue;
+
+            $cq = get_post_meta( $bp->ID, '_current_qty', true );
+            if ( $cq !== '' && $cq !== false ) {
+                $graduated_qty = intval( $cq );
+            } else {
+                $graduated_qty = intval( get_post_meta( $bp->ID, '_arrival_qty', true ) );
+            }
+            if ( $graduated_qty <= 0 ) continue;
+
+            $common = FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title );
+
+            $species[ $bp->ID ] = [
+                'name'          => $common,
+                'graduated_qty' => $graduated_qty,
+                'queue'         => [],
+            ];
+        }
+
+        // Step 2 — Gather request data
+        $requests = get_posts( [
+            'post_type'        => 'fish_request',
+            'numberposts'      => -1,
+            'post_status'      => 'any',
+            'suppress_filters' => true,
+            'meta_query'       => [
+                [
+                    'key'   => '_batch_name',
+                    'value' => $batch_name,
+                ],
+            ],
+        ] );
+
+        $items_by_fish = []; // fish_batch_post_id => [ { user_id, qty, requested_at } ]
+        foreach ( $requests as $req ) {
+            if ( get_post_meta( $req->ID, '_is_admin_order', true ) ) continue;
+
+            $user_id    = intval( get_post_meta( $req->ID, '_customer_id', true ) );
+            $cart_items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
+
+            foreach ( $cart_items as $item ) {
+                $fish_id      = intval( $item['batch_id'] ?? 0 );
+                $qty          = intval( $item['qty'] ?? 0 );
+                $requested_at = $item['requested_at'] ?? '';
+
+                if ( ! $fish_id || $qty <= 0 ) continue;
+
+                $items_by_fish[ $fish_id ][] = [
+                    'user_id'      => $user_id,
+                    'requested_qty' => $qty,
+                    'requested_at' => $requested_at,
+                ];
+            }
+        }
+
+        // Step 3 — Build per-species queues (sorted by requested_at ascending)
+        foreach ( $species as $fish_id => &$sp ) {
+            if ( empty( $items_by_fish[ $fish_id ] ) ) continue;
+
+            $queue = [];
+            foreach ( $items_by_fish[ $fish_id ] as $entry ) {
+                $queue[] = [
+                    'user_id'           => $entry['user_id'],
+                    'requested_qty'     => $entry['requested_qty'],
+                    'requested_at'      => $entry['requested_at'],
+                    'status'            => 'pending',
+                    'accepted_qty'      => 0,
+                    'notified_at'       => null,
+                    'decision_deadline' => null,
+                ];
+            }
+
+            usort( $queue, function( $a, $b ) {
+                return strcmp( $a['requested_at'], $b['requested_at'] );
+            } );
+
+            $sp['queue'] = $queue;
+        }
+        unset( $sp );
+
+        // Step 4 — Store the queue
+        $response_hours = intval( get_option( 'fishotel_verification_response_hours', 24 ) );
+        $queue_data = [
+            'batch_name'           => $batch_name,
+            'started_at'           => time(),
+            'response_window_hours' => $response_hours,
+            'species'              => $species,
+        ];
+
+        $option_key = 'fishotel_verification_queue_' . sanitize_title( $batch_name );
+        update_option( $option_key, $queue_data );
+
+        // Step 5 — Advance batch status to verification
+        $statuses = get_option( 'fishotel_batch_statuses', [] );
+        $statuses[ $batch_name ] = 'verification';
+        update_option( 'fishotel_batch_statuses', $statuses );
+
+        // Step 6 — Trigger customer notification check
+        $this->maybe_notify_customers( $batch_name );
+    }
+
+    // TODO: implemented in Stage 5 Prompt 4
+    public function maybe_notify_customers( $batch_name ) {
+    }
 }
