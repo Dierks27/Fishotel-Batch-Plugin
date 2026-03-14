@@ -660,7 +660,7 @@ trait FisHotel_HotelProgram {
 .fh-room-card-summary{font-size:11px;color:#777;letter-spacing:0.5px}
 
 /* VIEW TOGGLE */
-.fh-hotel-view-toggle{position:absolute;top:10px;right:12px;z-index:10;margin:0;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px}
+.fh-hotel-view-toggle{text-align:right;margin-bottom:6px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px}
 .fh-toggle-opt{cursor:pointer;color:rgba(225,225,225,0.35)}
 .fh-toggle-opt.fh-toggle-active{color:#96885f}
 .fh-toggle-sep{color:rgba(225,225,225,0.2);margin:0 8px}
@@ -796,13 +796,13 @@ trait FisHotel_HotelProgram {
     $floor_labels = [ 1 => '20 Gallon', 2 => '40 Gallon', 3 => 'QT Annex — 40 Gallon' ];
     $qt_rooms = [ '301', '302' ];
     ?>
+    <div class="fh-hotel-view-toggle">
+      <span class="fh-toggle-opt fh-toggle-building fh-toggle-active" data-view="building">&#8862; Building</span>
+      <span class="fh-toggle-sep">&middot;</span>
+      <span class="fh-toggle-opt fh-toggle-table" data-view="table">&#8801; Table View</span>
+    </div>
     <div class="fh-hotel-table-view" style="display:none"></div>
     <div class="fh-hotel-slider">
-      <div class="fh-hotel-view-toggle">
-        <span class="fh-toggle-opt fh-toggle-building fh-toggle-active" data-view="building">&#8862; Building</span>
-        <span class="fh-toggle-sep">&middot;</span>
-        <span class="fh-toggle-opt fh-toggle-table" data-view="table">&#8801; Table View</span>
-      </div>
       <div class="fh-hotel-slides">
         <!-- Slide 1: Main Building -->
         <div class="fh-hotel-slide fh-hotel-slide--active">
