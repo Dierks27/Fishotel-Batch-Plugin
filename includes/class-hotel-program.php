@@ -3569,6 +3569,104 @@ trait FisHotel_HotelProgram {
         $this->send_verification_email( $user_id, $batch_name, $queue );
     }
 
+    /* ─────────────────────────────────────────────
+     *  Verification Cron — Auto-Pass Expired Windows
+     * ───────────────────────────────────────────── */
+
+    public function run_verification_cron() {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE 'fishotel_verification_queue_%'",
+            ARRAY_A
+        );
+
+        if ( empty( $rows ) ) return;
+
+        $statuses = get_option( 'fishotel_batch_statuses', [] );
+
+        foreach ( $rows as $row ) {
+            $option_key = $row['option_name'];
+            $queue      = maybe_unserialize( $row['option_value'] );
+            if ( empty( $queue['batch_name'] ) || empty( $queue['species'] ) ) continue;
+
+            $batch_name = $queue['batch_name'];
+
+            // Skip if batch is no longer in verification stage
+            if ( ( $statuses[ $batch_name ] ?? '' ) !== 'verification' ) continue;
+
+            $modified = false;
+
+            foreach ( $queue['species'] as $fish_id => &$sp ) {
+                foreach ( $sp['queue'] as $i => &$entry ) {
+                    if ( $entry['status'] !== 'pending' ) continue;
+                    if ( empty( $entry['decision_deadline'] ) ) continue;
+                    if ( $entry['decision_deadline'] >= time() ) continue;
+
+                    // Verify they are first in line
+                    $first_in_line = true;
+                    for ( $j = 0; $j < $i; $j++ ) {
+                        if ( ! in_array( $sp['queue'][ $j ]['status'], [ 'accepted', 'passed' ], true ) ) {
+                            $first_in_line = false;
+                            break;
+                        }
+                    }
+                    if ( ! $first_in_line ) continue;
+
+                    // Auto-pass this entry
+                    $entry['status']       = 'passed';
+                    $entry['accepted_qty'] = 0;
+                    $entry['decision_at']  = time();
+                    $entry['auto_passed']  = true;
+                    $modified = true;
+
+                    // Stamp deadline on next pending
+                    $response_hours = intval( get_option( 'fishotel_verification_response_hours', 24 ) );
+                    $deadline       = time() + ( $response_hours * 3600 );
+                    for ( $k = $i + 1; $k < count( $sp['queue'] ); $k++ ) {
+                        if ( $sp['queue'][ $k ]['status'] === 'pending' ) {
+                            $sp['queue'][ $k ]['decision_deadline'] = $deadline;
+                            break;
+                        }
+                    }
+                }
+                unset( $entry );
+            }
+            unset( $sp );
+
+            if ( ! $modified ) continue;
+
+            update_option( $option_key, $queue );
+
+            // Notify next-in-queue and check auto-passed users
+            foreach ( $queue['species'] as $fish_id => $sp ) {
+                foreach ( $sp['queue'] as $entry ) {
+                    if ( ! empty( $entry['auto_passed'] ) && $entry['decision_at'] >= time() - 5 ) {
+                        $this->maybe_notify_next_in_queue( $batch_name, $fish_id );
+                        $this->check_and_notify_user( $batch_name, intval( $entry['user_id'] ), $queue );
+                    }
+                }
+            }
+
+            // Check if entire batch is complete
+            $all_complete = true;
+            foreach ( $queue['species'] as $sp ) {
+                foreach ( $sp['queue'] as $entry ) {
+                    if ( ! in_array( $entry['status'], [ 'accepted', 'passed' ], true ) ) {
+                        $all_complete = false;
+                        break 2;
+                    }
+                }
+            }
+
+            if ( $all_complete ) {
+                $statuses[ $batch_name ] = 'draft';
+                update_option( 'fishotel_batch_statuses', $statuses );
+                // TODO: Stage 6 Draft Pool trigger goes here
+            }
+        }
+    }
+
     private function send_verification_email( $user_id, $batch_name, $queue ) {
         $user = get_userdata( $user_id );
         if ( ! $user || ! $user->user_email ) return;

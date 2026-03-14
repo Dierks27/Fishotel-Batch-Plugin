@@ -462,6 +462,7 @@ trait FisHotel_Admin {
                                 <td>
                                     <input type="number" name="verification_response_hours" form="fishotel-save-all-form" value="<?php echo esc_attr( get_option( 'fishotel_verification_response_hours', 24 ) ); ?>" min="1" style="width:80px;padding:5px 8px;border-radius:4px;"> <span style="color:#aaa;">hours</span>
                                     <small style="display:block;margin-top:5px;color:#aaa;">Time customers have to accept or pass before auto-pass kicks in</small>
+                                    <button type="button" id="fh-run-cron-btn" style="margin-top:8px;background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:5px 14px;font-size:12px;cursor:pointer;" onclick="(function(btn){btn.disabled=true;btn.textContent='Running...';fetch('<?php echo admin_url('admin-ajax.php'); ?>',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'action=fishotel_run_cron_now',credentials:'same-origin'}).then(function(r){return r.json()}).then(function(d){btn.textContent=d.success?'Done!':'Error';setTimeout(function(){btn.disabled=false;btn.textContent='Run Verification Cron Now'},2000)}).catch(function(){btn.textContent='Error';btn.disabled=false})})(this)">Run Verification Cron Now</button>
                                 </td>
                             </tr>
                             <tr>

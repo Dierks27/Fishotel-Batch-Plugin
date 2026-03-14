@@ -994,6 +994,12 @@ trait FisHotel_Ajax {
         wp_send_json_success();
     }
 
+    public function ajax_run_cron_now() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'access_denied' );
+        $this->run_verification_cron();
+        wp_send_json_success( 'Cron ran' );
+    }
+
     private function maybe_notify_next_in_queue( $batch_name, $fish_id ) {
         $option_key = 'fishotel_verification_queue_' . sanitize_title( $batch_name );
         $queue      = get_option( $option_key, [] );

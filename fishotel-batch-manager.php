@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v6.4 - Email + on-site notifications for verification queue.
- * Version:           6.4
+ * Description:       v6.5 - Cron auto-pass for expired verification windows.
+ * Version:           6.5
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '6.4' );
+define( 'FISHOTEL_VERSION', '6.5' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -137,6 +137,7 @@ class FisHotel_Batch_Manager {
     public function __construct() {
         add_action( 'init', [$this, 'init'] );
         $this->hotel_program_init();
+        add_action( 'fishotel_verification_cron', [$this, 'run_verification_cron'] );
         add_action( 'admin_menu', [$this, 'add_admin_menu'] );
         add_action( 'admin_init', [$this, 'register_settings'] );
         add_action( 'rest_api_init', [$this, 'register_rest_routes'] );
@@ -252,6 +253,7 @@ class FisHotel_Batch_Manager {
         add_action( 'wp_ajax_fishotel_verification_accept', [$this, 'ajax_verification_accept'] );
         add_action( 'wp_ajax_fishotel_verification_pass',   [$this, 'ajax_verification_pass'] );
         add_action( 'wp_ajax_fishotel_dismiss_notification', [$this, 'ajax_dismiss_notification'] );
+        add_action( 'wp_ajax_fishotel_run_cron_now',       [$this, 'ajax_run_cron_now'] );
 
         add_action( 'woocommerce_after_checkout_form', [$this, 'add_return_to_fish_button'] );
         add_action( 'woocommerce_thankyou', [$this, 'add_return_to_fish_button'] );
@@ -1029,5 +1031,15 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
     }
 }
 
-new FisHotel_Batch_Manager();
+$fishotel_instance = new FisHotel_Batch_Manager();
 new FisHotel_GitHub_Updater( __FILE__ );
+
+register_activation_hook( __FILE__, function() {
+    if ( ! wp_next_scheduled( 'fishotel_verification_cron' ) ) {
+        wp_schedule_event( time(), 'hourly', 'fishotel_verification_cron' );
+    }
+} );
+
+register_deactivation_hook( __FILE__, function() {
+    wp_clear_scheduled_hook( 'fishotel_verification_cron' );
+} );
