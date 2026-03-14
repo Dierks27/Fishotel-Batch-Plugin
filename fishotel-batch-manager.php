@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.46 - Room lightbox: full-viewport panel with aquarium image, pop animation, dark hotel aesthetic.
- * Version:           5.46
+ * Description:       v5.47 - Building zoom 4x with getBoundingClientRect origin, slide-up info card inside building.
+ * Version:           5.47
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.46' );
+define( 'FISHOTEL_VERSION', '5.47' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
