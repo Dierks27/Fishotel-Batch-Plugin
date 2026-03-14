@@ -636,18 +636,18 @@ trait FisHotel_HotelProgram {
 /* BUILDING ZOOM */
 .fh-zoom-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:99;opacity:0;transition:opacity 0.3s ease;cursor:pointer}
 .fh-zoom-backdrop--visible{opacity:1}
-.fh-room-card{position:fixed;bottom:0;left:50%;width:min(520px,92vw);background:rgba(15,15,15,0.95);border-top:2px solid rgba(150,136,95,0.5);padding:20px 24px;box-sizing:border-box;z-index:10001;transform:translateX(-50%) translateY(110%);transition:transform 250ms ease-out;font-family:'Oswald',sans-serif;color:#f5f0e8}
-.fh-room-card--visible{transform:translateX(-50%) translateY(0)}
+.fh-room-card{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(420px,88vw);background:#111;border:1px solid rgba(150,136,95,0.35);padding:28px 32px;box-sizing:border-box;z-index:10001;opacity:0;transition:opacity 200ms ease;font-family:'Oswald',sans-serif;color:#f5f0e8;text-align:center}
+.fh-room-card--visible{opacity:1}
 .fh-room--zooming .fh-hotel-room-yours{display:none !important}
-.fh-room-card-room{font-size:11px;font-variant:small-caps;letter-spacing:2px;color:#96885f;margin-bottom:4px}
-.fh-room-card-species{font-size:28px;font-weight:700;color:#f5f0e8;margin-bottom:8px;line-height:1.1}
-.fh-room-card-info{font-size:13px;color:#999;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fh-room-card-room{font-size:12px;font-variant:small-caps;letter-spacing:2px;color:#96885f;margin-bottom:4px}
+.fh-room-card-species{font-size:26px;font-weight:700;color:#f5f0e8;margin:6px 0;line-height:1.15}
+.fh-room-card-info{font-size:13px;color:#999;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
 .fh-room-card-badge{display:inline-block;font-size:11px;padding:3px 12px;border-radius:10px;letter-spacing:0.1em}
 .fh-room-card-badge--qt{background:#2d5a2d;color:#fff}
 .fh-room-card-badge--pending{background:#8b6914;color:#fff}
 .fh-room-card-badge--doa{background:#8b1414;color:#fff}
 .fh-room-card-badge--none{background:#888;color:#fff}
-.fh-room-card-yours{margin-top:10px;padding-top:8px;border-top:1px solid rgba(150,136,95,0.3);font-size:13px;color:#96885f;letter-spacing:1px}
+.fh-room-card-yours{margin-top:12px;padding-top:10px;border-top:1px solid rgba(150,136,95,0.3);font-size:13px;color:#96885f;letter-spacing:1px}
 
 /* RESPONSIVE */
 @media(max-width:640px){
@@ -913,39 +913,28 @@ trait FisHotel_HotelProgram {
         if (!_fhZoomOpen) return;
         _fhZoomOpen = false;
         if (_fhZoomRoom) { _fhZoomRoom.classList.remove('fh-room--zooming'); _fhZoomRoom = null; }
-        /* Slide card down first */
+        /* Fade card out */
         var card = document.querySelector('.fh-room-card');
         if (card) {
             card.classList.remove('fh-room-card--visible');
-            card.addEventListener('transitionend', function() {
-                card.remove();
-                /* Then unzoom building */
-                if (_fhZoomBuilding) {
-                    _fhZoomBuilding.style.transform = 'translate(0px, 0px) scale(1)';
-                    _fhZoomBuilding.addEventListener('transitionend', function onUnzoom(e) {
-                        if (e.propertyName !== 'transform') return;
-                        _fhZoomBuilding.removeEventListener('transitionend', onUnzoom);
-                        _fhZoomBuilding.style.transform = '';
-                        _fhZoomBuilding.style.transition = '';
-                        _fhZoomBuilding = null;
-                    });
-                }
-                /* Fade backdrop */
-                var bd = document.querySelector('.fh-zoom-backdrop');
-                if (bd) {
-                    bd.classList.remove('fh-zoom-backdrop--visible');
-                    bd.addEventListener('transitionend', function() { bd.remove(); }, { once: true });
-                }
-            }, { once: true });
-        } else {
-            /* Fallback if no card */
-            if (_fhZoomBuilding) {
+            card.addEventListener('transitionend', function() { card.remove(); }, { once: true });
+        }
+        /* Unzoom building */
+        if (_fhZoomBuilding) {
+            _fhZoomBuilding.style.transform = 'translate(0px, 0px) scale(1)';
+            _fhZoomBuilding.addEventListener('transitionend', function onUnzoom(e) {
+                if (e.propertyName !== 'transform') return;
+                _fhZoomBuilding.removeEventListener('transitionend', onUnzoom);
                 _fhZoomBuilding.style.transform = '';
                 _fhZoomBuilding.style.transition = '';
                 _fhZoomBuilding = null;
-            }
-            var bd = document.querySelector('.fh-zoom-backdrop');
-            if (bd) bd.remove();
+            });
+        }
+        /* Fade backdrop */
+        var bd = document.querySelector('.fh-zoom-backdrop');
+        if (bd) {
+            bd.classList.remove('fh-zoom-backdrop--visible');
+            bd.addEventListener('transitionend', function() { bd.remove(); }, { once: true });
         }
         if (_fhZoomEscHandler) {
             document.removeEventListener('keydown', _fhZoomEscHandler);
@@ -1031,25 +1020,20 @@ trait FisHotel_HotelProgram {
 
         var yoursHtml = isMine ? '<div class="fh-room-card-yours">YOUR ROOM</div>' : '';
 
-        building.addEventListener('transitionend', function onZoomIn(e) {
-            if (e.propertyName !== 'transform') return;
-            building.removeEventListener('transitionend', onZoomIn);
-
-            var card = document.createElement('div');
-            card.className = 'fh-room-card';
-            card.innerHTML =
-                '<div class="fh-room-card-room">ROOM ' + id + '</div>' +
-                '<div class="fh-room-card-species">' + species + '</div>' +
-                '<div class="fh-room-card-info">' +
-                    '<span>Qty: ' + qty + '</span>' +
-                    '<span>&middot;</span>' +
-                    '<span>Tank #' + id + '</span>' +
-                    '<span class="fh-room-card-badge ' + badgeClass + '">' + statusLabel + '</span>' +
-                '</div>' +
-                yoursHtml;
-            document.body.appendChild(card);
-            requestAnimationFrame(function() { card.classList.add('fh-room-card--visible'); });
-        });
+        var card = document.createElement('div');
+        card.className = 'fh-room-card';
+        card.innerHTML =
+            '<div class="fh-room-card-room">ROOM ' + id + '</div>' +
+            '<div class="fh-room-card-species">' + species + '</div>' +
+            '<div class="fh-room-card-info">' +
+                '<span>Qty: ' + qty + '</span>' +
+                '<span>&middot;</span>' +
+                '<span>Tank #' + id + '</span>' +
+                '<span class="fh-room-card-badge ' + badgeClass + '">' + statusLabel + '</span>' +
+            '</div>' +
+            yoursHtml;
+        document.body.appendChild(card);
+        requestAnimationFrame(function() { card.classList.add('fh-room-card--visible'); });
 
         /* Escape key */
         _fhZoomEscHandler = function(e) {

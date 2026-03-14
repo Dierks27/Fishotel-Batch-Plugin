@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.51 - Fixed info card positioning, hide YOUR ROOM label during zoom.
- * Version:           5.51
+ * Description:       v5.52 - Centered fade-in info card, no slide animation, no transitionend dependency.
+ * Version:           5.52
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.51' );
+define( 'FISHOTEL_VERSION', '5.52' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
