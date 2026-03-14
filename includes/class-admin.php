@@ -2952,6 +2952,10 @@ trait FisHotel_Admin {
             }
         }
 
+        // Arrival date vars (shared across tabs)
+        $hf_arrival_dates = get_option( 'fishotel_batch_arrival_dates', [] );
+        $hf_arrival_date  = $hf_arrival_dates[ $selected ] ?? '';
+
         // ── Arrival Data Form ──────────────────────────────────────────────
         if ( $tab === 'arrival' ) :
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:28px;">';
@@ -3078,15 +3082,13 @@ trait FisHotel_Admin {
         echo '</div></form></div>';
 
         // ── HF Post Generator ──────────────────────────────────────────────
-        $hf_arrival_dates = get_option( 'fishotel_batch_arrival_dates', [] );
-        $hf_arrival_date  = $hf_arrival_dates[ $selected ] ?? '';
         $hf_arrival_fmt   = $hf_arrival_date ? date( 'F j, Y', strtotime( $hf_arrival_date ) ) : 'TBD';
         $hf_qt_end        = $hf_arrival_date ? date( 'F j, Y', strtotime( $hf_arrival_date . ' +14 days' ) ) : 'TBD';
 
         $hf_total_ordered  = 0;
         $hf_total_received = 0;
         $hf_total_doa      = 0;
-        $hf_lines          = [];
+        $hf_rows           = '';
 
         foreach ( $batch_fish as $bp ) {
             $recv = intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) );
@@ -3098,13 +3100,17 @@ trait FisHotel_Admin {
 
             $cust_demand = $demand[ $bp->ID ] ?? 0;
             $available   = $recv - $doa;
-            $fill_label  = ( $cust_demand === 0 ) ? 'no demand' : ( $available >= $cust_demand ? 'filled' : 'short' );
-            $hf_lines[]  = '[*] ' . FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title ) . ' — Received: ' . $recv . ', DOA: ' . $doa . ' (' . $fill_label . ')';
+            $fill_label  = ( $cust_demand === 0 ) ? 'No Demand' : ( $available >= $cust_demand ? 'Filled' : 'Short' );
+            $species     = FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title );
+            $hf_rows    .= '[tr][td]' . $species . '[/td][td]' . $ord . '[/td][td]' . $recv . '[/td][td]' . $doa . '[/td][td]' . $fill_label . '[/td][/tr]' . "\n";
         }
 
         $hf_post  = '[b]' . esc_html( $selected ) . ' — Arrival Report (' . $hf_arrival_fmt . ')[/b]' . "\n\n";
         $hf_post .= 'Total ordered: ' . $hf_total_ordered . ' | Received: ' . $hf_total_received . ' | DOA: ' . $hf_total_doa . "\n\n";
-        $hf_post .= '[list]' . "\n" . implode( "\n", $hf_lines ) . "\n" . '[/list]' . "\n\n";
+        $hf_post .= '[table]' . "\n";
+        $hf_post .= '[tr][th]Species[/th][th]Ordered[/th][th]Received[/th][th]DOA[/th][th]Status[/th][/tr]' . "\n";
+        $hf_post .= $hf_rows;
+        $hf_post .= '[/table]' . "\n\n";
         $hf_post .= 'Quarantine ends: [b]' . $hf_qt_end . '[/b]';
 
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:28px;">';
@@ -3220,6 +3226,42 @@ trait FisHotel_Admin {
                 echo '</div>';
             }
             echo '</form></div>';
+
+            // ── HF Graduation Summary ────────────────────────────────────────
+            $hf_grad_date = $hf_arrival_date ? date( 'F j, Y', strtotime( $hf_arrival_date . ' +14 days' ) ) : 'TBD';
+            $hf_grad_rows    = '';
+            $hf_grad_total   = 0;
+            $hf_grad_species = 0;
+
+            foreach ( $batch_fish as $bp ) {
+                $recv = intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) );
+                if ( $recv <= 0 ) continue;
+                $doa      = intval( get_post_meta( $bp->ID, '_arrival_qty_doa', true ) );
+                $gq       = get_post_meta( $bp->ID, '_graduation_qty', true );
+                $grad_val = ( $gq !== '' && $gq !== false ) ? intval( $gq ) : ( $recv - $doa );
+                $lost     = $recv - $doa - $grad_val;
+                $surv_pct = $recv > 0 ? round( $grad_val / $recv * 100 ) : 0;
+                $species  = FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title );
+
+                $hf_grad_rows .= '[tr][td]' . $species . '[/td][td]' . $recv . '[/td][td]' . $grad_val . '[/td][td]' . $lost . '[/td][td]' . $surv_pct . '%[/td][/tr]' . "\n";
+                $hf_grad_total += $grad_val;
+                $hf_grad_species++;
+            }
+
+            $hf_grad  = '[b]' . esc_html( $selected ) . ' — Graduation Report (' . $hf_grad_date . ')[/b]' . "\n\n";
+            $hf_grad .= 'Quarantine complete! Here\'s the final headcount.' . "\n\n";
+            $hf_grad .= '[table]' . "\n";
+            $hf_grad .= '[tr][th]Species[/th][th]Arrived[/th][th]Graduated[/th][th]Lost in QT[/th][th]Survival[/th][/tr]' . "\n";
+            $hf_grad .= $hf_grad_rows;
+            $hf_grad .= '[/table]' . "\n\n";
+            $hf_grad .= 'Total graduated: ' . $hf_grad_total . ' fish across ' . $hf_grad_species . ' species.' . "\n\n";
+            $hf_grad .= 'Stage 5 (Accept or Pass) opening soon — watch for your notification!';
+
+            echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-top:28px;">';
+            echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">HF Graduation Summary</h2>';
+            echo '<button type="button" id="fh-gen-hf-grad" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;margin-bottom:12px;" onclick="document.getElementById(\'fh-hf-grad-output\').style.display=\'block\';this.style.display=\'none\';">Generate HF Post</button>';
+            echo '<textarea id="fh-hf-grad-output" readonly style="display:none;width:100%;min-height:200px;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:6px;padding:12px;font-family:monospace;font-size:13px;resize:vertical;" onclick="this.select()">' . esc_textarea( $hf_grad ) . '</textarea>';
+            echo '</div>';
         }
         endif; // graduation tab
 

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.65 - Rename Arrival Entry to QT Operations.
- * Version:           5.65
+ * Description:       v5.66 - BBCode table format for HF Arrival + new HF Graduation Summary.
+ * Version:           5.66
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.65' );
+define( 'FISHOTEL_VERSION', '5.66' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
