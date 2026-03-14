@@ -654,6 +654,22 @@ trait FisHotel_HotelProgram {
 .fh-room-card-badge--none{background:#888;color:#fff}
 .fh-room-card-summary{font-size:11px;color:#777;letter-spacing:0.5px}
 
+/* VIEW TOGGLE */
+.fh-hotel-view-toggle{text-align:right;margin-bottom:8px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px}
+.fh-toggle-opt{cursor:pointer;color:rgba(225,225,225,0.35)}
+.fh-toggle-opt.fh-toggle-active{color:#96885f}
+.fh-toggle-sep{color:rgba(225,225,225,0.2);margin:0 8px}
+
+/* TABLE VIEW */
+.fh-hotel-table-view{width:100%;font-family:'Oswald',sans-serif}
+.fh-hotel-table-view table{width:100%;border-collapse:collapse}
+.fh-hotel-table-view th{background:#1a1a1a;color:#96885f;font-size:12px;letter-spacing:1.5px;padding:10px 12px;text-align:left;border-bottom:1px solid rgba(150,136,95,0.3)}
+.fh-hotel-table-view td{padding:9px 12px;font-size:14px;color:rgb(225,225,225);border-bottom:1px solid rgba(255,255,255,0.06)}
+.fh-hotel-table-view tr:nth-child(even) td{background:rgba(255,255,255,0.02)}
+.fh-hotel-table-view tr:hover td{background:rgba(150,136,95,0.07)}
+.fh-hotel-table-view tr.fh-table-mine td{color:#f5f0e8}
+.fh-hotel-table-view tr.fh-table-mine td:first-child::before{content:'\2605 ';color:#96885f;font-size:11px}
+
 /* RESPONSIVE */
 @media(max-width:640px){
     .fh-hotel-postcard-wrap{width:100%}
@@ -775,6 +791,12 @@ trait FisHotel_HotelProgram {
     $floor_labels = [ 1 => '20 Gallon', 2 => '40 Gallon', 3 => 'QT Annex — 40 Gallon' ];
     $qt_rooms = [ '301', '302' ];
     ?>
+    <div class="fh-hotel-view-toggle">
+      <span class="fh-toggle-opt fh-toggle-building fh-toggle-active" data-view="building">&#8862; Building</span>
+      <span class="fh-toggle-sep">&middot;</span>
+      <span class="fh-toggle-opt fh-toggle-table" data-view="table">&#8801; Table View</span>
+    </div>
+    <div class="fh-hotel-table-view" style="display:none"></div>
     <div class="fh-hotel-slider">
       <div class="fh-hotel-slides">
         <!-- Slide 1: Main Building -->
@@ -1077,6 +1099,61 @@ trait FisHotel_HotelProgram {
             });
         });
     });
+
+    /* ── View toggle (Building / Table) ──────────────── */
+    (function() {
+        var KEY = 'fh_hotel_view';
+        var slider = document.querySelector('.fh-hotel-slider');
+        var tableWrap = document.querySelector('.fh-hotel-table-view');
+        var toggles = document.querySelectorAll('.fh-toggle-opt');
+        if (!slider || !tableWrap || !toggles.length) return;
+
+        function buildTableView() {
+            var rooms = document.querySelectorAll('[data-room-fish]');
+            var rows = [];
+            rooms.forEach(function(r) {
+                var room = r.getAttribute('data-room');
+                var fish;
+                try { fish = JSON.parse(r.getAttribute('data-room-fish')); } catch(e) { return; }
+                if (!fish || !fish.length) return;
+                fish.forEach(function(f) {
+                    rows.push({ room: room, species: f.species, qty: f.qty, status: f.status, mine: f.mine });
+                });
+            });
+            rows.sort(function(a, b) { return a.room.localeCompare(b.room, undefined, {numeric: true}); });
+            var html = '<table><thead><tr><th>ROOM</th><th>SPECIES</th><th>QTY</th><th>STATUS</th></tr></thead><tbody>';
+            rows.forEach(function(r) {
+                var cls = r.mine ? ' class="fh-table-mine"' : '';
+                var badge = r.status === 'qt' ? 'QT' : r.status === 'pending' ? 'PENDING' : r.status === 'doa' ? 'DOA' : r.status.toUpperCase();
+                html += '<tr' + cls + '><td>' + r.room + '</td><td>' + r.species + '</td><td>' + r.qty + '</td><td>' + badge + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            tableWrap.innerHTML = html;
+        }
+
+        function showView(view) {
+            if (view === 'table') {
+                buildTableView();
+                slider.style.display = 'none';
+                tableWrap.style.display = 'block';
+            } else {
+                slider.style.display = '';
+                tableWrap.style.display = 'none';
+            }
+            toggles.forEach(function(t) {
+                t.classList.toggle('fh-toggle-active', t.getAttribute('data-view') === view);
+            });
+            try { sessionStorage.setItem(KEY, view); } catch(e) {}
+        }
+
+        toggles.forEach(function(t) {
+            t.addEventListener('click', function() { showView(t.getAttribute('data-view')); });
+        });
+
+        var saved = null;
+        try { saved = sessionStorage.getItem(KEY); } catch(e) {}
+        if (saved === 'table') showView('table');
+    })();
 
     /* ── Flip handler with layer pause/resume ──────── */
     function fishotelHotelFlipCard(card) {
