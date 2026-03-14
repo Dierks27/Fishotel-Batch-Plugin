@@ -3469,7 +3469,138 @@ trait FisHotel_HotelProgram {
         $this->maybe_notify_customers( $batch_name );
     }
 
-    // TODO: implemented in Stage 5 Prompt 4
     public function maybe_notify_customers( $batch_name ) {
+        $option_key = 'fishotel_verification_queue_' . sanitize_title( $batch_name );
+        $queue      = get_option( $option_key, [] );
+        if ( empty( $queue['species'] ) ) return;
+
+        // Collect all unique user IDs across all species queues
+        $user_ids = [];
+        foreach ( $queue['species'] as $sp ) {
+            foreach ( $sp['queue'] as $entry ) {
+                $uid = intval( $entry['user_id'] );
+                if ( $uid ) $user_ids[ $uid ] = true;
+            }
+        }
+
+        foreach ( array_keys( $user_ids ) as $uid ) {
+            $this->check_and_notify_user( $batch_name, $uid, $queue );
+        }
+    }
+
+    public function check_and_notify_user( $batch_name, $user_id, $queue ) {
+        if ( empty( $queue['species'] ) ) return;
+
+        // Find all species where this user has an entry
+        $user_species = [];
+        foreach ( $queue['species'] as $fish_id => $sp ) {
+            foreach ( $sp['queue'] as $pos => $entry ) {
+                if ( intval( $entry['user_id'] ) !== $user_id ) continue;
+                $user_species[] = [
+                    'fish_id'  => $fish_id,
+                    'position' => $pos,
+                    'entry'    => $entry,
+                    'species'  => $sp,
+                ];
+            }
+        }
+
+        if ( empty( $user_species ) ) return;
+
+        // Check if ALL species are resolvable for this user
+        foreach ( $user_species as $us ) {
+            $entry = $us['entry'];
+            // Already resolved — accepted or passed
+            if ( in_array( $entry['status'], [ 'accepted', 'passed' ], true ) ) continue;
+
+            // Check if they are first-in-line pending (all before are accepted/passed)
+            if ( $entry['status'] === 'pending' ) {
+                $all_before = true;
+                for ( $i = 0; $i < $us['position']; $i++ ) {
+                    if ( ! in_array( $us['species']['queue'][ $i ]['status'], [ 'accepted', 'passed' ], true ) ) {
+                        $all_before = false;
+                        break;
+                    }
+                }
+                if ( $all_before ) continue; // Resolvable — their turn
+            }
+
+            // This species is NOT resolvable — user is waiting
+            return;
+        }
+
+        // All species resolvable — check for existing unread notification
+        $existing = get_posts( [
+            'post_type'   => 'fishotel_notification',
+            'numberposts' => 1,
+            'post_status' => 'any',
+            'meta_query'  => [
+                [ 'key' => '_fh_notif_user_id', 'value' => $user_id ],
+                [ 'key' => '_fh_notif_batch',   'value' => $batch_name ],
+                [ 'key' => '_fh_notif_type',    'value' => 'verification_ready' ],
+                [ 'key' => '_fh_notif_read',    'value' => '0' ],
+            ],
+        ] );
+        if ( ! empty( $existing ) ) return;
+
+        // Build the batch page URL
+        $assignments = get_option( 'fishotel_batch_page_assignments', [] );
+        $page_slug   = $assignments[ $batch_name ] ?? '';
+        $page        = $page_slug ? get_page_by_path( $page_slug ) : null;
+        $batch_url   = $page ? get_permalink( $page->ID ) : 'https://fishotel.com/live-fish-list/';
+
+        // Create on-site notification
+        $message = 'Your order for <strong>' . esc_html( $batch_name ) . '</strong> is ready for review. <a href="' . esc_url( $batch_url ) . '" style="color:#b5a165;text-decoration:underline;">Accept or pass your items now</a>.';
+        $notif_id = wp_insert_post( [
+            'post_type'    => 'fishotel_notification',
+            'post_title'   => (string) $user_id,
+            'post_content' => $message,
+            'post_status'  => 'publish',
+        ] );
+        if ( $notif_id ) {
+            update_post_meta( $notif_id, '_fh_notif_user_id', $user_id );
+            update_post_meta( $notif_id, '_fh_notif_batch',   $batch_name );
+            update_post_meta( $notif_id, '_fh_notif_type',    'verification_ready' );
+            update_post_meta( $notif_id, '_fh_notif_read',    0 );
+            update_post_meta( $notif_id, '_fh_notif_created', time() );
+        }
+
+        // Send email
+        $this->send_verification_email( $user_id, $batch_name, $queue );
+    }
+
+    private function send_verification_email( $user_id, $batch_name, $queue ) {
+        $user = get_userdata( $user_id );
+        if ( ! $user || ! $user->user_email ) return;
+
+        $assignments = get_option( 'fishotel_batch_page_assignments', [] );
+        $page_slug   = $assignments[ $batch_name ] ?? '';
+        $page        = $page_slug ? get_page_by_path( $page_slug ) : null;
+        $batch_url   = $page ? get_permalink( $page->ID ) : 'https://fishotel.com/live-fish-list/';
+
+        $response_hours = intval( get_option( 'fishotel_verification_response_hours', 24 ) );
+
+        // Build species summary lines
+        $lines = [];
+        foreach ( $queue['species'] as $fish_id => $sp ) {
+            foreach ( $sp['queue'] as $entry ) {
+                if ( intval( $entry['user_id'] ) !== $user_id ) continue;
+                $lines[] = '  ' . $sp['name'] . ' — ' . $sp['graduated_qty'] . ' available, you requested ' . $entry['requested_qty'];
+            }
+        }
+
+        $body  = 'Hi ' . $user->display_name . ",\n\n";
+        $body .= 'Your order for ' . $batch_name . " is ready for review.\n\n";
+        $body .= "Here's what we have for you:\n";
+        $body .= implode( "\n", $lines ) . "\n\n";
+        $body .= 'Head to the batch page to accept or pass each item: ' . $batch_url . "\n\n";
+        $body .= 'You have ' . $response_hours . " hours to respond before items auto-pass.\n\n";
+        $body .= "— The FisHotel Team\nfishotel.com\n";
+
+        wp_mail(
+            $user->user_email,
+            'FisHotel · ' . $batch_name . ' — Your Order Is Ready',
+            $body
+        );
     }
 }

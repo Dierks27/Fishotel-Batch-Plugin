@@ -946,6 +946,9 @@ trait FisHotel_Ajax {
         $sp['queue'][ $index ]['accepted_qty']  = $qty;
         $sp['queue'][ $index ]['decision_at']   = time();
 
+        // Stamp decision_deadline on the next pending entry
+        $this->stamp_next_deadline( $sp['queue'], $index );
+
         update_option( $ctx['option_key'], $queue );
 
         $this->maybe_notify_next_in_queue( $ctx['batch_name'], $fish_id );
@@ -965,11 +968,30 @@ trait FisHotel_Ajax {
         $sp['queue'][ $index ]['accepted_qty']  = 0;
         $sp['queue'][ $index ]['decision_at']   = time();
 
+        // Stamp decision_deadline on the next pending entry
+        $this->stamp_next_deadline( $sp['queue'], $index );
+
         update_option( $ctx['option_key'], $queue );
 
         $this->maybe_notify_next_in_queue( $ctx['batch_name'], $fish_id );
 
         wp_send_json_success( [ 'status' => 'passed' ] );
+    }
+
+    public function ajax_dismiss_notification() {
+        if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'fishotel_notif_nonce' ) ) {
+            wp_send_json_error( 'invalid_nonce' );
+        }
+        $post_id = intval( $_POST['post_id'] ?? 0 );
+        $post    = get_post( $post_id );
+        if ( ! $post || $post->post_type !== 'fishotel_notification' ) {
+            wp_send_json_error( 'not_found' );
+        }
+        if ( intval( get_post_meta( $post_id, '_fh_notif_user_id', true ) ) !== get_current_user_id() ) {
+            wp_send_json_error( 'not_yours' );
+        }
+        update_post_meta( $post_id, '_fh_notif_read', 1 );
+        wp_send_json_success();
     }
 
     private function maybe_notify_next_in_queue( $batch_name, $fish_id ) {
@@ -995,11 +1017,28 @@ trait FisHotel_Ajax {
             if ( $all_before_resolved && empty( $entry['notified_at'] ) ) {
                 $entry['notified_at'] = time();
                 update_option( $option_key, $queue );
-                // Notification dispatch — implemented in Prompt 4
+            }
+
+            // Check if the newly eligible user should be notified (all their species resolvable)
+            if ( $all_before_resolved ) {
+                $this->check_and_notify_user( $batch_name, intval( $entry['user_id'] ), $queue );
             }
             break;
         }
         unset( $entry );
+    }
+
+    private function stamp_next_deadline( &$queue_entries, $current_index ) {
+        $response_hours = intval( get_option( 'fishotel_verification_response_hours', 24 ) );
+        $deadline       = time() + ( $response_hours * 3600 );
+
+        // Find the next pending entry after the current one
+        for ( $i = $current_index + 1; $i < count( $queue_entries ); $i++ ) {
+            if ( $queue_entries[ $i ]['status'] === 'pending' ) {
+                $queue_entries[ $i ]['decision_deadline'] = $deadline;
+                break;
+            }
+        }
     }
 
 }

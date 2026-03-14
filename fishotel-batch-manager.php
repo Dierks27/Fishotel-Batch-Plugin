@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v6.3 - Verification queue mutation (accept & pass handlers).
- * Version:           6.3
+ * Description:       v6.4 - Email + on-site notifications for verification queue.
+ * Version:           6.4
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '6.3' );
+define( 'FISHOTEL_VERSION', '6.4' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -214,6 +214,7 @@ class FisHotel_Batch_Manager {
 
         add_shortcode( 'fishotel_batch', [$this, 'batch_shortcode'] );
         add_shortcode( 'fishotel_wallet', [$this, 'wallet_shortcode'] );
+        add_shortcode( 'fishotel_notifications', [$this, 'notifications_shortcode'] );
 
         // Secure AJAX with nonces
         add_action( 'wp_ajax_fishotel_submit_requests', [$this, 'ajax_submit_requests'] );
@@ -250,6 +251,7 @@ class FisHotel_Batch_Manager {
         // Verification AJAX
         add_action( 'wp_ajax_fishotel_verification_accept', [$this, 'ajax_verification_accept'] );
         add_action( 'wp_ajax_fishotel_verification_pass',   [$this, 'ajax_verification_pass'] );
+        add_action( 'wp_ajax_fishotel_dismiss_notification', [$this, 'ajax_dismiss_notification'] );
 
         add_action( 'woocommerce_after_checkout_form', [$this, 'add_return_to_fish_button'] );
         add_action( 'woocommerce_thankyou', [$this, 'add_return_to_fish_button'] );

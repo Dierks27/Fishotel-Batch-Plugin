@@ -19,6 +19,7 @@ trait FisHotel_Admin {
         register_post_type( 'fish_master', [ 'labels' => [ 'name' => 'Master Fish Library', 'singular_name' => 'Master Fish' ], 'public' => false, 'show_ui' => true, 'show_in_menu' => false, 'supports' => [ 'title' ] ] );
         register_post_type( 'fish_batch', [ 'labels' => [ 'name' => 'Batch Fish', 'singular_name' => 'Batch Fish' ], 'public' => false, 'show_ui' => true, 'show_in_menu' => false, 'supports' => [ 'title' ] ] );
         register_post_type( 'fish_request', [ 'labels' => [ 'name' => 'Batch Requests', 'singular_name' => 'Batch Request' ], 'public' => false, 'show_ui' => true, 'show_in_menu' => false, 'supports' => [ 'title' ] ] );
+        register_post_type( 'fishotel_notification', [ 'labels' => [ 'name' => 'Notifications', 'singular_name' => 'Notification' ], 'public' => false, 'show_ui' => false, 'show_in_menu' => false, 'supports' => [ 'title', 'editor' ] ] );
     }
 
     public function add_admin_menu() {

@@ -3693,4 +3693,57 @@ trait FisHotel_Shortcodes {
         return 'waiting';
     }
 
+    /* ─────────────────────────────────────────────
+     *  [fishotel_notifications] shortcode
+     * ───────────────────────────────────────────── */
+
+    public function notifications_shortcode() {
+        if ( ! is_user_logged_in() ) return '';
+
+        $uid = get_current_user_id();
+        $notifications = get_posts( [
+            'post_type'      => 'fishotel_notification',
+            'numberposts'    => 20,
+            'post_status'    => 'any',
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+            'meta_query'     => [
+                [ 'key' => '_fh_notif_user_id', 'value' => $uid, 'compare' => '=' ],
+                [ 'key' => '_fh_notif_read',    'value' => '0',  'compare' => '=' ],
+            ],
+        ] );
+
+        if ( empty( $notifications ) ) return '';
+
+        $nonce = wp_create_nonce( 'fishotel_notif_nonce' );
+        ob_start();
+        ?>
+        <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+        <style>
+            .fhn-banner{background:#0c161f;border:1px solid #b5a165;border-radius:8px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-family:'Oswald',sans-serif;}
+            .fhn-banner-msg{color:#ddd;font-size:0.9rem;line-height:1.4;}
+            .fhn-dismiss{background:none;border:none;color:#666;font-size:1.3rem;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0;}
+            .fhn-dismiss:hover{color:#b5a165;}
+        </style>
+        <?php foreach ( $notifications as $notif ) : ?>
+            <div class="fhn-banner" id="fhn-<?php echo $notif->ID; ?>">
+                <div class="fhn-banner-msg"><?php echo wp_kses_post( $notif->post_content ); ?></div>
+                <button type="button" class="fhn-dismiss" onclick="fhnDismiss(<?php echo $notif->ID; ?>)" title="Dismiss">&times;</button>
+            </div>
+        <?php endforeach; ?>
+        <script>
+        function fhnDismiss(id) {
+            var el = document.getElementById('fhn-' + id);
+            if (el) el.style.display = 'none';
+            var fd = new FormData();
+            fd.append('action', 'fishotel_dismiss_notification');
+            fd.append('post_id', id);
+            fd.append('nonce', '<?php echo $nonce; ?>');
+            fetch('<?php echo admin_url( "admin-ajax.php" ); ?>', { method: 'POST', body: fd, credentials: 'same-origin' });
+        }
+        </script>
+        <?php
+        return ob_get_clean();
+    }
+
 }
