@@ -602,7 +602,7 @@ trait FisHotel_HotelProgram {
 .fh-hotel-building[data-band="sunset"] .fh-hotel-sign-glow,.fh-hotel-building[data-band="night"] .fh-hotel-sign-glow{opacity:1 !important}
 .fh-hotel-building[data-band="night"] .fh-hotel-sign-glow{background:radial-gradient(ellipse 60% 50% at 50% 60%,rgba(255,230,140,0.28) 0%,rgba(255,190,80,0.14) 40%,transparent 70%) !important}
 /* Slider for multiple buildings */
-.fh-hotel-slider{position:relative;max-width:1000px;margin:32px auto 0;padding-top:48px}
+.fh-hotel-slider{position:relative;max-width:1000px;margin:32px auto 0}
 .fh-hotel-table-view th{cursor:pointer;user-select:none}
 .fh-hotel-table-view th:hover{color:#c9a84c}
 .fh-hotel-table-view th.fh-sort-active{color:#c9a84c}
@@ -666,7 +666,7 @@ trait FisHotel_HotelProgram {
 .fh-toggle-sep{color:rgba(225,225,225,0.2);margin:0 8px}
 
 /* TABLE VIEW */
-.fh-hotel-table-view{width:100%;font-family:'Oswald',sans-serif;padding-top:48px}
+.fh-hotel-table-view{width:100%;font-family:'Oswald',sans-serif}
 .fh-hotel-table-view table{width:100%;border-collapse:collapse}
 .fh-hotel-table-view th{background:#1a1a1a;color:#96885f;font-size:12px;letter-spacing:1.5px;padding:10px 12px;text-align:left;border-bottom:1px solid rgba(150,136,95,0.3)}
 .fh-hotel-table-view td{padding:9px 12px;font-size:14px;color:rgb(225,225,225);border-bottom:1px solid rgba(255,255,255,0.06)}
