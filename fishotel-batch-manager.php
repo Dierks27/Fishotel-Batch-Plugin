@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.53 - Multi-species info card with per-fish rows, mine stars, data-room-fish JSON.
- * Version:           5.53
+ * Description:       v5.54 - Card fade delay 300ms, border-radius 8px, mobile card-only mode.
+ * Version:           5.54
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.53' );
+define( 'FISHOTEL_VERSION', '5.54' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
