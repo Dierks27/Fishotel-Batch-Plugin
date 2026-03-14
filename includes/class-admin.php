@@ -26,7 +26,7 @@ trait FisHotel_Admin {
         // 3 visible menu items
         add_menu_page( 'FisHotel Batch Manager', 'FisHotel Batch', 'manage_options', 'fishotel-batch-hq', [$this, 'batch_hq_html'], $fish_icon, 56 );
         add_submenu_page( 'fishotel-batch-hq', 'Batch HQ', 'Batch HQ', 'manage_options', 'fishotel-batch-hq' );
-        add_submenu_page( 'fishotel-batch-hq', 'Arrival Entry', 'Arrival Entry', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
+        add_submenu_page( 'fishotel-batch-hq', 'QT Operations', 'QT Operations', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Sourcing', 'Sourcing', 'manage_options', 'fishotel-sourcing', [$this, 'sourcing_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Hotel Program', 'Hotel Program', 'manage_options', 'fishotel-hotel-program', [$this, 'hotel_program_html'] );
         // Hidden backward-compat pages (old slugs still work via direct URL)
@@ -2881,8 +2881,8 @@ trait FisHotel_Admin {
             : ( ! empty( $eligible ) ? reset( $eligible ) : '' );
 
         echo '<div class="wrap">';
-        echo '<h1>Arrival Entry</h1>';
-        echo '<p style="color:#aaa;">Record arrival quantities, DOA counts, and track quarantine survival for each species.</p>';
+        echo '<h1>QT Operations</h1>';
+        echo '<p style="color:#aaa;">Manage arrivals, track quarantine survival, and confirm graduation counts.</p>';
 
         // Batch selector
         echo '<form method="get" style="margin-bottom:20px;">';
