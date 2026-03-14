@@ -635,11 +635,11 @@ trait FisHotel_HotelProgram {
 .fh-hotel-room-detail-close:hover{color:#fff}
 
 /* BUILDING ZOOM */
-.fh-building-zoomed{transform:scale(4);z-index:100 !important}
+.fh-building-zoomed{transform:scale(var(--fh-room-scale,2.5));z-index:100 !important}
 .fh-zoom-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:99;opacity:0;transition:opacity 0.3s ease;cursor:pointer}
 .fh-zoom-backdrop--visible{opacity:1}
-.fh-room-card{position:absolute;bottom:0;left:5%;width:90%;background:rgba(15,15,15,0.95);border-top:2px solid rgba(150,136,95,0.5);padding:20px 24px;box-sizing:border-box;z-index:4;transform:translateY(100%);transition:transform 250ms ease-out;font-family:'Oswald',sans-serif;color:#f5f0e8}
-.fh-room-card--visible{transform:translateY(0)}
+.fh-room-card{position:fixed;bottom:0;left:50%;width:90%;max-width:600px;background:rgba(15,15,15,0.95);border-top:2px solid rgba(150,136,95,0.5);padding:20px 24px;box-sizing:border-box;z-index:10000;transform:translateX(-50%) translateY(100%);transition:transform 250ms ease-out;font-family:'Oswald',sans-serif;color:#f5f0e8}
+.fh-room-card--visible{transform:translateX(-50%) translateY(0)}
 .fh-room-card-room{font-size:11px;font-variant:small-caps;letter-spacing:2px;color:#96885f;margin-bottom:4px}
 .fh-room-card-species{font-size:28px;font-weight:700;color:#f5f0e8;margin-bottom:8px;line-height:1.1}
 .fh-room-card-info{font-size:13px;color:#999;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -926,6 +926,8 @@ trait FisHotel_HotelProgram {
                         if (e.propertyName !== 'transform') return;
                         _fhZoomBuilding.removeEventListener('transitionend', onUnzoom);
                         _fhZoomBuilding.style.transformOrigin = '';
+                        _fhZoomBuilding.style.removeProperty('--fh-room-scale');
+                        delete _fhZoomBuilding.dataset.fhZoomScale;
                         _fhZoomBuilding = null;
                     });
                 }
@@ -941,6 +943,8 @@ trait FisHotel_HotelProgram {
             if (_fhZoomBuilding) {
                 _fhZoomBuilding.classList.remove('fh-building-zoomed');
                 _fhZoomBuilding.style.transformOrigin = '';
+                _fhZoomBuilding.style.removeProperty('--fh-room-scale');
+                delete _fhZoomBuilding.dataset.fhZoomScale;
                 _fhZoomBuilding = null;
             }
             var bd = document.querySelector('.fh-zoom-backdrop');
@@ -984,13 +988,20 @@ trait FisHotel_HotelProgram {
 
         _fhZoomBuilding = building;
 
-        /* Calculate transform-origin via getBoundingClientRect */
-        var roomRect = roomEl.getBoundingClientRect();
-        var buildRect = building.getBoundingClientRect();
-        var originX = (roomRect.left - buildRect.left + roomRect.width / 2) / buildRect.width * 100;
-        var originY = (roomRect.top - buildRect.top + roomRect.height / 2) / buildRect.height * 100;
+        /* Calculate scale to fill building frame with this room */
+        var bRect = building.getBoundingClientRect();
+        var rRect = roomEl.getBoundingClientRect();
+        var scaleX = bRect.width / rRect.width;
+        var scaleY = bRect.height / rRect.height;
+        var scale = Math.min(scaleX, scaleY) * 0.88;
 
-        building.style.transformOrigin = originX + '% ' + originY + '%';
+        /* Transform-origin: center of room relative to building */
+        var originX = ((rRect.left - bRect.left + rRect.width / 2) / bRect.width * 100).toFixed(2) + '%';
+        var originY = ((rRect.top - bRect.top + rRect.height / 2) / bRect.height * 100).toFixed(2) + '%';
+
+        building.style.transformOrigin = originX + ' ' + originY;
+        building.style.setProperty('--fh-room-scale', scale);
+        building.dataset.fhZoomScale = scale;
         building.classList.add('fh-building-zoomed');
 
         /* Backdrop */
@@ -1036,7 +1047,7 @@ trait FisHotel_HotelProgram {
                     '<span class="fh-room-card-badge ' + badgeClass + '">' + statusLabel + '</span>' +
                 '</div>' +
                 yoursHtml;
-            building.appendChild(card);
+            document.body.appendChild(card);
             requestAnimationFrame(function() { card.classList.add('fh-room-card--visible'); });
         });
 
