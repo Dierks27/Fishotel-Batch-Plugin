@@ -2860,8 +2860,12 @@ trait FisHotel_Admin {
     public function arrival_entry_html() {
         if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
 
-        if ( isset( $_GET['updated'] ) )         echo '<div class="notice notice-success is-dismissible"><p>Arrival data saved.</p></div>';
+        if ( isset( $_GET['updated'] ) )           echo '<div class="notice notice-success is-dismissible"><p>Arrival data saved.</p></div>';
         if ( isset( $_GET['survival_logged'] ) )  echo '<div class="notice notice-success is-dismissible"><p>Survival log entry added.</p></div>';
+        if ( isset( $_GET['graduation_saved'] ) ) echo '<div class="notice notice-success is-dismissible"><p>Graduation counts saved.</p></div>';
+
+        $tab = sanitize_text_field( $_GET['tab'] ?? 'arrival' );
+        if ( ! in_array( $tab, [ 'arrival', 'tracker', 'graduation' ], true ) ) $tab = 'arrival';
 
         $batches_str   = get_option( 'fishotel_batches', '' );
         $batches_array = array_values( array_filter( array_map( 'trim', explode( "\n", $batches_str ) ) ) );
@@ -2883,6 +2887,7 @@ trait FisHotel_Admin {
         // Batch selector
         echo '<form method="get" style="margin-bottom:20px;">';
         echo '<input type="hidden" name="page" value="fishotel-arrival-entry">';
+        echo '<input type="hidden" name="tab" value="' . esc_attr( $tab ) . '">';
         echo '<label style="font-weight:700;margin-right:10px;">Batch:</label>';
         echo '<select name="batch" onchange="this.form.submit()" style="min-width:220px;padding:6px 10px;border-radius:4px;">';
         if ( empty( $eligible ) ) {
@@ -2921,6 +2926,13 @@ trait FisHotel_Admin {
             return;
         }
 
+        $tab_base = admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $selected ) );
+        echo '<nav class="nav-tab-wrapper" style="margin-bottom:20px;">';
+        echo '<a href="' . esc_url( $tab_base . '&tab=arrival' ) . '" class="nav-tab' . ( $tab === 'arrival' ? ' nav-tab-active' : '' ) . '">Arrival Data</a>';
+        echo '<a href="' . esc_url( $tab_base . '&tab=tracker' ) . '" class="nav-tab' . ( $tab === 'tracker' ? ' nav-tab-active' : '' ) . '">Quarantine Tracker</a>';
+        echo '<a href="' . esc_url( $tab_base . '&tab=graduation' ) . '" class="nav-tab' . ( $tab === 'graduation' ? ' nav-tab-active' : '' ) . '">Graduation Headcount</a>';
+        echo '</nav>';
+
         // Aggregate customer demand per batch_id
         $requests = get_posts( [
             'post_type'   => 'fish_request',
@@ -2941,6 +2953,7 @@ trait FisHotel_Admin {
         }
 
         // ── Arrival Data Form ──────────────────────────────────────────────
+        if ( $tab === 'arrival' ) :
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:28px;">';
         echo '<h2 style="color:#e67e22;margin-top:0;font-size:1.2em;">Arrival Data</h2>';
         echo '<input type="text" id="fh-arrival-search" placeholder="Search species..." style="width:100%;padding:10px 14px;margin-bottom:16px;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:6px;font-size:14px;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor=\'#e67e22\'" onblur="this.style.borderColor=\'#555\'">';
@@ -3099,8 +3112,10 @@ trait FisHotel_Admin {
         echo '<button type="button" id="fh-gen-hf" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;margin-bottom:12px;" onclick="document.getElementById(\'fh-hf-output\').style.display=\'block\';this.style.display=\'none\';">Generate HF Post</button>';
         echo '<textarea id="fh-hf-output" readonly style="display:none;width:100%;min-height:200px;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:6px;padding:12px;font-family:monospace;font-size:13px;resize:vertical;" onclick="this.select()">' . esc_textarea( $hf_post ) . '</textarea>';
         echo '</div>';
+        endif; // arrival tab
 
         // ── Survival Tracker ───────────────────────────────────────────────
+        if ( $tab === 'tracker' ) :
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;">';
         echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Quarantine Survival Tracker</h2>';
         echo '<p style="color:#aaa;margin-top:0;font-size:13px;">Log daily live counts per species. Entries are append-only.</p>';
@@ -3141,8 +3156,10 @@ trait FisHotel_Admin {
         echo '<div style="margin-top:16px;text-align:right;">';
         echo '<button type="submit" style="background:#27ae60;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Log Today\'s Counts</button>';
         echo '</div></form></div>';
+        endif; // tracker tab
 
         // ── Graduation Headcount ─────────────────────────────────────────────
+        if ( $tab === 'graduation' ) :
         $current_stage    = $statuses[ $selected ] ?? '';
         $grad_locked      = in_array( $current_stage, [ 'graduation', 'verification', 'draft', 'invoicing' ], true );
         $grad_has_entries = false;
@@ -3153,7 +3170,6 @@ trait FisHotel_Admin {
         }
 
         if ( $grad_has_entries ) {
-            echo '<hr style="border:none;border-top:1px solid #444;margin:28px 0;">';
             echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;">';
             echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Graduation Headcount</h2>';
             echo '<p style="color:#aaa;margin-top:0;font-size:13px;">Final confirmed counts after QT. These numbers lock when batch advances to graduation.</p>';
@@ -3203,6 +3219,7 @@ trait FisHotel_Admin {
             }
             echo '</form></div>';
         }
+        endif; // graduation tab
 
         echo '</div>'; // .wrap
 
@@ -3357,7 +3374,7 @@ trait FisHotel_Admin {
             update_post_meta( $batch_id, '_qt_survival_log', $log );
         }
 
-        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&survival_logged=1' ) );
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=tracker&survival_logged=1' ) );
         exit;
     }
 
@@ -3382,7 +3399,7 @@ trait FisHotel_Admin {
             update_post_meta( $batch_id, '_graduation_qty', intval( $qty ) );
         }
 
-        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&graduation_saved=1' ) );
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=graduation&graduation_saved=1' ) );
         exit;
     }
 
