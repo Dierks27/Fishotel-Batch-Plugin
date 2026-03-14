@@ -636,8 +636,9 @@ trait FisHotel_HotelProgram {
 /* BUILDING ZOOM */
 .fh-zoom-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:99;opacity:0;transition:opacity 0.3s ease;cursor:pointer}
 .fh-zoom-backdrop--visible{opacity:1}
-.fh-room-card{position:fixed;bottom:0;left:50%;width:90%;max-width:600px;background:rgba(15,15,15,0.95);border-top:2px solid rgba(150,136,95,0.5);padding:20px 24px;box-sizing:border-box;z-index:10000;transform:translateX(-50%) translateY(100%);transition:transform 250ms ease-out;font-family:'Oswald',sans-serif;color:#f5f0e8}
+.fh-room-card{position:fixed;bottom:0;left:50%;width:min(520px,92vw);background:rgba(15,15,15,0.95);border-top:2px solid rgba(150,136,95,0.5);padding:20px 24px;box-sizing:border-box;z-index:10001;transform:translateX(-50%) translateY(110%);transition:transform 250ms ease-out;font-family:'Oswald',sans-serif;color:#f5f0e8}
 .fh-room-card--visible{transform:translateX(-50%) translateY(0)}
+.fh-room--zooming .fh-hotel-room-yours{display:none !important}
 .fh-room-card-room{font-size:11px;font-variant:small-caps;letter-spacing:2px;color:#96885f;margin-bottom:4px}
 .fh-room-card-species{font-size:28px;font-weight:700;color:#f5f0e8;margin-bottom:8px;line-height:1.1}
 .fh-room-card-info{font-size:13px;color:#999;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -905,11 +906,13 @@ trait FisHotel_HotelProgram {
     var fishotelHotelOpenRoom = null;
     var _fhZoomOpen = false;
     var _fhZoomBuilding = null;
+    var _fhZoomRoom = null;
     var _fhZoomEscHandler = null;
 
     function fishotelZoomClose() {
         if (!_fhZoomOpen) return;
         _fhZoomOpen = false;
+        if (_fhZoomRoom) { _fhZoomRoom.classList.remove('fh-room--zooming'); _fhZoomRoom = null; }
         /* Slide card down first */
         var card = document.querySelector('.fh-room-card');
         if (card) {
@@ -981,6 +984,8 @@ trait FisHotel_HotelProgram {
         if (!building) return;
 
         _fhZoomBuilding = building;
+        _fhZoomRoom = roomEl;
+        roomEl.classList.add('fh-room--zooming');
 
         /* Room center relative to building top-left */
         var bRect = building.getBoundingClientRect();
