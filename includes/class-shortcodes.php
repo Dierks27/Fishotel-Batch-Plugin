@@ -3546,7 +3546,7 @@ trait FisHotel_Shortcodes {
                             <td class="fhv-action-cell" data-fish-id="<?php echo intval( $ms['fish_id'] ); ?>">
                                 <?php
                                 $ds = $ms['display_status'];
-                                if ( $ds === 'confirmed' ) {
+                                if ( $ds === 'accepted' ) {
                                     echo '<span class="fhv-badge fhv-badge-confirmed">CONFIRMED</span>';
                                 } elseif ( $ds === 'pending_decision' || $ds === 'passed_to_you' ) {
                                     $badge_label = ( $ds === 'passed_to_you' ) ? 'OFFERED TO YOU' : 'YOUR TURN';
@@ -3670,15 +3670,8 @@ trait FisHotel_Shortcodes {
         // Already passed
         if ( $entry['status'] === 'passed' ) return 'passed';
 
-        // Already accepted
-        if ( $entry['status'] === 'accepted' ) return 'confirmed';
-
-        // Check if confirmed by supply — sum requested_qty of all entries at or before this position
-        $cumulative = 0;
-        for ( $i = 0; $i <= $position; $i++ ) {
-            $cumulative += $queue[ $i ]['requested_qty'];
-        }
-        if ( $cumulative <= $species_data['graduated_qty'] ) return 'confirmed';
+        // Already accepted — locked confirmed state
+        if ( $entry['status'] === 'accepted' ) return 'accepted';
 
         // Check if passed_to_you — entry before them has status passed
         if ( $position > 0 && $queue[ $position - 1 ]['status'] === 'passed' && $entry['status'] === 'pending' ) {
