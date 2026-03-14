@@ -665,6 +665,7 @@ trait FisHotel_HotelProgram {
     .fh-hotel-postcard-back{display:none;margin-top:0;border-radius:0 0 6px 6px;padding-bottom:20px !important;overflow:hidden !important}
     .fh-hotel-postcard-scene{display:block !important;height:200px !important}
     .fh-hotel-postcard-front-strip{display:flex !important;height:auto !important;padding:10px 12px !important}
+    .fh-hotel-flip-btn{position:absolute !important;bottom:12px !important;right:12px !important;margin:0 !important;font-size:10px !important;padding:4px 10px !important;letter-spacing:1px !important;line-height:1.4 !important}
     .fh-hotel-card[data-flipped="true"] .fh-hotel-postcard-front .fh-hotel-postcard-scene,
     .fh-hotel-card[data-flipped="true"] .fh-hotel-postcard-front .fh-hotel-postcard-front-strip{display:none}
     .fh-hotel-card[data-flipped="true"] .fh-hotel-postcard-back{display:flex;box-shadow:0 4px 20px rgba(0,0,0,0.4)}

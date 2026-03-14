@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.54 - Card fade delay 300ms, border-radius 8px, mobile card-only mode.
- * Version:           5.54
+ * Description:       v5.55 - Mobile flip button absolute positioned over postcard scene.
+ * Version:           5.55
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.54' );
+define( 'FISHOTEL_VERSION', '5.55' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
