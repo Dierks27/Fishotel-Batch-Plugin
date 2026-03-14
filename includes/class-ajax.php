@@ -881,19 +881,125 @@ trait FisHotel_Ajax {
     }
 
     /* ─────────────────────────────────────────────
-     *  Verification AJAX stubs (Stage 5)
+     *  Verification AJAX — Accept & Pass (Stage 5)
      * ───────────────────────────────────────────── */
 
+    private function verification_load_and_validate() {
+        if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'fishotel_verification_nonce' ) ) {
+            wp_send_json_error( 'invalid_nonce' );
+        }
+
+        $fish_id    = intval( $_POST['fish_id'] ?? 0 );
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        $user       = wp_get_current_user();
+
+        if ( ! $user->ID ) wp_send_json_error( 'not_logged_in' );
+
+        $option_key = 'fishotel_verification_queue_' . sanitize_title( $batch_name );
+        $queue      = get_option( $option_key, [] );
+
+        if ( empty( $queue ) || empty( $queue['species'] ) ) wp_send_json_error( 'no_queue' );
+        if ( ! isset( $queue['species'][ $fish_id ] ) )       wp_send_json_error( 'species_not_found' );
+
+        $sp    = &$queue['species'][ $fish_id ];
+        $index = null;
+        foreach ( $sp['queue'] as $i => $entry ) {
+            if ( intval( $entry['user_id'] ) === $user->ID ) {
+                $index = $i;
+                break;
+            }
+        }
+        if ( $index === null ) wp_send_json_error( 'not_in_queue' );
+
+        // Verify it is their turn: must be first pending, all before must be accepted/passed
+        for ( $i = 0; $i < $index; $i++ ) {
+            if ( ! in_array( $sp['queue'][ $i ]['status'], [ 'accepted', 'passed' ], true ) ) {
+                wp_send_json_error( 'not_your_turn' );
+            }
+        }
+        if ( $sp['queue'][ $index ]['status'] !== 'pending' ) {
+            wp_send_json_error( 'not_your_turn' );
+        }
+
+        return [
+            'queue'      => &$queue,
+            'option_key' => $option_key,
+            'fish_id'    => $fish_id,
+            'batch_name' => $batch_name,
+            'index'      => $index,
+            'user_id'    => $user->ID,
+        ];
+    }
+
     public function ajax_verification_accept() {
-        check_ajax_referer( 'fishotel_verification_nonce', 'nonce' );
-        // TODO: queue mutation implemented in Stage 5 Prompt 3
-        wp_send_json_success();
+        $ctx = $this->verification_load_and_validate();
+
+        $fish_id = $ctx['fish_id'];
+        $index   = $ctx['index'];
+        $queue   = &$ctx['queue'];
+        $sp      = &$queue['species'][ $fish_id ];
+
+        $qty = intval( $_POST['qty'] ?? 0 );
+        $qty = max( 1, min( $qty, $sp['queue'][ $index ]['requested_qty'], $sp['graduated_qty'] ) );
+
+        $sp['queue'][ $index ]['status']       = 'accepted';
+        $sp['queue'][ $index ]['accepted_qty']  = $qty;
+        $sp['queue'][ $index ]['decision_at']   = time();
+
+        update_option( $ctx['option_key'], $queue );
+
+        $this->maybe_notify_next_in_queue( $ctx['batch_name'], $fish_id );
+
+        wp_send_json_success( [ 'status' => 'accepted', 'qty' => $qty ] );
     }
 
     public function ajax_verification_pass() {
-        check_ajax_referer( 'fishotel_verification_nonce', 'nonce' );
-        // TODO: queue mutation implemented in Stage 5 Prompt 3
-        wp_send_json_success();
+        $ctx = $this->verification_load_and_validate();
+
+        $fish_id = $ctx['fish_id'];
+        $index   = $ctx['index'];
+        $queue   = &$ctx['queue'];
+        $sp      = &$queue['species'][ $fish_id ];
+
+        $sp['queue'][ $index ]['status']       = 'passed';
+        $sp['queue'][ $index ]['accepted_qty']  = 0;
+        $sp['queue'][ $index ]['decision_at']   = time();
+
+        update_option( $ctx['option_key'], $queue );
+
+        $this->maybe_notify_next_in_queue( $ctx['batch_name'], $fish_id );
+
+        wp_send_json_success( [ 'status' => 'passed' ] );
+    }
+
+    private function maybe_notify_next_in_queue( $batch_name, $fish_id ) {
+        $option_key = 'fishotel_verification_queue_' . sanitize_title( $batch_name );
+        $queue      = get_option( $option_key, [] );
+
+        if ( empty( $queue['species'][ $fish_id ]['queue'] ) ) return;
+
+        $sp = &$queue['species'][ $fish_id ];
+
+        // Find the first pending entry where all before it are resolved
+        foreach ( $sp['queue'] as $i => &$entry ) {
+            if ( $entry['status'] !== 'pending' ) continue;
+
+            $all_before_resolved = true;
+            for ( $j = 0; $j < $i; $j++ ) {
+                if ( ! in_array( $sp['queue'][ $j ]['status'], [ 'accepted', 'passed' ], true ) ) {
+                    $all_before_resolved = false;
+                    break;
+                }
+            }
+
+            if ( $all_before_resolved && empty( $entry['notified_at'] ) ) {
+                $entry['notified_at'] = time();
+                update_option( $option_key, $queue );
+                // Notification dispatch — implemented in Prompt 4
+            }
+            break;
+        }
+        unset( $entry );
     }
 
 }
