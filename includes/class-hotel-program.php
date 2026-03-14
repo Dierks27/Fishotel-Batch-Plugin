@@ -660,7 +660,7 @@ trait FisHotel_HotelProgram {
 .fh-room-card-summary{font-size:11px;color:#777;letter-spacing:0.5px}
 
 /* VIEW TOGGLE */
-.fh-hotel-view-toggle{text-align:right;margin-bottom:6px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px}
+.fh-hotel-view-toggle{text-align:right;margin-top:10px;margin-bottom:6px;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px}
 .fh-toggle-opt{cursor:pointer;color:rgba(225,225,225,0.35)}
 .fh-toggle-opt.fh-toggle-active{color:#96885f}
 .fh-toggle-sep{color:rgba(225,225,225,0.2);margin:0 8px}
