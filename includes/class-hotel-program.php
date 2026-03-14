@@ -631,6 +631,18 @@ trait FisHotel_HotelProgram {
 .fh-hotel-room-detail-close{position:absolute;top:12px;right:16px;background:none;border:none;color:#666;font-size:20px;cursor:pointer}
 .fh-hotel-room-detail-close:hover{color:#fff}
 
+/* ZOOM */
+.fh-hotel-building,.fh-hotel-building-2{transition:transform 0.4s ease-in-out}
+.fh-hotel-building--zoomed,.fh-hotel-building-2--zoomed{overflow:hidden;position:relative}
+.fh-hotel-zoom-overlay{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);color:#fdf8f0;font-family:'Oswald',sans-serif;padding:10px 14px;z-index:20;display:flex;flex-direction:column;gap:2px}
+.fh-hotel-zoom-overlay-species{font-size:16px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase}
+.fh-hotel-zoom-overlay-meta{font-size:12px;letter-spacing:0.05em;opacity:0.85}
+.fh-hotel-zoom-overlay-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;letter-spacing:0.1em;margin-top:4px;width:fit-content}
+.fh-hotel-zoom-overlay-badge--qt{background:#27ae60;color:#fff}
+.fh-hotel-zoom-overlay-badge--none{background:#888;color:#fff}
+.fh-hotel-zoom-close{position:absolute;top:10px;right:10px;z-index:25;width:28px;height:28px;border-radius:50%;background:#1a3a5c;color:#fff;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif}
+.fh-hotel-zoom-close:hover{background:#2a5a8c}
+
 /* RESPONSIVE */
 @media(max-width:640px){
     .fh-hotel-postcard-wrap{width:100%}
@@ -662,6 +674,8 @@ trait FisHotel_HotelProgram {
     .fh-hotel-room-species{font-size:9px !important}
     .fh-hotel-room-qty{font-size:8px !important}
     .fh-hotel-room-fish{font-size:18px !important}
+    .fh-hotel-zoom-overlay,.fh-hotel-zoom-close{display:none !important}
+    .fh-hotel-building--zoomed,.fh-hotel-building-2--zoomed{transform:none !important;overflow:visible !important}
 }
 </style>
 
@@ -776,8 +790,10 @@ trait FisHotel_HotelProgram {
                     if ( $is_mine ) $cls .= ' fh-hotel-room--mine';
                     $total_qty = 0;
                     foreach ( $fish_list as $fd ) { $total_qty += intval( $fd['qty'] ); }
+                    $first_species = ! empty( $fish_list ) ? $fish_list[0]['species'] : '';
+                    $first_status  = ! empty( $fish_list ) ? $fish_list[0]['status']  : '';
                 ?>
-                    <div class="<?php echo esc_attr( $cls ); ?>" data-room="<?php echo esc_attr( $tank_id ); ?>" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>')">
+                    <div class="<?php echo esc_attr( $cls ); ?>" data-room="<?php echo esc_attr( $tank_id ); ?>" data-room-state="<?php echo esc_attr( $state ); ?>" data-room-species="<?php echo esc_attr( $first_species ); ?>" data-room-qty="<?php echo intval( $total_qty ); ?>" data-room-status="<?php echo esc_attr( $first_status ); ?>" data-room-mine="<?php echo $is_mine ? '1' : '0'; ?>" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>', this)">
                         <?php if ( $is_mine ) : ?><div class="fh-hotel-room-yours">YOUR ROOM</div><?php endif; ?>
                     </div>
                 <?php endforeach; ?>
@@ -824,8 +840,10 @@ trait FisHotel_HotelProgram {
                 if ( $is_mine ) $cls .= ' fh-hotel-room--mine';
                 $total_qty = 0;
                 foreach ( $fish_list as $fd ) { $total_qty += intval( $fd['qty'] ); }
+                $first_species = ! empty( $fish_list ) ? $fish_list[0]['species'] : '';
+                $first_status  = ! empty( $fish_list ) ? $fish_list[0]['status']  : '';
             ?>
-                <div class="<?php echo esc_attr( $cls ); ?>" data-room="<?php echo esc_attr( $tank_id ); ?>" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>')">
+                <div class="<?php echo esc_attr( $cls ); ?>" data-room="<?php echo esc_attr( $tank_id ); ?>" data-room-state="<?php echo esc_attr( $state ); ?>" data-room-species="<?php echo esc_attr( $first_species ); ?>" data-room-qty="<?php echo intval( $total_qty ); ?>" data-room-status="<?php echo esc_attr( $first_status ); ?>" data-room-mine="<?php echo $is_mine ? '1' : '0'; ?>" onclick="fishotelHotelToggleRoom('<?php echo esc_js( $tank_id ); ?>', this)">
                     <?php if ( $is_mine ) : ?><div class="fh-hotel-room-yours">YOUR ROOM</div><?php endif; ?>
                 </div>
             <?php endforeach; ?>
@@ -879,20 +897,116 @@ trait FisHotel_HotelProgram {
     <?php endforeach; ?>
 
     <script>
-    /* ── Room toggle ────────────────────────────────── */
+    /* ── Room toggle + Desktop zoom ────────────────── */
     var fishotelHotelOpenRoom = null;
-    function fishotelHotelToggleRoom(id) {
-        var panels = document.querySelectorAll('.fh-hotel-room-detail');
-        if (fishotelHotelOpenRoom === id) {
-            document.getElementById('fh-room-detail-' + id).classList.remove('fh-hotel-room-detail--open');
-            fishotelHotelOpenRoom = null;
+    var fishotelHotelZoomedRoom = null;
+
+    function fishotelHotelZoomOut() {
+        if (!fishotelHotelZoomedRoom) return;
+        var oldOverlay = document.querySelector('.fh-hotel-zoom-overlay');
+        var oldClose = document.querySelector('.fh-hotel-zoom-close');
+        if (oldOverlay) oldOverlay.remove();
+        if (oldClose) oldClose.remove();
+        document.querySelectorAll('.fh-hotel-building--zoomed,.fh-hotel-building-2--zoomed').forEach(function(b) {
+            b.classList.remove('fh-hotel-building--zoomed', 'fh-hotel-building-2--zoomed');
+            b.style.transform = '';
+            b.style.transformOrigin = '';
+        });
+        fishotelHotelZoomedRoom = null;
+    }
+
+    function fishotelHotelToggleRoom(id, roomEl) {
+        var isMobile = window.innerWidth <= 700;
+
+        /* ── Mobile: existing detail panel behavior ── */
+        if (isMobile) {
+            var panels = document.querySelectorAll('.fh-hotel-room-detail');
+            if (fishotelHotelOpenRoom === id) {
+                document.getElementById('fh-room-detail-' + id).classList.remove('fh-hotel-room-detail--open');
+                fishotelHotelOpenRoom = null;
+                return;
+            }
+            panels.forEach(function(p){ p.classList.remove('fh-hotel-room-detail--open'); });
+            var el = document.getElementById('fh-room-detail-' + id);
+            if (el) { el.classList.add('fh-hotel-room-detail--open'); }
+            fishotelHotelOpenRoom = id;
             return;
         }
-        panels.forEach(function(p){ p.classList.remove('fh-hotel-room-detail--open'); });
-        var el = document.getElementById('fh-room-detail-' + id);
-        if (el) { el.classList.add('fh-hotel-room-detail--open'); }
-        fishotelHotelOpenRoom = id;
+
+        /* ── Desktop: CSS zoom ── */
+        if (fishotelHotelZoomedRoom === id) {
+            fishotelHotelZoomOut();
+            return;
+        }
+        fishotelHotelZoomOut();
+
+        if (!roomEl) roomEl = document.querySelector('[data-room="' + id + '"]');
+        if (!roomEl) return;
+
+        var building = roomEl.closest('.fh-hotel-building, .fh-hotel-building-2');
+        if (!building) return;
+
+        var isBeachHut = building.classList.contains('fh-hotel-building-2');
+        var scale = isBeachHut ? 2 : 2.5;
+
+        /* Calculate room center as percentage of building */
+        var bRect = building.getBoundingClientRect();
+        var rRect = roomEl.getBoundingClientRect();
+        var cx = ((rRect.left + rRect.width / 2) - bRect.left) / bRect.width * 100;
+        var cy = ((rRect.top + rRect.height / 2) - bRect.top) / bRect.height * 100;
+
+        building.style.transformOrigin = cx + '% ' + cy + '%';
+        building.style.transform = 'scale(' + scale + ')';
+        building.classList.add(isBeachHut ? 'fh-hotel-building-2--zoomed' : 'fh-hotel-building--zoomed');
+
+        /* Build overlay */
+        var state = roomEl.dataset.roomState || 'unassigned';
+        var species = roomEl.dataset.roomSpecies || '';
+        var qty = roomEl.dataset.roomQty || '0';
+        var status = roomEl.dataset.roomStatus || '';
+
+        var overlay = document.createElement('div');
+        overlay.className = 'fh-hotel-zoom-overlay';
+
+        if (state === 'unassigned') {
+            overlay.innerHTML = '<div class="fh-hotel-zoom-overlay-species">UNASSIGNED</div>' +
+                '<div class="fh-hotel-zoom-overlay-meta">Room ' + id + '</div>' +
+                '<div class="fh-hotel-zoom-overlay-badge fh-hotel-zoom-overlay-badge--none">NO GUEST</div>';
+        } else if (state === 'noarrival') {
+            overlay.innerHTML = '<div class="fh-hotel-zoom-overlay-species">NO ARRIVAL</div>' +
+                '<div class="fh-hotel-zoom-overlay-meta">Room ' + id + '</div>' +
+                '<div class="fh-hotel-zoom-overlay-badge fh-hotel-zoom-overlay-badge--none">NO ARRIVAL</div>';
+        } else {
+            var statusLabel = status === 'in_qt' ? 'IN QT' : status.replace(/_/g, ' ').toUpperCase();
+            var badgeClass = status === 'in_qt' ? 'fh-hotel-zoom-overlay-badge--qt' : 'fh-hotel-zoom-overlay-badge--none';
+            overlay.innerHTML = '<div class="fh-hotel-zoom-overlay-species">' + species + '</div>' +
+                '<div class="fh-hotel-zoom-overlay-meta">Room ' + id + ' &bull; Qty: ' + qty + '</div>' +
+                '<div class="fh-hotel-zoom-overlay-badge ' + badgeClass + '">' + statusLabel + '</div>';
+        }
+
+        building.appendChild(overlay);
+
+        /* Close button */
+        var closeBtn = document.createElement('button');
+        closeBtn.className = 'fh-hotel-zoom-close';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            fishotelHotelZoomOut();
+        });
+        building.appendChild(closeBtn);
+
+        fishotelHotelZoomedRoom = id;
     }
+
+    /* Click on building background (not a room) zooms out */
+    document.querySelectorAll('.fh-hotel-building, .fh-hotel-building-2').forEach(function(b) {
+        b.addEventListener('click', function(e) {
+            if (fishotelHotelZoomedRoom && !e.target.closest('.fh-hotel-room') && !e.target.closest('.fh-hotel-zoom-close')) {
+                fishotelHotelZoomOut();
+            }
+        });
+    });
 
     /* ── Building slider ────────────────────────────── */
     document.querySelectorAll('.fh-hotel-slider').forEach(function(slider) {
@@ -900,6 +1014,7 @@ trait FisHotel_HotelProgram {
         var dots = slider.querySelectorAll('.fh-hotel-dot');
         var current = 0;
         function goTo(n) {
+            fishotelHotelZoomOut();
             slides[current].classList.remove('fh-hotel-slide--active');
             dots[current].classList.remove('fh-hotel-dot--active');
             current = n;
