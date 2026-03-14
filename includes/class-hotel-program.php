@@ -634,23 +634,29 @@ trait FisHotel_HotelProgram {
 /* RESPONSIVE */
 @media(max-width:640px){
     .fh-hotel-postcard-wrap{width:100%}
-    .fh-hotel-card{width:100%}
-    .fh-hotel-card-inner{transform:none !important}
+    .fh-hotel-card{width:100%;border-radius:12px !important;overflow:hidden !important}
+    .fh-hotel-card-inner{transform:none !important;border-radius:12px !important;overflow:hidden !important}
     .fh-hotel-postcard-front,.fh-hotel-postcard-back{backface-visibility:visible;-webkit-backface-visibility:visible;transform:none !important}
     .fh-hotel-postcard-front{position:relative !important;height:auto !important}
     .fh-hotel-postcard-back{position:relative !important;height:auto !important;min-height:300px;width:100%}
-    .fh-hotel-postcard-back{display:none;margin-top:0;border-radius:0 0 6px 6px;padding-bottom:20px !important}
+    .fh-hotel-postcard-back{display:none;margin-top:0;border-radius:0 0 6px 6px;padding-bottom:20px !important;overflow:hidden !important}
     .fh-hotel-postcard-scene{display:block !important;height:200px !important}
     .fh-hotel-postcard-front-strip{display:flex !important;height:auto !important;padding:10px 12px !important}
     .fh-hotel-card[data-flipped="true"] .fh-hotel-postcard-front .fh-hotel-postcard-scene,
     .fh-hotel-card[data-flipped="true"] .fh-hotel-postcard-front .fh-hotel-postcard-front-strip{display:none}
     .fh-hotel-card[data-flipped="true"] .fh-hotel-postcard-back{display:flex;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
-    .fh-hotel-postcard-back-right{width:160px;padding:14px}
-    .fh-hotel-postcard-back-left{padding:20px 16px}
+    .fh-hotel-postcard-back-right{width:160px;padding:8px !important}
+    .fh-hotel-postcard-back-left{padding:8px !important}
     .fh-hotel-postcard-stamp-area{width:60px !important;height:60px !important}
     .fh-hotel-postcard-stamp{width:50px !important;height:50px !important}
     .fh-hotel-postcard-stamp-text{font-size:7px !important}
-    .fh-hotel-postcard-postmark{width:65px;height:65px}
+    .fh-hotel-postcard-postmark{width:48px !important;height:48px !important;margin:4px 0 !important}
+    .fh-hotel-postcard-postmark-city,.fh-hotel-postcard-postmark-date{font-size:7px !important}
+    .fh-hotel-postcard-back-message{font-size:13px !important;line-height:1.3 !important}
+    .fh-hotel-postcard-back-correspondence{font-size:8px !important;margin-bottom:2px !important}
+    .fh-hotel-postcard-back-signature{font-size:11px !important;margin-top:4px !important}
+    .fh-hotel-postcard-address-label{font-size:7px !important}
+    .fh-hotel-postcard-address-line{font-size:9px !important;margin-bottom:2px !important}
     .fh-hotel-postcard-vertical-text{display:none}
     .fh-hotel-slider{margin-top:24px !important}
     .fh-hotel-room-species{font-size:9px !important}
@@ -691,6 +697,10 @@ trait FisHotel_HotelProgram {
                 <div class="fh-hotel-postcard-back-left">
                     <div class="fh-hotel-postcard-back-correspondence">CORRESPONDENCE</div>
                     <div class="fh-hotel-postcard-back-message"><?php echo $postcard_message; ?></div>
+                    <div class="fh-hotel-postcard-postmark">
+                        <div class="fh-hotel-postcard-postmark-city"><?php echo $postmark_city; ?></div>
+                        <div class="fh-hotel-postcard-postmark-date"><?php echo esc_html( $postmark_date ); ?></div>
+                    </div>
                     <div class="fh-hotel-postcard-back-signature">— The FisHotel Concierge</div>
                 </div>
                 <div class="fh-hotel-postcard-back-right">
@@ -699,10 +709,6 @@ trait FisHotel_HotelProgram {
                             <span class="fh-hotel-postcard-stamp-text">PLACE<br>STAMP<br>HERE</span>
 
                         </div>
-                    </div>
-                    <div class="fh-hotel-postcard-postmark">
-                        <div class="fh-hotel-postcard-postmark-city"><?php echo $postmark_city; ?></div>
-                        <div class="fh-hotel-postcard-postmark-date"><?php echo esc_html( $postmark_date ); ?></div>
                     </div>
                     <div class="fh-hotel-postcard-address-lines">
                         <div class="fh-hotel-postcard-address-label">TO: OUR VALUED GUEST</div>

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.41 - Mobile postcard polish (scene, gap, stamp, button padding).
- * Version:           5.41
+ * Description:       v5.42 - Move postmark to left panel, rounded corners, compress back content.
+ * Version:           5.42
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.41' );
+define( 'FISHOTEL_VERSION', '5.42' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
