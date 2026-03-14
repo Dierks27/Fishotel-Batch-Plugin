@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.44 - Rewrite room zoom: fix centering, body-appended overlay/close, Escape key.
- * Version:           5.44
+ * Description:       v5.45 - Room zoom: percentage transform-origin, backdrop, in-room overlay, DOA badge.
+ * Version:           5.45
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.44' );
+define( 'FISHOTEL_VERSION', '5.45' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
