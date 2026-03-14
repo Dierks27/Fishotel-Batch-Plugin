@@ -434,7 +434,8 @@ trait FisHotel_HotelProgram {
             $tank = (string) get_post_meta( $bf->ID, '_arrival_tank', true );
             if ( $tank === '' || ! array_key_exists( $tank, $room_map ) ) continue;
             $arr_status = get_post_meta( $bf->ID, '_arrival_status', true );
-            $qty_recv   = intval( get_post_meta( $bf->ID, '_arrival_qty_received', true ) );
+            $cq         = get_post_meta( $bf->ID, '_current_qty', true );
+            $qty_recv   = ( $cq !== '' && $cq !== false ) ? intval( $cq ) : intval( get_post_meta( $bf->ID, '_arrival_qty_received', true ) );
             $qty_doa    = intval( get_post_meta( $bf->ID, '_arrival_qty_doa', true ) );
             $master_id  = get_post_meta( $bf->ID, '_master_id', true );
             $common     = $master_id ? get_the_title( $master_id ) : $bf->post_title;

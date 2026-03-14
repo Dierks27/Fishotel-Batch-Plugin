@@ -2602,7 +2602,8 @@ trait FisHotel_Shortcodes {
             // Arrival meta per species
             $species_arrival = [];
             foreach ( $batch_posts as $bp ) {
-                $recv = intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) );
+                $cq   = get_post_meta( $bp->ID, '_current_qty', true );
+                $recv = ( $cq !== '' && $cq !== false ) ? intval( $cq ) : intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) );
                 $doa  = intval( get_post_meta( $bp->ID, '_arrival_qty_doa', true ) );
                 $species_arrival[ $bp->ID ] = [ 'received' => $recv, 'doa' => $doa, 'alive' => $recv - $doa ];
             }

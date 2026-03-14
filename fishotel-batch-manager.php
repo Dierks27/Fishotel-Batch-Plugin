@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.63 - Arrival Entry tabbed layout (Arrival Data / Quarantine Tracker / Graduation).
- * Version:           5.63
+ * Description:       v5.64 - _current_qty from survival tracker used as live display quantity.
+ * Version:           5.64
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.63' );
+define( 'FISHOTEL_VERSION', '5.64' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -393,7 +393,7 @@ class FisHotel_Batch_Manager {
                 'fish_id'      => $bp->ID,
                 'common_name'  => self::resolve_common_name( $bp->ID, $bp->post_title ),
                 'qty_ordered'  => $demand[ $bp->ID ] ?? 0,
-                'qty_received' => intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) ),
+                'qty_received' => ( ( $cq = get_post_meta( $bp->ID, '_current_qty', true ) ) !== '' && $cq !== false ) ? intval( $cq ) : intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) ),
                 'qty_doa'      => intval( get_post_meta( $bp->ID, '_arrival_qty_doa', true ) ),
                 'tank'         => get_post_meta( $bp->ID, '_arrival_tank', true ) ?: '',
                 'status'       => get_post_meta( $bp->ID, '_arrival_status', true ) ?: 'in_transit',
@@ -462,7 +462,8 @@ class FisHotel_Batch_Manager {
         $species_raw = [];
         foreach ( $batch_fish as $bp ) {
             $cname = self::resolve_common_name( $bp->ID, $bp->post_title );
-            $recv  = intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) );
+            $cq    = get_post_meta( $bp->ID, '_current_qty', true );
+            $recv  = ( $cq !== '' && $cq !== false ) ? intval( $cq ) : intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) );
             $doa   = intval( get_post_meta( $bp->ID, '_arrival_qty_doa', true ) );
             $species_raw[] = [
                 'common_name' => $cname,

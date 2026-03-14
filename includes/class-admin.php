@@ -3195,8 +3195,10 @@ trait FisHotel_Admin {
                 $recv = intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) );
                 if ( $recv <= 0 ) continue;
                 $doa       = intval( get_post_meta( $bp->ID, '_arrival_qty_doa', true ) );
+                $cq        = get_post_meta( $bp->ID, '_current_qty', true );
+                $live_qty  = ( $cq !== '' && $cq !== false ) ? intval( $cq ) : ( $recv - $doa );
                 $grad_qty  = get_post_meta( $bp->ID, '_graduation_qty', true );
-                $default   = $recv - $doa;
+                $default   = $live_qty;
                 $grad_val  = ( $grad_qty !== '' && $grad_qty !== false ) ? intval( $grad_qty ) : $default;
                 $common    = FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title );
                 $disabled  = $grad_locked ? ' disabled' : '';
@@ -3372,6 +3374,7 @@ trait FisHotel_Admin {
 
             $log[] = [ 'date' => $today, 'count' => intval( $count ) ];
             update_post_meta( $batch_id, '_qt_survival_log', $log );
+            update_post_meta( $batch_id, '_current_qty', intval( $count ) );
         }
 
         wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=tracker&survival_logged=1' ) );
