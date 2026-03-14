@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v5.61 - 10px margin-top on view toggle for postcard spacing.
- * Version:           5.61
+ * Description:       v5.62 - Graduation Headcount section on Arrival Entry page.
+ * Version:           5.62
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '5.61' );
+define( 'FISHOTEL_VERSION', '5.62' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -165,6 +165,7 @@ class FisHotel_Batch_Manager {
         add_action( 'admin_post_fishotel_save_ticker',        [$this, 'save_ticker_handler'] );
         add_action( 'admin_post_fishotel_save_arrival_data',  [$this, 'save_arrival_data_handler'] );
         add_action( 'admin_post_fishotel_log_survival_entry', [$this, 'log_survival_entry_handler'] );
+        add_action( 'admin_post_fishotel_save_graduation_data', [$this, 'save_graduation_data_handler'] );
 
         add_action( 'wp_login', [$this, 'record_last_login'], 10, 2 );
 

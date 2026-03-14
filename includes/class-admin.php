@@ -3142,6 +3142,68 @@ trait FisHotel_Admin {
         echo '<button type="submit" style="background:#27ae60;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Log Today\'s Counts</button>';
         echo '</div></form></div>';
 
+        // ── Graduation Headcount ─────────────────────────────────────────────
+        $current_stage    = $statuses[ $selected ] ?? '';
+        $grad_locked      = in_array( $current_stage, [ 'graduation', 'verification', 'draft', 'invoicing' ], true );
+        $grad_has_entries = false;
+
+        foreach ( $batch_fish as $bp ) {
+            $recv = intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) );
+            if ( $recv > 0 ) { $grad_has_entries = true; break; }
+        }
+
+        if ( $grad_has_entries ) {
+            echo '<hr style="border:none;border-top:1px solid #444;margin:28px 0;">';
+            echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;">';
+            echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Graduation Headcount</h2>';
+            echo '<p style="color:#aaa;margin-top:0;font-size:13px;">Final confirmed counts after QT. These numbers lock when batch advances to graduation.</p>';
+
+            if ( $grad_locked ) {
+                echo '<p style="color:#e67e22;font-size:12px;margin-bottom:12px;">&#x1F512; Counts locked &mdash; batch has advanced to graduation stage. Edit batch status to unlock.</p>';
+            }
+
+            echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+            wp_nonce_field( 'fishotel_save_graduation_nonce' );
+            echo '<input type="hidden" name="action" value="fishotel_save_graduation_data">';
+            echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+
+            echo '<table style="width:100%;border-collapse:collapse;">';
+            echo '<thead><tr style="border-bottom:2px solid #444;text-align:left;">';
+            echo '<th style="padding:8px;color:#b5a165;">Species</th>';
+            echo '<th style="padding:8px;color:#b5a165;text-align:center;">Arrived Qty</th>';
+            echo '<th style="padding:8px;color:#b5a165;text-align:center;">DOA</th>';
+            echo '<th style="padding:8px;color:#b5a165;text-align:center;">Graduated Qty</th>';
+            echo '</tr></thead><tbody>';
+
+            foreach ( $batch_fish as $bp ) {
+                $recv = intval( get_post_meta( $bp->ID, '_arrival_qty_received', true ) );
+                if ( $recv <= 0 ) continue;
+                $doa       = intval( get_post_meta( $bp->ID, '_arrival_qty_doa', true ) );
+                $grad_qty  = get_post_meta( $bp->ID, '_graduation_qty', true );
+                $default   = $recv - $doa;
+                $grad_val  = ( $grad_qty !== '' && $grad_qty !== false ) ? intval( $grad_qty ) : $default;
+                $common    = FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title );
+                $disabled  = $grad_locked ? ' disabled' : '';
+
+                echo '<tr style="border-bottom:1px solid #333;">';
+                echo '<td style="padding:8px;">' . esc_html( $common ) . '</td>';
+                echo '<td style="padding:8px;text-align:center;color:#aaa;">' . $recv . '</td>';
+                echo '<td style="padding:8px;text-align:center;color:#aaa;">' . $doa . '</td>';
+                echo '<td style="padding:8px;text-align:center;">';
+                echo '<input type="number" name="graduation[' . $bp->ID . ']" value="' . $grad_val . '" min="0" style="width:70px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;"' . $disabled . '>';
+                echo '</td>';
+                echo '</tr>';
+            }
+
+            echo '</tbody></table>';
+            if ( ! $grad_locked ) {
+                echo '<div style="margin-top:16px;text-align:right;">';
+                echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Save Graduation Counts</button>';
+                echo '</div>';
+            }
+            echo '</form></div>';
+        }
+
         echo '</div>'; // .wrap
 
         // Inline JS for real-time fill rate updates
@@ -3296,6 +3358,31 @@ trait FisHotel_Admin {
         }
 
         wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&survival_logged=1' ) );
+        exit;
+    }
+
+    public function save_graduation_data_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_save_graduation_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        if ( ! $batch_name ) wp_die( 'No batch specified.' );
+
+        $graduation = $_POST['graduation'] ?? [];
+
+        foreach ( $graduation as $batch_id => $qty ) {
+            $batch_id = intval( $batch_id );
+            if ( ! $batch_id ) continue;
+
+            $post = get_post( $batch_id );
+            if ( ! $post || $post->post_type !== 'fish_batch' ) continue;
+            if ( get_post_meta( $batch_id, '_batch_name', true ) !== $batch_name ) continue;
+
+            update_post_meta( $batch_id, '_graduation_qty', intval( $qty ) );
+        }
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&graduation_saved=1' ) );
         exit;
     }
 
