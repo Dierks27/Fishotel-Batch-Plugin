@@ -204,6 +204,44 @@ trait FisHotel_HotelProgram {
         return $map;
     }
 
+    private function hotel_parse_scene_image( $filename ) {
+        $bn = pathinfo( $filename, PATHINFO_FILENAME );
+        if ( preg_match( '/^hotel-(.+)-scene-(\d+)/', $bn, $m ) ) {
+            return [ 'scene_type' => $m[1], 'scene_number' => $m[2] ];
+        }
+        return [ 'scene_type' => 'lobby', 'scene_number' => '01' ];
+    }
+
+    private function hotel_scene_url_from_image( $scene_image ) {
+        $parsed = $this->hotel_parse_scene_image( $scene_image );
+        return $this->hotel_scene_url( $parsed['scene_type'], $parsed['scene_number'] );
+    }
+
+    private function hotel_scene_urls_by_band_from_image( $scene_image ) {
+        $parsed = $this->hotel_parse_scene_image( $scene_image );
+        return $this->hotel_scene_urls_by_band( $parsed['scene_type'], $parsed['scene_number'] );
+    }
+
+    private function hotel_migrate_activity_scene( &$act ) {
+        if ( ! empty( $act['scene_image'] ) ) return;
+        $type = $act['scene_type'] ?? 'lobby';
+        $num  = str_pad( $act['scene_number'] ?? '01', 2, '0', STR_PAD_LEFT );
+        $act['scene_image'] = 'hotel-' . $type . '-scene-' . $num . '.jpg';
+    }
+
+    private function hotel_scan_scene_images() {
+        $dir   = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene/';
+        $files = [];
+        if ( ! is_dir( $dir ) ) return $files;
+        foreach ( glob( $dir . 'hotel-*-scene-*.{jpg,png}', GLOB_BRACE ) as $f ) {
+            $bn = basename( $f );
+            if ( preg_match( '/-(?:morning|afternoon|sunset|night)\.[a-z]+$/i', $bn ) ) continue;
+            $files[] = $bn;
+        }
+        sort( $files );
+        return $files;
+    }
+
     private function hotel_seed_layer_defaults() {
         $existing = get_option( 'fishotel_layer_configs' );
         if ( $existing === false ) {
@@ -405,13 +443,14 @@ trait FisHotel_HotelProgram {
         $now_ts     = strtotime( current_time( 'Y-m-d' ) );
         $day_number = max( 1, min( 21, (int) floor( ( $now_ts - $start_ts ) / 86400 ) + 1 ) );
 
-        $activity   = $this->hotel_get_resolved_activity( $batch_name, $day_number );
-        $scene_type = $activity['scene_type'] ?? 'lobby';
-        $scene_num  = $activity['scene_number'] ?? '01';
-        $scene_data = $this->hotel_scene_url( $scene_type, $scene_num );
-        $scene_url  = $scene_data ? $scene_data['url'] : false;
-        $scene_urls_by_band = $this->hotel_scene_urls_by_band( $scene_type, $scene_num );
-        $scene_slug   = $scene_type . '-scene-' . $scene_num;
+        $activity = $this->hotel_get_resolved_activity( $batch_name, $day_number );
+        $this->hotel_migrate_activity_scene( $activity );
+        $scene_image = $activity['scene_image'] ?? 'hotel-lobby-scene-01.jpg';
+        $parsed      = $this->hotel_parse_scene_image( $scene_image );
+        $scene_data  = $this->hotel_scene_url( $parsed['scene_type'], $parsed['scene_number'] );
+        $scene_url   = $scene_data ? $scene_data['url'] : false;
+        $scene_urls_by_band = $this->hotel_scene_urls_by_band( $parsed['scene_type'], $parsed['scene_number'] );
+        $scene_slug  = $parsed['scene_type'] . '-scene-' . $parsed['scene_number'];
         $layer_config = $this->hotel_get_layer_config( $scene_slug );
 
         $postcard_message = esc_html( $activity['postcard_message'] ?? '' );
@@ -1500,10 +1539,15 @@ trait FisHotel_HotelProgram {
         if ( isset( $_GET['act_saved'] ) ) echo '<div class="notice notice-success"><p>Activity saved.</p></div>';
         if ( isset( $_GET['act_deleted'] ) ) echo '<div class="notice notice-success"><p>Activity deleted.</p></div>';
 
-        $scene_types = [ 'pool', 'spa', 'dining', 'lobby', 'beach', 'suite', 'bar', 'graduation' ];
         $times       = [ 'morning' => 'Morning', 'afternoon' => 'Afternoon', 'evening' => 'Evening', 'night' => 'Night' ];
 
         $plugin_base_url = plugins_url( 'assists/scene/', FISHOTEL_PLUGIN_FILE );
+        $scene_images    = $this->hotel_scan_scene_images();
+
+        // Backwards-compat: migrate editing activity to scene_image
+        if ( $editing ) {
+            $this->hotel_migrate_activity_scene( $editing );
+        }
         ?>
         <table class="widefat striped" style="max-width:1000px;">
             <thead>
@@ -1527,7 +1571,7 @@ trait FisHotel_HotelProgram {
                         <td><?php echo esc_html( $act['name'] ); ?></td>
                         <td><?php if ( $cat ) : ?><span style="display:inline-block;padding:2px 8px;border-radius:3px;background:<?php echo esc_attr( $cat['color'] ); ?>;color:#fff;font-size:11px;"><?php echo esc_html( $cat['label'] ); ?></span><?php else : ?>—<?php endif; ?></td>
                         <td><?php echo esc_html( ucfirst( $act['time_of_day'] ?? '' ) ); ?></td>
-                        <td><code><?php echo esc_html( ( $act['scene_type'] ?? '' ) . '-' . ( $act['scene_number'] ?? '' ) ); ?></code></td>
+                        <td><code><?php $this->hotel_migrate_activity_scene( $act ); echo esc_html( $act['scene_image'] ?? '' ); ?></code></td>
                         <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo esc_html( $act['postcard_message'] ?? '' ); ?></td>
                         <td>
                             <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-hotel-program&tab=activities&edit_act=' . $act['id'] ) ); ?>">Edit</a>
@@ -1561,17 +1605,33 @@ trait FisHotel_HotelProgram {
                             <option value="<?php echo esc_attr( $k ); ?>" <?php selected( ( $editing['time_of_day'] ?? '' ), $k ); ?>><?php echo esc_html( $v ); ?></option>
                         <?php endforeach; ?>
                     </select></td></tr>
-                <tr><th><label>Scene Type</label></th>
-                    <td><select name="act_scene_type" id="fh-hotel-scene-type" onchange="fishotelHotelPreviewScene()">
-                        <?php foreach ( $scene_types as $st ) : ?>
-                            <option value="<?php echo esc_attr( $st ); ?>" <?php selected( ( $editing['scene_type'] ?? '' ), $st ); ?>><?php echo esc_html( ucfirst( $st ) ); ?></option>
-                        <?php endforeach; ?>
-                    </select></td></tr>
-                <tr><th><label>Scene Number</label></th>
-                    <td><input type="text" name="act_scene_number" id="fh-hotel-scene-num" value="<?php echo esc_attr( $editing['scene_number'] ?? '01' ); ?>" style="width:60px;" oninput="fishotelHotelPreviewScene()">
-                        <p class="description">Two-digit number matching the scene filename (e.g. 01, 03).</p></td></tr>
-                <tr><th><label>Scene Preview</label></th>
-                    <td><div id="fh-hotel-scene-preview" style="width:200px;height:133px;border:1px solid #ccc;background:#f5f0e8;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;overflow:hidden;">Loading...</div></td></tr>
+                <tr><th><label>Scene Image</label></th>
+                    <td>
+                        <input type="hidden" name="act_scene_image" id="fh-hotel-scene-image" value="<?php echo esc_attr( $editing['scene_image'] ?? '' ); ?>">
+                        <?php if ( empty( $scene_images ) ) : ?>
+                            <p style="color:#999;">No scene images uploaded yet — upload images to <code>assists/scene/</code> via the Assets tab.</p>
+                        <?php else : ?>
+                            <div id="fh-hotel-scene-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;max-height:320px;overflow-y:auto;padding:8px;border:1px solid #ddd;border-radius:4px;background:#f9f7f3;">
+                                <?php foreach ( $scene_images as $si ) : ?>
+                                    <div class="fh-scene-thumb" data-filename="<?php echo esc_attr( $si ); ?>"
+                                         onclick="fishotelSelectScene(this)"
+                                         style="cursor:pointer;border:3px solid transparent;border-radius:4px;padding:4px;text-align:center;position:relative;transition:border-color .15s;">
+                                        <img src="<?php echo esc_url( $plugin_base_url . $si ); ?>" alt="<?php echo esc_attr( $si ); ?>"
+                                             style="width:120px;height:80px;object-fit:cover;border-radius:3px;display:block;margin:0 auto;">
+                                        <span style="display:block;font-size:10px;color:#666;margin-top:4px;word-break:break-all;"><?php echo esc_html( $si ); ?></span>
+                                        <span class="fh-scene-check" style="display:none;position:absolute;top:8px;right:8px;background:#96885f;color:#fff;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;font-size:12px;">✓</span>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <div id="fh-hotel-scene-preview" style="margin-top:10px;width:200px;height:133px;border:1px solid #ccc;background:#f5f0e8;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;overflow:hidden;border-radius:4px;">
+                                <?php if ( ! empty( $editing['scene_image'] ) ) : ?>
+                                    <img src="<?php echo esc_url( $plugin_base_url . $editing['scene_image'] ); ?>" style="width:100%;height:100%;object-fit:cover;">
+                                <?php else : ?>
+                                    Select a scene above
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                    </td></tr>
                 <tr><th><label>Postcard Message</label></th>
                     <td><textarea name="act_postcard_message" rows="3" class="large-text"><?php echo esc_textarea( $editing['postcard_message'] ?? '' ); ?></textarea>
                         <p class="description">Written in hotel concierge voice. Shown on the back of the customer postcard.</p></td></tr>
@@ -1586,17 +1646,32 @@ trait FisHotel_HotelProgram {
 
         <script>
         var fishotelHotelSceneBase = <?php echo wp_json_encode( $plugin_base_url ); ?>;
-        function fishotelHotelPreviewScene() {
-            var type = document.getElementById('fh-hotel-scene-type').value;
-            var num  = document.getElementById('fh-hotel-scene-num').value.padStart(2, '0');
-            var url  = fishotelHotelSceneBase + 'hotel-' + type + '-scene-' + num + '.jpg';
-            var el   = document.getElementById('fh-hotel-scene-preview');
-            var img  = new Image();
-            img.onload = function() { el.innerHTML = ''; el.style.backgroundImage = 'url(' + url + ')'; el.style.backgroundSize = 'cover'; el.style.backgroundPosition = 'center'; };
-            img.onerror = function() { el.style.backgroundImage = 'none'; el.innerHTML = '<span style="color:#999;font-size:12px;">No image found for that filename.</span>'; };
-            img.src = url;
+        function fishotelSelectScene(el) {
+            document.querySelectorAll('.fh-scene-thumb').forEach(function(t) {
+                t.style.borderColor = 'transparent';
+                t.querySelector('.fh-scene-check').style.display = 'none';
+            });
+            el.style.borderColor = '#96885f';
+            el.querySelector('.fh-scene-check').style.display = 'block';
+            var fn = el.getAttribute('data-filename');
+            document.getElementById('fh-hotel-scene-image').value = fn;
+            var preview = document.getElementById('fh-hotel-scene-preview');
+            if (preview) {
+                preview.innerHTML = '<img src="' + fishotelHotelSceneBase + fn + '" style="width:100%;height:100%;object-fit:cover;">';
+            }
         }
-        fishotelHotelPreviewScene();
+        (function() {
+            var current = document.getElementById('fh-hotel-scene-image').value;
+            if (!current) return;
+            var thumbs = document.querySelectorAll('.fh-scene-thumb');
+            for (var i = 0; i < thumbs.length; i++) {
+                if (thumbs[i].getAttribute('data-filename') === current) {
+                    thumbs[i].style.borderColor = '#96885f';
+                    thumbs[i].querySelector('.fh-scene-check').style.display = 'block';
+                    break;
+                }
+            }
+        })();
         </script>
         <?php
     }
@@ -1913,8 +1988,7 @@ trait FisHotel_HotelProgram {
             'name'             => sanitize_text_field( $_POST['act_name'] ?? '' ),
             'category_id'      => sanitize_text_field( $_POST['act_category_id'] ?? '' ),
             'time_of_day'      => sanitize_key( $_POST['act_time_of_day'] ?? 'morning' ),
-            'scene_type'       => sanitize_key( $_POST['act_scene_type'] ?? 'pool' ),
-            'scene_number'     => str_pad( absint( $_POST['act_scene_number'] ?? 1 ), 2, '0', STR_PAD_LEFT ),
+            'scene_image'      => sanitize_file_name( $_POST['act_scene_image'] ?? '' ),
             'postcard_message' => sanitize_textarea_field( $_POST['act_postcard_message'] ?? '' ),
             'postmark_city'    => strtoupper( sanitize_text_field( $_POST['act_postmark_city'] ?? 'CHAMPLIN, MN' ) ),
             'description'      => sanitize_text_field( $_POST['act_description'] ?? '' ),
