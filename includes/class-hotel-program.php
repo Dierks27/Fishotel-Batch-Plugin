@@ -233,7 +233,7 @@ trait FisHotel_HotelProgram {
         $dir   = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene/';
         $files = [];
         if ( ! is_dir( $dir ) ) return $files;
-        foreach ( glob( $dir . 'hotel-*-scene-*.{jpg,png}', GLOB_BRACE ) as $f ) {
+        foreach ( glob( $dir . 'hotel-*.{jpg,png}', GLOB_BRACE ) as $f ) {
             $bn = basename( $f );
             if ( preg_match( '/-(?:morning|afternoon|sunset|night)\.[a-z]+$/i', $bn ) ) continue;
             $files[] = $bn;
