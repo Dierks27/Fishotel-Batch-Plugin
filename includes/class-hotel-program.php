@@ -447,7 +447,7 @@ trait FisHotel_HotelProgram {
         $schedule = $this->hotel_get_schedule( $batch_name );
         if ( empty( $schedule ) ) return '';
 
-        $force_day  = (int) get_option( 'fishotel_force_day', 0 );
+        $force_day  = (int) get_option( 'fishotel_force_day_' . sanitize_key( $batch_name ), 0 );
         if ( $force_day > 0 ) {
             $day_number = min( 21, $force_day );
         } else {

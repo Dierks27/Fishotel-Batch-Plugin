@@ -258,6 +258,13 @@ trait FisHotel_Admin {
                     $origin = sanitize_text_field( $_POST['origin_' . $key] );
                     if ( $origin !== '' ) $new_origins[ $batch ] = $origin;
                 }
+                $force_day_val = isset( $_POST['force_day_' . $key] ) ? (int) $_POST['force_day_' . $key] : 0;
+                $force_day_option = 'fishotel_force_day_' . sanitize_key( $batch );
+                if ( $force_day_val > 0 && $force_day_val <= 21 ) {
+                    update_option( $force_day_option, $force_day_val );
+                } else {
+                    delete_option( $force_day_option );
+                }
             }
             update_option( 'fishotel_batch_page_assignments', $new_assignments );
             update_option( 'fishotel_batch_statuses', $new_statuses );
@@ -359,6 +366,7 @@ trait FisHotel_Admin {
                             $closed_date    = $closed_dates[$batch] ?? '';
                             $closed_time_val = $closed_times[$batch] ?? '23:59';
                             $current_origin = $batch_origins[$batch] ?? '';
+                            $force_day_cur  = (int) get_option( 'fishotel_force_day_' . $key, 0 );
                             $view_url  = $current_page ? home_url( '/' . $current_page ) : '';
                             $embed_url = $current_page ? home_url( '/' . $current_page . '?embed=1' ) : '';
                         ?>
@@ -367,6 +375,9 @@ trait FisHotel_Admin {
                                 <strong style="color:#b5a165;cursor:pointer;" onclick="fhToggleDetail('<?php echo $key; ?>')">
                                     <span id="fh-chev-<?php echo $key; ?>" style="display:inline-block;transition:transform .2s;font-size:11px;margin-right:4px;">&#9654;</span><?php echo esc_html( $batch ); ?>
                                 </strong>
+                                <?php if ( $force_day_cur > 0 ) : ?>
+                                    <span style="color:#e67e22;font-size:11px;margin-left:8px;">&#9888; Preview Day <?php echo $force_day_cur; ?></span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <select name="origin_<?php echo $key; ?>" style="width:100%;">
@@ -426,6 +437,11 @@ trait FisHotel_Admin {
                                     <div>
                                         <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Arrival Date</label>
                                         <input type="date" name="arrival_date_<?php echo $key; ?>" value="<?php echo esc_attr( $arrival_date ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:140px;">
+                                    </div>
+                                    <div>
+                                        <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Preview Day</label>
+                                        <input type="number" min="0" max="21" name="force_day_<?php echo $key; ?>" value="<?php echo $force_day_cur ? esc_attr( $force_day_cur ) : ''; ?>" placeholder="Off" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:60px;">
+                                        <span style="display:block;color:#666;font-size:10px;margin-top:2px;">Force postcard day (1–21)</span>
                                     </div>
                                 </div>
                             </td>
