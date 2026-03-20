@@ -230,14 +230,22 @@ trait FisHotel_HotelProgram {
     }
 
     private function hotel_scan_scene_images() {
+        $library = get_option( 'fishotel_assets_library', [ 'assets' => [] ] );
+        if ( empty( $library['assets'] ) ) {
+            $library = get_option( 'fishotel_asset_library', [ 'assets' => [] ] );
+        }
         $dir   = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene/';
         $files = [];
-        if ( ! is_dir( $dir ) ) return $files;
-        foreach ( glob( $dir . 'hotel-*.{jpg,png}', GLOB_BRACE ) as $f ) {
-            $bn = basename( $f );
-            if ( preg_match( '/-(?:morning|afternoon|sunset|night)\.[a-z]+$/i', $bn ) ) continue;
-            $files[] = $bn;
+        foreach ( ( $library['assets'] ?? [] ) as $a ) {
+            if ( ( $a['folder'] ?? '' ) !== 'scene-backgrounds' ) continue;
+            $fn = $a['filename'] ?? '';
+            if ( $fn === '' ) continue;
+            if ( preg_match( '/-(?:morning|afternoon|sunset|night)\.[a-z]+$/i', $fn ) ) continue;
+            if ( file_exists( $dir . $fn ) ) {
+                $files[] = $fn;
+            }
         }
+        $files = array_unique( $files );
         sort( $files );
         return $files;
     }
