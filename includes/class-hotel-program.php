@@ -447,9 +447,14 @@ trait FisHotel_HotelProgram {
         $schedule = $this->hotel_get_schedule( $batch_name );
         if ( empty( $schedule ) ) return '';
 
-        $start_ts   = strtotime( $schedule['stage4_start'] ?? 'today' );
-        $now_ts     = strtotime( current_time( 'Y-m-d' ) );
-        $day_number = max( 1, min( 21, (int) floor( ( $now_ts - $start_ts ) / 86400 ) + 1 ) );
+        $force_day  = (int) get_option( 'fishotel_force_day', 0 );
+        if ( $force_day > 0 ) {
+            $day_number = min( 21, $force_day );
+        } else {
+            $start_ts   = strtotime( $schedule['stage4_start'] ?? 'today' );
+            $now_ts     = strtotime( current_time( 'Y-m-d' ) );
+            $day_number = max( 1, min( 21, (int) floor( ( $now_ts - $start_ts ) / 86400 ) + 1 ) );
+        }
 
         $activity = $this->hotel_get_resolved_activity( $batch_name, $day_number );
         $this->hotel_migrate_activity_scene( $activity );
