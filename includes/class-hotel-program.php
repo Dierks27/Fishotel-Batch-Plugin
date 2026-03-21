@@ -484,19 +484,62 @@ trait FisHotel_HotelProgram {
 
         $activity = $this->hotel_get_resolved_activity( $batch_name, $day_number );
         $this->hotel_migrate_activity_scene( $activity );
-        $scene_image = $activity['scene_image'] ?? '';
-        if ( $scene_image ) {
-            $parsed           = $this->hotel_parse_scene_image( $scene_image );
-            $scene_data       = $this->hotel_scene_url( $parsed['scene_type'], $parsed['scene_number'] );
-            $scene_url        = $scene_data['url'];
-            $scene_urls_by_band = $this->hotel_scene_urls_by_band( $parsed['scene_type'], $parsed['scene_number'] );
-            $scene_slug       = $parsed['scene_type'] . '-scene-' . $parsed['scene_number'];
-            $layer_config     = $this->hotel_get_layer_config( $scene_slug );
+
+        // Resolve scene image per time band
+        $band_fields = [
+            'morning'   => $activity['scene_morning']   ?? '',
+            'afternoon' => $activity['scene_afternoon'] ?? '',
+            'sunset'    => $activity['scene_sunset']    ?? '',
+            'night'     => $activity['scene_night']     ?? '',
+        ];
+        $has_band_images = array_filter( $band_fields );
+
+        // Build URLs for client-side band swap and determine server-side default
+        $scene_base_url     = plugins_url( 'assists/scene/', FISHOTEL_PLUGIN_FILE );
+        $scene_urls_by_band = [];
+        if ( ! empty( $has_band_images ) ) {
+            // New per-band fields — build URL map directly from filenames
+            foreach ( $band_fields as $band => $fn ) {
+                if ( $fn ) {
+                    $scene_urls_by_band[ $band ] = $scene_base_url . $fn;
+                }
+            }
+            // Fallback chain: morning → afternoon → sunset → night → morning
+            $fallback_order = [ 'morning', 'afternoon', 'sunset', 'night' ];
+            $first_available = reset( $has_band_images );
+            $scene_urls_by_band['_fallback'] = $scene_base_url . $first_available;
+
+            // Server-side: pick the current band's image for initial render
+            $hour = (int) current_time( 'G' );
+            if      ( $hour >= 5  && $hour < 12 ) $current_band = 'morning';
+            elseif  ( $hour >= 12 && $hour < 16 ) $current_band = 'afternoon';
+            elseif  ( $hour >= 16 && $hour < 20 ) $current_band = 'sunset';
+            else                                   $current_band = 'night';
+
+            // Walk fallback: current → next → next → … → wrap around
+            $scene_image = '';
+            $start = array_search( $current_band, $fallback_order );
+            for ( $i = 0; $i < 4; $i++ ) {
+                $try = $fallback_order[ ( $start + $i ) % 4 ];
+                if ( $band_fields[ $try ] ) { $scene_image = $band_fields[ $try ]; break; }
+            }
         } else {
-            $scene_url          = false;
-            $scene_urls_by_band = [];
-            $scene_slug         = '';
-            $layer_config       = [];
+            // Legacy: single scene_image field (backwards compat)
+            $scene_image = $activity['scene_image'] ?? '';
+            if ( $scene_image ) {
+                $scene_urls_by_band['_fallback'] = $scene_base_url . $scene_image;
+            }
+        }
+
+        if ( $scene_image ) {
+            $scene_url = $scene_base_url . $scene_image;
+            $parsed    = $this->hotel_parse_scene_image( $scene_image );
+            $scene_slug   = $parsed['scene_type'] . '-scene-' . $parsed['scene_number'];
+            $layer_config = $this->hotel_get_layer_config( $scene_slug );
+        } else {
+            $scene_url    = false;
+            $scene_slug   = '';
+            $layer_config = [];
         }
 
         $postcard_message = esc_html( $activity['postcard_message'] ?? '' );
@@ -1330,8 +1373,8 @@ trait FisHotel_HotelProgram {
     (function(){
         var h = new Date().getHours();
         var band;
-        if (h >= 5 && h < 11) band = 'morning';
-        else if (h >= 11 && h < 16) band = 'afternoon';
+        if (h >= 5 && h < 12) band = 'morning';
+        else if (h >= 12 && h < 16) band = 'afternoon';
         else if (h >= 16 && h < 20) band = 'sunset';
         else band = 'night';
 
@@ -1347,7 +1390,14 @@ trait FisHotel_HotelProgram {
         try { sceneUrls = JSON.parse(front.getAttribute('data-scene-urls') || '{}'); } catch(e){}
         var sceneEl = front.querySelector('.fh-hotel-postcard-scene');
         if (sceneEl) {
-            var todUrl = sceneUrls[band] || sceneUrls['_fallback'] || null;
+            var bands = ['morning','afternoon','sunset','night'];
+            var start = bands.indexOf(band);
+            var todUrl = null;
+            for (var bi = 0; bi < 4; bi++) {
+                var tryBand = bands[(start + bi) % 4];
+                if (sceneUrls[tryBand]) { todUrl = sceneUrls[tryBand]; break; }
+            }
+            if (!todUrl) todUrl = sceneUrls['_fallback'] || null;
             if (todUrl) {
                 sceneEl.style.backgroundImage = "url('" + todUrl + "')";
             }
@@ -1617,7 +1667,21 @@ trait FisHotel_HotelProgram {
                         <td><?php echo esc_html( $act['name'] ); ?></td>
                         <td><?php if ( $cat ) : ?><span style="display:inline-block;padding:2px 8px;border-radius:3px;background:<?php echo esc_attr( $cat['color'] ); ?>;color:#fff;font-size:11px;"><?php echo esc_html( $cat['label'] ); ?></span><?php else : ?>—<?php endif; ?></td>
                         <td><?php echo esc_html( ucfirst( $act['time_of_day'] ?? '' ) ); ?></td>
-                        <td><code><?php $this->hotel_migrate_activity_scene( $act ); echo esc_html( $act['scene_image'] ?? '' ); ?></code></td>
+                        <td style="font-size:11px;"><?php
+                            $this->hotel_migrate_activity_scene( $act );
+                            $bands_set = [];
+                            if ( ! empty( $act['scene_morning'] ) )   $bands_set[] = 'M';
+                            if ( ! empty( $act['scene_afternoon'] ) ) $bands_set[] = 'A';
+                            if ( ! empty( $act['scene_sunset'] ) )    $bands_set[] = 'S';
+                            if ( ! empty( $act['scene_night'] ) )     $bands_set[] = 'N';
+                            if ( ! empty( $bands_set ) ) {
+                                echo esc_html( implode( '/', $bands_set ) );
+                            } elseif ( ! empty( $act['scene_image'] ) ) {
+                                echo '<code>' . esc_html( $act['scene_image'] ) . '</code>';
+                            } else {
+                                echo '<span style="color:#999;">—</span>';
+                            }
+                        ?></td>
                         <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo esc_html( $act['postcard_message'] ?? '' ); ?></td>
                         <td>
                             <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-hotel-program&tab=activities&edit_act=' . $act['id'] ) ); ?>">Edit</a>
@@ -1651,33 +1715,52 @@ trait FisHotel_HotelProgram {
                             <option value="<?php echo esc_attr( $k ); ?>" <?php selected( ( $editing['time_of_day'] ?? '' ), $k ); ?>><?php echo esc_html( $v ); ?></option>
                         <?php endforeach; ?>
                     </select></td></tr>
-                <tr><th><label>Scene Image</label></th>
+                <?php
+                $band_labels = [
+                    'morning'   => 'Morning (5 am – 12 pm)',
+                    'afternoon' => 'Afternoon (12 pm – 4 pm)',
+                    'sunset'    => 'Sunset (4 pm – 8 pm)',
+                    'night'     => 'Night (8 pm – 5 am)',
+                ];
+                foreach ( $band_labels as $band_key => $band_label ) :
+                    $field_name = 'act_scene_' . $band_key;
+                    $field_id   = 'fh-hotel-scene-' . $band_key;
+                    $current    = $editing[ 'scene_' . $band_key ] ?? '';
+                ?>
+                <tr><th><label><?php echo esc_html( $band_label ); ?></label></th>
                     <td>
-                        <input type="hidden" name="act_scene_image" id="fh-hotel-scene-image" value="<?php echo esc_attr( $editing['scene_image'] ?? '' ); ?>">
+                        <input type="hidden" name="<?php echo esc_attr( $field_name ); ?>" id="<?php echo esc_attr( $field_id ); ?>" value="<?php echo esc_attr( $current ); ?>">
                         <?php if ( empty( $scene_images ) ) : ?>
-                            <p style="color:#999;">No scene images uploaded yet — upload images to <code>assists/scene/</code> via the Assets tab.</p>
+                            <p style="color:#999;">No scene images uploaded yet — upload via the Assets tab.</p>
                         <?php else : ?>
-                            <div id="fh-hotel-scene-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;max-height:320px;overflow-y:auto;padding:8px;border:1px solid #ddd;border-radius:4px;background:#f9f7f3;">
+                            <div class="fh-band-picker" data-band="<?php echo esc_attr( $band_key ); ?>" style="margin-bottom:4px;">
+                                <div class="fh-band-preview" id="<?php echo esc_attr( $field_id ); ?>-preview"
+                                     style="width:160px;height:80px;border:1px solid #ccc;background:#f5f0e8;display:inline-flex;align-items:center;justify-content:center;color:#999;font-size:11px;overflow:hidden;border-radius:4px;vertical-align:middle;cursor:pointer;"
+                                     onclick="fishotelToggleBandGrid('<?php echo esc_attr( $band_key ); ?>')">
+                                    <?php if ( $current ) : ?>
+                                        <img src="<?php echo esc_url( $plugin_base_url . $current ); ?>" style="width:100%;height:100%;object-fit:cover;">
+                                    <?php else : ?>
+                                        Click to pick
+                                    <?php endif; ?>
+                                </div>
+                                <button type="button" class="button button-small" style="vertical-align:middle;margin-left:6px;" onclick="fishotelClearBand('<?php echo esc_attr( $band_key ); ?>')">Clear</button>
+                                <span id="<?php echo esc_attr( $field_id ); ?>-name" style="font-size:11px;color:#666;margin-left:6px;vertical-align:middle;"><?php echo esc_html( $current ); ?></span>
+                            </div>
+                            <div class="fh-band-grid" id="<?php echo esc_attr( $field_id ); ?>-grid"
+                                 style="display:none;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;max-height:220px;overflow-y:auto;padding:8px;border:1px solid #ddd;border-radius:4px;background:#f9f7f3;margin-top:6px;">
                                 <?php foreach ( $scene_images as $si ) : ?>
                                     <div class="fh-scene-thumb" data-filename="<?php echo esc_attr( $si ); ?>"
-                                         onclick="fishotelSelectScene(this)"
-                                         style="cursor:pointer;border:3px solid transparent;border-radius:4px;padding:4px;text-align:center;position:relative;transition:border-color .15s;">
+                                         onclick="fishotelSelectBandScene('<?php echo esc_attr( $band_key ); ?>', this)"
+                                         style="cursor:pointer;border:3px solid transparent;border-radius:4px;padding:3px;text-align:center;position:relative;transition:border-color .15s;">
                                         <img src="<?php echo esc_url( $plugin_base_url . $si ); ?>" alt="<?php echo esc_attr( $si ); ?>"
-                                             style="width:120px;height:80px;object-fit:cover;border-radius:3px;display:block;margin:0 auto;">
-                                        <span style="display:block;font-size:10px;color:#666;margin-top:4px;word-break:break-all;"><?php echo esc_html( $si ); ?></span>
-                                        <span class="fh-scene-check" style="display:none;position:absolute;top:8px;right:8px;background:#96885f;color:#fff;border-radius:50%;width:20px;height:20px;line-height:20px;text-align:center;font-size:12px;">✓</span>
+                                             style="width:100px;height:60px;object-fit:cover;border-radius:3px;display:block;margin:0 auto;">
+                                        <span style="display:block;font-size:9px;color:#666;margin-top:3px;word-break:break-all;line-height:1.2;"><?php echo esc_html( $si ); ?></span>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
-                            <div id="fh-hotel-scene-preview" style="margin-top:10px;width:200px;height:133px;border:1px solid #ccc;background:#f5f0e8;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;overflow:hidden;border-radius:4px;">
-                                <?php if ( ! empty( $editing['scene_image'] ) ) : ?>
-                                    <img src="<?php echo esc_url( $plugin_base_url . $editing['scene_image'] ); ?>" style="width:100%;height:100%;object-fit:cover;">
-                                <?php else : ?>
-                                    Select a scene above
-                                <?php endif; ?>
-                            </div>
                         <?php endif; ?>
                     </td></tr>
+                <?php endforeach; ?>
                 <tr><th><label>Postcard Message</label></th>
                     <td><textarea name="act_postcard_message" rows="3" class="large-text"><?php echo esc_textarea( $editing['postcard_message'] ?? '' ); ?></textarea>
                         <p class="description">Written in hotel concierge voice. Shown on the back of the customer postcard.</p></td></tr>
@@ -1692,31 +1775,48 @@ trait FisHotel_HotelProgram {
 
         <script>
         var fishotelHotelSceneBase = <?php echo wp_json_encode( $plugin_base_url ); ?>;
-        function fishotelSelectScene(el) {
-            document.querySelectorAll('.fh-scene-thumb').forEach(function(t) {
-                t.style.borderColor = 'transparent';
-                t.querySelector('.fh-scene-check').style.display = 'none';
-            });
-            el.style.borderColor = '#96885f';
-            el.querySelector('.fh-scene-check').style.display = 'block';
-            var fn = el.getAttribute('data-filename');
-            document.getElementById('fh-hotel-scene-image').value = fn;
-            var preview = document.getElementById('fh-hotel-scene-preview');
-            if (preview) {
-                preview.innerHTML = '<img src="' + fishotelHotelSceneBase + fn + '" style="width:100%;height:100%;object-fit:cover;">';
-            }
+
+        function fishotelToggleBandGrid(band) {
+            var grid = document.getElementById('fh-hotel-scene-' + band + '-grid');
+            grid.style.display = grid.style.display === 'none' ? 'grid' : 'none';
         }
+
+        function fishotelSelectBandScene(band, el) {
+            // Clear selection in this band's grid
+            var grid = el.closest('.fh-band-grid');
+            grid.querySelectorAll('.fh-scene-thumb').forEach(function(t){ t.style.borderColor = 'transparent'; });
+            el.style.borderColor = '#96885f';
+
+            var fn = el.getAttribute('data-filename');
+            document.getElementById('fh-hotel-scene-' + band).value = fn;
+            document.getElementById('fh-hotel-scene-' + band + '-name').textContent = fn;
+            var preview = document.getElementById('fh-hotel-scene-' + band + '-preview');
+            preview.innerHTML = '<img src="' + fishotelHotelSceneBase + fn + '" style="width:100%;height:100%;object-fit:cover;">';
+            grid.style.display = 'none';
+        }
+
+        function fishotelClearBand(band) {
+            document.getElementById('fh-hotel-scene-' + band).value = '';
+            document.getElementById('fh-hotel-scene-' + band + '-name').textContent = '';
+            var preview = document.getElementById('fh-hotel-scene-' + band + '-preview');
+            preview.innerHTML = 'Click to pick';
+            var grid = document.getElementById('fh-hotel-scene-' + band + '-grid');
+            grid.querySelectorAll('.fh-scene-thumb').forEach(function(t){ t.style.borderColor = 'transparent'; });
+        }
+
+        // Highlight current selections on load
         (function() {
-            var current = document.getElementById('fh-hotel-scene-image').value;
-            if (!current) return;
-            var thumbs = document.querySelectorAll('.fh-scene-thumb');
-            for (var i = 0; i < thumbs.length; i++) {
-                if (thumbs[i].getAttribute('data-filename') === current) {
-                    thumbs[i].style.borderColor = '#96885f';
-                    thumbs[i].querySelector('.fh-scene-check').style.display = 'block';
-                    break;
-                }
-            }
+            ['morning','afternoon','sunset','night'].forEach(function(band) {
+                var current = document.getElementById('fh-hotel-scene-' + band).value;
+                if (!current) return;
+                var grid = document.getElementById('fh-hotel-scene-' + band + '-grid');
+                if (!grid) return;
+                grid.querySelectorAll('.fh-scene-thumb').forEach(function(t) {
+                    if (t.getAttribute('data-filename') === current) {
+                        t.style.borderColor = '#96885f';
+                    }
+                });
+            });
         })();
         </script>
         <?php
@@ -2029,18 +2129,27 @@ trait FisHotel_HotelProgram {
         }
         $acts = $this->hotel_get_activities();
         $id   = sanitize_text_field( $_POST['act_id'] ?? '' );
+        $scene_morning   = sanitize_file_name( $_POST['act_scene_morning']   ?? '' );
+        $scene_afternoon = sanitize_file_name( $_POST['act_scene_afternoon'] ?? '' );
+        $scene_sunset    = sanitize_file_name( $_POST['act_scene_sunset']    ?? '' );
+        $scene_night     = sanitize_file_name( $_POST['act_scene_night']     ?? '' );
+        // Backwards compat: scene_image = first non-empty band pick
+        $scene_image     = $scene_morning ?: $scene_afternoon ?: $scene_sunset ?: $scene_night;
+
         $data = [
             'id'               => $id ?: 'act_' . uniqid(),
             'name'             => sanitize_text_field( $_POST['act_name'] ?? '' ),
             'category_id'      => sanitize_text_field( $_POST['act_category_id'] ?? '' ),
             'time_of_day'      => sanitize_key( $_POST['act_time_of_day'] ?? 'morning' ),
-            'scene_image'      => sanitize_file_name( $_POST['act_scene_image'] ?? '' ),
+            'scene_morning'    => $scene_morning,
+            'scene_afternoon'  => $scene_afternoon,
+            'scene_sunset'     => $scene_sunset,
+            'scene_night'      => $scene_night,
+            'scene_image'      => $scene_image,
             'postcard_message' => sanitize_textarea_field( $_POST['act_postcard_message'] ?? '' ),
             'postmark_city'    => strtoupper( sanitize_text_field( $_POST['act_postmark_city'] ?? 'CHAMPLIN, MN' ) ),
             'description'      => sanitize_text_field( $_POST['act_description'] ?? '' ),
         ];
-        // $data intentionally omits scene_type/scene_number — full replacement
-        // below strips those legacy keys so migration never fires on saved activities.
 
         if ( $id ) {
             foreach ( $acts as &$a ) {
