@@ -3935,18 +3935,365 @@ trait FisHotel_Shortcodes {
     }
 
     /* ─────────────────────────────────────────────
-     *  Stage 6: Last Call Draft Pool (stub)
+     *  Stage 6: Last Call Draft Pool
      * ───────────────────────────────────────────── */
 
     public function render_last_call_page( $batch_name ) {
+        $slug     = sanitize_title( $batch_name );
+        $pool     = get_option( 'fishotel_lastcall_pool_' . $slug, [] );
+        $deadline = intval( get_option( 'fishotel_lastcall_deadline_' . $slug, 0 ) );
+        $results  = get_option( 'fishotel_lastcall_results_' . $slug, [] );
+        $now      = time();
+
+        $window_open  = $deadline > $now && empty( $results );
+        $window_closed_no_results = $deadline <= $now && empty( $results );
+        $has_results  = ! empty( $results );
+
+        $is_logged_in = is_user_logged_in();
+        $uid          = get_current_user_id();
+        $wishlist     = $is_logged_in ? get_option( 'fishotel_lastcall_wishlist_' . $slug . '_' . $uid, [] ) : [];
+
+        // Enrich pool items with price from fish_master
+        foreach ( $pool as &$item ) {
+            $master_id = get_post_meta( $item['fish_id'], '_master_id', true );
+            $item['price'] = $master_id ? floatval( get_post_meta( $master_id, '_selling_price', true ) ) : 0;
+        }
+        unset( $item );
+
+        $fonts_url = 'https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Special+Elite&family=Klee+One&display=swap';
+        $ajax_url  = admin_url( 'admin-ajax.php' );
+        $nonce     = wp_create_nonce( 'fishotel_lastcall_nonce' );
+
         ob_start();
         ?>
-        <div class="fh-lastcall-wrap" style="max-width:680px;margin:40px auto;padding:40px;background:#f5f0e8;border:4px double #2e2418;text-align:center;font-family:'Courier New',monospace;color:#2e2418;">
-            <h2 style="font-family:'Oswald',sans-serif;letter-spacing:0.2em;color:#96885f;margin-top:0;">THE FISHOTEL</h2>
-            <p style="font-variant:small-caps;letter-spacing:0.15em;font-size:0.9rem;">Last Call — Draft Pool</p>
-            <hr style="border:none;border-top:1px solid #d6cfc2;margin:20px 0;">
-            <p style="font-size:0.85rem;color:#666;">Stage 6 is under construction. Check back soon.</p>
+        <link href="<?php echo esc_url( $fonts_url ); ?>" rel="stylesheet">
+        <style>
+            .fhlc-wrap{max-width:720px;margin:40px auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#e0ddd5;color-scheme:dark;}
+            .fhlc-wrap *{box-sizing:border-box;}
+
+            /* ── Header ── */
+            .fhlc-header{text-align:center;margin-bottom:32px;}
+            .fhlc-hotel{font-family:'Oswald',sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:0.25em;color:#c9a84c;margin:0;}
+            .fhlc-subtitle{font-family:'Courier New',monospace;font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;color:#998877;margin:6px 0 0;}
+            .fhlc-timer{font-family:'Courier New',monospace;font-size:1.1rem;color:#e67e22;margin:16px 0 0;letter-spacing:0.05em;}
+            .fhlc-timer-label{font-size:0.7rem;color:#998877;text-transform:uppercase;letter-spacing:0.08em;display:block;margin-bottom:4px;}
+
+            /* ── Pool grid ── */
+            .fhlc-pool-title{font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;letter-spacing:0.15em;color:#c9a84c;text-transform:uppercase;margin:0 0 16px;padding-bottom:8px;border-bottom:1px solid #333;}
+            .fhlc-pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:32px;}
+            .fhlc-card{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:16px;transition:border-color 0.2s;}
+            .fhlc-card:hover{border-color:#555;}
+            .fhlc-card-name{font-family:'Special Elite',monospace;font-size:0.95rem;color:#e0ddd5;margin:0 0 8px;line-height:1.3;}
+            .fhlc-card-row{display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;color:#998877;margin-top:4px;}
+            .fhlc-card-qty{font-family:'Courier New',monospace;font-weight:700;color:#c9a84c;font-size:0.85rem;}
+            .fhlc-card-price{font-family:'Courier New',monospace;color:#888;}
+
+            /* ── Wishlist ── */
+            .fhlc-wl-title{font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;letter-spacing:0.15em;color:#c9a84c;text-transform:uppercase;margin:0 0 8px;padding-bottom:8px;border-bottom:1px solid #333;}
+            .fhlc-wl-desc{font-size:0.8rem;color:#998877;margin:0 0 16px;}
+            .fhlc-wl-list{list-style:none;margin:0;padding:0;}
+            .fhlc-wl-item{display:flex;align-items:center;gap:10px;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:10px 14px;margin-bottom:6px;cursor:grab;user-select:none;transition:border-color 0.2s,background 0.2s;}
+            .fhlc-wl-item:active{cursor:grabbing;}
+            .fhlc-wl-item.fhlc-dragging{opacity:0.5;border-color:#c9a84c;}
+            .fhlc-wl-item.fhlc-drag-over{border-color:#c9a84c;background:#222;}
+            .fhlc-wl-handle{color:#555;font-size:1.1rem;flex-shrink:0;cursor:grab;}
+            .fhlc-wl-rank{font-family:'Courier New',monospace;font-size:0.75rem;color:#c9a84c;width:20px;text-align:center;flex-shrink:0;}
+            .fhlc-wl-name{font-family:'Special Elite',monospace;font-size:0.9rem;color:#e0ddd5;flex:1;}
+            .fhlc-wl-alt{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+            .fhlc-wl-alt label{font-size:0.68rem;color:#888;cursor:pointer;}
+            .fhlc-wl-alt input{cursor:pointer;}
+            .fhlc-wl-remove{background:none;border:none;color:#666;font-size:1rem;cursor:pointer;padding:0 4px;flex-shrink:0;}
+            .fhlc-wl-remove:hover{color:#e74c3c;}
+
+            /* ── Add to wishlist ── */
+            .fhlc-add-wrap{margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+            .fhlc-add-select{flex:1;min-width:160px;padding:8px 10px;border:1px solid #444;border-radius:6px;background:#1a1a1a;color:#e0ddd5;font-size:0.85rem;}
+            .fhlc-add-btn{background:#333;color:#c9a84c;border:1px solid #555;border-radius:6px;padding:8px 18px;font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap;}
+            .fhlc-add-btn:hover{background:#444;}
+
+            /* ── Save button ── */
+            .fhlc-save-row{margin-top:16px;display:flex;align-items:center;gap:12px;}
+            .fhlc-save-btn{background:#c9a84c;color:#111;font-family:'Oswald',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.08em;text-transform:uppercase;border:none;border-radius:6px;padding:10px 32px;cursor:pointer;transition:background 0.2s;}
+            .fhlc-save-btn:hover{background:#b5963e;}
+            .fhlc-save-btn:disabled{opacity:0.5;cursor:not-allowed;}
+            .fhlc-save-status{font-size:0.78rem;color:#27ae60;font-family:'Courier New',monospace;}
+
+            /* ── States ── */
+            .fhlc-closed-msg{text-align:center;font-family:'Special Elite',monospace;font-size:1rem;color:#998877;margin:32px 0;line-height:1.6;}
+            .fhlc-login-note{text-align:center;font-family:'Special Elite',monospace;font-size:0.85rem;color:#888;margin:24px 0;padding:20px;border:1px dashed #444;border-radius:8px;}
+            .fhlc-results-stub{text-align:center;font-family:'Special Elite',monospace;font-size:1rem;color:#998877;margin:32px 0;}
+        </style>
+
+        <div class="fhlc-wrap">
+            <!-- Header -->
+            <div class="fhlc-header">
+                <h2 class="fhlc-hotel">THE FISHOTEL</h2>
+                <p class="fhlc-subtitle">Last Call &mdash; Draft Pool</p>
+                <?php if ( $window_open ) : ?>
+                    <div class="fhlc-timer">
+                        <span class="fhlc-timer-label">Wishlist closes in</span>
+                        <span id="fhlc-countdown" data-deadline="<?php echo esc_attr( $deadline ); ?>">--:--:--</span>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Pool Section (visible to ALL) -->
+            <?php if ( ! empty( $pool ) ) : ?>
+            <h3 class="fhlc-pool-title">The Pool</h3>
+            <div class="fhlc-pool">
+                <?php foreach ( $pool as $item ) : ?>
+                <div class="fhlc-card" data-fish-id="<?php echo esc_attr( $item['fish_id'] ); ?>">
+                    <p class="fhlc-card-name"><?php echo esc_html( $item['name'] ); ?></p>
+                    <div class="fhlc-card-row">
+                        <span>Available</span>
+                        <span class="fhlc-card-qty"><?php echo intval( $item['pool_qty'] ); ?></span>
+                    </div>
+                    <?php if ( $item['price'] > 0 ) : ?>
+                    <div class="fhlc-card-row">
+                        <span>Price</span>
+                        <span class="fhlc-card-price">$<?php echo number_format( $item['price'], 2 ); ?></span>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php else : ?>
+            <p class="fhlc-closed-msg">No fish available in the pool.</p>
+            <?php endif; ?>
+
+            <?php if ( $has_results ) : ?>
+                <!-- State 3: Draft results -->
+                <div class="fhlc-results-stub">
+                    <p>The draft has been completed. Results coming soon.</p>
+                </div>
+
+            <?php elseif ( $window_closed_no_results ) : ?>
+                <!-- State 2: Window closed, no results yet -->
+                <div class="fhlc-closed-msg">
+                    <p>The bar is closed.<br>The draft will begin shortly.</p>
+                </div>
+
+            <?php elseif ( $window_open ) : ?>
+                <!-- State 1: Wishlist open -->
+                <?php if ( $is_logged_in ) : ?>
+                    <h3 class="fhlc-wl-title">Your Wishlist</h3>
+                    <p class="fhlc-wl-desc">Drag to rank your picks. Toggle "alt" to mark a fish as your backup if the one above it isn't available.</p>
+
+                    <ul class="fhlc-wl-list" id="fhlc-wishlist">
+                        <?php
+                        if ( ! empty( $wishlist ) ) {
+                            foreach ( $wishlist as $i => $wl_item ) {
+                                $name = '';
+                                foreach ( $pool as $p ) {
+                                    if ( intval( $p['fish_id'] ) === intval( $wl_item['fish_id'] ) ) { $name = $p['name']; break; }
+                                }
+                                if ( ! $name ) continue;
+                                $alt_checked = ! empty( $wl_item['is_alternative_to'] ) ? ' checked' : '';
+                                $is_first    = $i === 0;
+                                ?>
+                                <li class="fhlc-wl-item" draggable="true" data-fish-id="<?php echo esc_attr( $wl_item['fish_id'] ); ?>">
+                                    <span class="fhlc-wl-handle">&#x2630;</span>
+                                    <span class="fhlc-wl-rank"><?php echo $i + 1; ?></span>
+                                    <span class="fhlc-wl-name"><?php echo esc_html( $name ); ?></span>
+                                    <span class="fhlc-wl-alt"<?php echo $is_first ? ' style="visibility:hidden"' : ''; ?>>
+                                        <input type="checkbox" class="fhlc-alt-check"<?php echo $alt_checked; ?>>
+                                        <label>alt</label>
+                                    </span>
+                                    <button type="button" class="fhlc-wl-remove" title="Remove">&times;</button>
+                                </li>
+                                <?php
+                            }
+                        }
+                        ?>
+                    </ul>
+
+                    <div class="fhlc-add-wrap">
+                        <select id="fhlc-add-select" class="fhlc-add-select">
+                            <option value="">Add a fish to your wishlist&hellip;</option>
+                            <?php foreach ( $pool as $item ) : ?>
+                            <option value="<?php echo esc_attr( $item['fish_id'] ); ?>"><?php echo esc_html( $item['name'] ); ?> (<?php echo intval( $item['pool_qty'] ); ?> avail)</option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="button" class="fhlc-add-btn" id="fhlc-add-btn">+ Add</button>
+                    </div>
+
+                    <div class="fhlc-save-row">
+                        <button type="button" class="fhlc-save-btn" id="fhlc-save-btn">Save Wishlist</button>
+                        <span class="fhlc-save-status" id="fhlc-save-status"><?php echo ! empty( $wishlist ) ? '&#x2713; Saved' : ''; ?></span>
+                    </div>
+
+                <?php else : ?>
+                    <div class="fhlc-login-note">
+                        <p>Log in to submit your wishlist.</p>
+                        <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="color:#c9a84c;text-decoration:underline;">Log In</a>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
         </div>
+
+        <?php if ( $window_open ) : ?>
+        <script>
+        (function(){
+            /* ── Countdown ── */
+            var cdEl = document.getElementById('fhlc-countdown');
+            if(cdEl){
+                var dl = parseInt(cdEl.dataset.deadline,10)*1000;
+                function tick(){
+                    var diff = dl - Date.now();
+                    if(diff<=0){cdEl.textContent='CLOSED';return;}
+                    var h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+                    cdEl.textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+                    setTimeout(tick,1000);
+                }
+                tick();
+            }
+
+            <?php if ( $is_logged_in ) : ?>
+            /* ── Pool data for JS ── */
+            var poolData = <?php echo wp_json_encode( array_map( function( $p ) {
+                return [ 'fish_id' => $p['fish_id'], 'name' => $p['name'], 'pool_qty' => $p['pool_qty'] ];
+            }, $pool ) ); ?>;
+            var poolMap = {};
+            poolData.forEach(function(p){ poolMap[p.fish_id] = p; });
+
+            var list = document.getElementById('fhlc-wishlist');
+            var addSel = document.getElementById('fhlc-add-select');
+            var addBtn = document.getElementById('fhlc-add-btn');
+            var saveBtn = document.getElementById('fhlc-save-btn');
+            var saveStatus = document.getElementById('fhlc-save-status');
+
+            /* ── Add fish ── */
+            addBtn.addEventListener('click', function(){
+                var fid = addSel.value;
+                if(!fid) return;
+                var p = poolMap[fid];
+                if(!p) return;
+                /* Check if already in list */
+                var existing = list.querySelectorAll('.fhlc-wl-item');
+                for(var i=0;i<existing.length;i++){
+                    if(existing[i].dataset.fishId == fid) return;
+                }
+                var li = createWlItem(fid, p.name, false);
+                list.appendChild(li);
+                renumber();
+                addSel.value = '';
+                saveStatus.textContent = '';
+            });
+
+            function createWlItem(fishId, name, isAlt){
+                var li = document.createElement('li');
+                li.className = 'fhlc-wl-item';
+                li.draggable = true;
+                li.dataset.fishId = fishId;
+                li.innerHTML =
+                    '<span class="fhlc-wl-handle">&#x2630;</span>' +
+                    '<span class="fhlc-wl-rank">?</span>' +
+                    '<span class="fhlc-wl-name">' + escHtml(name) + '</span>' +
+                    '<span class="fhlc-wl-alt"><input type="checkbox" class="fhlc-alt-check"' + (isAlt?' checked':'') + '><label>alt</label></span>' +
+                    '<button type="button" class="fhlc-wl-remove" title="Remove">&times;</button>';
+                bindItem(li);
+                return li;
+            }
+
+            function escHtml(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+            /* ── Remove ── */
+            list.addEventListener('click', function(e){
+                if(e.target.classList.contains('fhlc-wl-remove')){
+                    e.target.closest('.fhlc-wl-item').remove();
+                    renumber();
+                    saveStatus.textContent = '';
+                }
+            });
+
+            /* ── Drag and drop ── */
+            var dragEl = null;
+            function bindItem(li){
+                li.addEventListener('dragstart', function(e){
+                    dragEl = li;
+                    li.classList.add('fhlc-dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+                li.addEventListener('dragend', function(){
+                    li.classList.remove('fhlc-dragging');
+                    var items = list.querySelectorAll('.fhlc-wl-item');
+                    items.forEach(function(it){ it.classList.remove('fhlc-drag-over'); });
+                    dragEl = null;
+                    renumber();
+                    saveStatus.textContent = '';
+                });
+                li.addEventListener('dragover', function(e){
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    li.classList.add('fhlc-drag-over');
+                });
+                li.addEventListener('dragleave', function(){
+                    li.classList.remove('fhlc-drag-over');
+                });
+                li.addEventListener('drop', function(e){
+                    e.preventDefault();
+                    li.classList.remove('fhlc-drag-over');
+                    if(dragEl && dragEl !== li){
+                        var items = Array.from(list.children);
+                        var fromIdx = items.indexOf(dragEl);
+                        var toIdx = items.indexOf(li);
+                        if(fromIdx < toIdx) li.after(dragEl);
+                        else li.before(dragEl);
+                    }
+                });
+            }
+            /* Bind existing items */
+            list.querySelectorAll('.fhlc-wl-item').forEach(bindItem);
+
+            function renumber(){
+                var items = list.querySelectorAll('.fhlc-wl-item');
+                items.forEach(function(li, i){
+                    li.querySelector('.fhlc-wl-rank').textContent = i + 1;
+                    var altSpan = li.querySelector('.fhlc-wl-alt');
+                    altSpan.style.visibility = i === 0 ? 'hidden' : 'visible';
+                    if(i === 0){
+                        var cb = altSpan.querySelector('.fhlc-alt-check');
+                        if(cb) cb.checked = false;
+                    }
+                });
+            }
+            renumber();
+
+            /* ── Save ── */
+            saveBtn.addEventListener('click', function(){
+                saveBtn.disabled = true;
+                saveStatus.textContent = 'Saving...';
+                var items = list.querySelectorAll('.fhlc-wl-item');
+                var wl = [];
+                var prevFishId = null;
+                items.forEach(function(li, i){
+                    var fishId = li.dataset.fishId;
+                    var isAlt = li.querySelector('.fhlc-alt-check');
+                    var altTo = (isAlt && isAlt.checked && prevFishId) ? prevFishId : null;
+                    wl.push({ fish_id: parseInt(fishId,10), rank: i+1, is_alternative_to: altTo ? parseInt(altTo,10) : null });
+                    prevFishId = fishId;
+                });
+                var fd = new FormData();
+                fd.append('action', 'fishotel_save_lastcall_wishlist');
+                fd.append('nonce', '<?php echo esc_js( $nonce ); ?>');
+                fd.append('batch_name', '<?php echo esc_js( $batch_name ); ?>');
+                fd.append('wishlist', JSON.stringify(wl));
+                fetch('<?php echo esc_url( $ajax_url ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(d){
+                        saveBtn.disabled = false;
+                        saveStatus.textContent = d.success ? '\u2713 Saved' : 'Error: ' + (d.data && d.data.message || 'Unknown');
+                    })
+                    .catch(function(){
+                        saveBtn.disabled = false;
+                        saveStatus.textContent = 'Network error';
+                    });
+            });
+            <?php endif; ?>
+        })();
+        </script>
+        <?php endif; ?>
+
         <?php
         return ob_get_clean();
     }

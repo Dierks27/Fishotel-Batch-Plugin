@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v6.31 - Stage 6 Last Call data architecture and admin settings.
- * Version:           6.31
+ * Description:       v6.32 - Last Call pool display and wishlist UI.
+ * Version:           6.32
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '6.31' );
+define( 'FISHOTEL_VERSION', '6.32' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -255,6 +255,9 @@ class FisHotel_Batch_Manager {
         add_action( 'wp_ajax_fishotel_verification_pass',   [$this, 'ajax_verification_pass'] );
         add_action( 'wp_ajax_fishotel_dismiss_notification', [$this, 'ajax_dismiss_notification'] );
         add_action( 'wp_ajax_fishotel_run_cron_now',       [$this, 'ajax_run_cron_now'] );
+
+        // Last Call AJAX
+        add_action( 'wp_ajax_fishotel_save_lastcall_wishlist', [$this, 'ajax_save_lastcall_wishlist'] );
 
         add_action( 'woocommerce_after_checkout_form', [$this, 'add_return_to_fish_button'] );
         add_action( 'woocommerce_thankyou', [$this, 'add_return_to_fish_button'] );

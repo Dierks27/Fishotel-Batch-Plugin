@@ -1026,4 +1026,50 @@ trait FisHotel_Ajax {
         }
     }
 
+    /* ─────────────────────────────────────────────
+     *  Last Call: Save Wishlist (Stage 6)
+     * ───────────────────────────────────────────── */
+
+    public function ajax_save_lastcall_wishlist() {
+        if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'fishotel_lastcall_nonce' ) ) {
+            wp_send_json_error( [ 'message' => 'Security check failed.' ] );
+        }
+
+        $uid = get_current_user_id();
+        if ( ! $uid ) {
+            wp_send_json_error( [ 'message' => 'Not logged in.' ] );
+        }
+
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        if ( ! $batch_name ) {
+            wp_send_json_error( [ 'message' => 'No batch specified.' ] );
+        }
+
+        $slug     = sanitize_title( $batch_name );
+        $deadline = intval( get_option( 'fishotel_lastcall_deadline_' . $slug, 0 ) );
+        if ( $deadline && time() > $deadline ) {
+            wp_send_json_error( [ 'message' => 'The wishlist window has closed.' ] );
+        }
+
+        $raw = json_decode( wp_unslash( $_POST['wishlist'] ?? '[]' ), true );
+        if ( ! is_array( $raw ) ) {
+            wp_send_json_error( [ 'message' => 'Invalid wishlist data.' ] );
+        }
+
+        // Sanitize
+        $wishlist = [];
+        foreach ( $raw as $entry ) {
+            $fish_id = intval( $entry['fish_id'] ?? 0 );
+            if ( ! $fish_id ) continue;
+            $wishlist[] = [
+                'fish_id'           => $fish_id,
+                'rank'              => intval( $entry['rank'] ?? 0 ),
+                'is_alternative_to' => ! empty( $entry['is_alternative_to'] ) ? intval( $entry['is_alternative_to'] ) : null,
+            ];
+        }
+
+        update_option( 'fishotel_lastcall_wishlist_' . $slug . '_' . $uid, $wishlist );
+        wp_send_json_success( [ 'message' => 'Wishlist saved.' ] );
+    }
+
 }
