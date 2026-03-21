@@ -163,6 +163,8 @@ trait FisHotel_Admin {
         register_setting( 'fishotel_batch_settings', 'fishotel_deposit_product_id', [ 'default' => 31985 ] );
         register_setting( 'fishotel_batch_settings', 'fishotel_batch_deposit_amounts' );
         register_setting( 'fishotel_batch_settings', 'fishotel_verification_response_hours', [ 'default' => 24 ] );
+        register_setting( 'fishotel_batch_settings', 'fishotel_lastcall_window_hours', [ 'default' => 48 ] );
+        register_setting( 'fishotel_batch_settings', 'fishotel_lastcall_rounds', [ 'default' => 2 ] );
     }
 
     public function batch_settings_html() {
@@ -214,6 +216,12 @@ trait FisHotel_Admin {
             update_option( 'fishotel_admin_test_mode', isset( $_POST['admin_test_mode'] ) ? 1 : 0 );
             if ( isset( $_POST['verification_response_hours'] ) ) {
                 update_option( 'fishotel_verification_response_hours', max( 1, intval( $_POST['verification_response_hours'] ) ) );
+            }
+            if ( isset( $_POST['lastcall_window_hours'] ) ) {
+                update_option( 'fishotel_lastcall_window_hours', max( 1, intval( $_POST['lastcall_window_hours'] ) ) );
+            }
+            if ( isset( $_POST['lastcall_rounds'] ) ) {
+                update_option( 'fishotel_lastcall_rounds', max( 1, min( 10, intval( $_POST['lastcall_rounds'] ) ) ) );
             }
 
             $new_assignments = [];
@@ -479,6 +487,20 @@ trait FisHotel_Admin {
                                     <input type="number" name="verification_response_hours" form="fishotel-save-all-form" value="<?php echo esc_attr( get_option( 'fishotel_verification_response_hours', 24 ) ); ?>" min="1" style="width:80px;padding:5px 8px;border-radius:4px;"> <span style="color:#aaa;">hours</span>
                                     <small style="display:block;margin-top:5px;color:#aaa;">Time customers have to accept or pass before auto-pass kicks in</small>
                                     <button type="button" id="fh-run-cron-btn" style="margin-top:8px;background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:5px 14px;font-size:12px;cursor:pointer;" onclick="(function(btn){btn.disabled=true;btn.textContent='Running...';fetch('<?php echo admin_url('admin-ajax.php'); ?>',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'action=fishotel_run_cron_now',credentials:'same-origin'}).then(function(r){return r.json()}).then(function(d){btn.textContent=d.success?'Done!':'Error';setTimeout(function(){btn.disabled=false;btn.textContent='Run Verification Cron Now'},2000)}).catch(function(){btn.textContent='Error';btn.disabled=false})})(this)">Run Verification Cron Now</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="color:#ddd;">Last Call Window</th>
+                                <td>
+                                    <input type="number" name="lastcall_window_hours" form="fishotel-save-all-form" value="<?php echo esc_attr( get_option( 'fishotel_lastcall_window_hours', 48 ) ); ?>" min="1" style="width:80px;padding:5px 8px;border-radius:4px;"> <span style="color:#aaa;">hours</span>
+                                    <small style="display:block;margin-top:5px;color:#aaa;">Wishlist submission window for Last Call draft pool</small>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="color:#ddd;">Last Call Rounds</th>
+                                <td>
+                                    <input type="number" name="lastcall_rounds" form="fishotel-save-all-form" value="<?php echo esc_attr( get_option( 'fishotel_lastcall_rounds', 2 ) ); ?>" min="1" max="10" style="width:80px;padding:5px 8px;border-radius:4px;">
+                                    <small style="display:block;margin-top:5px;color:#aaa;">Number of draft rounds before remaining pool is released</small>
                                 </td>
                             </tr>
                             <tr>
@@ -2892,9 +2914,10 @@ trait FisHotel_Admin {
         if ( isset( $_GET['updated'] ) )           echo '<div class="notice notice-success is-dismissible"><p>Arrival data saved.</p></div>';
         if ( isset( $_GET['survival_logged'] ) )  echo '<div class="notice notice-success is-dismissible"><p>Survival log entry added.</p></div>';
         if ( isset( $_GET['graduation_saved'] ) ) echo '<div class="notice notice-success is-dismissible"><p>Graduation counts saved.</p></div>';
+        if ( isset( $_GET['lastcall_opened'] ) )  echo '<div class="notice notice-success is-dismissible"><p>Last Call opened! Draft pool and order have been built.</p></div>';
 
         $tab = sanitize_text_field( $_GET['tab'] ?? 'arrival' );
-        if ( ! in_array( $tab, [ 'arrival', 'tracker', 'graduation' ], true ) ) $tab = 'arrival';
+        if ( ! in_array( $tab, [ 'arrival', 'tracker', 'graduation', 'lastcall' ], true ) ) $tab = 'arrival';
 
         $batches_str   = get_option( 'fishotel_batches', '' );
         $batches_array = array_values( array_filter( array_map( 'trim', explode( "\n", $batches_str ) ) ) );
@@ -2960,6 +2983,7 @@ trait FisHotel_Admin {
         echo '<a href="' . esc_url( $tab_base . '&tab=arrival' ) . '" class="nav-tab' . ( $tab === 'arrival' ? ' nav-tab-active' : '' ) . '">Arrival Data</a>';
         echo '<a href="' . esc_url( $tab_base . '&tab=tracker' ) . '" class="nav-tab' . ( $tab === 'tracker' ? ' nav-tab-active' : '' ) . '">Quarantine Tracker</a>';
         echo '<a href="' . esc_url( $tab_base . '&tab=graduation' ) . '" class="nav-tab' . ( $tab === 'graduation' ? ' nav-tab-active' : '' ) . '">Graduation Headcount</a>';
+        echo '<a href="' . esc_url( $tab_base . '&tab=lastcall' ) . '" class="nav-tab' . ( $tab === 'lastcall' ? ' nav-tab-active' : '' ) . '">Last Call</a>';
         echo '</nav>';
 
         // Aggregate customer demand per batch_id
@@ -3294,6 +3318,73 @@ trait FisHotel_Admin {
         }
         endif; // graduation tab
 
+        // ── Last Call ───────────────────────────────────────────────────────────
+        if ( $tab === 'lastcall' ) :
+        $current_stage = $statuses[ $selected ] ?? '';
+        $lc_slug       = sanitize_title( $selected );
+        $lc_pool       = get_option( 'fishotel_lastcall_pool_' . $lc_slug, [] );
+        $lc_order      = get_option( 'fishotel_lastcall_order_' . $lc_slug, [] );
+        $lc_opened     = get_option( 'fishotel_lastcall_opened_at_' . $lc_slug, '' );
+        $lc_deadline   = get_option( 'fishotel_lastcall_deadline_' . $lc_slug, '' );
+        $lc_window     = intval( get_option( 'fishotel_lastcall_window_hours', 48 ) );
+        $lc_rounds     = intval( get_option( 'fishotel_lastcall_rounds', 2 ) );
+
+        echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;">';
+        echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Last Call — Draft Pool</h2>';
+
+        if ( $current_stage === 'draft' && $lc_opened ) {
+            // Already open — show status
+            $deadline_fmt = $lc_deadline ? date( 'F j, Y g:i A', $lc_deadline ) : 'N/A';
+            echo '<p style="color:#27ae60;font-size:13px;margin-bottom:12px;">&#x2705; Last Call is <strong>OPEN</strong></p>';
+            echo '<table style="width:100%;border-collapse:collapse;margin-bottom:16px;">';
+            echo '<tr style="border-bottom:1px solid #333;"><td style="padding:8px;color:#aaa;">Opened</td><td style="padding:8px;color:#ddd;">' . date( 'F j, Y g:i A', $lc_opened ) . '</td></tr>';
+            echo '<tr style="border-bottom:1px solid #333;"><td style="padding:8px;color:#aaa;">Deadline</td><td style="padding:8px;color:#ddd;">' . esc_html( $deadline_fmt ) . '</td></tr>';
+            echo '<tr style="border-bottom:1px solid #333;"><td style="padding:8px;color:#aaa;">Draft Rounds</td><td style="padding:8px;color:#ddd;">' . $lc_rounds . '</td></tr>';
+            echo '<tr style="border-bottom:1px solid #333;"><td style="padding:8px;color:#aaa;">Pool Species</td><td style="padding:8px;color:#ddd;">' . count( $lc_pool ) . '</td></tr>';
+            echo '<tr style="border-bottom:1px solid #333;"><td style="padding:8px;color:#aaa;">Draft Order</td><td style="padding:8px;color:#ddd;">' . count( $lc_order ) . ' customers</td></tr>';
+            echo '</table>';
+
+            if ( ! empty( $lc_pool ) ) {
+                echo '<h3 style="color:#b5a165;font-size:1em;margin-top:20px;">Available Pool</h3>';
+                echo '<table style="width:100%;border-collapse:collapse;">';
+                echo '<thead><tr style="border-bottom:2px solid #444;"><th style="padding:8px;color:#b5a165;text-align:left;">Species</th><th style="padding:8px;color:#b5a165;text-align:center;">Available</th></tr></thead><tbody>';
+                foreach ( $lc_pool as $item ) {
+                    echo '<tr style="border-bottom:1px solid #333;">';
+                    echo '<td style="padding:8px;color:#ddd;">' . esc_html( $item['name'] ) . '</td>';
+                    echo '<td style="padding:8px;text-align:center;color:#ddd;">' . intval( $item['pool_qty'] ) . '</td>';
+                    echo '</tr>';
+                }
+                echo '</tbody></table>';
+            }
+        } else {
+            // Not yet open — show Open button
+            $can_open = in_array( $current_stage, [ 'verification', 'graduation' ], true );
+            $queue_exists = ! empty( get_option( 'fishotel_verification_queue_' . $lc_slug, [] ) );
+
+            echo '<p style="color:#aaa;font-size:13px;margin-bottom:16px;">Opens the Last Call draft pool. Builds the available fish pool from verification leftovers and creates the draft order based on customer request timestamps.</p>';
+            echo '<ul style="color:#aaa;font-size:12px;margin:0 0 16px 20px;">';
+            echo '<li>Window: <strong style="color:#ddd;">' . $lc_window . ' hours</strong></li>';
+            echo '<li>Rounds: <strong style="color:#ddd;">' . $lc_rounds . '</strong></li>';
+            echo '</ul>';
+
+            if ( ! $queue_exists ) {
+                echo '<p style="color:#e74c3c;font-size:12px;">&#x26A0; No verification queue found for this batch. Run verification first.</p>';
+            } elseif ( ! $can_open ) {
+                echo '<p style="color:#e67e22;font-size:12px;">&#x1F512; Batch must be at verification or graduation stage to open Last Call. Current: <strong>' . esc_html( $current_stage ) . '</strong></p>';
+            }
+
+            echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+            wp_nonce_field( 'fishotel_open_lastcall_nonce' );
+            echo '<input type="hidden" name="action" value="fishotel_open_lastcall">';
+            echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+            $disabled = ( ! $can_open || ! $queue_exists ) ? ' disabled' : '';
+            echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;"' . $disabled . '>Open Last Call</button>';
+            echo '</form>';
+        }
+
+        echo '</div>';
+        endif; // lastcall tab
+
         echo '</div>'; // .wrap
 
         // Inline JS for real-time fill rate updates
@@ -3481,6 +3572,41 @@ trait FisHotel_Admin {
         $this->build_verification_queue( $batch_name );
 
         wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=graduation&graduation_saved=1' ) );
+        exit;
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Open Last Call (Stage 6)
+     * ───────────────────────────────────────────── */
+
+    public function open_lastcall_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_open_lastcall_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        if ( ! $batch_name ) wp_die( 'No batch specified.' );
+
+        $slug = sanitize_title( $batch_name );
+
+        // Build pool and draft order
+        $pool  = $this->build_last_call_pool( $batch_name );
+        $order = $this->build_last_call_draft_order( $batch_name );
+
+        // Set timestamps
+        $window_hours = intval( get_option( 'fishotel_lastcall_window_hours', 48 ) );
+        $opened_at    = time();
+        $deadline     = $opened_at + ( $window_hours * 3600 );
+
+        update_option( 'fishotel_lastcall_opened_at_' . $slug, $opened_at );
+        update_option( 'fishotel_lastcall_deadline_' . $slug, $deadline );
+
+        // Advance batch status to draft
+        $statuses = get_option( 'fishotel_batch_statuses', [] );
+        $statuses[ $batch_name ] = 'draft';
+        update_option( 'fishotel_batch_statuses', $statuses );
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=lastcall&lastcall_opened=1' ) );
         exit;
     }
 

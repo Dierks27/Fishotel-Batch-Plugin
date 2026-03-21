@@ -3656,6 +3656,113 @@ trait FisHotel_HotelProgram {
         $this->maybe_notify_customers( $batch_name );
     }
 
+    /* ─────────────────────────────────────────────
+     *  Last Call: Pool Builder (Stage 6)
+     * ───────────────────────────────────────────── */
+
+    public function build_last_call_pool( $batch_name ) {
+        $slug       = sanitize_title( $batch_name );
+        $queue_data = get_option( 'fishotel_verification_queue_' . $slug, [] );
+        if ( empty( $queue_data['species'] ) ) return [];
+
+        $pool = [];
+        foreach ( $queue_data['species'] as $fish_id => $sp ) {
+            $graduated = intval( $sp['graduated_qty'] ?? 0 );
+            $accepted  = 0;
+            foreach ( $sp['queue'] as $entry ) {
+                if ( ( $entry['status'] ?? '' ) === 'accepted' ) {
+                    $accepted += intval( $entry['accepted_qty'] ?? 0 );
+                }
+            }
+            $pool_qty = $graduated - $accepted;
+            if ( $pool_qty > 0 ) {
+                $pool[] = [
+                    'fish_id'  => $fish_id,
+                    'name'     => $sp['name'] ?? '',
+                    'pool_qty' => $pool_qty,
+                ];
+            }
+        }
+
+        update_option( 'fishotel_lastcall_pool_' . $slug, $pool );
+        return $pool;
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Last Call: Draft Order Builder (Stage 6)
+     * ───────────────────────────────────────────── */
+
+    public function build_last_call_draft_order( $batch_name ) {
+        $slug       = sanitize_title( $batch_name );
+        $queue_data = get_option( 'fishotel_verification_queue_' . $slug, [] );
+        if ( empty( $queue_data['species'] ) ) return [];
+
+        // Tally accepted fish per user from the verification queue
+        $user_accepted = []; // user_id => total accepted qty
+        foreach ( $queue_data['species'] as $sp ) {
+            foreach ( $sp['queue'] as $entry ) {
+                $uid = intval( $entry['user_id'] ?? 0 );
+                if ( ! $uid ) continue;
+                if ( ! isset( $user_accepted[ $uid ] ) ) $user_accepted[ $uid ] = 0;
+                if ( ( $entry['status'] ?? '' ) === 'accepted' ) {
+                    $user_accepted[ $uid ] += intval( $entry['accepted_qty'] ?? 0 );
+                }
+            }
+        }
+
+        // Get earliest requested_at per customer from fish_request posts
+        $requests = get_posts( [
+            'post_type'        => 'fish_request',
+            'numberposts'      => -1,
+            'post_status'      => 'any',
+            'suppress_filters' => true,
+            'meta_query'       => [
+                [ 'key' => '_batch_name', 'value' => $batch_name ],
+            ],
+        ] );
+
+        $user_earliest = []; // user_id => earliest requested_at
+        foreach ( $requests as $req ) {
+            if ( get_post_meta( $req->ID, '_is_admin_order', true ) ) continue;
+            $uid        = intval( get_post_meta( $req->ID, '_customer_id', true ) );
+            $cart_items = json_decode( get_post_meta( $req->ID, '_cart_items', true ), true ) ?: [];
+            foreach ( $cart_items as $item ) {
+                $at = $item['requested_at'] ?? '';
+                if ( $at && ( ! isset( $user_earliest[ $uid ] ) || $at < $user_earliest[ $uid ] ) ) {
+                    $user_earliest[ $uid ] = $at;
+                }
+            }
+        }
+
+        // Split into zero-fish and has-fish groups
+        $zero_fish = [];
+        $has_fish  = [];
+        foreach ( $user_accepted as $uid => $total ) {
+            $at = $user_earliest[ $uid ] ?? '9999';
+            if ( $total <= 0 ) {
+                $zero_fish[] = [ 'user_id' => $uid, 'requested_at' => $at ];
+            } else {
+                $has_fish[] = [ 'user_id' => $uid, 'requested_at' => $at ];
+            }
+        }
+
+        // Sort both groups by requested_at DESC (latest requesters first)
+        $sort_desc = function( $a, $b ) {
+            return strcmp( $b['requested_at'], $a['requested_at'] );
+        };
+        usort( $zero_fish, $sort_desc );
+        usort( $has_fish, $sort_desc );
+
+        // Zero-fish group goes first, then has-fish group
+        $order = array_merge(
+            array_column( $zero_fish, 'user_id' ),
+            array_column( $has_fish, 'user_id' )
+        );
+
+        update_option( 'fishotel_lastcall_order_' . $slug, $order );
+        return $order;
+    }
+
     public function maybe_notify_customers( $batch_name ) {
         $option_key = 'fishotel_verification_queue_' . sanitize_title( $batch_name );
         $queue      = get_option( $option_key, [] );

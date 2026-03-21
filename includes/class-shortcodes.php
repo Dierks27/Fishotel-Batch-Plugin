@@ -2567,6 +2567,12 @@ trait FisHotel_Shortcodes {
             return $this->hotel_postcard_shortcode( $batch_name );
         }
 
+        // ─── Stage 6: Last Call draft pool ──
+        if ( $status === 'draft' ) {
+            ob_end_clean();
+            return $this->render_last_call_page( $batch_name );
+        }
+
         // ─── Stage 3b: Arrival tracking view (arrived + all post-arrived stages) ──
         $arrived_stages = [ 'arrived', 'in_quarantine', 'graduation', 'verification', 'draft', 'invoicing' ];
         if ( in_array( $status, $arrived_stages, true ) ) {
@@ -3924,6 +3930,23 @@ trait FisHotel_Shortcodes {
             fetch('<?php echo admin_url( "admin-ajax.php" ); ?>', { method: 'POST', body: fd, credentials: 'same-origin' });
         }
         </script>
+        <?php
+        return ob_get_clean();
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Stage 6: Last Call Draft Pool (stub)
+     * ───────────────────────────────────────────── */
+
+    public function render_last_call_page( $batch_name ) {
+        ob_start();
+        ?>
+        <div class="fh-lastcall-wrap" style="max-width:680px;margin:40px auto;padding:40px;background:#f5f0e8;border:4px double #2e2418;text-align:center;font-family:'Courier New',monospace;color:#2e2418;">
+            <h2 style="font-family:'Oswald',sans-serif;letter-spacing:0.2em;color:#96885f;margin-top:0;">THE FISHOTEL</h2>
+            <p style="font-variant:small-caps;letter-spacing:0.15em;font-size:0.9rem;">Last Call — Draft Pool</p>
+            <hr style="border:none;border-top:1px solid #d6cfc2;margin:20px 0;">
+            <p style="font-size:0.85rem;color:#666;">Stage 6 is under construction. Check back soon.</p>
+        </div>
         <?php
         return ob_get_clean();
     }
