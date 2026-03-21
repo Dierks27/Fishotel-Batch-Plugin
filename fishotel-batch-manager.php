@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v6.35 - Last Call notifications, cron, admin controls, invoicing stub.
- * Version:           6.35
+ * Description:       v6.36 - Full Last Call admin control panel.
+ * Version:           6.36
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '6.35' );
+define( 'FISHOTEL_VERSION', '6.36' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -168,8 +168,14 @@ class FisHotel_Batch_Manager {
         add_action( 'admin_post_fishotel_save_arrival_data',  [$this, 'save_arrival_data_handler'] );
         add_action( 'admin_post_fishotel_log_survival_entry', [$this, 'log_survival_entry_handler'] );
         add_action( 'admin_post_fishotel_save_graduation_data', [$this, 'save_graduation_data_handler'] );
-        add_action( 'admin_post_fishotel_open_lastcall',  [$this, 'open_lastcall_handler'] );
-        add_action( 'admin_post_fishotel_reset_lastcall', [$this, 'reset_lastcall_handler'] );
+        add_action( 'admin_post_fishotel_open_lastcall',       [$this, 'open_lastcall_handler'] );
+        add_action( 'admin_post_fishotel_reset_lastcall',      [$this, 'reset_lastcall_handler'] );
+        add_action( 'admin_post_fishotel_lc_update_settings',  [$this, 'lc_update_settings_handler'] );
+        add_action( 'admin_post_fishotel_lc_pool_update',      [$this, 'lc_pool_update_handler'] );
+        add_action( 'admin_post_fishotel_lc_pool_remove',      [$this, 'lc_pool_remove_handler'] );
+        add_action( 'admin_post_fishotel_lc_pool_add',         [$this, 'lc_pool_add_handler'] );
+        add_action( 'admin_post_fishotel_lc_order_move',       [$this, 'lc_order_move_handler'] );
+        add_action( 'admin_post_fishotel_lc_close_window',     [$this, 'lc_close_window_handler'] );
 
         add_action( 'wp_login', [$this, 'record_last_login'], 10, 2 );
 

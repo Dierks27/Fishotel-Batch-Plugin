@@ -3321,163 +3321,344 @@ trait FisHotel_Admin {
 
         // ── Last Call ───────────────────────────────────────────────────────────
         if ( $tab === 'lastcall' ) :
-        $current_stage = $statuses[ $selected ] ?? '';
-        $lc_slug       = sanitize_title( $selected );
-        $lc_pool       = get_option( 'fishotel_lastcall_pool_' . $lc_slug, [] );
-        $lc_order      = get_option( 'fishotel_lastcall_order_' . $lc_slug, [] );
-        $lc_opened     = get_option( 'fishotel_lastcall_opened_at_' . $lc_slug, '' );
-        $lc_deadline   = get_option( 'fishotel_lastcall_deadline_' . $lc_slug, '' );
-        $lc_results    = get_option( 'fishotel_lastcall_results_' . $lc_slug, [] );
-        $lc_window     = intval( get_option( 'fishotel_lastcall_window_hours', 48 ) );
-        $lc_rounds     = intval( get_option( 'fishotel_lastcall_rounds', 2 ) );
-        $lc_now        = time();
-        $lc_window_closed = $lc_deadline && $lc_now > intval( $lc_deadline );
+        $current_stage    = $statuses[ $selected ] ?? '';
+        $lc_slug          = sanitize_title( $selected );
+        $lc_pool          = get_option( 'fishotel_lastcall_pool_' . $lc_slug, [] );
+        $lc_order         = get_option( 'fishotel_lastcall_order_' . $lc_slug, [] );
+        $lc_opened        = intval( get_option( 'fishotel_lastcall_opened_at_' . $lc_slug, 0 ) );
+        $lc_deadline      = intval( get_option( 'fishotel_lastcall_deadline_' . $lc_slug, 0 ) );
+        $lc_results       = get_option( 'fishotel_lastcall_results_' . $lc_slug, [] );
+        $lc_rounds_val    = intval( get_option( 'fishotel_lastcall_rounds', 2 ) );
+        $lc_now           = time();
+        $lc_is_open       = $current_stage === 'draft' && $lc_opened;
+        $lc_window_closed = $lc_is_open && $lc_deadline && $lc_now > $lc_deadline;
+        $lc_has_results   = ! empty( $lc_results );
+        $lc_queue         = get_option( 'fishotel_verification_queue_' . $lc_slug, [] );
+        $admin_post_url   = esc_url( admin_url( 'admin-post.php' ) );
 
-        echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;">';
-        echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Last Call — Draft Pool</h2>';
-
-        if ( $current_stage === 'draft' && $lc_opened ) {
-            // Already open — show status
-            $deadline_fmt = $lc_deadline ? date( 'F j, Y g:i A', $lc_deadline ) : 'N/A';
-            echo '<p style="color:#27ae60;font-size:13px;margin-bottom:12px;">&#x2705; Last Call is <strong>OPEN</strong></p>';
-            echo '<table style="width:100%;border-collapse:collapse;margin-bottom:16px;">';
-            echo '<tr style="border-bottom:1px solid #333;"><td style="padding:8px;color:#aaa;">Opened</td><td style="padding:8px;color:#ddd;">' . date( 'F j, Y g:i A', $lc_opened ) . '</td></tr>';
-            echo '<tr style="border-bottom:1px solid #333;"><td style="padding:8px;color:#aaa;">Deadline</td><td style="padding:8px;color:#ddd;">' . esc_html( $deadline_fmt ) . '</td></tr>';
-            echo '<tr style="border-bottom:1px solid #333;"><td style="padding:8px;color:#aaa;">Draft Rounds</td><td style="padding:8px;color:#ddd;">' . $lc_rounds . '</td></tr>';
-            echo '<tr style="border-bottom:1px solid #333;"><td style="padding:8px;color:#aaa;">Pool Species</td><td style="padding:8px;color:#ddd;">' . count( $lc_pool ) . '</td></tr>';
-            echo '<tr style="border-bottom:1px solid #333;"><td style="padding:8px;color:#aaa;">Draft Order</td><td style="padding:8px;color:#ddd;">' . count( $lc_order ) . ' customers</td></tr>';
-            echo '</table>';
-
-            if ( ! empty( $lc_pool ) ) {
-                echo '<h3 style="color:#b5a165;font-size:1em;margin-top:20px;">Available Pool</h3>';
-                echo '<table style="width:100%;border-collapse:collapse;">';
-                echo '<thead><tr style="border-bottom:2px solid #444;"><th style="padding:8px;color:#b5a165;text-align:left;">Species</th><th style="padding:8px;color:#b5a165;text-align:center;">Available</th></tr></thead><tbody>';
-                foreach ( $lc_pool as $item ) {
-                    echo '<tr style="border-bottom:1px solid #333;">';
-                    echo '<td style="padding:8px;color:#ddd;">' . esc_html( $item['name'] ) . '</td>';
-                    echo '<td style="padding:8px;text-align:center;color:#ddd;">' . intval( $item['pool_qty'] ) . '</td>';
-                    echo '</tr>';
+        // Compute accepted totals per user from verification queue (for "zero fish" badge)
+        $lc_user_accepted = [];
+        if ( ! empty( $lc_queue['species'] ) ) {
+            foreach ( $lc_queue['species'] as $sp ) {
+                foreach ( $sp['queue'] as $entry ) {
+                    $uid = intval( $entry['user_id'] ?? 0 );
+                    if ( ! isset( $lc_user_accepted[ $uid ] ) ) $lc_user_accepted[ $uid ] = 0;
+                    if ( ( $entry['status'] ?? '' ) === 'accepted' ) {
+                        $lc_user_accepted[ $uid ] += intval( $entry['accepted_qty'] ?? 0 );
+                    }
                 }
-                echo '</tbody></table>';
             }
+        }
 
-            // Run Draft button (window closed, no results yet)
-            if ( $lc_window_closed && empty( $lc_results ) ) {
-                $draft_nonce = wp_create_nonce( 'fishotel_lastcall_draft_nonce' );
-                echo '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #444;">';
-                echo '<p style="color:#e67e22;font-size:13px;">Wishlist window has closed. Ready to run the draft.</p>';
-                echo '<button type="button" id="fh-run-draft-btn" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Run Draft</button>';
-                echo '<span id="fh-draft-status" style="margin-left:12px;font-size:12px;color:#aaa;"></span>';
-                echo '</div>';
-                ?>
-                <script>
-                document.getElementById('fh-run-draft-btn').addEventListener('click', function(){
-                    var btn = this;
-                    var status = document.getElementById('fh-draft-status');
-                    if(!confirm('Run the Last Call draft? This cannot be undone.')) return;
-                    btn.disabled = true;
-                    status.textContent = 'Running draft...';
-                    var fd = new FormData();
-                    fd.append('action', 'fishotel_run_lastcall_draft');
-                    fd.append('nonce', '<?php echo esc_js( $draft_nonce ); ?>');
-                    fd.append('batch_name', '<?php echo esc_js( $selected ); ?>');
-                    fetch('<?php echo esc_url( admin_url( "admin-ajax.php" ) ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
-                        .then(function(r){ return r.json(); })
-                        .then(function(d){
-                            if(d.success){
-                                status.textContent = 'Draft complete! ' + d.data.picks.length + ' picks made.';
-                                status.style.color = '#27ae60';
-                                setTimeout(function(){ location.reload(); }, 1500);
-                            } else {
-                                status.textContent = 'Error: ' + (d.data && d.data.message || 'Unknown');
-                                status.style.color = '#e74c3c';
-                                btn.disabled = false;
-                            }
-                        })
-                        .catch(function(){ status.textContent = 'Network error'; status.style.color = '#e74c3c'; btn.disabled = false; });
-                });
-                </script>
-                <?php
-            }
+        // ── NOT YET OPEN — show Open button ──
+        if ( ! $lc_is_open ) {
+            $can_open     = in_array( $current_stage, [ 'verification', 'graduation' ], true );
+            $queue_exists = ! empty( $lc_queue );
 
-            // Draft results summary
-            if ( ! empty( $lc_results ) ) {
-                echo '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #444;">';
-                echo '<h3 style="color:#27ae60;font-size:1em;margin-top:0;">Draft Results</h3>';
-                echo '<p style="color:#aaa;font-size:12px;">Ran at ' . date( 'F j, Y g:i A', $lc_results['run_at'] ) . ' &mdash; ' . count( $lc_results['picks'] ) . ' picks across ' . $lc_results['rounds'] . ' rounds</p>';
-                echo '<table style="width:100%;border-collapse:collapse;">';
-                echo '<thead><tr style="border-bottom:2px solid #444;">';
-                echo '<th style="padding:8px;color:#b5a165;text-align:center;">Rd</th>';
-                echo '<th style="padding:8px;color:#b5a165;text-align:left;">Customer</th>';
-                echo '<th style="padding:8px;color:#b5a165;text-align:left;">Fish</th>';
-                echo '</tr></thead><tbody>';
-                foreach ( $lc_results['picks'] as $pick ) {
-                    $user = get_user_by( 'id', $pick['user_id'] );
-                    $display = $user ? $user->display_name : 'User #' . $pick['user_id'];
-                    echo '<tr style="border-bottom:1px solid #333;">';
-                    echo '<td style="padding:8px;text-align:center;color:#888;">' . intval( $pick['round'] ) . '</td>';
-                    echo '<td style="padding:8px;color:#ddd;">' . esc_html( $display ) . '</td>';
-                    echo '<td style="padding:8px;color:#ddd;">' . esc_html( $pick['fish_name'] ) . '</td>';
-                    echo '</tr>';
-                }
-                echo '</tbody></table>';
-
-                // Summary stats
-                $total_fish = array_sum( array_column( $lc_results['picks'], 'qty' ) );
-                echo '<p style="color:#aaa;font-size:12px;margin-top:12px;">';
-                echo '<strong>' . count( $lc_results['picks'] ) . '</strong> picks &mdash; <strong>' . $total_fish . '</strong> fish distributed';
-                echo '</p>';
-
-                // Action buttons
-                echo '<div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;">';
-
-                // Advance to Invoicing
-                echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="margin:0;">';
-                wp_nonce_field( 'fishotel_advance_stage_nonce' );
-                echo '<input type="hidden" name="action" value="fishotel_advance_stage">';
-                echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
-                echo '<input type="hidden" name="new_stage" value="invoicing">';
-                echo '<button type="submit" style="background:#27ae60;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;">Advance to Invoicing</button>';
-                echo '</form>';
-
-                // Reset Draft (danger)
-                echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="margin:0;" onsubmit="return confirm(\'Reset the draft? This clears all results and notifications. Cannot be undone.\');">';
-                wp_nonce_field( 'fishotel_reset_lastcall_nonce' );
-                echo '<input type="hidden" name="action" value="fishotel_reset_lastcall">';
-                echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
-                echo '<button type="submit" style="background:#333;color:#e74c3c;font-weight:700;border:1px solid #e74c3c;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;">Reset Draft</button>';
-                echo '</form>';
-
-                echo '</div>';
-                echo '</div>';
-            }
-        } else {
-            // Not yet open — show Open button
-            $can_open = in_array( $current_stage, [ 'verification', 'graduation' ], true );
-            $queue_exists = ! empty( get_option( 'fishotel_verification_queue_' . $lc_slug, [] ) );
-
-            echo '<p style="color:#aaa;font-size:13px;margin-bottom:16px;">Opens the Last Call draft pool. Builds the available fish pool from verification leftovers and creates the draft order based on customer request timestamps.</p>';
-            echo '<ul style="color:#aaa;font-size:12px;margin:0 0 16px 20px;">';
-            echo '<li>Window: <strong style="color:#ddd;">' . $lc_window . ' hours</strong></li>';
-            echo '<li>Rounds: <strong style="color:#ddd;">' . $lc_rounds . '</strong></li>';
-            echo '</ul>';
+            echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;">';
+            echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Last Call — Draft Pool</h2>';
+            echo '<p style="color:#aaa;font-size:13px;margin-bottom:16px;">Opens the Last Call draft pool. Builds the available fish pool from verification leftovers and creates the draft order.</p>';
 
             if ( ! $queue_exists ) {
-                echo '<p style="color:#e74c3c;font-size:12px;">&#x26A0; No verification queue found for this batch. Run verification first.</p>';
+                echo '<p style="color:#e74c3c;font-size:12px;">No verification queue found. Run verification first.</p>';
             } elseif ( ! $can_open ) {
-                echo '<p style="color:#e67e22;font-size:12px;">&#x1F512; Batch must be at verification or graduation stage to open Last Call. Current: <strong>' . esc_html( $current_stage ) . '</strong></p>';
+                echo '<p style="color:#e67e22;font-size:12px;">Batch must be at verification or graduation stage. Current: <strong>' . esc_html( $current_stage ) . '</strong></p>';
             }
 
-            echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+            echo '<form method="post" action="' . $admin_post_url . '">';
             wp_nonce_field( 'fishotel_open_lastcall_nonce' );
             echo '<input type="hidden" name="action" value="fishotel_open_lastcall">';
             echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
             $disabled = ( ! $can_open || ! $queue_exists ) ? ' disabled' : '';
             echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;"' . $disabled . '>Open Last Call</button>';
+            echo '</form></div>';
+
+        } else {
+        // ── LAST CALL IS OPEN — full control panel ──
+
+        // Status badge
+        if ( $lc_has_results ) {
+            $badge = '<span style="background:#27ae60;color:#fff;padding:3px 12px;border-radius:4px;font-size:12px;font-weight:700;">DRAFT COMPLETE</span>';
+        } elseif ( $lc_window_closed ) {
+            $badge = '<span style="background:#e67e22;color:#000;padding:3px 12px;border-radius:4px;font-size:12px;font-weight:700;">CLOSED</span>';
+        } else {
+            $badge = '<span style="background:#27ae60;color:#fff;padding:3px 12px;border-radius:4px;font-size:12px;font-weight:700;">OPEN</span>';
+        }
+
+        // ── Section 1: Status & Settings ──
+        echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:16px;">';
+        echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Last Call — Status ' . $badge . '</h2>';
+        echo '<table style="width:100%;border-collapse:collapse;">';
+        echo '<tr style="border-bottom:1px solid #333;"><td style="padding:8px;color:#aaa;width:160px;">Opened</td><td style="padding:8px;color:#ddd;">' . ( $lc_opened ? date( 'F j, Y g:i A', $lc_opened ) : 'N/A' ) . '</td></tr>';
+        echo '</table>';
+
+        // Editable deadline
+        echo '<form method="post" action="' . $admin_post_url . '" style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
+        wp_nonce_field( 'fishotel_lc_update_settings_nonce' );
+        echo '<input type="hidden" name="action" value="fishotel_lc_update_settings">';
+        echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+        echo '<label style="color:#aaa;font-size:13px;">Deadline:</label>';
+        $dl_val = $lc_deadline ? date( 'Y-m-d\TH:i', $lc_deadline ) : '';
+        echo '<input type="datetime-local" name="lc_deadline" value="' . esc_attr( $dl_val ) . '" style="padding:5px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">';
+        echo '<label style="color:#aaa;font-size:13px;margin-left:12px;">Rounds:</label>';
+        echo '<input type="number" name="lc_rounds" value="' . esc_attr( $lc_rounds_val ) . '" min="1" max="10" style="width:60px;padding:5px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">';
+        echo '<button type="submit" style="background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:6px 16px;font-size:12px;cursor:pointer;">Save</button>';
+        echo '</form>';
+        echo '</div>';
+
+        // ── Section 2: The Pool ──
+        if ( ! $lc_has_results ) {
+        echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:16px;">';
+        echo '<h3 style="color:#b5a165;margin-top:0;font-size:1.1em;">The Pool</h3>';
+
+        if ( ! empty( $lc_pool ) ) {
+            echo '<table style="width:100%;border-collapse:collapse;margin-bottom:12px;">';
+            echo '<thead><tr style="border-bottom:2px solid #444;">';
+            echo '<th style="padding:8px;color:#b5a165;text-align:left;">Species</th>';
+            echo '<th style="padding:8px;color:#b5a165;text-align:center;">Qty</th>';
+            echo '<th style="padding:8px;color:#b5a165;text-align:center;">Update</th>';
+            echo '<th style="padding:8px;color:#b5a165;text-align:center;">Remove</th>';
+            echo '</tr></thead><tbody>';
+            foreach ( $lc_pool as $idx => $item ) {
+                echo '<tr style="border-bottom:1px solid #333;">';
+                echo '<td style="padding:8px;color:#ddd;">' . esc_html( $item['name'] ) . '</td>';
+                echo '<td style="padding:4px 8px;text-align:center;">';
+                echo '<form method="post" action="' . $admin_post_url . '" style="display:inline-flex;align-items:center;gap:6px;margin:0;">';
+                wp_nonce_field( 'fishotel_lc_pool_update_nonce' );
+                echo '<input type="hidden" name="action" value="fishotel_lc_pool_update">';
+                echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+                echo '<input type="hidden" name="pool_idx" value="' . $idx . '">';
+                echo '<input type="number" name="pool_qty" value="' . intval( $item['pool_qty'] ) . '" min="0" style="width:60px;text-align:center;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:4px;padding:4px;">';
+                echo '</td><td style="padding:4px 8px;text-align:center;">';
+                echo '<button type="submit" style="background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer;">Save</button>';
+                echo '</form>';
+                echo '</td>';
+                echo '<td style="padding:4px 8px;text-align:center;">';
+                echo '<form method="post" action="' . $admin_post_url . '" style="display:inline;margin:0;" onsubmit="return confirm(\'Remove ' . esc_attr( $item['name'] ) . ' from pool?\');">';
+                wp_nonce_field( 'fishotel_lc_pool_remove_nonce' );
+                echo '<input type="hidden" name="action" value="fishotel_lc_pool_remove">';
+                echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+                echo '<input type="hidden" name="pool_idx" value="' . $idx . '">';
+                echo '<button type="submit" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;" title="Remove">&times;</button>';
+                echo '</form></td>';
+                echo '</tr>';
+            }
+            echo '</tbody></table>';
+        } else {
+            echo '<p style="color:#888;font-size:12px;">Pool is empty.</p>';
+        }
+
+        // Add species to pool
+        $pool_fish_ids = array_column( $lc_pool, 'fish_id' );
+        $available_to_add = [];
+        foreach ( $batch_fish as $bp ) {
+            if ( ! in_array( $bp->ID, $pool_fish_ids ) ) {
+                $common = FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title );
+                $available_to_add[] = [ 'id' => $bp->ID, 'name' => $common ];
+            }
+        }
+        if ( ! empty( $available_to_add ) ) {
+            echo '<form method="post" action="' . $admin_post_url . '" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">';
+            wp_nonce_field( 'fishotel_lc_pool_add_nonce' );
+            echo '<input type="hidden" name="action" value="fishotel_lc_pool_add">';
+            echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+            echo '<select name="add_fish_id" style="flex:1;min-width:180px;padding:6px;border:1px solid #555;background:#2a2a2a;color:#fff;border-radius:4px;">';
+            echo '<option value="">+ Add species to pool...</option>';
+            foreach ( $available_to_add as $af ) {
+                echo '<option value="' . esc_attr( $af['id'] ) . '">' . esc_html( $af['name'] ) . '</option>';
+            }
+            echo '</select>';
+            echo '<input type="number" name="add_qty" value="1" min="1" style="width:60px;padding:6px;border:1px solid #555;background:#2a2a2a;color:#fff;border-radius:4px;text-align:center;">';
+            echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:7px 18px;font-size:12px;cursor:pointer;">Add</button>';
             echo '</form>';
+        }
+        echo '</div>';
+        } // end pool section (not shown when results exist)
+
+        // ── Section 3: Draft Order ──
+        if ( ! $lc_has_results && ! empty( $lc_order ) ) {
+        echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:16px;">';
+        echo '<h3 style="color:#b5a165;margin-top:0;font-size:1.1em;">Draft Order <span style="color:#888;font-size:0.8em;">(' . count( $lc_order ) . ' customers)</span></h3>';
+        echo '<table style="width:100%;border-collapse:collapse;">';
+        echo '<thead><tr style="border-bottom:2px solid #444;">';
+        echo '<th style="padding:6px 8px;color:#b5a165;text-align:center;width:40px;">#</th>';
+        echo '<th style="padding:6px 8px;color:#b5a165;text-align:left;">Customer</th>';
+        echo '<th style="padding:6px 8px;color:#b5a165;text-align:left;">HF Username</th>';
+        echo '<th style="padding:6px 8px;color:#b5a165;text-align:center;width:100px;">Move</th>';
+        echo '</tr></thead><tbody>';
+        foreach ( $lc_order as $pos => $uid ) {
+            $u       = get_user_by( 'id', $uid );
+            $display = $u ? $u->display_name : 'User #' . $uid;
+            $hf_name = get_user_meta( $uid, '_fishotel_humble_username', true );
+            $zero    = ( isset( $lc_user_accepted[ $uid ] ) && $lc_user_accepted[ $uid ] <= 0 );
+            $zero_badge = $zero ? ' <span style="background:#e74c3c;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700;">ZERO FISH</span>' : '';
+
+            echo '<tr style="border-bottom:1px solid #333;">';
+            echo '<td style="padding:6px 8px;text-align:center;color:#888;">' . ( $pos + 1 ) . '</td>';
+            echo '<td style="padding:6px 8px;color:#ddd;">' . esc_html( $display ) . $zero_badge . '</td>';
+            echo '<td style="padding:6px 8px;color:#aaa;">' . esc_html( $hf_name ?: '—' ) . '</td>';
+            echo '<td style="padding:6px 8px;text-align:center;">';
+            if ( $pos > 0 ) {
+                echo '<form method="post" action="' . $admin_post_url . '" style="display:inline;margin:0;">';
+                wp_nonce_field( 'fishotel_lc_order_move_nonce' );
+                echo '<input type="hidden" name="action" value="fishotel_lc_order_move">';
+                echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+                echo '<input type="hidden" name="pos" value="' . $pos . '">';
+                echo '<input type="hidden" name="dir" value="up">';
+                echo '<button type="submit" style="background:none;border:none;color:#888;cursor:pointer;font-size:14px;" title="Move up">&uarr;</button>';
+                echo '</form>';
+            }
+            if ( $pos < count( $lc_order ) - 1 ) {
+                echo '<form method="post" action="' . $admin_post_url . '" style="display:inline;margin:0;">';
+                wp_nonce_field( 'fishotel_lc_order_move_nonce' );
+                echo '<input type="hidden" name="action" value="fishotel_lc_order_move">';
+                echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+                echo '<input type="hidden" name="pos" value="' . $pos . '">';
+                echo '<input type="hidden" name="dir" value="down">';
+                echo '<button type="submit" style="background:none;border:none;color:#888;cursor:pointer;font-size:14px;" title="Move down">&darr;</button>';
+                echo '</form>';
+            }
+            echo '</td></tr>';
+        }
+        echo '</tbody></table>';
+        echo '</div>';
+        } // end draft order section
+
+        // ── Section 4: Wishlists ──
+        if ( ! $lc_has_results && ! empty( $lc_order ) ) {
+        echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:16px;">';
+        echo '<h3 style="color:#b5a165;margin-top:0;font-size:1.1em;">Wishlists</h3>';
+        echo '<table style="width:100%;border-collapse:collapse;">';
+        echo '<thead><tr style="border-bottom:2px solid #444;">';
+        echo '<th style="padding:6px 8px;color:#b5a165;text-align:left;">Customer</th>';
+        echo '<th style="padding:6px 8px;color:#b5a165;text-align:center;">Items</th>';
+        echo '<th style="padding:6px 8px;color:#b5a165;text-align:center;">Saved</th>';
+        echo '</tr></thead><tbody>';
+        $wl_idx = 0;
+        foreach ( $lc_order as $uid ) {
+            $u       = get_user_by( 'id', $uid );
+            $display = $u ? $u->display_name : 'User #' . $uid;
+            $wl      = get_option( 'fishotel_lastcall_wishlist_' . $lc_slug . '_' . $uid, [] );
+            $count   = count( $wl );
+            $saved   = $count > 0 ? 'Yes' : '—';
+
+            echo '<tr style="border-bottom:1px solid #333;cursor:pointer;" onclick="var d=document.getElementById(\'fh-wl-detail-' . $wl_idx . '\');d.style.display=d.style.display===\'none\'?\'table-row\':\'none\';">';
+            echo '<td style="padding:6px 8px;color:#ddd;">' . esc_html( $display ) . ' <span style="color:#666;font-size:11px;">&#x25BC;</span></td>';
+            echo '<td style="padding:6px 8px;text-align:center;color:' . ( $count > 0 ? '#ddd' : '#666' ) . ';">' . $count . '</td>';
+            echo '<td style="padding:6px 8px;text-align:center;color:' . ( $count > 0 ? '#27ae60' : '#666' ) . ';">' . $saved . '</td>';
+            echo '</tr>';
+
+            // Expandable detail row
+            echo '<tr id="fh-wl-detail-' . $wl_idx . '" style="display:none;background:#181818;">';
+            echo '<td colspan="3" style="padding:8px 20px;">';
+            if ( empty( $wl ) ) {
+                echo '<span style="color:#666;font-size:12px;">No wishlist submitted.</span>';
+            } else {
+                echo '<ol style="margin:4px 0;padding-left:20px;color:#aaa;font-size:12px;">';
+                foreach ( $wl as $wi ) {
+                    $fish_name = '';
+                    foreach ( $lc_pool as $p ) {
+                        if ( intval( $p['fish_id'] ) === intval( $wi['fish_id'] ) ) { $fish_name = $p['name']; break; }
+                    }
+                    if ( ! $fish_name ) $fish_name = 'Fish #' . $wi['fish_id'];
+                    $alt_label = ! empty( $wi['is_alternative_to'] ) ? ' <span style="color:#e67e22;font-size:10px;">(alt)</span>' : '';
+                    echo '<li style="margin:2px 0;">' . esc_html( $fish_name ) . $alt_label . '</li>';
+                }
+                echo '</ol>';
+            }
+            echo '</td></tr>';
+            $wl_idx++;
+        }
+        echo '</tbody></table>';
+        echo '</div>';
+        } // end wishlists section
+
+        // ── Section 5: Actions ──
+        echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:16px;">';
+        echo '<h3 style="color:#b5a165;margin-top:0;font-size:1.1em;">Actions</h3>';
+
+        if ( ! $lc_window_closed && ! $lc_has_results ) {
+            // Window open — close early button
+            echo '<form method="post" action="' . $admin_post_url . '" style="margin:0;" onsubmit="return confirm(\'Close the wishlist window early? Customers will no longer be able to submit.\');">';
+            wp_nonce_field( 'fishotel_lc_close_window_nonce' );
+            echo '<input type="hidden" name="action" value="fishotel_lc_close_window">';
+            echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+            echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;">Close Window Early</button>';
+            echo '</form>';
+
+        } elseif ( $lc_window_closed && ! $lc_has_results ) {
+            // Window closed, no results — run draft
+            $draft_nonce = wp_create_nonce( 'fishotel_lastcall_draft_nonce' );
+            echo '<p style="color:#e67e22;font-size:13px;margin-bottom:12px;">Wishlist window has closed. Ready to run the draft.</p>';
+            echo '<button type="button" id="fh-run-draft-btn" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Run Draft</button>';
+            echo '<span id="fh-draft-status" style="margin-left:12px;font-size:12px;color:#aaa;"></span>';
+            ?>
+            <script>
+            document.getElementById('fh-run-draft-btn').addEventListener('click', function(){
+                var btn = this, status = document.getElementById('fh-draft-status');
+                if(!confirm('Run the Last Call draft? This cannot be undone.')) return;
+                btn.disabled = true; status.textContent = 'Running draft...';
+                var fd = new FormData();
+                fd.append('action', 'fishotel_run_lastcall_draft');
+                fd.append('nonce', '<?php echo esc_js( $draft_nonce ); ?>');
+                fd.append('batch_name', '<?php echo esc_js( $selected ); ?>');
+                fetch('<?php echo esc_url( admin_url( "admin-ajax.php" ) ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(d){
+                        if(d.success){ status.textContent = 'Draft complete! ' + d.data.picks.length + ' picks.'; status.style.color='#27ae60'; setTimeout(function(){ location.reload(); }, 1500); }
+                        else { status.textContent = 'Error: ' + (d.data&&d.data.message||'Unknown'); status.style.color='#e74c3c'; btn.disabled=false; }
+                    }).catch(function(){ status.textContent = 'Network error'; status.style.color='#e74c3c'; btn.disabled=false; });
+            });
+            </script>
+            <?php
+
+        } elseif ( $lc_has_results ) {
+            // Results exist — show table + action buttons
+            echo '<h4 style="color:#27ae60;font-size:1em;margin:0 0 8px;">Draft Results</h4>';
+            echo '<p style="color:#aaa;font-size:12px;margin-bottom:8px;">Ran ' . date( 'F j, Y g:i A', $lc_results['run_at'] ) . ' &mdash; ' . count( $lc_results['picks'] ) . ' picks, ' . $lc_results['rounds'] . ' rounds</p>';
+            echo '<table style="width:100%;border-collapse:collapse;margin-bottom:12px;">';
+            echo '<thead><tr style="border-bottom:2px solid #444;">';
+            echo '<th style="padding:6px 8px;color:#b5a165;text-align:center;">Rd</th>';
+            echo '<th style="padding:6px 8px;color:#b5a165;text-align:left;">Customer</th>';
+            echo '<th style="padding:6px 8px;color:#b5a165;text-align:left;">Fish</th>';
+            echo '<th style="padding:6px 8px;color:#b5a165;text-align:center;">Qty</th>';
+            echo '</tr></thead><tbody>';
+            foreach ( $lc_results['picks'] as $pick ) {
+                $u       = get_user_by( 'id', $pick['user_id'] );
+                $display = $u ? $u->display_name : 'User #' . $pick['user_id'];
+                echo '<tr style="border-bottom:1px solid #333;">';
+                echo '<td style="padding:6px 8px;text-align:center;color:#888;">' . intval( $pick['round'] ) . '</td>';
+                echo '<td style="padding:6px 8px;color:#ddd;">' . esc_html( $display ) . '</td>';
+                echo '<td style="padding:6px 8px;color:#ddd;">' . esc_html( $pick['fish_name'] ) . '</td>';
+                echo '<td style="padding:6px 8px;text-align:center;color:#ddd;">' . intval( $pick['qty'] ) . '</td>';
+                echo '</tr>';
+            }
+            echo '</tbody></table>';
+
+            $total_fish = array_sum( array_column( $lc_results['picks'], 'qty' ) );
+            echo '<p style="color:#aaa;font-size:12px;"><strong>' . count( $lc_results['picks'] ) . '</strong> picks &mdash; <strong>' . $total_fish . '</strong> fish distributed</p>';
+
+            echo '<div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">';
+            echo '<form method="post" action="' . $admin_post_url . '" style="margin:0;">';
+            wp_nonce_field( 'fishotel_advance_stage_nonce' );
+            echo '<input type="hidden" name="action" value="fishotel_advance_stage">';
+            echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+            echo '<input type="hidden" name="new_stage" value="invoicing">';
+            echo '<button type="submit" style="background:#27ae60;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;">Advance to Invoicing</button>';
+            echo '</form>';
+
+            echo '<form method="post" action="' . $admin_post_url . '" style="margin:0;" onsubmit="return confirm(\'Reset the draft? Clears all results and notifications.\');">';
+            wp_nonce_field( 'fishotel_reset_lastcall_nonce' );
+            echo '<input type="hidden" name="action" value="fishotel_reset_lastcall">';
+            echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+            echo '<button type="submit" style="background:#333;color:#e74c3c;font-weight:700;border:1px solid #e74c3c;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;">Reset Draft</button>';
+            echo '</form>';
+            echo '</div>';
         }
 
         echo '</div>';
+
+        } // end else (lc_is_open)
         endif; // lastcall tab
 
         echo '</div>'; // .wrap
@@ -3745,6 +3926,152 @@ trait FisHotel_Admin {
         ) );
 
         wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=lastcall&lastcall_reset=1' ) );
+        exit;
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Last Call: Update Settings (deadline/rounds)
+     * ───────────────────────────────────────────── */
+
+    public function lc_update_settings_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_lc_update_settings_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        if ( ! $batch_name ) wp_die( 'No batch specified.' );
+        $slug = sanitize_title( $batch_name );
+
+        if ( ! empty( $_POST['lc_deadline'] ) ) {
+            $ts = strtotime( $_POST['lc_deadline'] );
+            if ( $ts ) update_option( 'fishotel_lastcall_deadline_' . $slug, $ts );
+        }
+        if ( isset( $_POST['lc_rounds'] ) ) {
+            update_option( 'fishotel_lastcall_rounds', max( 1, min( 10, intval( $_POST['lc_rounds'] ) ) ) );
+        }
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=lastcall&updated=1' ) );
+        exit;
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Last Call: Pool — Update Qty
+     * ───────────────────────────────────────────── */
+
+    public function lc_pool_update_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_lc_pool_update_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        $idx        = intval( $_POST['pool_idx'] ?? -1 );
+        $qty        = max( 0, intval( $_POST['pool_qty'] ?? 0 ) );
+        $slug       = sanitize_title( $batch_name );
+        $pool       = get_option( 'fishotel_lastcall_pool_' . $slug, [] );
+
+        if ( isset( $pool[ $idx ] ) ) {
+            $pool[ $idx ]['pool_qty'] = $qty;
+            update_option( 'fishotel_lastcall_pool_' . $slug, $pool );
+        }
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=lastcall&updated=1' ) );
+        exit;
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Last Call: Pool — Remove Species
+     * ───────────────────────────────────────────── */
+
+    public function lc_pool_remove_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_lc_pool_remove_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        $idx        = intval( $_POST['pool_idx'] ?? -1 );
+        $slug       = sanitize_title( $batch_name );
+        $pool       = get_option( 'fishotel_lastcall_pool_' . $slug, [] );
+
+        if ( isset( $pool[ $idx ] ) ) {
+            array_splice( $pool, $idx, 1 );
+            update_option( 'fishotel_lastcall_pool_' . $slug, $pool );
+        }
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=lastcall&updated=1' ) );
+        exit;
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Last Call: Pool — Add Species
+     * ───────────────────────────────────────────── */
+
+    public function lc_pool_add_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_lc_pool_add_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        $fish_id    = intval( $_POST['add_fish_id'] ?? 0 );
+        $qty        = max( 1, intval( $_POST['add_qty'] ?? 1 ) );
+        $slug       = sanitize_title( $batch_name );
+
+        if ( $fish_id ) {
+            $pool = get_option( 'fishotel_lastcall_pool_' . $slug, [] );
+            $post = get_post( $fish_id );
+            $name = $post ? FisHotel_Batch_Manager::resolve_common_name( $fish_id, $post->post_title ) : 'Fish #' . $fish_id;
+            $pool[] = [
+                'fish_id'  => $fish_id,
+                'name'     => $name,
+                'pool_qty' => $qty,
+            ];
+            update_option( 'fishotel_lastcall_pool_' . $slug, $pool );
+        }
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=lastcall&updated=1' ) );
+        exit;
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Last Call: Draft Order — Move Up/Down
+     * ───────────────────────────────────────────── */
+
+    public function lc_order_move_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_lc_order_move_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        $pos        = intval( $_POST['pos'] ?? -1 );
+        $dir        = sanitize_text_field( $_POST['dir'] ?? '' );
+        $slug       = sanitize_title( $batch_name );
+        $order      = get_option( 'fishotel_lastcall_order_' . $slug, [] );
+
+        if ( $dir === 'up' && $pos > 0 && isset( $order[ $pos ] ) ) {
+            $tmp = $order[ $pos - 1 ];
+            $order[ $pos - 1 ] = $order[ $pos ];
+            $order[ $pos ] = $tmp;
+        } elseif ( $dir === 'down' && $pos < count( $order ) - 1 && isset( $order[ $pos ] ) ) {
+            $tmp = $order[ $pos + 1 ];
+            $order[ $pos + 1 ] = $order[ $pos ];
+            $order[ $pos ] = $tmp;
+        }
+
+        update_option( 'fishotel_lastcall_order_' . $slug, $order );
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=lastcall&updated=1' ) );
+        exit;
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Last Call: Close Window Early
+     * ───────────────────────────────────────────── */
+
+    public function lc_close_window_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_lc_close_window_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        $slug       = sanitize_title( $batch_name );
+
+        // Set deadline to now
+        update_option( 'fishotel_lastcall_deadline_' . $slug, time() );
+        update_option( 'fishotel_lastcall_window_expired_' . $slug, true );
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=lastcall&updated=1' ) );
         exit;
     }
 
