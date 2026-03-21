@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v6.34 - Last Call community reveal animation.
- * Version:           6.34
+ * Description:       v6.35 - Last Call notifications, cron, admin controls, invoicing stub.
+ * Version:           6.35
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '6.34' );
+define( 'FISHOTEL_VERSION', '6.35' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -138,6 +138,7 @@ class FisHotel_Batch_Manager {
         add_action( 'init', [$this, 'init'] );
         $this->hotel_program_init();
         add_action( 'fishotel_verification_cron', [$this, 'run_verification_cron'] );
+        add_action( 'fishotel_lastcall_cron',     [$this, 'run_lastcall_cron'] );
         add_action( 'admin_menu', [$this, 'add_admin_menu'] );
         add_action( 'admin_init', [$this, 'register_settings'] );
         add_action( 'rest_api_init', [$this, 'register_rest_routes'] );
@@ -167,7 +168,8 @@ class FisHotel_Batch_Manager {
         add_action( 'admin_post_fishotel_save_arrival_data',  [$this, 'save_arrival_data_handler'] );
         add_action( 'admin_post_fishotel_log_survival_entry', [$this, 'log_survival_entry_handler'] );
         add_action( 'admin_post_fishotel_save_graduation_data', [$this, 'save_graduation_data_handler'] );
-        add_action( 'admin_post_fishotel_open_lastcall', [$this, 'open_lastcall_handler'] );
+        add_action( 'admin_post_fishotel_open_lastcall',  [$this, 'open_lastcall_handler'] );
+        add_action( 'admin_post_fishotel_reset_lastcall', [$this, 'reset_lastcall_handler'] );
 
         add_action( 'wp_login', [$this, 'record_last_login'], 10, 2 );
 
@@ -1046,8 +1048,12 @@ register_activation_hook( __FILE__, function() {
     if ( ! wp_next_scheduled( 'fishotel_verification_cron' ) ) {
         wp_schedule_event( time(), 'hourly', 'fishotel_verification_cron' );
     }
+    if ( ! wp_next_scheduled( 'fishotel_lastcall_cron' ) ) {
+        wp_schedule_event( time(), 'hourly', 'fishotel_lastcall_cron' );
+    }
 } );
 
 register_deactivation_hook( __FILE__, function() {
     wp_clear_scheduled_hook( 'fishotel_verification_cron' );
+    wp_clear_scheduled_hook( 'fishotel_lastcall_cron' );
 } );

@@ -2573,6 +2573,26 @@ trait FisHotel_Shortcodes {
             return $this->render_last_call_page( $batch_name );
         }
 
+        // ─── Stage 7: Invoicing ──
+        if ( $status === 'invoicing' ) {
+            ob_end_clean();
+            $fonts_url = 'https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Special+Elite&display=swap';
+            ob_start();
+            ?>
+            <link href="<?php echo esc_url( $fonts_url ); ?>" rel="stylesheet">
+            <div style="max-width:680px;margin:40px auto;padding:40px;background:#f5f0e8;border:4px double #2e2418;text-align:center;font-family:'Courier New',monospace;color:#2e2418;color-scheme:light;">
+                <h2 style="font-family:'Oswald',sans-serif;letter-spacing:0.2em;color:#96885f;margin-top:0;">THE FISHOTEL</h2>
+                <p style="font-variant:small-caps;letter-spacing:0.15em;font-size:0.9rem;">Invoice Processing</p>
+                <hr style="border:none;border-top:1px solid #d6cfc2;margin:20px 0;">
+                <p style="font-family:'Special Elite',monospace;font-size:0.95rem;color:#555;line-height:1.6;">
+                    Your order is being finalized.<br>Invoice coming soon.
+                </p>
+                <p style="font-size:0.75rem;color:#998877;margin-top:24px;">THE FISHOTEL &middot; CHAMPLIN, MN &middot; EST. 2024</p>
+            </div>
+            <?php
+            return ob_get_clean();
+        }
+
         // ─── Stage 3b: Arrival tracking view (arrived + all post-arrived stages) ──
         $arrived_stages = [ 'arrived', 'in_quarantine', 'graduation', 'verification', 'draft', 'invoicing' ];
         if ( in_array( $status, $arrived_stages, true ) ) {

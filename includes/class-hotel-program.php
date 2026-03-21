@@ -3834,7 +3834,98 @@ trait FisHotel_HotelProgram {
         ];
 
         update_option( 'fishotel_lastcall_results_' . $slug, $results );
+
+        // Send notifications to customers who received picks
+        $this->send_lastcall_notifications( $batch_name, $picks );
+
         return $results;
+    }
+
+    /**
+     * Notify each customer who received at least one draft pick.
+     */
+    private function send_lastcall_notifications( $batch_name, $picks ) {
+        // Group picks by user
+        $by_user = [];
+        foreach ( $picks as $pick ) {
+            $uid = intval( $pick['user_id'] );
+            $by_user[ $uid ][] = $pick;
+        }
+
+        // Build batch page URL
+        $assignments = get_option( 'fishotel_batch_page_assignments', [] );
+        $page_slug   = $assignments[ $batch_name ] ?? '';
+        $page        = $page_slug ? get_page_by_path( $page_slug ) : null;
+        $batch_url   = $page ? get_permalink( $page->ID ) : home_url();
+
+        foreach ( $by_user as $uid => $user_picks ) {
+            $user = get_user_by( 'id', $uid );
+            if ( ! $user ) continue;
+
+            // Build pick list HTML
+            $pick_html = '<ul>';
+            foreach ( $user_picks as $p ) {
+                $pick_html .= '<li>' . esc_html( $p['fish_name'] ) . ' (Round ' . intval( $p['round'] ) . ')</li>';
+            }
+            $pick_html .= '</ul>';
+
+            // On-site notification
+            $message = 'Your Last Call picks for <strong>' . esc_html( $batch_name ) . '</strong> are in! '
+                     . $pick_html
+                     . '<a href="' . esc_url( $batch_url ) . '" style="color:#b5a165;text-decoration:underline;">View your results</a>.';
+
+            $notif_id = wp_insert_post( [
+                'post_type'    => 'fishotel_notification',
+                'post_title'   => (string) $uid,
+                'post_content' => $message,
+                'post_status'  => 'publish',
+            ] );
+            if ( $notif_id ) {
+                update_post_meta( $notif_id, '_fh_notif_user_id', $uid );
+                update_post_meta( $notif_id, '_fh_notif_batch',   $batch_name );
+                update_post_meta( $notif_id, '_fh_notif_type',    'lastcall_results' );
+                update_post_meta( $notif_id, '_fh_notif_read',    0 );
+                update_post_meta( $notif_id, '_fh_notif_created', time() );
+            }
+
+            // Email
+            $pick_text = '';
+            foreach ( $user_picks as $p ) {
+                $pick_text .= '  - ' . $p['fish_name'] . ' (Round ' . $p['round'] . ")\n";
+            }
+
+            $subject = 'Your Last Call results are in — ' . $batch_name;
+            $body    = "Hi " . $user->display_name . ",\n\n"
+                     . "The Last Call draft for " . $batch_name . " is complete!\n\n"
+                     . "Your picks:\n" . $pick_text . "\n"
+                     . "View your full results: " . $batch_url . "\n\n"
+                     . "— The FisHotel";
+
+            wp_mail( $user->user_email, $subject, $body );
+        }
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Last Call Cron — Auto-expire Wishlist Window
+     * ───────────────────────────────────────────── */
+
+    public function run_lastcall_cron() {
+        $statuses = get_option( 'fishotel_batch_statuses', [] );
+        $now      = time();
+
+        foreach ( $statuses as $batch_name => $status ) {
+            if ( $status !== 'draft' ) continue;
+
+            $slug     = sanitize_title( $batch_name );
+            $deadline = intval( get_option( 'fishotel_lastcall_deadline_' . $slug, 0 ) );
+            $results  = get_option( 'fishotel_lastcall_results_' . $slug, [] );
+            $expired  = get_option( 'fishotel_lastcall_window_expired_' . $slug, false );
+
+            // If deadline passed, no results yet, and not already flagged
+            if ( $deadline && $now > $deadline && empty( $results ) && ! $expired ) {
+                update_option( 'fishotel_lastcall_window_expired_' . $slug, true );
+            }
+        }
     }
 
     /**

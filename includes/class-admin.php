@@ -2915,6 +2915,7 @@ trait FisHotel_Admin {
         if ( isset( $_GET['survival_logged'] ) )  echo '<div class="notice notice-success is-dismissible"><p>Survival log entry added.</p></div>';
         if ( isset( $_GET['graduation_saved'] ) ) echo '<div class="notice notice-success is-dismissible"><p>Graduation counts saved.</p></div>';
         if ( isset( $_GET['lastcall_opened'] ) )  echo '<div class="notice notice-success is-dismissible"><p>Last Call opened! Draft pool and order have been built.</p></div>';
+        if ( isset( $_GET['lastcall_reset'] ) )   echo '<div class="notice notice-warning is-dismissible"><p>Draft results have been reset. You can re-run the draft.</p></div>';
 
         $tab = sanitize_text_field( $_GET['tab'] ?? 'arrival' );
         if ( ! in_array( $tab, [ 'arrival', 'tracker', 'graduation', 'lastcall' ], true ) ) $tab = 'arrival';
@@ -3420,6 +3421,34 @@ trait FisHotel_Admin {
                     echo '</tr>';
                 }
                 echo '</tbody></table>';
+
+                // Summary stats
+                $total_fish = array_sum( array_column( $lc_results['picks'], 'qty' ) );
+                echo '<p style="color:#aaa;font-size:12px;margin-top:12px;">';
+                echo '<strong>' . count( $lc_results['picks'] ) . '</strong> picks &mdash; <strong>' . $total_fish . '</strong> fish distributed';
+                echo '</p>';
+
+                // Action buttons
+                echo '<div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;">';
+
+                // Advance to Invoicing
+                echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="margin:0;">';
+                wp_nonce_field( 'fishotel_advance_stage_nonce' );
+                echo '<input type="hidden" name="action" value="fishotel_advance_stage">';
+                echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+                echo '<input type="hidden" name="new_stage" value="invoicing">';
+                echo '<button type="submit" style="background:#27ae60;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;">Advance to Invoicing</button>';
+                echo '</form>';
+
+                // Reset Draft (danger)
+                echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="margin:0;" onsubmit="return confirm(\'Reset the draft? This clears all results and notifications. Cannot be undone.\');">';
+                wp_nonce_field( 'fishotel_reset_lastcall_nonce' );
+                echo '<input type="hidden" name="action" value="fishotel_reset_lastcall">';
+                echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+                echo '<button type="submit" style="background:#333;color:#e74c3c;font-weight:700;border:1px solid #e74c3c;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;">Reset Draft</button>';
+                echo '</form>';
+
+                echo '</div>';
                 echo '</div>';
             }
         } else {
@@ -3673,6 +3702,49 @@ trait FisHotel_Admin {
         update_option( 'fishotel_batch_statuses', $statuses );
 
         wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=lastcall&lastcall_opened=1' ) );
+        exit;
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Reset Last Call Draft
+     * ───────────────────────────────────────────── */
+
+    public function reset_lastcall_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_reset_lastcall_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        if ( ! $batch_name ) wp_die( 'No batch specified.' );
+
+        $slug = sanitize_title( $batch_name );
+
+        // Clear results
+        delete_option( 'fishotel_lastcall_results_' . $slug );
+        delete_option( 'fishotel_lastcall_window_expired_' . $slug );
+
+        // Clear lastcall_results notifications for this batch
+        $notifs = get_posts( [
+            'post_type'      => 'fishotel_notification',
+            'numberposts'    => -1,
+            'post_status'    => 'any',
+            'meta_query'     => [
+                [ 'key' => '_fh_notif_batch', 'value' => $batch_name ],
+                [ 'key' => '_fh_notif_type',  'value' => 'lastcall_results' ],
+            ],
+        ] );
+        foreach ( $notifs as $n ) {
+            wp_delete_post( $n->ID, true );
+        }
+
+        // Clear seen-reveal user meta
+        global $wpdb;
+        $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$wpdb->usermeta} WHERE meta_key = %s",
+            'fishotel_lastcall_seen_reveal_' . $slug
+        ) );
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=lastcall&lastcall_reset=1' ) );
         exit;
     }
 
