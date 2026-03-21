@@ -3984,6 +3984,7 @@ trait FisHotel_Shortcodes {
         $ajax_url  = admin_url( 'admin-ajax.php' );
         $nonce     = wp_create_nonce( 'fishotel_lastcall_nonce' );
         $felt_url  = plugins_url( 'assists/casino/Felt-Table.jpg', FISHOTEL_PLUGIN_FILE );
+        $card_url  = plugins_url( 'assists/casino/FisHotel-Face-Card.png', FISHOTEL_PLUGIN_FILE );
 
         ob_start();
         ?>
@@ -4007,16 +4008,13 @@ trait FisHotel_Shortcodes {
             .fhlc-pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:32px;}
 
             /* ── Playing cards ── */
-            .fhlc-card{background:#faf8f2;border:1px solid #bbb;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.65),0 2px 4px rgba(0,0,0,0.3);color:#1a1a1a;position:relative;padding:28px 14px 14px;outline:3px solid #faf8f2;outline-offset:-7px;transition:transform 0.25s,box-shadow 0.25s;}
+            .fhlc-card{background:url('<?php echo esc_url( $card_url ); ?>') center center / cover;background-color:#faf8f2;border:none;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.65),0 2px 4px rgba(0,0,0,0.3);position:relative;padding:48px 18px 18px 18px;min-height:200px;color:#1a1a1a;transition:transform 0.25s,box-shadow 0.25s;}
             .fhlc-card:nth-child(odd){transform:rotate(-1.2deg);}
             .fhlc-card:nth-child(even){transform:rotate(1.5deg);}
             .fhlc-card:hover{transform:rotate(0deg) translateY(-6px);z-index:10;box-shadow:0 18px 50px rgba(0,0,0,0.75);}
-            .fhlc-card::before{font-size:20px;line-height:1;position:absolute;top:6px;left:9px;font-family:Georgia,serif;}
-            .fhlc-card:nth-child(odd)::before{content:'\2660';color:#111;}
-            .fhlc-card:nth-child(even)::before{content:'\2665';color:#b00;}
-            .fhlc-card::after{font-size:20px;line-height:1;position:absolute;bottom:6px;right:9px;font-family:Georgia,serif;transform:rotate(180deg);display:block;}
-            .fhlc-card:nth-child(odd)::after{content:'\2660';color:#111;}
-            .fhlc-card:nth-child(even)::after{content:'\2665';color:#b00;}
+            .fhlc-card-suit{position:absolute;top:30px;left:10px;font-size:16px;font-family:Georgia,serif;line-height:1;}
+            .fhlc-card:nth-child(odd) .fhlc-card-suit{color:#111;}
+            .fhlc-card:nth-child(even) .fhlc-card-suit{color:#b00;}
             .fhlc-card-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;letter-spacing:0.03em;line-height:1.2;margin:0 0 10px;}
             .fhlc-card:nth-child(odd) .fhlc-card-name{color:#111;}
             .fhlc-card:nth-child(even) .fhlc-card-name{color:#b00;}
@@ -4078,8 +4076,9 @@ trait FisHotel_Shortcodes {
             <?php if ( ! empty( $pool ) ) : ?>
             <h3 class="fhlc-pool-title">The Pool</h3>
             <div class="fhlc-pool">
-                <?php foreach ( $pool as $item ) : ?>
+                <?php foreach ( $pool as $ci => $item ) : ?>
                 <div class="fhlc-card" data-fish-id="<?php echo esc_attr( $item['fish_id'] ); ?>">
+                    <span class="fhlc-card-suit"><?php echo ( $ci % 2 === 0 ) ? '&#9824;' : '&#9829;'; ?></span>
                     <p class="fhlc-card-name"><?php echo esc_html( $item['name'] ); ?></p>
                     <div class="fhlc-card-row">
                         <span>Available</span>
