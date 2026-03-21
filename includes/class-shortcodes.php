@@ -3641,7 +3641,7 @@ trait FisHotel_Shortcodes {
             .fhf-preparing{text-align:center;padding:24px 16px;font-family:'Special Elite',monospace;font-style:italic;font-size:0.95rem;color:#665544;}
             /* Folio settled overlay */
             .fhf-settled-stamp{
-                position:absolute;top:45%;left:52%;transform:translate(-50%,-50%) rotate(-12deg) skewX(-2deg);text-align:center;line-height:1.15;
+                position:absolute;bottom:200px;left:50%;transform:translateX(-50%) rotate(-12deg) skewX(-2deg);text-align:center;line-height:1.15;
                 font-family:'Courier New',monospace;font-weight:700;font-size:clamp(0.9rem,3.2vw,1.6rem);
                 color:#8b0000;border:3px solid #8b0000;border-radius:4px;padding:6px 18px;letter-spacing:0.18em;
                 text-transform:uppercase;opacity:0.35;pointer-events:none;z-index:10;white-space:nowrap;
