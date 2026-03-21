@@ -80,8 +80,7 @@ trait FisHotel_HotelProgram {
                 'name'             => 'Welcome Reception',
                 'category_id'      => 'cat_arrival',
                 'time_of_day'      => 'morning',
-                'scene_type'       => 'lobby',
-                'scene_number'     => '01',
+                'scene_image'      => 'hotel-arrival-scene-01.jpg',
                 'postcard_message' => 'Your guests have arrived and are being personally escorted to their accommodations. Welcome to The FisHotel.',
                 'postmark_city'    => 'CHAMPLIN, MN',
                 'description'      => 'First day welcome reception at the lobby.',
@@ -91,8 +90,7 @@ trait FisHotel_HotelProgram {
                 'name'             => 'Checkout Day',
                 'category_id'      => 'cat_graduation',
                 'time_of_day'      => 'morning',
-                'scene_type'       => 'graduation',
-                'scene_number'     => '01',
+                'scene_image'      => 'hotel-graduation-scene-01.jpg',
                 'postcard_message' => 'After an exceptional stay, your fish have been cleared for departure. It has been our honor to host them.',
                 'postmark_city'    => 'CHAMPLIN, MN',
                 'description'      => 'Graduation day checkout.',
@@ -102,8 +100,7 @@ trait FisHotel_HotelProgram {
                 'name'             => 'Afternoon Poolside Lounging',
                 'category_id'      => 'cat_pool',
                 'time_of_day'      => 'afternoon',
-                'scene_type'       => 'pool',
-                'scene_number'     => '04',
+                'scene_image'      => 'hotel-pool-spa-scene-04.jpg',
                 'postcard_message' => 'Your fish are currently enjoying the thermal pools. Do not disturb.',
                 'postmark_city'    => 'CHAMPLIN, MN',
                 'description'      => 'Afternoon poolside relaxation with ocean breezes.',
@@ -113,8 +110,7 @@ trait FisHotel_HotelProgram {
                 'name'             => 'Evening at the Pool',
                 'category_id'      => 'cat_pool',
                 'time_of_day'      => 'evening',
-                'scene_type'       => 'pool',
-                'scene_number'     => '01',
+                'scene_image'      => 'hotel-pool-spa-scene-01.jpg',
                 'postcard_message' => 'As the sun sets over the FisHotel grounds, your guests are taking a final evening swim before dinner.',
                 'postmark_city'    => 'CHAMPLIN, MN',
                 'description'      => 'Evening swim session.',
@@ -224,9 +220,14 @@ trait FisHotel_HotelProgram {
 
     private function hotel_migrate_activity_scene( &$act ) {
         if ( ! empty( $act['scene_image'] ) ) return;
+        if ( empty( $act['scene_type'] ) && empty( $act['scene_number'] ) ) return;
         $type = $act['scene_type'] ?? 'lobby';
         $num  = str_pad( $act['scene_number'] ?? '01', 2, '0', STR_PAD_LEFT );
-        $act['scene_image'] = 'hotel-' . $type . '-scene-' . $num . '.jpg';
+        $candidate = 'hotel-' . $type . '-scene-' . $num . '.jpg';
+        $dir = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene/';
+        if ( file_exists( $dir . $candidate ) ) {
+            $act['scene_image'] = $candidate;
+        }
     }
 
     private function hotel_scan_scene_images() {
@@ -2013,6 +2014,8 @@ trait FisHotel_HotelProgram {
             'postmark_city'    => strtoupper( sanitize_text_field( $_POST['act_postmark_city'] ?? 'CHAMPLIN, MN' ) ),
             'description'      => sanitize_text_field( $_POST['act_description'] ?? '' ),
         ];
+        // $data intentionally omits scene_type/scene_number — full replacement
+        // below strips those legacy keys so migration never fires on saved activities.
 
         if ( $id ) {
             foreach ( $acts as &$a ) {
