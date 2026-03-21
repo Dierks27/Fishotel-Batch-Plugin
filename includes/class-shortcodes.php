@@ -4005,28 +4005,39 @@ trait FisHotel_Shortcodes {
 
             /* ── Pool grid ── */
             .fhlc-pool-title{color:rgba(255,255,255,0.75);letter-spacing:0.4em;font-family:'Oswald',sans-serif;font-size:11px;text-transform:uppercase;margin:0 0 16px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.15);}
-            .fhlc-pool{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:32px;}
+            .fhlc-pool{display:flex;flex-wrap:wrap;gap:20px;margin-bottom:32px;}
 
-            /* ── Playing cards ── */
-            .fhlc-card{width:120px;min-width:120px;min-height:168px;flex:0 0 120px;padding:32px 10px 32px 10px;background:url('<?php echo esc_url( $card_url ); ?>') center center;background-size:100% 100%;background-color:#faf8f2;box-sizing:border-box;border:none;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.65),0 2px 4px rgba(0,0,0,0.3);position:relative;color:#1a1a1a;transition:transform 0.25s,box-shadow 0.25s;}
+            /* ── Playing cards (absolute positioning) ── */
+            .fhlc-card{width:155px;height:240px;flex:0 0 155px;position:relative;overflow:hidden;padding:0;background:url('<?php echo esc_url( $card_url ); ?>') center center;background-size:100% 100%;background-color:#faf8f2;border:none;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.65);transition:transform 0.25s,box-shadow 0.25s;}
             .fhlc-card:nth-child(odd){transform:rotate(-1.2deg);}
             .fhlc-card:nth-child(even){transform:rotate(1.5deg);}
             .fhlc-card:hover{transform:rotate(0deg) translateY(-6px);z-index:10;box-shadow:0 18px 50px rgba(0,0,0,0.75);}
-            .fhlc-card-suit{position:absolute;top:22px;left:7px;font-size:12px;font-family:Georgia,serif;line-height:1;}
+            .fhlc-card-suit{position:absolute;top:26px;left:9px;font-size:13px;font-family:Georgia,serif;line-height:1;}
             .fhlc-card:nth-child(odd) .fhlc-card-suit{color:#111;}
             .fhlc-card:nth-child(even) .fhlc-card-suit{color:#b00;}
-            .fhlc-card-name{font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;line-height:1.2;margin:0 0 5px;}
+            .fhlc-card-name{position:absolute;top:42px;left:14px;right:14px;text-align:center;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;line-height:1.2;margin:0;}
             .fhlc-card:nth-child(odd) .fhlc-card-name{color:#111;}
             .fhlc-card:nth-child(even) .fhlc-card-name{color:#b00;}
-            .fhlc-card-row{display:flex;justify-content:space-between;align-items:center;color:#555;font-size:9px;font-family:'Courier New',monospace;margin-bottom:2px;}
-            .fhlc-card-qty{font-weight:700;color:#222;}
+            .fhlc-card-row{position:absolute;left:14px;right:14px;display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:#111;font-family:'Courier New',monospace;}
+            .fhlc-card-row.fhlc-row-avail{top:118px;}
+            .fhlc-card-row.fhlc-row-price{top:132px;}
+            .fhlc-card-qty{color:#111;}
             .fhlc-card:nth-child(even) .fhlc-card-qty{color:#b00;}
-            .fhlc-card-price{color:#444;}
-            .fhlc-card-add{display:block;width:calc(100% - 28px);margin:8px auto 0 auto;padding:6px 4px;font-size:9px;letter-spacing:0.05em;box-sizing:border-box;min-height:28px;text-transform:uppercase;font-family:'Oswald',sans-serif;border:none;border-radius:2px;cursor:pointer;text-align:center;}
+            .fhlc-card-price{color:#111;}
+            .fhlc-card-add{position:absolute;bottom:34px;left:18px;right:18px;padding:6px 0;font-size:10px;font-family:'Oswald',sans-serif;text-transform:uppercase;border:none;border-radius:6px;text-align:center;cursor:pointer;letter-spacing:0.05em;}
             .fhlc-card:nth-child(odd) .fhlc-card-add{background:#111;color:#faf8f2;}
             .fhlc-card:nth-child(even) .fhlc-card-add{background:#b00;color:#fff;}
             .fhlc-card-add.fhlc-added{background:#ddd;color:#aaa;cursor:default;pointer-events:none;}
-            @media (max-width:480px){.fhlc-pool{gap:12px;}.fhlc-card{width:120px;flex:0 0 120px;}}
+            @media (max-width:480px){
+                .fhlc-pool{gap:12px;}
+                .fhlc-card{width:130px;height:201px;flex:0 0 130px;}
+                .fhlc-card-suit{top:22px;left:8px;font-size:11px;}
+                .fhlc-card-name{top:35px;left:12px;right:12px;font-size:10px;}
+                .fhlc-card-row{left:12px;right:12px;font-size:9px;}
+                .fhlc-card-row.fhlc-row-avail{top:99px;}
+                .fhlc-card-row.fhlc-row-price{top:111px;}
+                .fhlc-card-add{bottom:29px;left:15px;right:15px;font-size:9px;padding:5px 0;}
+            }
 
             /* ── Wishlist ── */
             .fhlc-wl-title{color:#fff;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;text-shadow:0 1px 6px rgba(0,0,0,0.8);margin:0 0 8px;padding-bottom:8px;}
@@ -4082,18 +4093,18 @@ trait FisHotel_Shortcodes {
                 <div class="fhlc-card" data-fish-id="<?php echo esc_attr( $item['fish_id'] ); ?>">
                     <span class="fhlc-card-suit"><?php echo ( $ci % 2 === 0 ) ? '&#9824;' : '&#9829;'; ?></span>
                     <p class="fhlc-card-name"><?php echo esc_html( $item['name'] ); ?></p>
-                    <div class="fhlc-card-row">
+                    <div class="fhlc-card-row fhlc-row-avail">
                         <span>Available</span>
                         <span class="fhlc-card-qty"><?php echo intval( $item['pool_qty'] ); ?></span>
                     </div>
                     <?php if ( $item['price'] > 0 ) : ?>
-                    <div class="fhlc-card-row">
+                    <div class="fhlc-card-row fhlc-row-price">
                         <span>Price</span>
                         <span class="fhlc-card-price">$<?php echo number_format( $item['price'], 2 ); ?></span>
                     </div>
                     <?php endif; ?>
                     <?php if ( $window_open && $is_logged_in ) : ?>
-                    <button type="button" class="fhlc-card-add" data-fish-id="<?php echo esc_attr( $item['fish_id'] ); ?>" data-fish-name="<?php echo esc_attr( $item['name'] ); ?>">+ Add to Wishlist</button>
+                    <button type="button" class="fhlc-card-add" data-fish-id="<?php echo esc_attr( $item['fish_id'] ); ?>" data-fish-name="<?php echo esc_attr( $item['name'] ); ?>">+ Request</button>
                     <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
@@ -4489,7 +4500,7 @@ trait FisHotel_Shortcodes {
                         btn.textContent = '\u2713 Added';
                     } else {
                         btn.classList.remove('fhlc-added');
-                        btn.textContent = '+ Add to Wishlist';
+                        btn.textContent = '+ Request';
                     }
                 });
             }
