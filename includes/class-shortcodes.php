@@ -3641,7 +3641,7 @@ trait FisHotel_Shortcodes {
             .fhf-preparing{text-align:center;padding:24px 16px;font-family:'Special Elite',monospace;font-style:italic;font-size:0.95rem;color:#665544;}
             /* Folio settled overlay */
             .fhf-settled-stamp{
-                position:absolute;top:48%;left:52%;transform:translate(-50%,-50%) rotate(-12deg) skewX(-2deg);
+                position:absolute;top:45%;left:52%;transform:translate(-50%,-50%) rotate(-12deg) skewX(-2deg);text-align:center;line-height:1.15;
                 font-family:'Courier New',monospace;font-weight:700;font-size:clamp(0.9rem,3.2vw,1.6rem);
                 color:#8b0000;border:3px solid #8b0000;border-radius:4px;padding:6px 18px;letter-spacing:0.18em;
                 text-transform:uppercase;opacity:0.35;pointer-events:none;z-index:10;white-space:nowrap;
@@ -3671,6 +3671,9 @@ trait FisHotel_Shortcodes {
             .fhf-wrap .fhf-colophon{color:#998877 !important;}
             .fhf-wrap .fhf-preparing{color:#665544 !important;}
             .fhf-wrap .fhf-error{color:#8b0000 !important;}
+            /* Tighten spacing */
+            .fhf-wrap .fhf-body{min-height:0 !important;padding-bottom:16px !important;}
+            .fhf-wrap .fhf-footer{padding-top:16px !important;padding-bottom:20px !important;}
             /* Table header text */
             .fhf-wrap .fhf-table thead th{color:#1a0f00 !important;font-weight:700 !important;letter-spacing:0.12em !important;}
             /* Mobile */
@@ -3690,7 +3693,7 @@ trait FisHotel_Shortcodes {
                 <div class="fhf-punch fhf-punch-r"></div>
 
                 <?php if ( $all_resolved ) : ?>
-                    <div class="fhf-settled-stamp">Charges Confirmed</div>
+                    <div class="fhf-settled-stamp">Charges<br>Confirmed</div>
                 <?php endif; ?>
 
                 <!-- Header -->
