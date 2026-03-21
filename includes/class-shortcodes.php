@@ -3432,25 +3432,59 @@ trait FisHotel_Shortcodes {
 
         // ── Not logged in ──
         if ( ! is_user_logged_in() ) {
+            $login_url = wp_login_url( get_permalink() );
             ?>
             <link href="<?php echo esc_url( $fonts_url ); ?>" rel="stylesheet">
             <style>
-                .fhf-login-wrap{max-width:680px;margin:40px auto;position:relative;}
+                .fhf-login-wrap{max-width:680px;margin:40px auto;position:relative;color-scheme:light !important;}
                 .fhf-login-doc{background:#f5f0e8;border:4px double #2e2418;padding:60px 40px;text-align:center;position:relative;filter:blur(3px);pointer-events:none;min-height:300px;
                     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");}
+                .fhf-login-doc p{color:#2e2418 !important;}
+                .fhf-login-doc .fhf-login-title{color:#96885f !important;}
                 .fhf-login-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;}
-                .fhf-login-overlay p{font-family:'Special Elite',monospace;font-size:clamp(0.85rem,2.5vw,1.1rem);color:#2e2418;text-transform:uppercase;letter-spacing:0.1em;text-align:center;margin:0 0 20px;max-width:400px;}
-                .fhf-login-btn{background:#2e2418;color:#f5f0e8;font-family:'Oswald',sans-serif;font-weight:700;font-size:0.9rem;padding:12px 36px;border:none;cursor:pointer;text-transform:uppercase;letter-spacing:0.08em;}
-                .fhf-login-btn:hover{background:#4a3a28;}
+                .fhf-login-heading{font-family:'Courier New',monospace;font-size:clamp(0.8rem,2.2vw,1rem);color:#2e2418 !important;text-transform:uppercase;letter-spacing:0.12em;font-variant:small-caps;text-align:center;margin:0 0 20px;max-width:420px;line-height:1.6;}
+                .fhf-login-btn{display:inline-block;background:#2e2418;color:#f5f0e8 !important;font-family:'Courier New',monospace;font-weight:700;font-size:0.85rem;padding:12px 40px;text-decoration:none;text-transform:uppercase;letter-spacing:0.1em;border:2px solid #2e2418;cursor:pointer;transition:background 0.2s;}
+                .fhf-login-btn:hover{background:#4a3a28;color:#f5f0e8 !important;}
+                .fhf-login-note{font-family:'Special Elite',monospace;font-size:0.72rem;color:#998877 !important;text-align:center;margin:16px 0 0;max-width:360px;}
+                #fhf-login-modal input:-webkit-autofill,
+                #fhf-login-modal input:-webkit-autofill:hover,
+                #fhf-login-modal input:-webkit-autofill:focus {
+                    -webkit-box-shadow: 0 0 0 1000px #071420 inset !important;
+                    -webkit-text-fill-color: #e8dcc0 !important;
+                    caret-color: #e8dcc0;
+                }
             </style>
             <div class="fhf-login-wrap">
                 <div class="fhf-login-doc">
-                    <p style="font-family:'Oswald',sans-serif;color:#96885f;font-size:1.5rem;letter-spacing:0.12em;font-weight:700;">THE FISHOTEL</p>
-                    <p style="font-family:'Courier New',monospace;color:#2e2418;font-size:0.8rem;font-variant:small-caps;letter-spacing:0.15em;">Guest Folio</p>
+                    <p class="fhf-login-title" style="font-family:'Oswald',sans-serif;font-size:1.5rem;letter-spacing:0.12em;font-weight:700;">THE FISHOTEL</p>
+                    <p style="font-family:'Courier New',monospace;font-size:0.8rem;font-variant:small-caps;letter-spacing:0.15em;">Guest Folio</p>
+                    <div style="margin-top:30px;height:40px;border-bottom:1px solid #d6cfc2;"></div>
+                    <div style="display:flex;justify-content:space-between;padding:12px 20px;font-family:'Courier New',monospace;font-size:0.7rem;color:#998877;">
+                        <span>GUEST: ____________</span><span>BATCH: ____________</span>
+                    </div>
+                    <div style="margin-top:20px;height:80px;border:1px solid #d6cfc2;"></div>
                 </div>
                 <div class="fhf-login-overlay">
-                    <p>Please identify yourself at the front desk</p>
-                    <button type="button" class="fhf-login-btn" onclick="document.getElementById('fishotel-login-modal').style.display='flex'">Log In</button>
+                    <p class="fhf-login-heading">Please identify yourself at the front desk</p>
+                    <button type="button" class="fhf-login-btn" onclick="document.getElementById('fhf-login-modal').style.display='flex'">Log In</button>
+                    <p class="fhf-login-note">Don't have an account? This is a members-only process.</p>
+                </div>
+            </div>
+            <!-- ===== Folio Login Modal — GATE ACCESS REQUIRED ===== -->
+            <div id="fhf-login-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(4,12,22,0.95);z-index:9999;align-items:center;justify-content:center;">
+                <div style="background:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E&quot;),linear-gradient(165deg,#071420 0%,#060f1a 50%,#040c15 100%);background-size:150px 150px,cover;border:1px solid rgba(181,161,101,0.4);border-radius:3px;box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 0 1px rgba(181,161,101,0.1);padding:36px 40px 32px;width:400px;max-width:92%;color:#fff;position:relative;overflow:hidden;">
+                    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#b5a165 20%,#d4bc7e 50%,#b5a165 80%,transparent);"></div>
+                    <h3 style="margin:0 0 24px;font-family:'Special Elite',monospace;font-size:13px;letter-spacing:0.3em;color:#d4bc7e;text-transform:uppercase;text-align:center;">Gate Access Required</h3>
+                    <form method="post" action="<?php echo esc_url( $login_url ); ?>">
+                        <?php wp_nonce_field( 'fishotel_login', 'fishotel_login_nonce' ); ?>
+                        <input type="hidden" name="redirect_to" value="<?php echo esc_url( get_permalink() ); ?>">
+                        <input type="hidden" name="rememberme" value="forever">
+                        <p><input type="text" name="log" placeholder="USERNAME OR EMAIL" autocomplete="username" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(181,161,101,0.3);color:#e8dcc0;font-family:'Special Elite',monospace;letter-spacing:0.05em;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(181,161,101,0.7)';this.style.background='rgba(255,255,255,0.09)';this.style.outline='none'" onblur="this.style.borderColor='rgba(181,161,101,0.3)';this.style.background='rgba(255,255,255,0.06)'"></p>
+                        <p><input type="password" name="pwd" placeholder="PASSWORD" autocomplete="current-password" style="width:100%;padding:11px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(181,161,101,0.3);color:#e8dcc0;font-family:'Special Elite',monospace;letter-spacing:0.05em;box-sizing:border-box;" onfocus="this.style.borderColor='rgba(181,161,101,0.7)';this.style.background='rgba(255,255,255,0.09)';this.style.outline='none'" onblur="this.style.borderColor='rgba(181,161,101,0.3)';this.style.background='rgba(255,255,255,0.06)'"></p>
+                        <p><button type="submit" style="width:100%;padding:12px;background:rgba(181,161,101,0.22);border:1.5px solid #d4bc7e;color:#f0e0a0;font-family:'Special Elite',monospace;font-size:12px;letter-spacing:0.25em;text-transform:uppercase;cursor:pointer;box-shadow:0 0 18px rgba(181,161,101,0.15);" onmouseover="this.style.background='rgba(181,161,101,0.32)'" onmouseout="this.style.background='rgba(181,161,101,0.22)'">&#x2726; LOG IN &#x2726;</button></p>
+                        <p style="text-align:center;margin:15px 0 0 0;"><a href="<?php echo esc_url( wp_lostpassword_url() ); ?>" style="color:rgba(212,188,126,0.5);font-family:'Special Elite',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;text-decoration:none;" onmouseover="this.style.color='#d4bc7e'" onmouseout="this.style.color='rgba(212,188,126,0.5)'">Forgot Password?</a></p>
+                    </form>
+                    <button onclick="document.getElementById('fhf-login-modal').style.display='none'" style="position:absolute;top:14px;right:16px;background:none;border:none;color:rgba(212,188,126,0.5);font-size:18px;cursor:pointer;" onmouseover="this.style.color='#d4bc7e'" onmouseout="this.style.color='rgba(212,188,126,0.5)'">&#x2715;</button>
                 </div>
             </div>
             <?php
