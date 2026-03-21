@@ -3610,6 +3610,19 @@ trait FisHotel_Shortcodes {
                 color:#2e5e2e;border:6px double #2e5e2e;padding:10px 40px;letter-spacing:0.15em;
                 text-transform:uppercase;opacity:0.25;pointer-events:none;z-index:10;white-space:nowrap;
             }
+            /* Dark theme overrides — force cream paper aesthetic */
+            .fhf-wrap .fhf-table th{background:#d4c9a8 !important;color:#2e2418 !important;}
+            .fhf-wrap .fhf-table td{background:transparent !important;color:#2e2418 !important;}
+            .fhf-wrap .fhf-table tr:nth-child(even) td{background:#ede4d0 !important;}
+            .fhf-wrap .fhf-table thead tr{background:#d4c9a8 !important;}
+            .fhf-wrap .fhf-doc,.fhf-wrap .fhf-header,.fhf-wrap .fhf-body,.fhf-wrap .fhf-footer{background-color:transparent !important;color:#2e2418 !important;}
+            .fhf-wrap .fhf-stamp-confirmed{color:#2e5e2e !important;border-color:#2e5e2e !important;}
+            .fhf-wrap .fhf-stamp-yourturn{color:#1a3a5c !important;border-color:#1a3a5c !important;}
+            .fhf-wrap .fhf-stamp-waiting{color:#96885f !important;border-color:#96885f !important;}
+            .fhf-wrap .fhf-stamp-passed{color:#999 !important;border-color:#bbb !important;}
+            .fhf-wrap a,.fhf-wrap strong{color:#2e2418 !important;}
+            /* Logo */
+            .fhf-logo{display:block;width:48px;height:48px;margin:0 auto 6px;filter:brightness(0) saturate(100%);}
             /* Mobile */
             @media(max-width:600px){
                 .fhf-doc{border-width:3px;}
@@ -3635,6 +3648,7 @@ trait FisHotel_Shortcodes {
                     <span class="fhf-form-ref fhf-form-left">FORM FH-GF-001</span>
                     <span class="fhf-form-ref fhf-form-right">COPY 1 &mdash; GUEST</span>
                     <p class="fhf-hotel-name">The FisHotel</p>
+                    <img class="fhf-logo" src="<?php echo esc_url( plugins_url( 'assists/Small-Fish-Hotel-White.png', FISHOTEL_PLUGIN_FILE ) ); ?>" alt="FisHotel">
                     <p class="fhf-subtitle">Guest Folio</p>
                     <div class="fhf-guest-row">
                         <span>GUEST: <strong><?php echo esc_html( strtoupper( $guest_name ) ); ?></strong></span>
