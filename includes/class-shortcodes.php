@@ -3688,7 +3688,7 @@ trait FisHotel_Shortcodes {
                 <div class="fhf-punch fhf-punch-r"></div>
 
                 <?php if ( $all_resolved ) : ?>
-                    <div class="fhf-settled-stamp">Folio Settled</div>
+                    <div class="fhf-settled-stamp">Charges Confirmed</div>
                 <?php endif; ?>
 
                 <!-- Header -->
@@ -3756,6 +3756,8 @@ trait FisHotel_Shortcodes {
 
                 <!-- Footer -->
                 <div class="fhf-footer">
+                    <hr style="border:none;border-top:1px solid #d6cfc2;margin:0 0 12px;">
+                    <p style="font-family:'Courier New',monospace;font-variant:small-caps;font-size:11px;color:#2e2418;text-align:center;letter-spacing:0.1em;margin:0 0 14px;">Charges to Date &mdash; Enjoy the Remainder of Your Stay at The FisHotel</p>
                     <p class="fhf-sig-line">GUEST SIGNATURE <span class="fhf-sig-underline"></span></p>
                     <?php if ( $has_action ) : ?>
                         <p class="fhf-respond" style="color:#2e2418;">PLEASE RESPOND AT YOUR EARLIEST CONVENIENCE</p>
