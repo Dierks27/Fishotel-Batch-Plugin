@@ -61,7 +61,11 @@ trait FisHotel_HotelProgram {
 
     private function hotel_seed_defaults() {
         $cats = get_option( 'fishotel_hotel_categories', [] );
-        if ( ! empty( $cats ) ) return;
+        if ( ! empty( $cats ) ) {
+            // Existing install — migrate activities that still carry legacy scene_type/scene_number
+            $this->hotel_migrate_legacy_activities();
+            return;
+        }
 
         $default_cats = [
             [ 'id' => 'cat_arrival',    'name' => 'ARRIVAL',    'color' => '#1a3a5c', 'exclude_random' => true,  'label' => 'ARRIVAL' ],
@@ -117,6 +121,38 @@ trait FisHotel_HotelProgram {
             ],
         ];
         update_option( 'fishotel_hotel_activities', $default_acts );
+    }
+
+    /**
+     * One-time migration: strip legacy scene_type/scene_number from stored
+     * activities and set scene_image where missing. Runs once per version bump.
+     */
+    private function hotel_migrate_legacy_activities() {
+        $migrated_key = 'fishotel_activities_migrated';
+        if ( get_option( $migrated_key ) === FISHOTEL_VERSION ) return;
+
+        $acts    = get_option( 'fishotel_hotel_activities', [] );
+        $changed = false;
+
+        foreach ( $acts as &$act ) {
+            if ( ! isset( $act['scene_type'] ) && ! isset( $act['scene_number'] ) ) continue;
+
+            // Build scene_image from legacy keys if not already set
+            if ( empty( $act['scene_image'] ) ) {
+                $type = $act['scene_type'] ?? 'lobby';
+                $num  = str_pad( $act['scene_number'] ?? '01', 2, '0', STR_PAD_LEFT );
+                $act['scene_image'] = 'hotel-' . $type . '-scene-' . $num . '.jpg';
+            }
+
+            unset( $act['scene_type'], $act['scene_number'] );
+            $changed = true;
+        }
+        unset( $act );
+
+        if ( $changed ) {
+            update_option( 'fishotel_hotel_activities', $acts );
+        }
+        update_option( $migrated_key, FISHOTEL_VERSION );
     }
 
     /* ─────────────────────────────────────────────
@@ -316,8 +352,7 @@ trait FisHotel_HotelProgram {
                 'name'             => 'Welcome Reception',
                 'category_id'      => 'cat_arrival',
                 'time_of_day'      => 'morning',
-                'scene_type'       => 'lobby',
-                'scene_number'     => '01',
+                'scene_image'      => 'hotel-arrival-scene-01.jpg',
                 'postcard_message' => 'Your guests have arrived and are being personally escorted to their accommodations. Welcome to The FisHotel.',
                 'postmark_city'    => 'CHAMPLIN, MN',
                 'description'      => 'Check-in day.',
@@ -330,8 +365,7 @@ trait FisHotel_HotelProgram {
                 'name'             => 'Checkout Day',
                 'category_id'      => 'cat_graduation',
                 'time_of_day'      => 'morning',
-                'scene_type'       => 'graduation',
-                'scene_number'     => '01',
+                'scene_image'      => 'hotel-graduation-scene-01.jpg',
                 'postcard_message' => 'After an exceptional stay, your fish have been cleared for departure. It has been our honor to host them.',
                 'postmark_city'    => 'CHAMPLIN, MN',
                 'description'      => 'Graduation day.',
@@ -374,8 +408,7 @@ trait FisHotel_HotelProgram {
             'name'             => 'Settling In',
             'category_id'      => '',
             'time_of_day'      => 'morning',
-            'scene_type'       => 'lobby',
-            'scene_number'     => '01',
+            'scene_image'      => '',
             'postcard_message' => 'Your guests are settling into their rooms at The FisHotel. More activities coming soon!',
             'postmark_city'    => 'CHAMPLIN, MN',
             'description'      => 'Default placeholder.',
@@ -451,15 +484,20 @@ trait FisHotel_HotelProgram {
 
         $activity = $this->hotel_get_resolved_activity( $batch_name, $day_number );
         $this->hotel_migrate_activity_scene( $activity );
-        $scene_image = $activity['scene_image'] ?? 'hotel-lobby-scene-01.jpg';
-        $parsed      = $this->hotel_parse_scene_image( $scene_image );
-        $scene_data  = $this->hotel_scene_url( $parsed['scene_type'], $parsed['scene_number'] );
-        // DEBUG — remove after diagnosis
-        echo '<!-- FH_DEBUG scene_image=' . esc_html( $scene_image ) . ' parsed_type=' . esc_html( $parsed['scene_type'] ) . ' parsed_num=' . esc_html( $parsed['scene_number'] ) . ' scene_data=' . ( $scene_data ? $scene_data['url'] : 'FALSE' ) . ' -->';
-        $scene_url   = $scene_data ? $scene_data['url'] : false;
-        $scene_urls_by_band = $this->hotel_scene_urls_by_band( $parsed['scene_type'], $parsed['scene_number'] );
-        $scene_slug  = $parsed['scene_type'] . '-scene-' . $parsed['scene_number'];
-        $layer_config = $this->hotel_get_layer_config( $scene_slug );
+        $scene_image = $activity['scene_image'] ?? '';
+        if ( $scene_image ) {
+            $parsed           = $this->hotel_parse_scene_image( $scene_image );
+            $scene_data       = $this->hotel_scene_url( $parsed['scene_type'], $parsed['scene_number'] );
+            $scene_url        = $scene_data['url'];
+            $scene_urls_by_band = $this->hotel_scene_urls_by_band( $parsed['scene_type'], $parsed['scene_number'] );
+            $scene_slug       = $parsed['scene_type'] . '-scene-' . $parsed['scene_number'];
+            $layer_config     = $this->hotel_get_layer_config( $scene_slug );
+        } else {
+            $scene_url          = false;
+            $scene_urls_by_band = [];
+            $scene_slug         = '';
+            $layer_config       = [];
+        }
 
         $postcard_message = esc_html( $activity['postcard_message'] ?? '' );
         $activity_name    = esc_html( $activity['name'] ?? '' );

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v6.16 - Remove file_exists from hotel_scene_url, always return URL.
- * Version:           6.16
+ * Description:       v6.17 - Migrate legacy scene_type/scene_number from stored activities.
+ * Version:           6.17
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '6.16' );
+define( 'FISHOTEL_VERSION', '6.17' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
