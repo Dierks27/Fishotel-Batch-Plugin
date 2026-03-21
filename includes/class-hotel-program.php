@@ -2226,23 +2226,17 @@ trait FisHotel_HotelProgram {
         .fh-st-add input{padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;width:180px}
         </style>
 
-        <!-- Scene Types Manager -->
-        <a class="fh-st-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'▾ Hide Scene Types':'▸ Manage Scene Types'">▸ Manage Scene Types</a>
-        <div class="fh-st-manager" id="fh-st-manager" data-nonce="<?php echo esc_attr( wp_create_nonce( 'fishotel_scene_types' ) ); ?>">
+        <!-- Scene Types (derived from Categories tab) -->
+        <a class="fh-st-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'▾ Hide Scene Types':'▸ Scene Types'">▸ Scene Types</a>
+        <div class="fh-st-manager" id="fh-st-manager">
             <div class="fh-st-list" id="fh-st-list">
                 <?php foreach ( $scene_types as $st ) : ?>
                     <span class="fh-st-tag" data-type="<?php echo esc_attr( $st ); ?>">
                         <?php echo esc_html( $st ); ?>
-                        <button type="button" onclick="fhStRemove(this)" title="Remove">&times;</button>
                     </span>
                 <?php endforeach; ?>
             </div>
-            <div class="fh-st-add">
-                <input type="text" id="fh-st-new" placeholder="new-scene-type" pattern="[a-z0-9\-]+">
-                <button type="button" class="button button-small" onclick="fhStAdd()">Add Scene Type</button>
-            </div>
-            <button type="button" class="button button-primary button-small" onclick="fhStSave()">Save Scene Types</button>
-            <span id="fh-st-status" style="margin-left:10px;font-size:12px;color:#46b450;display:none;"></span>
+            <p style="font-size:11px;color:#888;margin:6px 0 0;">Scene types are derived from the <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-hotel-program&tab=categories' ) ); ?>">Categories tab</a>. Add or rename categories there to update this list.</p>
         </div>
 
         <div class="fh-layer-scene-tabs">
@@ -2443,52 +2437,7 @@ trait FisHotel_HotelProgram {
                 list.appendChild(formEl);
             };
 
-            /* ── Scene Types manager ── */
-            window.fhStRemove = function(btn) {
-                var tag = btn.closest('.fh-st-tag');
-                var type = tag.dataset.type;
-                var configs = <?php echo wp_json_encode( $all_configs ); ?>;
-                if (configs[type] && configs[type].length) {
-                    if (!confirm('Scene type "' + type + '" has ' + configs[type].length + ' layer(s). Remove anyway?')) return;
-                }
-                tag.remove();
-            };
-
-            window.fhStAdd = function() {
-                var inp = document.getElementById('fh-st-new');
-                var val = inp.value.trim().toLowerCase().replace(/[^a-z0-9\-]/g, '');
-                if (!val) { alert('Enter a valid scene type (lowercase, alphanumeric, hyphens).'); return; }
-                var existing = Array.from(document.querySelectorAll('.fh-st-tag')).map(function(t){ return t.dataset.type; });
-                if (existing.indexOf(val) !== -1) { alert('Scene type "' + val + '" already exists.'); return; }
-                var list = document.getElementById('fh-st-list');
-                var span = document.createElement('span');
-                span.className = 'fh-st-tag';
-                span.dataset.type = val;
-                span.innerHTML = val + ' <button type="button" onclick="fhStRemove(this)" title="Remove">&times;</button>';
-                list.appendChild(span);
-                inp.value = '';
-            };
-
-            window.fhStSave = function() {
-                var types = Array.from(document.querySelectorAll('.fh-st-tag')).map(function(t){ return t.dataset.type; });
-                if (!types.length) { alert('Must have at least one scene type.'); return; }
-                var fd = new FormData();
-                fd.append('action', 'fishotel_save_scene_types');
-                fd.append('nonce', document.getElementById('fh-st-manager').dataset.nonce);
-                fd.append('scene_types', JSON.stringify(types));
-                fetch(ajaxurl, { method: 'POST', body: fd, credentials: 'same-origin' })
-                    .then(function(r){ return r.json(); })
-                    .then(function(r){
-                        if (r.success) {
-                            var st = document.getElementById('fh-st-status');
-                            st.textContent = 'Saved! Reloading…';
-                            st.style.display = '';
-                            setTimeout(function(){ window.location.reload(); }, 800);
-                        } else {
-                            alert(r.data && r.data.message || 'Save failed.');
-                        }
-                    });
-            };
+            /* Scene Types manager removed — scene types now derived from Categories tab */
 
             window.fhLayerShowOnAll = function(cb) {
                 var form = cb.closest('.fh-layer-edit-form');
@@ -2683,12 +2632,19 @@ trait FisHotel_HotelProgram {
      * ───────────────────────────────────────────── */
 
     private function hotel_get_scene_types() {
-        $defaults = [ 'pool', 'lobby', 'spa', 'dining', 'beach', 'bar', 'suite', 'graduation', 'morning', 'night' ];
-        $types = get_option( 'fishotel_scene_types', $defaults );
-        if ( ! is_array( $types ) || empty( $types ) ) {
-            return $defaults;
+        $cats  = get_option( 'fishotel_hotel_categories', [] );
+        $types = [];
+        foreach ( $cats as $cat ) {
+            $slug = sanitize_title( $cat['name'] ?? '' );
+            if ( $slug && ! in_array( $slug, $types, true ) ) {
+                $types[] = $slug;
+            }
         }
-        return array_values( $types );
+        if ( ! empty( $types ) ) {
+            return $types;
+        }
+        // Fallback if no categories exist yet
+        return [ 'pool', 'lobby', 'spa', 'dining', 'beach', 'bar', 'suite', 'graduation' ];
     }
 
     /* ═════════════════════════════════════════════
