@@ -4018,16 +4018,18 @@ trait FisHotel_Shortcodes {
             .fhlc-card-name{position:absolute;top:42px;left:14px;right:14px;text-align:center;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;line-height:1.2;margin:0;}
             .fhlc-card:nth-child(odd) .fhlc-card-name{color:#111;}
             .fhlc-card:nth-child(even) .fhlc-card-name{color:#b00;}
-            .fhlc-card-row{position:absolute;left:14px;right:14px;display:flex;gap:6px;font-size:10px;font-weight:700;color:#111;font-family:'Courier New',monospace;}
+            .fhlc-card-row{position:absolute;left:14px;right:14px;display:flex;gap:6px;justify-content:center;font-size:11px;font-weight:700;color:#111;font-family:'Courier New',monospace;}
             .fhlc-card-row.fhlc-row-avail{top:118px;}
             .fhlc-card-row.fhlc-row-price{top:132px;}
             .fhlc-card-qty{color:#111;}
             .fhlc-card:nth-child(even) .fhlc-card-qty{color:#b00;}
             .fhlc-card-price{color:#111;}
-            .fhlc-card-add{position:absolute;bottom:34px;left:24px;right:24px;padding:6px 0;font-size:10px;font-family:'Oswald',sans-serif;text-transform:uppercase;border:none;border-radius:6px;text-align:center;cursor:pointer;letter-spacing:0.05em;}
-            .fhlc-card:nth-child(odd) .fhlc-card-add{background:#111;color:#faf8f2;}
-            .fhlc-card:nth-child(even) .fhlc-card-add{background:#b00;color:#fff;}
-            .fhlc-card-add.fhlc-added{background:#ddd;color:#aaa;cursor:default;pointer-events:none;}
+            .fhlc-card-add{position:absolute;bottom:34px;left:26px;right:26px;padding:4px 0;font-size:9px;font-family:'Courier New',monospace;text-transform:uppercase;background:transparent;border-radius:4px;text-align:center;cursor:pointer;letter-spacing:0.06em;font-weight:600;transition:background 0.2s,color 0.2s;}
+            .fhlc-card:nth-child(odd) .fhlc-card-add{color:#111;border:1px solid #111;}
+            .fhlc-card:nth-child(odd) .fhlc-card-add:hover{background:#111;color:#faf8f2;}
+            .fhlc-card:nth-child(even) .fhlc-card-add{color:#b00;border:1px solid #b00;}
+            .fhlc-card:nth-child(even) .fhlc-card-add:hover{background:#b00;color:#fff;}
+            .fhlc-card-add.fhlc-added{background:transparent;color:#bbb;border-color:#ccc;cursor:default;pointer-events:none;}
             @media (max-width:480px){
                 .fhlc-pool{gap:12px;}
                 .fhlc-card{width:130px;height:201px;flex:0 0 130px;}
@@ -4036,7 +4038,7 @@ trait FisHotel_Shortcodes {
                 .fhlc-card-row{left:12px;right:12px;font-size:9px;}
                 .fhlc-card-row.fhlc-row-avail{top:99px;}
                 .fhlc-card-row.fhlc-row-price{top:111px;}
-                .fhlc-card-add{bottom:29px;left:20px;right:20px;font-size:9px;padding:5px 0;}
+                .fhlc-card-add{bottom:29px;left:22px;right:22px;font-size:8px;padding:3px 0;}
             }
 
             /* ── Wishlist ── */
