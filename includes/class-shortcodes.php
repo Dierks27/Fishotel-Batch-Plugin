@@ -3531,10 +3531,10 @@ trait FisHotel_Shortcodes {
         <link href="<?php echo esc_url( $fonts_url ); ?>" rel="stylesheet">
         <style>
             /* ── Folio document ── */
-            .fhf-wrap{max-width:680px;margin:40px auto;position:relative;}
+            .fhf-wrap{max-width:680px;margin:40px auto;position:relative;color-scheme:light !important;background:#f5f0e8 !important;color:#2e2418 !important;}
             .fhf-doc{
-                background:#f5f0e8;background-image:<?php echo $paper_bg; ?>;
-                border:4px double #2e2418;padding:0;position:relative;overflow:hidden;
+                background:#f5f0e8 !important;background-image:<?php echo $paper_bg; ?> !important;
+                border:4px double #2e2418;padding:0;position:relative;overflow:hidden;color:#2e2418 !important;
             }
             /* Coffee ring stain */
             .fhf-doc::after{
@@ -3610,19 +3610,28 @@ trait FisHotel_Shortcodes {
                 color:#2e5e2e;border:6px double #2e5e2e;padding:10px 40px;letter-spacing:0.15em;
                 text-transform:uppercase;opacity:0.25;pointer-events:none;z-index:10;white-space:nowrap;
             }
-            /* Dark theme overrides — force cream paper aesthetic */
+            /* Dark theme overrides — force cream paper aesthetic on every element */
+            .fhf-wrap .fhf-doc{background:#f5f0e8 !important;color:#2e2418 !important;}
+            .fhf-wrap .fhf-header,.fhf-wrap .fhf-body,.fhf-wrap .fhf-footer{background:transparent !important;color:#2e2418 !important;}
+            .fhf-wrap p,.fhf-wrap span,.fhf-wrap td,.fhf-wrap th,.fhf-wrap label,.fhf-wrap div,.fhf-wrap a,.fhf-wrap strong,.fhf-wrap em,.fhf-wrap h1,.fhf-wrap h2,.fhf-wrap h3,.fhf-wrap h4{color:#2e2418 !important;}
+            .fhf-wrap .fhf-hotel-name{color:#96885f !important;}
+            .fhf-wrap .fhf-subtitle,.fhf-wrap .fhf-form-ref,.fhf-wrap .fhf-date,.fhf-wrap .fhf-guest-row,.fhf-wrap .fhf-guest-row span,.fhf-wrap .fhf-guest-row strong{color:#2e2418 !important;}
+            .fhf-wrap .fhf-form-ref{color:#998877 !important;}
+            .fhf-wrap .fhf-date{color:#665544 !important;}
             .fhf-wrap .fhf-table th{background:#d4c9a8 !important;color:#2e2418 !important;}
             .fhf-wrap .fhf-table td{background:transparent !important;color:#2e2418 !important;}
             .fhf-wrap .fhf-table tr:nth-child(even) td{background:#ede4d0 !important;}
             .fhf-wrap .fhf-table thead tr{background:#d4c9a8 !important;}
-            .fhf-wrap .fhf-doc,.fhf-wrap .fhf-header,.fhf-wrap .fhf-body,.fhf-wrap .fhf-footer{background-color:transparent !important;color:#2e2418 !important;}
             .fhf-wrap .fhf-stamp-confirmed{color:#2e5e2e !important;border-color:#2e5e2e !important;}
             .fhf-wrap .fhf-stamp-yourturn{color:#1a3a5c !important;border-color:#1a3a5c !important;}
             .fhf-wrap .fhf-stamp-waiting{color:#96885f !important;border-color:#96885f !important;}
             .fhf-wrap .fhf-stamp-passed{color:#999 !important;border-color:#bbb !important;}
-            .fhf-wrap a,.fhf-wrap strong{color:#2e2418 !important;}
+            .fhf-wrap .fhf-sig-line,.fhf-wrap .fhf-respond{color:#2e2418 !important;}
+            .fhf-wrap .fhf-colophon{color:#998877 !important;}
+            .fhf-wrap .fhf-preparing{color:#665544 !important;}
+            .fhf-wrap .fhf-error{color:#8b0000 !important;}
             /* Logo */
-            .fhf-logo{display:block;width:48px;height:48px;margin:0 auto 6px;filter:brightness(0) saturate(100%);}
+            .fhf-logo{display:block;width:48px;height:48px;margin:0 auto 6px;filter:brightness(0) saturate(100%) !important;}
             /* Mobile */
             @media(max-width:600px){
                 .fhf-doc{border-width:3px;}
