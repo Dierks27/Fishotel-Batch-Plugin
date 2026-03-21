@@ -3614,6 +3614,8 @@ trait FisHotel_Shortcodes {
             .fhf-wrap .fhf-doc{background:#f5f0e8 !important;color:#2e2418 !important;}
             .fhf-wrap .fhf-header,.fhf-wrap .fhf-body,.fhf-wrap .fhf-footer{background:transparent !important;color:#2e2418 !important;}
             .fhf-wrap p,.fhf-wrap span,.fhf-wrap td,.fhf-wrap th,.fhf-wrap label,.fhf-wrap div,.fhf-wrap a,.fhf-wrap strong,.fhf-wrap em,.fhf-wrap h1,.fhf-wrap h2,.fhf-wrap h3,.fhf-wrap h4{color:#2e2418 !important;}
+            .fhf-wrap .fhf-header{background:#f5f0e8 !important;}
+            .fhf-wrap .fhf-header *{color:#2e2418 !important;}
             .fhf-wrap .fhf-hotel-name{color:#96885f !important;}
             .fhf-wrap .fhf-subtitle,.fhf-wrap .fhf-form-ref,.fhf-wrap .fhf-date,.fhf-wrap .fhf-guest-row,.fhf-wrap .fhf-guest-row span,.fhf-wrap .fhf-guest-row strong{color:#2e2418 !important;}
             .fhf-wrap .fhf-form-ref{color:#998877 !important;}
