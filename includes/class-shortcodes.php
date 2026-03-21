@@ -3641,10 +3641,12 @@ trait FisHotel_Shortcodes {
             .fhf-preparing{text-align:center;padding:24px 16px;font-family:'Special Elite',monospace;font-style:italic;font-size:0.95rem;color:#665544;}
             /* Folio settled overlay */
             .fhf-settled-stamp{
-                position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-18deg);
-                font-family:'Courier New',monospace;font-weight:700;font-size:clamp(2rem,6vw,3.5rem);
-                color:#8b0000;border:6px double #8b0000;padding:10px 40px;letter-spacing:0.15em;
-                text-transform:uppercase;opacity:0.25;pointer-events:none;z-index:10;white-space:nowrap;
+                position:absolute;top:48%;left:52%;transform:translate(-50%,-50%) rotate(-12deg) skewX(-2deg);
+                font-family:'Courier New',monospace;font-weight:700;font-size:clamp(0.9rem,3.2vw,1.6rem);
+                color:#8b0000;border:3px solid #8b0000;border-radius:4px;padding:6px 18px;letter-spacing:0.18em;
+                text-transform:uppercase;opacity:0.35;pointer-events:none;z-index:10;white-space:nowrap;
+                box-shadow:inset 0 0 8px rgba(139,0,0,0.15);
+                text-shadow:1px 0 0 rgba(139,0,0,0.08);
             }
             /* Dark theme overrides — force cream paper aesthetic on every element */
             .fhf-wrap .fhf-doc{background:#f5f0e8 !important;color:#2e2418 !important;}
