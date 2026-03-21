@@ -3641,13 +3641,10 @@ trait FisHotel_Shortcodes {
             .fhf-preparing{text-align:center;padding:24px 16px;font-family:'Special Elite',monospace;font-style:italic;font-size:0.95rem;color:#665544;}
             /* Folio settled overlay */
             .fhf-settled-stamp{
-                position:absolute;bottom:200px;left:50%;transform:translateX(-50%) rotate(-12deg) skewX(-2deg);text-align:center;line-height:1.15;
-                font-family:'Courier New',monospace;font-weight:700;font-size:clamp(0.9rem,3.2vw,1.6rem);
-                color:#8b0000;border:3px solid #8b0000;border-radius:4px;padding:6px 18px;letter-spacing:0.18em;
-                text-transform:uppercase;opacity:0.35;pointer-events:none;z-index:10;white-space:nowrap;
-                box-shadow:inset 0 0 8px rgba(139,0,0,0.15);
-                text-shadow:1px 0 0 rgba(139,0,0,0.08);
+                position:absolute;bottom:200px;left:50%;transform:translateX(-50%) rotate(-12deg) skewX(-2deg);
+                opacity:0.35;pointer-events:none;z-index:10;
             }
+            .fhf-settled-stamp img{width:200px;height:auto;display:block;}
             /* Dark theme overrides — force cream paper aesthetic on every element */
             .fhf-wrap .fhf-doc{background:#f5f0e8 !important;color:#2e2418 !important;}
             .fhf-wrap .fhf-header,.fhf-wrap .fhf-body,.fhf-wrap .fhf-footer{background:transparent !important;color:#2e2418 !important;}
@@ -3666,7 +3663,7 @@ trait FisHotel_Shortcodes {
             .fhf-wrap .fhf-stamp-yourturn{color:#1a3a5c !important;border-color:#1a3a5c !important;}
             .fhf-wrap .fhf-stamp-waiting{color:#96885f !important;border-color:#96885f !important;}
             .fhf-wrap .fhf-stamp-passed{color:#999 !important;border-color:#bbb !important;}
-            .fhf-wrap .fhf-settled-stamp{color:#8b0000 !important;border-color:#8b0000 !important;}
+            .fhf-wrap .fhf-settled-stamp img{opacity:1 !important;}
             .fhf-wrap .fhf-sig-line,.fhf-wrap .fhf-respond{color:#2e2418 !important;}
             .fhf-wrap .fhf-colophon{color:#998877 !important;}
             .fhf-wrap .fhf-preparing{color:#665544 !important;}
@@ -3693,7 +3690,7 @@ trait FisHotel_Shortcodes {
                 <div class="fhf-punch fhf-punch-r"></div>
 
                 <?php if ( $all_resolved ) : ?>
-                    <div class="fhf-settled-stamp">Charges<br>Confirmed</div>
+                    <div class="fhf-settled-stamp"><img src="<?php echo esc_url( plugins_url( 'assists/stamps/Charges-Confirmed.png', FISHOTEL_PLUGIN_FILE ) ); ?>" alt="Charges Confirmed"></div>
                 <?php endif; ?>
 
                 <!-- Header -->
