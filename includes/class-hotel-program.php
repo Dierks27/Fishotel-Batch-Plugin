@@ -469,6 +469,8 @@ trait FisHotel_HotelProgram {
         $scene_image = $activity['scene_image'] ?? 'hotel-lobby-scene-01.jpg';
         $parsed      = $this->hotel_parse_scene_image( $scene_image );
         $scene_data  = $this->hotel_scene_url( $parsed['scene_type'], $parsed['scene_number'] );
+        // DEBUG — remove after diagnosis
+        echo '<!-- FH_DEBUG scene_image=' . esc_html( $scene_image ) . ' parsed_type=' . esc_html( $parsed['scene_type'] ) . ' parsed_num=' . esc_html( $parsed['scene_number'] ) . ' scene_data=' . ( $scene_data ? $scene_data['url'] : 'FALSE' ) . ' -->';
         $scene_url   = $scene_data ? $scene_data['url'] : false;
         $scene_urls_by_band = $this->hotel_scene_urls_by_band( $parsed['scene_type'], $parsed['scene_number'] );
         $scene_slug  = $parsed['scene_type'] . '-scene-' . $parsed['scene_number'];
