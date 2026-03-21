@@ -230,10 +230,7 @@ trait FisHotel_HotelProgram {
     }
 
     private function hotel_scan_scene_images() {
-        $library = get_option( 'fishotel_assets_library', [ 'assets' => [] ] );
-        if ( empty( $library['assets'] ) ) {
-            $library = get_option( 'fishotel_asset_library', [ 'assets' => [] ] );
-        }
+        $library = get_option( 'fishotel_asset_library', [ 'assets' => [] ] );
         $dir   = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene/';
         $files = [];
         foreach ( ( $library['assets'] ?? [] ) as $a ) {
@@ -317,8 +314,16 @@ trait FisHotel_HotelProgram {
         $slot     = $days[ $day_number ] ?? [ 'assignment_type' => 'random' ];
         $type     = $slot['assignment_type'] ?? 'random';
 
-        // Built-in first day
+        // Built-in first day — lookup from cat_arrival activities
         if ( $type === 'first_day' ) {
+            $acts = array_values( array_filter( $this->hotel_get_activities(), function( $a ) {
+                return $a['category_id'] === 'cat_arrival';
+            } ) );
+            if ( ! empty( $acts ) ) {
+                $seed = crc32( $batch_name . $day_number );
+                return $acts[ abs( $seed ) % count( $acts ) ];
+            }
+            // Fallback if no arrival activities exist
             return [
                 'name'             => 'Welcome Reception',
                 'category_id'      => 'cat_arrival',
