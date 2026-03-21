@@ -3526,6 +3526,11 @@ trait FisHotel_Admin {
 
         // ── Section 4: Wishlists ──
         if ( ! $lc_has_results && ! empty( $lc_order ) ) {
+        // Build pool options JSON for the JS editor
+        $pool_options_json = wp_json_encode( array_map( function( $p ) {
+            return [ 'id' => $p['fish_id'], 'name' => $p['name'] ];
+        }, $lc_pool ) );
+
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:16px;">';
         echo '<h3 style="color:#b5a165;margin-top:0;font-size:1.1em;">Wishlists</h3>';
         echo '<table style="width:100%;border-collapse:collapse;">';
@@ -3551,6 +3556,9 @@ trait FisHotel_Admin {
             // Expandable detail row
             echo '<tr id="fh-wl-detail-' . $wl_idx . '" style="display:none;background:#181818;">';
             echo '<td colspan="3" style="padding:8px 20px;">';
+
+            // Read-only view
+            echo '<div id="fh-wl-view-' . $wl_idx . '">';
             if ( empty( $wl ) ) {
                 echo '<span style="color:#666;font-size:12px;">No wishlist submitted.</span>';
             } else {
@@ -3566,11 +3574,174 @@ trait FisHotel_Admin {
                 }
                 echo '</ol>';
             }
+            echo '<button type="button" style="margin-top:8px;background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:5px 14px;font-size:11px;cursor:pointer;" onclick="fhWlEdit(' . $wl_idx . ',' . $uid . ')">Edit Wishlist</button>';
+            echo '</div>';
+
+            // Edit form (hidden initially)
+            echo '<div id="fh-wl-edit-' . $wl_idx . '" style="display:none;">';
+            echo '<form method="post" action="' . $admin_post_url . '" id="fh-wl-form-' . $wl_idx . '">';
+            wp_nonce_field( 'fishotel_save_admin_wishlist_nonce' );
+            echo '<input type="hidden" name="action" value="fishotel_save_admin_wishlist">';
+            echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
+            echo '<input type="hidden" name="target_user_id" value="' . esc_attr( $uid ) . '">';
+            echo '<input type="hidden" name="wishlist_json" id="fh-wl-json-' . $wl_idx . '" value="">';
+
+            echo '<div id="fh-wl-rows-' . $wl_idx . '" style="margin-bottom:8px;">';
+            // Rows populated by JS
+            echo '</div>';
+
+            echo '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">';
+            echo '<button type="button" style="background:#333;color:#c9a84c;border:1px solid #555;border-radius:4px;padding:5px 14px;font-size:11px;cursor:pointer;" onclick="fhWlAddRow(' . $wl_idx . ')">+ Add Row</button>';
+            echo '<button type="submit" style="background:#27ae60;color:#fff;border:none;border-radius:4px;padding:5px 18px;font-size:12px;font-weight:700;cursor:pointer;">Save Wishlist</button>';
+            echo '<button type="button" style="background:#333;color:#e74c3c;border:1px solid #e74c3c;border-radius:4px;padding:5px 14px;font-size:11px;cursor:pointer;" onclick="fhWlClear(' . $wl_idx . ')">Clear Wishlist</button>';
+            echo '<button type="button" style="background:none;border:none;color:#888;font-size:11px;cursor:pointer;text-decoration:underline;" onclick="document.getElementById(\'fh-wl-edit-' . $wl_idx . '\').style.display=\'none\';document.getElementById(\'fh-wl-view-' . $wl_idx . '\').style.display=\'block\';">Cancel</button>';
+            echo '</div>';
+            echo '</form>';
+            echo '</div>';
+
             echo '</td></tr>';
             $wl_idx++;
         }
         echo '</tbody></table>';
         echo '</div>';
+
+        // Wishlist editor JS
+        ?>
+        <script>
+        (function(){
+            var poolOpts = <?php echo $pool_options_json; ?>;
+            var wishlistData = {};
+            <?php
+            // Preload all wishlists into JS
+            foreach ( $lc_order as $idx => $uid ) {
+                $wl = get_option( 'fishotel_lastcall_wishlist_' . $lc_slug . '_' . $uid, [] );
+                echo 'wishlistData[' . $idx . '] = ' . wp_json_encode( $wl ) . ";\n";
+            }
+            ?>
+
+            function buildSelect(selectedId) {
+                var html = '<select name="wl_fish" style="min-width:140px;padding:4px 6px;border:1px solid #555;background:#2a2a2a;color:#fff;border-radius:4px;font-size:11px;">';
+                html += '<option value="">Select species...</option>';
+                poolOpts.forEach(function(p) {
+                    html += '<option value="' + p.id + '"' + (parseInt(p.id) === parseInt(selectedId) ? ' selected' : '') + '>' + escH(p.name) + '</option>';
+                });
+                html += '</select>';
+                return html;
+            }
+
+            function escH(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+            function renderRows(idx) {
+                var container = document.getElementById('fh-wl-rows-' + idx);
+                var items = wishlistData[idx] || [];
+                var html = '';
+                items.forEach(function(item, i) {
+                    var isFirst = i === 0;
+                    html += '<div class="fh-wl-erow" data-idx="' + i + '" style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #222;" draggable="true">';
+                    html += '<span style="cursor:grab;color:#555;font-size:13px;">&#x2630;</span>';
+                    html += '<span style="color:#888;font-size:11px;width:18px;text-align:center;">' + (i + 1) + '</span>';
+                    html += buildSelect(item.fish_id);
+                    html += '<label style="font-size:10px;color:#888;white-space:nowrap;' + (isFirst ? 'visibility:hidden;' : '') + '"><input type="checkbox" class="fh-wl-alt"' + (item.is_alternative_to ? ' checked' : '') + ' style="cursor:pointer;"> alt</label>';
+                    html += '<button type="button" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px;padding:0 4px;" onclick="fhWlRemoveRow(' + idx + ',' + i + ')">&times;</button>';
+                    html += '</div>';
+                });
+                container.innerHTML = html;
+                bindDrag(idx);
+            }
+
+            window.fhWlEdit = function(idx, uid) {
+                document.getElementById('fh-wl-view-' + idx).style.display = 'none';
+                document.getElementById('fh-wl-edit-' + idx).style.display = 'block';
+                renderRows(idx);
+            };
+
+            window.fhWlAddRow = function(idx) {
+                if (!wishlistData[idx]) wishlistData[idx] = [];
+                wishlistData[idx].push({ fish_id: 0, rank: wishlistData[idx].length + 1, is_alternative_to: null });
+                renderRows(idx);
+            };
+
+            window.fhWlRemoveRow = function(idx, rowIdx) {
+                wishlistData[idx].splice(rowIdx, 1);
+                renderRows(idx);
+            };
+
+            window.fhWlClear = function(idx) {
+                if (!confirm('Clear entire wishlist for this customer?')) return;
+                wishlistData[idx] = [];
+                renderRows(idx);
+            };
+
+            // Serialize on form submit
+            document.querySelectorAll('[id^="fh-wl-form-"]').forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    var idxMatch = form.id.match(/fh-wl-form-(\d+)/);
+                    if (!idxMatch) return;
+                    var idx = parseInt(idxMatch[1], 10);
+                    var rows = form.querySelectorAll('.fh-wl-erow');
+                    var items = [];
+                    var prevFishId = null;
+                    rows.forEach(function(row, i) {
+                        var sel = row.querySelector('select[name="wl_fish"]');
+                        var altCb = row.querySelector('.fh-wl-alt');
+                        var fishId = sel ? parseInt(sel.value, 10) : 0;
+                        if (!fishId) return;
+                        var isAlt = altCb && altCb.checked && prevFishId ? prevFishId : null;
+                        items.push({ fish_id: fishId, rank: i + 1, is_alternative_to: isAlt });
+                        prevFishId = fishId;
+                    });
+                    document.getElementById('fh-wl-json-' + idx).value = JSON.stringify(items);
+                });
+            });
+
+            // Drag and drop within edit rows
+            function bindDrag(idx) {
+                var container = document.getElementById('fh-wl-rows-' + idx);
+                var dragEl = null;
+                container.querySelectorAll('.fh-wl-erow').forEach(function(row) {
+                    row.addEventListener('dragstart', function(e) {
+                        dragEl = row;
+                        row.style.opacity = '0.4';
+                        e.dataTransfer.effectAllowed = 'move';
+                    });
+                    row.addEventListener('dragend', function() {
+                        row.style.opacity = '1';
+                        dragEl = null;
+                        // Sync data from DOM order
+                        var rows = container.querySelectorAll('.fh-wl-erow');
+                        var newData = [];
+                        rows.forEach(function(r) {
+                            var sel = r.querySelector('select[name="wl_fish"]');
+                            var altCb = r.querySelector('.fh-wl-alt');
+                            newData.push({
+                                fish_id: sel ? parseInt(sel.value, 10) || 0 : 0,
+                                rank: newData.length + 1,
+                                is_alternative_to: altCb && altCb.checked ? 1 : null
+                            });
+                        });
+                        wishlistData[idx] = newData;
+                        renderRows(idx);
+                    });
+                    row.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        row.style.borderTop = '2px solid #c9a84c';
+                    });
+                    row.addEventListener('dragleave', function() {
+                        row.style.borderTop = '';
+                    });
+                    row.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        row.style.borderTop = '';
+                        if (dragEl && dragEl !== row) {
+                            container.insertBefore(dragEl, row);
+                        }
+                    });
+                });
+            }
+        })();
+        </script>
+        <?php
         } // end wishlists section
 
         // ── Section 5: Actions ──
@@ -4070,6 +4241,41 @@ trait FisHotel_Admin {
         // Set deadline to now
         update_option( 'fishotel_lastcall_deadline_' . $slug, time() );
         update_option( 'fishotel_lastcall_window_expired_' . $slug, true );
+
+        wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=lastcall&updated=1' ) );
+        exit;
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Last Call: Admin Save Wishlist for User
+     * ───────────────────────────────────────────── */
+
+    public function save_admin_wishlist_handler() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['_wpnonce'] ?? '', 'fishotel_save_admin_wishlist_nonce' ) ) {
+            wp_die( 'Security check failed.' );
+        }
+
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        $target_uid = intval( $_POST['target_user_id'] ?? 0 );
+        if ( ! $batch_name || ! $target_uid ) wp_die( 'Missing parameters.' );
+
+        $slug = sanitize_title( $batch_name );
+        $raw  = json_decode( wp_unslash( $_POST['wishlist_json'] ?? '[]' ), true );
+
+        $wishlist = [];
+        if ( is_array( $raw ) ) {
+            foreach ( $raw as $entry ) {
+                $fish_id = intval( $entry['fish_id'] ?? 0 );
+                if ( ! $fish_id ) continue;
+                $wishlist[] = [
+                    'fish_id'           => $fish_id,
+                    'rank'              => intval( $entry['rank'] ?? 0 ),
+                    'is_alternative_to' => ! empty( $entry['is_alternative_to'] ) ? intval( $entry['is_alternative_to'] ) : null,
+                ];
+            }
+        }
+
+        update_option( 'fishotel_lastcall_wishlist_' . $slug . '_' . $target_uid, $wishlist );
 
         wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=lastcall&updated=1' ) );
         exit;
