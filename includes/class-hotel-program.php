@@ -234,7 +234,9 @@ trait FisHotel_HotelProgram {
         $dir   = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene/';
         $files = [];
         foreach ( ( $library['assets'] ?? [] ) as $a ) {
-            if ( ( $a['folder'] ?? '' ) !== 'scene-backgrounds' ) continue;
+            $is_bg = ( $a['folder'] ?? '' ) === 'scene-backgrounds'
+                  || ( $a['category'] ?? '' ) === 'background';
+            if ( ! $is_bg ) continue;
             $fn = $a['filename'] ?? '';
             if ( $fn === '' ) continue;
             if ( preg_match( '/-(?:morning|afternoon|sunset|night)\.[a-z]+$/i', $fn ) ) continue;
