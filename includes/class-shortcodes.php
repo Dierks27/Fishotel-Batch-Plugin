@@ -4005,26 +4005,28 @@ trait FisHotel_Shortcodes {
 
             /* ── Pool grid ── */
             .fhlc-pool-title{color:rgba(255,255,255,0.75);letter-spacing:0.4em;font-family:'Oswald',sans-serif;font-size:11px;text-transform:uppercase;margin:0 0 16px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.15);}
-            .fhlc-pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:32px;}
+            .fhlc-pool{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:32px;}
 
             /* ── Playing cards ── */
-            .fhlc-card{background:url('<?php echo esc_url( $card_url ); ?>') center center / cover;background-color:#faf8f2;border:none;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.65),0 2px 4px rgba(0,0,0,0.3);position:relative;padding:48px 18px 18px 18px;min-height:200px;color:#1a1a1a;transition:transform 0.25s,box-shadow 0.25s;}
+            .fhlc-card{width:120px;min-width:120px;min-height:168px;flex:0 0 120px;padding:32px 10px 32px 10px;background:url('<?php echo esc_url( $card_url ); ?>') center center;background-size:100% 100%;background-color:#faf8f2;box-sizing:border-box;border:none;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,0.65),0 2px 4px rgba(0,0,0,0.3);position:relative;color:#1a1a1a;transition:transform 0.25s,box-shadow 0.25s;}
             .fhlc-card:nth-child(odd){transform:rotate(-1.2deg);}
             .fhlc-card:nth-child(even){transform:rotate(1.5deg);}
             .fhlc-card:hover{transform:rotate(0deg) translateY(-6px);z-index:10;box-shadow:0 18px 50px rgba(0,0,0,0.75);}
-            .fhlc-card-suit{position:absolute;top:30px;left:10px;font-size:16px;font-family:Georgia,serif;line-height:1;}
+            .fhlc-card-suit{position:absolute;top:22px;left:7px;font-size:12px;font-family:Georgia,serif;line-height:1;}
             .fhlc-card:nth-child(odd) .fhlc-card-suit{color:#111;}
             .fhlc-card:nth-child(even) .fhlc-card-suit{color:#b00;}
-            .fhlc-card-name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;letter-spacing:0.03em;line-height:1.2;margin:0 0 10px;}
+            .fhlc-card-name{font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;line-height:1.2;margin:0 0 5px;}
             .fhlc-card:nth-child(odd) .fhlc-card-name{color:#111;}
             .fhlc-card:nth-child(even) .fhlc-card-name{color:#b00;}
-            .fhlc-card-row{display:flex;justify-content:space-between;align-items:center;color:#999;font-size:11px;font-family:'Courier New',monospace;letter-spacing:0.05em;margin-top:4px;}
-            .fhlc-card-qty{font-weight:700;color:#333;}
+            .fhlc-card-row{display:flex;justify-content:space-between;align-items:center;color:#555;font-size:9px;font-family:'Courier New',monospace;margin-bottom:2px;}
+            .fhlc-card-qty{font-weight:700;color:#222;}
             .fhlc-card:nth-child(even) .fhlc-card-qty{color:#b00;}
-            .fhlc-card-price{color:#777;font-style:italic;font-family:Georgia,serif;}
-            .fhlc-card-add{background:#111;border:none;color:#faf8f2;font-family:'Oswald',sans-serif;letter-spacing:0.12em;font-size:11px;border-radius:2px;padding:7px 12px;margin-top:10px;width:100%;text-transform:uppercase;cursor:pointer;display:block;text-align:center;}
-            .fhlc-card:nth-child(even) .fhlc-card-add{background:#b00;}
+            .fhlc-card-price{color:#444;}
+            .fhlc-card-add{display:block;width:calc(100% - 28px);margin:8px auto 0 auto;padding:6px 4px;font-size:9px;letter-spacing:0.05em;box-sizing:border-box;min-height:28px;text-transform:uppercase;font-family:'Oswald',sans-serif;border:none;border-radius:2px;cursor:pointer;text-align:center;}
+            .fhlc-card:nth-child(odd) .fhlc-card-add{background:#111;color:#faf8f2;}
+            .fhlc-card:nth-child(even) .fhlc-card-add{background:#b00;color:#fff;}
             .fhlc-card-add.fhlc-added{background:#ddd;color:#aaa;cursor:default;pointer-events:none;}
+            @media (max-width:480px){.fhlc-pool{gap:12px;}.fhlc-card{width:120px;flex:0 0 120px;}}
 
             /* ── Wishlist ── */
             .fhlc-wl-title{color:#fff;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;text-shadow:0 1px 6px rgba(0,0,0,0.8);margin:0 0 8px;padding-bottom:8px;}
