@@ -3428,23 +3428,37 @@ trait FisHotel_Shortcodes {
     public function render_verification_page( $batch_name ) {
         ob_start();
 
-        // ── Guest state ──
+        $fonts_url = 'https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Special+Elite&family=Klee+One&display=swap';
+
+        // ── Not logged in ──
         if ( ! is_user_logged_in() ) {
             ?>
-            <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
-            <div style="max-width:700px;margin:0 auto;font-family:'Oswald',sans-serif;">
-                <div style="background:linear-gradient(165deg,#0c161f 0%,#0a1320 50%,#081018 100%);border:2px solid #b5a165;border-radius:12px;padding:48px 28px;text-align:center;position:relative;overflow:hidden;">
-                    <div style="filter:blur(6px);opacity:0.3;pointer-events:none;position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 20px,rgba(181,161,101,0.05) 20px,rgba(181,161,101,0.05) 21px);"></div>
-                    <p style="color:#b5a165;font-size:1.4rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 12px;position:relative;">Order Verification</p>
-                    <p style="color:#8a9bae;font-size:0.95rem;margin:0 0 20px;position:relative;">Log in to view your order status.</p>
-                    <button type="button" onclick="document.getElementById('fishotel-login-modal').style.display='flex'" style="background:#b5a165;color:#0c161f;font-family:'Oswald',sans-serif;font-weight:700;font-size:0.95rem;padding:12px 36px;border:none;border-radius:6px;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;position:relative;">Log In</button>
+            <link href="<?php echo esc_url( $fonts_url ); ?>" rel="stylesheet">
+            <style>
+                .fhf-login-wrap{max-width:680px;margin:40px auto;position:relative;}
+                .fhf-login-doc{background:#f5f0e8;border:4px double #2e2418;padding:60px 40px;text-align:center;position:relative;filter:blur(3px);pointer-events:none;min-height:300px;
+                    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");}
+                .fhf-login-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;}
+                .fhf-login-overlay p{font-family:'Special Elite',monospace;font-size:clamp(0.85rem,2.5vw,1.1rem);color:#2e2418;text-transform:uppercase;letter-spacing:0.1em;text-align:center;margin:0 0 20px;max-width:400px;}
+                .fhf-login-btn{background:#2e2418;color:#f5f0e8;font-family:'Oswald',sans-serif;font-weight:700;font-size:0.9rem;padding:12px 36px;border:none;cursor:pointer;text-transform:uppercase;letter-spacing:0.08em;}
+                .fhf-login-btn:hover{background:#4a3a28;}
+            </style>
+            <div class="fhf-login-wrap">
+                <div class="fhf-login-doc">
+                    <p style="font-family:'Oswald',sans-serif;color:#96885f;font-size:1.5rem;letter-spacing:0.12em;font-weight:700;">THE FISHOTEL</p>
+                    <p style="font-family:'Courier New',monospace;color:#2e2418;font-size:0.8rem;font-variant:small-caps;letter-spacing:0.15em;">Guest Folio</p>
+                </div>
+                <div class="fhf-login-overlay">
+                    <p>Please identify yourself at the front desk</p>
+                    <button type="button" class="fhf-login-btn" onclick="document.getElementById('fishotel-login-modal').style.display='flex'">Log In</button>
                 </div>
             </div>
             <?php
             return ob_get_clean();
         }
 
-        $uid = get_current_user_id();
+        $uid  = get_current_user_id();
+        $user = wp_get_current_user();
 
         // ── Load verification queue ──
         $option_key = 'fishotel_verification_queue_' . sanitize_title( $batch_name );
@@ -3483,106 +3497,206 @@ trait FisHotel_Shortcodes {
         // ── No fish in this batch ──
         if ( empty( $my_species ) ) {
             ?>
-            <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
-            <div style="max-width:700px;margin:0 auto;font-family:'Oswald',sans-serif;">
-                <div style="background:linear-gradient(165deg,#0c161f 0%,#0a1320 50%,#081018 100%);border:2px solid #b5a165;border-radius:12px;padding:48px 28px;text-align:center;">
-                    <p style="color:#b5a165;font-size:1.3rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 12px;"><?php echo esc_html( strtoupper( $batch_name ) ); ?> &middot; ORDER VERIFICATION</p>
-                    <p style="color:#8a9bae;font-size:0.95rem;margin:0;">You don't have any requests on file for this batch.</p>
-                </div>
+            <link href="<?php echo esc_url( $fonts_url ); ?>" rel="stylesheet">
+            <style>
+                .fhf-empty{max-width:680px;margin:40px auto;background:#f5f0e8;border:4px double #2e2418;padding:60px 40px;text-align:center;position:relative;
+                    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");}
+            </style>
+            <div class="fhf-empty">
+                <p style="font-family:'Oswald',sans-serif;color:#96885f;font-size:1.4rem;letter-spacing:0.12em;font-weight:700;margin:0 0 8px;">THE FISHOTEL</p>
+                <p style="font-family:'Courier New',monospace;color:#2e2418;font-size:0.8rem;font-variant:small-caps;letter-spacing:0.15em;margin:0 0 24px;">Guest Folio</p>
+                <p style="font-family:'Special Elite',monospace;color:#2e2418;font-size:0.95rem;margin:0;">No requests on file for <strong><?php echo esc_html( strtoupper( $batch_name ) ); ?></strong>.</p>
             </div>
             <?php
             return ob_get_clean();
         }
 
         // ── Status summary ──
-        $has_waiting   = false;
-        $has_action    = false;
+        $has_waiting    = false;
+        $has_action     = false;
+        $all_resolved   = true;
+        $all_waiting    = true;
         foreach ( $my_species as $ms ) {
             if ( $ms['display_status'] === 'waiting' ) $has_waiting = true;
             if ( in_array( $ms['display_status'], [ 'pending_decision', 'passed_to_you' ], true ) ) $has_action = true;
+            if ( ! in_array( $ms['display_status'], [ 'accepted', 'passed' ], true ) ) $all_resolved = false;
+            if ( $ms['display_status'] !== 'waiting' ) $all_waiting = false;
         }
 
-        $nonce = wp_create_nonce( 'fishotel_verification_nonce' );
+        $nonce      = wp_create_nonce( 'fishotel_verification_nonce' );
+        $guest_name = $user->display_name ?: $user->user_login;
+        $folio_date = strtoupper( date_i18n( 'F j, Y' ) );
+        $paper_bg   = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E\")";
         ?>
-        <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+        <link href="<?php echo esc_url( $fonts_url ); ?>" rel="stylesheet">
         <style>
-            .fhv-wrap{max-width:800px;margin:0 auto;font-family:'Oswald',sans-serif;color:#fff;}
-            .fhv-card{background:linear-gradient(165deg,#0c161f 0%,#0a1320 50%,#081018 100%);border:2px solid #b5a165;border-radius:12px;padding:32px 24px 24px;position:relative;overflow:hidden;}
-            .fhv-title{font-weight:700;font-size:clamp(1.2rem,3vw,1.6rem);color:#b5a165;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 6px;text-align:center;}
-            .fhv-sub{color:#8a9bae;font-size:clamp(0.78rem,1.8vw,0.9rem);text-align:center;margin:0 0 24px;font-weight:400;}
-            .fhv-table{width:100%;border-collapse:collapse;}
-            .fhv-table th{padding:10px 8px;text-align:left;color:#b5a165;font-weight:600;font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;border-bottom:2px solid #b5a165;}
-            .fhv-table td{padding:12px 8px;border-bottom:1px solid #1e2a38;vertical-align:middle;font-size:0.9rem;}
-            .fhv-table td:nth-child(2),.fhv-table td:nth-child(3),.fhv-table th:nth-child(2),.fhv-table th:nth-child(3){text-align:center;}
-            .fhv-badge{display:inline-block;padding:4px 12px;border-radius:4px;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap;}
-            .fhv-badge-confirmed{background:#1a3a1a;color:#27ae60;border:1px solid #27ae60;}
-            .fhv-badge-your-turn{background:#3a2a0a;color:#e07b2a;border:1px solid #e07b2a;animation:fhv-pulse-amber 2.5s ease-in-out infinite;}
-            .fhv-badge-waiting{background:#1a1a2a;color:#6a7a8a;border:1px solid #3a4a5a;}
-            .fhv-badge-passed{background:#1a1a1a;color:#555;border:1px solid #333;}
-            @keyframes fhv-pulse-amber{0%,100%{box-shadow:0 0 4px #e07b2a,0 0 10px rgba(224,123,42,0.3);}50%{box-shadow:0 0 2px #e07b2a,0 0 4px rgba(224,123,42,0.1);}}
-            .fhv-action-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-            .fhv-qty-input{width:56px;padding:5px 6px;text-align:center;background:#1a2a3a;border:1px solid #3a4a5a;color:#fff;border-radius:4px;font-family:'Oswald',sans-serif;font-size:0.9rem;}
-            .fhv-btn-accept{background:#27ae60;color:#fff;border:none;border-radius:4px;padding:6px 16px;font-family:'Oswald',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;}
-            .fhv-btn-accept:hover{background:#2ecc71;}
-            .fhv-btn-pass{background:transparent;color:#8b3a3a;border:1px solid #5a2a2a;border-radius:4px;padding:6px 16px;font-family:'Oswald',sans-serif;font-weight:700;font-size:0.8rem;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;}
-            .fhv-btn-pass:hover{background:#2a1515;color:#c0504d;}
-            .fhv-summary{text-align:center;margin-top:20px;padding:16px;border-top:1px solid #1e2a38;font-size:0.9rem;}
-            .fhv-error{color:#e74c3c;font-size:0.78rem;margin-top:4px;display:none;}
-            @media(max-width:600px){.fhv-table th:nth-child(2),.fhv-table td:nth-child(2){display:none;}.fhv-action-row{gap:6px;}}
+            /* ── Folio document ── */
+            .fhf-wrap{max-width:680px;margin:40px auto;position:relative;}
+            .fhf-doc{
+                background:#f5f0e8;background-image:<?php echo $paper_bg; ?>;
+                border:4px double #2e2418;padding:0;position:relative;overflow:hidden;
+            }
+            /* Coffee ring stain */
+            .fhf-doc::after{
+                content:'';position:absolute;bottom:60px;right:30px;width:90px;height:90px;
+                border-radius:50%;border:8px solid rgba(101,67,33,0.06);
+                background:radial-gradient(ellipse at center,rgba(101,67,33,0.04) 0%,transparent 70%);
+                transform:rotate(15deg);pointer-events:none;z-index:1;
+            }
+            /* Punch holes */
+            .fhf-punch{position:absolute;top:16px;width:14px;height:14px;border-radius:50%;background:#1a1a2e;border:1px solid #a09080;box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);z-index:5;}
+            .fhf-punch-l{left:16px;}
+            .fhf-punch-r{right:16px;}
+            /* Header */
+            .fhf-header{padding:28px 32px 16px;position:relative;text-align:center;border-bottom:2px solid #2e2418;z-index:2;}
+            .fhf-form-ref{position:absolute;top:10px;font-family:'Courier New',monospace;font-size:9px;color:#998877;letter-spacing:0.08em;}
+            .fhf-form-left{left:32px;}
+            .fhf-form-right{right:32px;}
+            .fhf-hotel-name{font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(1.3rem,3vw,1.7rem);color:#96885f;letter-spacing:0.12em;text-transform:uppercase;margin:8px 0 2px;}
+            .fhf-subtitle{font-family:'Courier New',monospace;font-size:0.75rem;font-variant:small-caps;letter-spacing:0.18em;color:#2e2418;margin:0 0 12px;}
+            .fhf-guest-row{display:flex;justify-content:space-between;align-items:baseline;font-family:'Courier New',monospace;font-size:0.78rem;color:#2e2418;padding:0 0 4px;flex-wrap:wrap;gap:4px 16px;}
+            .fhf-guest-row span{white-space:nowrap;}
+            .fhf-date{font-family:'Courier New',monospace;font-size:0.72rem;color:#665544;letter-spacing:0.08em;margin:6px 0 0;}
+            /* Body */
+            .fhf-body{padding:20px 32px 24px;position:relative;z-index:2;}
+            /* Table */
+            .fhf-table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+            .fhf-table th{padding:8px 6px;text-align:left;font-family:'Courier New',monospace;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:#2e2418;border-bottom:2px solid #2e2418;font-weight:700;}
+            .fhf-table td{padding:10px 6px;border-bottom:1px solid #d6cfc2;vertical-align:middle;font-size:0.85rem;color:#2e2418;}
+            .fhf-table tr:nth-child(even) td{background:#ede4d0;}
+            .fhf-table tr:nth-child(odd) td{background:transparent;}
+            .fhf-table td:nth-child(2),.fhf-table td:nth-child(3),.fhf-table th:nth-child(2),.fhf-table th:nth-child(3){text-align:center;font-family:'Courier New',monospace;}
+            .fhf-species{font-family:'Special Elite',monospace;font-size:0.9rem;}
+            .fhf-table td:nth-child(4),.fhf-table th:nth-child(4){text-align:right;}
+            /* Status stamps */
+            .fhf-stamp{display:inline-block;padding:3px 10px;font-family:'Courier New',monospace;font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;}
+            .fhf-stamp-confirmed{color:#2e5e2e;border:2px solid #2e5e2e;transform:rotate(-2deg);background:rgba(46,94,46,0.06);}
+            .fhf-stamp-yourturn{color:#1a3a5c;border:2px solid #1a3a5c;background:rgba(26,58,92,0.06);animation:fhf-pulse 2.5s ease-in-out infinite;}
+            .fhf-stamp-waiting{color:#96885f;border:2px solid #96885f;background:rgba(150,136,95,0.06);}
+            .fhf-stamp-passed{color:#999;border:2px solid #bbb;text-decoration:line-through;background:rgba(0,0,0,0.02);}
+            @keyframes fhf-pulse{0%,100%{box-shadow:0 0 6px rgba(26,58,92,0.3);}50%{box-shadow:0 0 2px rgba(26,58,92,0.1);}}
+            /* Action row */
+            .fhf-action-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+            .fhf-qty-input{
+                width:48px;padding:4px 4px;text-align:center;background:transparent;
+                border:none;border-bottom:2px solid #2e2418;
+                font-family:'Klee One',cursive;font-size:1rem;color:#2e2418;outline:none;
+            }
+            .fhf-btn-keep{
+                font-family:'Courier New',monospace;font-weight:700;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;
+                color:#2e5e2e;border:2px solid #2e5e2e;background:rgba(46,94,46,0.06);
+                padding:5px 14px;cursor:pointer;transition:background 0.2s;
+            }
+            .fhf-btn-keep:hover{background:rgba(46,94,46,0.15);}
+            .fhf-btn-release{
+                font-family:'Courier New',monospace;font-weight:700;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;
+                color:#8b0000;border:2px solid #8b0000;background:rgba(139,0,0,0.04);
+                padding:5px 14px;cursor:pointer;transform:rotate(1deg);transition:background 0.2s;
+            }
+            .fhf-btn-release:hover{background:rgba(139,0,0,0.12);}
+            .fhf-error{color:#8b0000;font-family:'Courier New',monospace;font-size:0.7rem;margin-top:4px;display:none;text-align:right;}
+            /* Footer */
+            .fhf-footer{padding:16px 32px 24px;border-top:1px solid #d6cfc2;position:relative;z-index:2;}
+            .fhf-sig-line{font-family:'Courier New',monospace;font-size:0.72rem;color:#665544;margin:0 0 8px;letter-spacing:0.06em;}
+            .fhf-sig-underline{display:inline-block;width:200px;border-bottom:1px solid #2e2418;margin-left:8px;}
+            .fhf-respond{font-family:'Courier New',monospace;font-size:0.68rem;letter-spacing:0.06em;margin:12px 0 0;}
+            .fhf-colophon{text-align:center;font-family:'Courier New',monospace;font-size:0.6rem;color:#998877;letter-spacing:0.15em;text-transform:uppercase;margin:16px 0 0;}
+            /* Folio all-waiting note */
+            .fhf-preparing{text-align:center;padding:24px 16px;font-family:'Special Elite',monospace;font-style:italic;font-size:0.95rem;color:#665544;}
+            /* Folio settled overlay */
+            .fhf-settled-stamp{
+                position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-18deg);
+                font-family:'Courier New',monospace;font-weight:700;font-size:clamp(2rem,6vw,3.5rem);
+                color:#2e5e2e;border:6px double #2e5e2e;padding:10px 40px;letter-spacing:0.15em;
+                text-transform:uppercase;opacity:0.25;pointer-events:none;z-index:10;white-space:nowrap;
+            }
+            /* Mobile */
+            @media(max-width:600px){
+                .fhf-doc{border-width:3px;}
+                .fhf-header,.fhf-body,.fhf-footer{padding-left:16px;padding-right:16px;}
+                .fhf-table th:nth-child(2),.fhf-table td:nth-child(2){display:none;}
+                .fhf-action-row{gap:6px;justify-content:flex-start;}
+                .fhf-guest-row{flex-direction:column;gap:2px;}
+                .fhf-punch-l{left:10px;}.fhf-punch-r{right:10px;}.fhf-punch{width:10px;height:10px;top:12px;}
+            }
         </style>
-        <div class="fhv-wrap">
-            <div class="fhv-card">
-                <p class="fhv-title"><?php echo esc_html( strtoupper( $batch_name ) ); ?> &middot; ORDER VERIFICATION</p>
-                <p class="fhv-sub">Review your order below. Accept what you'd like to keep.</p>
+        <div class="fhf-wrap">
+            <div class="fhf-doc">
+                <!-- Punch holes -->
+                <div class="fhf-punch fhf-punch-l"></div>
+                <div class="fhf-punch fhf-punch-r"></div>
 
-                <table class="fhv-table">
-                    <thead><tr><th>Species</th><th>Qty Available</th><th>Your Request</th><th>Action</th></tr></thead>
-                    <tbody>
-                    <?php foreach ( $my_species as $ms ) : ?>
-                        <tr>
-                            <td><?php echo esc_html( $ms['name'] ); ?></td>
-                            <td><?php echo intval( $ms['graduated_qty'] ); ?></td>
-                            <td><?php echo intval( $ms['requested_qty'] ); ?></td>
-                            <td class="fhv-action-cell" data-fish-id="<?php echo intval( $ms['fish_id'] ); ?>">
-                                <?php
-                                $ds = $ms['display_status'];
-                                if ( $ds === 'accepted' ) {
-                                    echo '<span class="fhv-badge fhv-badge-confirmed">CONFIRMED</span>';
-                                } elseif ( $ds === 'pending_decision' || $ds === 'passed_to_you' ) {
-                                    $badge_label = ( $ds === 'passed_to_you' ) ? 'OFFERED TO YOU' : 'YOUR TURN';
-                                    $default_qty = min( $ms['requested_qty'], $ms['graduated_qty'] );
-                                    ?>
-                                    <div class="fhv-action-row">
-                                        <span class="fhv-badge fhv-badge-your-turn"><?php echo $badge_label; ?></span>
-                                        <input type="number" class="fhv-qty-input" value="<?php echo $default_qty; ?>" min="1" max="<?php echo intval( $ms['requested_qty'] ); ?>" data-fish="<?php echo intval( $ms['fish_id'] ); ?>">
-                                        <button type="button" class="fhv-btn-accept" onclick="fhvAccept(this)">Accept</button>
-                                        <button type="button" class="fhv-btn-pass" onclick="fhvPass(this)">Pass</button>
-                                    </div>
-                                    <div class="fhv-error"></div>
+                <?php if ( $all_resolved ) : ?>
+                    <div class="fhf-settled-stamp">Folio Settled</div>
+                <?php endif; ?>
+
+                <!-- Header -->
+                <div class="fhf-header">
+                    <span class="fhf-form-ref fhf-form-left">FORM FH-GF-001</span>
+                    <span class="fhf-form-ref fhf-form-right">COPY 1 &mdash; GUEST</span>
+                    <p class="fhf-hotel-name">The FisHotel</p>
+                    <p class="fhf-subtitle">Guest Folio</p>
+                    <div class="fhf-guest-row">
+                        <span>GUEST: <strong><?php echo esc_html( strtoupper( $guest_name ) ); ?></strong></span>
+                        <span>BATCH: <strong><?php echo esc_html( strtoupper( $batch_name ) ); ?></strong></span>
+                    </div>
+                    <p class="fhf-date"><?php echo esc_html( $folio_date ); ?></p>
+                </div>
+
+                <!-- Body -->
+                <div class="fhf-body">
+                    <?php if ( $all_waiting ) : ?>
+                        <p class="fhf-preparing">Your folio is being prepared. Check back soon.</p>
+                    <?php endif; ?>
+
+                    <table class="fhf-table">
+                        <thead><tr><th>Species</th><th>Qty Available</th><th>Your Request</th><th>Status</th></tr></thead>
+                        <tbody>
+                        <?php foreach ( $my_species as $ms ) : ?>
+                            <tr>
+                                <td class="fhf-species"><?php echo esc_html( $ms['name'] ); ?></td>
+                                <td><?php echo intval( $ms['graduated_qty'] ); ?></td>
+                                <td><?php echo intval( $ms['requested_qty'] ); ?></td>
+                                <td class="fhv-action-cell" data-fish-id="<?php echo intval( $ms['fish_id'] ); ?>">
                                     <?php
-                                } elseif ( $ds === 'waiting' ) {
-                                    echo '<span class="fhv-badge fhv-badge-waiting">WAITING</span>';
-                                    echo '<span style="color:#6a7a8a;font-size:0.78rem;margin-left:8px;">(' . intval( $ms['pending_ahead'] ) . ' ahead of you)</span>';
-                                } elseif ( $ds === 'passed' ) {
-                                    echo '<span class="fhv-badge fhv-badge-passed">PASSED</span>';
-                                }
-                                ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
+                                    $ds = $ms['display_status'];
+                                    if ( $ds === 'accepted' ) {
+                                        echo '<span class="fhf-stamp fhf-stamp-confirmed">CONFIRMED</span>';
+                                    } elseif ( $ds === 'pending_decision' || $ds === 'passed_to_you' ) {
+                                        $badge_label = ( $ds === 'passed_to_you' ) ? 'OFFERED TO YOU' : 'YOUR TURN';
+                                        $default_qty = min( $ms['requested_qty'], $ms['graduated_qty'] );
+                                        ?>
+                                        <div class="fhf-action-row">
+                                            <span class="fhf-stamp fhf-stamp-yourturn"><?php echo $badge_label; ?></span>
+                                            <input type="number" class="fhf-qty-input" value="<?php echo $default_qty; ?>" min="1" max="<?php echo intval( $ms['requested_qty'] ); ?>" data-fish="<?php echo intval( $ms['fish_id'] ); ?>">
+                                            <button type="button" class="fhf-btn-keep" onclick="fhvAccept(this)">Keep It</button>
+                                            <button type="button" class="fhf-btn-release" onclick="fhvPass(this)">Release</button>
+                                        </div>
+                                        <div class="fhf-error"></div>
+                                        <?php
+                                    } elseif ( $ds === 'waiting' ) {
+                                        echo '<span class="fhf-stamp fhf-stamp-waiting">WAITING</span>';
+                                        if ( $ms['pending_ahead'] > 0 ) {
+                                            echo '<span style="font-family:\'Courier New\',monospace;font-size:0.65rem;color:#998877;margin-left:6px;">(' . intval( $ms['pending_ahead'] ) . ' ahead)</span>';
+                                        }
+                                    } elseif ( $ds === 'passed' ) {
+                                        echo '<span class="fhf-stamp fhf-stamp-passed">PASSED</span>';
+                                    }
+                                    ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
 
-                <div class="fhv-summary" style="color:<?php echo $has_action ? '#e07b2a' : ( $has_waiting ? '#8a9bae' : '#27ae60' ); ?>;">
-                    <?php
-                    if ( $has_action ) {
-                        echo 'Action required &mdash; please respond to the items above.';
-                    } elseif ( $has_waiting ) {
-                        echo 'Hang tight &mdash; we\'re working through the queue on some of your fish.';
-                    } else {
-                        echo 'Your order is complete &mdash; we\'ll be in touch soon.';
-                    }
-                    ?>
+                <!-- Footer -->
+                <div class="fhf-footer">
+                    <p class="fhf-sig-line">GUEST SIGNATURE <span class="fhf-sig-underline"></span></p>
+                    <?php if ( $has_action ) : ?>
+                        <p class="fhf-respond" style="color:#2e2418;">PLEASE RESPOND AT YOUR EARLIEST CONVENIENCE</p>
+                    <?php endif; ?>
+                    <p class="fhf-colophon">The FisHotel &middot; Champlin, MN &middot; Est. 2024</p>
                 </div>
             </div>
         </div>
@@ -3595,8 +3709,8 @@ trait FisHotel_Shortcodes {
             window.fhvAccept = function(btn) {
                 var cell    = btn.closest('.fhv-action-cell');
                 var fishId  = cell.getAttribute('data-fish-id');
-                var qtyEl   = cell.querySelector('.fhv-qty-input');
-                var errEl   = cell.querySelector('.fhv-error');
+                var qtyEl   = cell.querySelector('.fhf-qty-input');
+                var errEl   = cell.querySelector('.fhf-error');
                 var qty     = parseInt(qtyEl.value, 10);
                 if (!qty || qty < 1) { errEl.textContent = 'Enter a valid quantity.'; errEl.style.display = 'block'; return; }
                 btn.disabled = true;
@@ -3613,7 +3727,7 @@ trait FisHotel_Shortcodes {
                     .then(function(r){ return r.json(); })
                     .then(function(data){
                         if (data.success) {
-                            cell.innerHTML = '<span class="fhv-badge fhv-badge-confirmed">CONFIRMED</span>';
+                            cell.innerHTML = '<span class="fhf-stamp fhf-stamp-confirmed">CONFIRMED</span>';
                         } else {
                             errEl.textContent = data.data && data.data.message ? data.data.message : 'Something went wrong.';
                             errEl.style.display = 'block';
@@ -3630,7 +3744,7 @@ trait FisHotel_Shortcodes {
             window.fhvPass = function(btn) {
                 var cell   = btn.closest('.fhv-action-cell');
                 var fishId = cell.getAttribute('data-fish-id');
-                var errEl  = cell.querySelector('.fhv-error');
+                var errEl  = cell.querySelector('.fhf-error');
                 btn.disabled = true;
                 errEl.style.display = 'none';
 
@@ -3644,7 +3758,7 @@ trait FisHotel_Shortcodes {
                     .then(function(r){ return r.json(); })
                     .then(function(data){
                         if (data.success) {
-                            cell.innerHTML = '<span class="fhv-badge fhv-badge-passed">PASSED</span>';
+                            cell.innerHTML = '<span class="fhf-stamp fhf-stamp-passed">PASSED</span>';
                         } else {
                             errEl.textContent = data.data && data.data.message ? data.data.message : 'Something went wrong.';
                             errEl.style.display = 'block';
