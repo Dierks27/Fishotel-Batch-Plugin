@@ -158,27 +158,12 @@ trait FisHotel_HotelProgram {
      * ───────────────────────────────────────────── */
 
     private function hotel_scene_url( $scene_type, $scene_number ) {
-        $base     = sanitize_key( $scene_type );
-        $dir      = plugin_dir_path( FISHOTEL_PLUGIN_FILE ) . 'assists/scene/';
-        $url_base = 'assists/scene/';
-        $bands    = [ 'morning', 'afternoon', 'sunset', 'night' ];
-        foreach ( $bands as $band ) {
-            $fn = 'hotel-' . $base . '-scene-' . $scene_number . '-' . $band . '.jpg';
-            if ( file_exists( $dir . $fn ) ) {
-                return [
-                    'url'  => plugins_url( $url_base . $fn, FISHOTEL_PLUGIN_FILE ),
-                    'band' => $band,
-                ];
-            }
-        }
-        $fn = 'hotel-' . $base . '-scene-' . $scene_number . '.jpg';
-        if ( file_exists( $dir . $fn ) ) {
-            return [
-                'url'  => plugins_url( $url_base . $fn, FISHOTEL_PLUGIN_FILE ),
-                'band' => null,
-            ];
-        }
-        return false;
+        $base = sanitize_key( $scene_type );
+        $fn   = 'hotel-' . $base . '-scene-' . $scene_number . '.jpg';
+        return [
+            'url'  => plugins_url( 'assists/scene/' . $fn, FISHOTEL_PLUGIN_FILE ),
+            'band' => null,
+        ];
     }
 
     private function hotel_scene_urls_by_band( $scene_type, $scene_number ) {
