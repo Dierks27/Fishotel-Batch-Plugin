@@ -3609,7 +3609,7 @@ trait FisHotel_Shortcodes {
             .fhf-settled-stamp{
                 position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-18deg);
                 font-family:'Courier New',monospace;font-weight:700;font-size:clamp(2rem,6vw,3.5rem);
-                color:#2e5e2e;border:6px double #2e5e2e;padding:10px 40px;letter-spacing:0.15em;
+                color:#8b0000;border:6px double #8b0000;padding:10px 40px;letter-spacing:0.15em;
                 text-transform:uppercase;opacity:0.25;pointer-events:none;z-index:10;white-space:nowrap;
             }
             /* Dark theme overrides — force cream paper aesthetic on every element */
@@ -3630,6 +3630,7 @@ trait FisHotel_Shortcodes {
             .fhf-wrap .fhf-stamp-yourturn{color:#1a3a5c !important;border-color:#1a3a5c !important;}
             .fhf-wrap .fhf-stamp-waiting{color:#96885f !important;border-color:#96885f !important;}
             .fhf-wrap .fhf-stamp-passed{color:#999 !important;border-color:#bbb !important;}
+            .fhf-wrap .fhf-settled-stamp{color:#8b0000 !important;border-color:#8b0000 !important;}
             .fhf-wrap .fhf-sig-line,.fhf-wrap .fhf-respond{color:#2e2418 !important;}
             .fhf-wrap .fhf-colophon{color:#998877 !important;}
             .fhf-wrap .fhf-preparing{color:#665544 !important;}
