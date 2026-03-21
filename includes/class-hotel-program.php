@@ -3763,6 +3763,118 @@ trait FisHotel_HotelProgram {
         return $order;
     }
 
+    /* ─────────────────────────────────────────────
+     *  Last Call: Draft Runner (Stage 6)
+     * ───────────────────────────────────────────── */
+
+    public function run_last_call_draft( $batch_name ) {
+        $slug      = sanitize_title( $batch_name );
+        $pool      = get_option( 'fishotel_lastcall_pool_' . $slug, [] );
+        $order     = get_option( 'fishotel_lastcall_order_' . $slug, [] );
+        $num_rounds = max( 1, intval( get_option( 'fishotel_lastcall_rounds', 2 ) ) );
+
+        if ( empty( $pool ) || empty( $order ) ) {
+            return [ 'run_at' => time(), 'rounds' => $num_rounds, 'picks' => [] ];
+        }
+
+        // Build mutable pool: fish_id => { name, remaining_qty }
+        $available = [];
+        foreach ( $pool as $item ) {
+            $available[ $item['fish_id'] ] = [
+                'name'          => $item['name'],
+                'remaining_qty' => intval( $item['pool_qty'] ),
+            ];
+        }
+
+        // Load all wishlists
+        $wishlists = [];
+        foreach ( $order as $uid ) {
+            $wl = get_option( 'fishotel_lastcall_wishlist_' . $slug . '_' . $uid, [] );
+            if ( ! empty( $wl ) ) {
+                $wishlists[ $uid ] = $wl;
+            }
+        }
+
+        // Track what each user has been awarded: user_id => [ fish_id => true ]
+        $awarded = [];
+        $picks   = [];
+
+        for ( $round = 1; $round <= $num_rounds; $round++ ) {
+            foreach ( $order as $uid ) {
+                if ( empty( $wishlists[ $uid ] ) ) continue;
+                if ( ! isset( $awarded[ $uid ] ) ) $awarded[ $uid ] = [];
+
+                $pick = $this->last_call_find_pick( $wishlists[ $uid ], $available, $awarded[ $uid ] );
+                if ( ! $pick ) continue;
+
+                $fish_id = $pick['fish_id'];
+
+                // Award 1 unit
+                $available[ $fish_id ]['remaining_qty']--;
+                if ( $available[ $fish_id ]['remaining_qty'] <= 0 ) {
+                    unset( $available[ $fish_id ] );
+                }
+
+                $awarded[ $uid ][ $fish_id ] = true;
+
+                $picks[] = [
+                    'round'     => $round,
+                    'user_id'   => $uid,
+                    'fish_id'   => $fish_id,
+                    'fish_name' => $pick['name'],
+                    'qty'       => 1,
+                ];
+            }
+        }
+
+        $results = [
+            'run_at' => time(),
+            'rounds' => $num_rounds,
+            'picks'  => $picks,
+        ];
+
+        update_option( 'fishotel_lastcall_results_' . $slug, $results );
+        return $results;
+    }
+
+    /**
+     * Walk a user's wishlist and find the first valid pick.
+     *
+     * @param array $wishlist      Ranked wishlist items.
+     * @param array $available     Pool keyed by fish_id with remaining_qty.
+     * @param array $user_awarded  Fish IDs already awarded to this user.
+     * @return array|null          { fish_id, name } or null.
+     */
+    private function last_call_find_pick( $wishlist, $available, $user_awarded ) {
+        // Build a set of fish_ids the user was awarded (for alternative logic)
+        foreach ( $wishlist as $item ) {
+            $fish_id = intval( $item['fish_id'] );
+
+            // Already awarded this fish? Skip.
+            if ( isset( $user_awarded[ $fish_id ] ) ) continue;
+
+            // Not in pool or out of stock? Skip.
+            if ( ! isset( $available[ $fish_id ] ) || $available[ $fish_id ]['remaining_qty'] <= 0 ) continue;
+
+            // Alternative logic: if this is an alternative to another item,
+            // only pick it if the parent was NOT awarded.
+            if ( ! empty( $item['is_alternative_to'] ) ) {
+                $parent_id = intval( $item['is_alternative_to'] );
+                if ( isset( $user_awarded[ $parent_id ] ) ) {
+                    // Parent was awarded — skip this alternative.
+                    continue;
+                }
+            }
+
+            return [
+                'fish_id' => $fish_id,
+                'name'    => $available[ $fish_id ]['name'],
+            ];
+        }
+
+        return null;
+    }
+
     public function maybe_notify_customers( $batch_name ) {
         $option_key = 'fishotel_verification_queue_' . sanitize_title( $batch_name );
         $queue      = get_option( $option_key, [] );

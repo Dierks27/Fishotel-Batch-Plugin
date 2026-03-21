@@ -3326,8 +3326,11 @@ trait FisHotel_Admin {
         $lc_order      = get_option( 'fishotel_lastcall_order_' . $lc_slug, [] );
         $lc_opened     = get_option( 'fishotel_lastcall_opened_at_' . $lc_slug, '' );
         $lc_deadline   = get_option( 'fishotel_lastcall_deadline_' . $lc_slug, '' );
+        $lc_results    = get_option( 'fishotel_lastcall_results_' . $lc_slug, [] );
         $lc_window     = intval( get_option( 'fishotel_lastcall_window_hours', 48 ) );
         $lc_rounds     = intval( get_option( 'fishotel_lastcall_rounds', 2 ) );
+        $lc_now        = time();
+        $lc_window_closed = $lc_deadline && $lc_now > intval( $lc_deadline );
 
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;">';
         echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Last Call — Draft Pool</h2>';
@@ -3355,6 +3358,69 @@ trait FisHotel_Admin {
                     echo '</tr>';
                 }
                 echo '</tbody></table>';
+            }
+
+            // Run Draft button (window closed, no results yet)
+            if ( $lc_window_closed && empty( $lc_results ) ) {
+                $draft_nonce = wp_create_nonce( 'fishotel_lastcall_draft_nonce' );
+                echo '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #444;">';
+                echo '<p style="color:#e67e22;font-size:13px;">Wishlist window has closed. Ready to run the draft.</p>';
+                echo '<button type="button" id="fh-run-draft-btn" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Run Draft</button>';
+                echo '<span id="fh-draft-status" style="margin-left:12px;font-size:12px;color:#aaa;"></span>';
+                echo '</div>';
+                ?>
+                <script>
+                document.getElementById('fh-run-draft-btn').addEventListener('click', function(){
+                    var btn = this;
+                    var status = document.getElementById('fh-draft-status');
+                    if(!confirm('Run the Last Call draft? This cannot be undone.')) return;
+                    btn.disabled = true;
+                    status.textContent = 'Running draft...';
+                    var fd = new FormData();
+                    fd.append('action', 'fishotel_run_lastcall_draft');
+                    fd.append('nonce', '<?php echo esc_js( $draft_nonce ); ?>');
+                    fd.append('batch_name', '<?php echo esc_js( $selected ); ?>');
+                    fetch('<?php echo esc_url( admin_url( "admin-ajax.php" ) ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
+                        .then(function(r){ return r.json(); })
+                        .then(function(d){
+                            if(d.success){
+                                status.textContent = 'Draft complete! ' + d.data.picks.length + ' picks made.';
+                                status.style.color = '#27ae60';
+                                setTimeout(function(){ location.reload(); }, 1500);
+                            } else {
+                                status.textContent = 'Error: ' + (d.data && d.data.message || 'Unknown');
+                                status.style.color = '#e74c3c';
+                                btn.disabled = false;
+                            }
+                        })
+                        .catch(function(){ status.textContent = 'Network error'; status.style.color = '#e74c3c'; btn.disabled = false; });
+                });
+                </script>
+                <?php
+            }
+
+            // Draft results summary
+            if ( ! empty( $lc_results ) ) {
+                echo '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #444;">';
+                echo '<h3 style="color:#27ae60;font-size:1em;margin-top:0;">Draft Results</h3>';
+                echo '<p style="color:#aaa;font-size:12px;">Ran at ' . date( 'F j, Y g:i A', $lc_results['run_at'] ) . ' &mdash; ' . count( $lc_results['picks'] ) . ' picks across ' . $lc_results['rounds'] . ' rounds</p>';
+                echo '<table style="width:100%;border-collapse:collapse;">';
+                echo '<thead><tr style="border-bottom:2px solid #444;">';
+                echo '<th style="padding:8px;color:#b5a165;text-align:center;">Rd</th>';
+                echo '<th style="padding:8px;color:#b5a165;text-align:left;">Customer</th>';
+                echo '<th style="padding:8px;color:#b5a165;text-align:left;">Fish</th>';
+                echo '</tr></thead><tbody>';
+                foreach ( $lc_results['picks'] as $pick ) {
+                    $user = get_user_by( 'id', $pick['user_id'] );
+                    $display = $user ? $user->display_name : 'User #' . $pick['user_id'];
+                    echo '<tr style="border-bottom:1px solid #333;">';
+                    echo '<td style="padding:8px;text-align:center;color:#888;">' . intval( $pick['round'] ) . '</td>';
+                    echo '<td style="padding:8px;color:#ddd;">' . esc_html( $display ) . '</td>';
+                    echo '<td style="padding:8px;color:#ddd;">' . esc_html( $pick['fish_name'] ) . '</td>';
+                    echo '</tr>';
+                }
+                echo '</tbody></table>';
+                echo '</div>';
             }
         } else {
             // Not yet open — show Open button

@@ -4062,10 +4062,40 @@ trait FisHotel_Shortcodes {
             <?php endif; ?>
 
             <?php if ( $has_results ) : ?>
-                <!-- State 3: Draft results -->
-                <div class="fhlc-results-stub">
-                    <p>The draft has been completed. Results coming soon.</p>
-                </div>
+                <!-- State 3: Draft results — show this user's picks only -->
+                <?php if ( $is_logged_in ) :
+                    $my_picks = array_filter( $results['picks'], function( $p ) use ( $uid ) {
+                        return intval( $p['user_id'] ) === $uid;
+                    });
+                ?>
+                    <?php if ( ! empty( $my_picks ) ) : ?>
+                    <h3 class="fhlc-wl-title">Your Draft Picks</h3>
+                    <div class="fhlc-pool">
+                        <?php foreach ( $my_picks as $pick ) : ?>
+                        <div class="fhlc-card" style="border-color:#27ae60;">
+                            <p class="fhlc-card-name"><?php echo esc_html( $pick['fish_name'] ); ?></p>
+                            <div class="fhlc-card-row">
+                                <span>Round</span>
+                                <span class="fhlc-card-qty"><?php echo intval( $pick['round'] ); ?></span>
+                            </div>
+                            <div class="fhlc-card-row">
+                                <span>Qty</span>
+                                <span class="fhlc-card-qty"><?php echo intval( $pick['qty'] ); ?></span>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php else : ?>
+                    <div class="fhlc-closed-msg">
+                        <p>The draft is complete.<br>No picks were made for you this round.</p>
+                    </div>
+                    <?php endif; ?>
+                <?php else : ?>
+                    <div class="fhlc-login-note">
+                        <p>The draft is complete. Log in to see your results.</p>
+                        <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="color:#c9a84c;text-decoration:underline;">Log In</a>
+                    </div>
+                <?php endif; ?>
 
             <?php elseif ( $window_closed_no_results ) : ?>
                 <!-- State 2: Window closed, no results yet -->

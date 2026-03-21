@@ -1072,4 +1072,39 @@ trait FisHotel_Ajax {
         wp_send_json_success( [ 'message' => 'Wishlist saved.' ] );
     }
 
+    /* ─────────────────────────────────────────────
+     *  Last Call: Run Draft (admin-only)
+     * ───────────────────────────────────────────── */
+
+    public function ajax_run_lastcall_draft() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+        if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'fishotel_lastcall_draft_nonce' ) ) {
+            wp_send_json_error( [ 'message' => 'Security check failed.' ] );
+        }
+
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        if ( ! $batch_name ) {
+            wp_send_json_error( [ 'message' => 'No batch specified.' ] );
+        }
+
+        $slug    = sanitize_title( $batch_name );
+        $results = get_option( 'fishotel_lastcall_results_' . $slug, [] );
+        if ( ! empty( $results ) ) {
+            wp_send_json_error( [ 'message' => 'Draft has already been run.' ] );
+        }
+
+        $results = $this->run_last_call_draft( $batch_name );
+
+        // Enrich picks with display names
+        foreach ( $results['picks'] as &$pick ) {
+            $user = get_user_by( 'id', $pick['user_id'] );
+            $pick['display_name'] = $user ? $user->display_name : 'User #' . $pick['user_id'];
+        }
+        unset( $pick );
+
+        wp_send_json_success( $results );
+    }
+
 }
