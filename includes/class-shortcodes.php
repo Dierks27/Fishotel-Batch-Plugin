@@ -4062,40 +4062,279 @@ trait FisHotel_Shortcodes {
             <?php endif; ?>
 
             <?php if ( $has_results ) : ?>
-                <!-- State 3: Draft results — show this user's picks only -->
-                <?php if ( $is_logged_in ) :
-                    $my_picks = array_filter( $results['picks'], function( $p ) use ( $uid ) {
-                        return intval( $p['user_id'] ) === $uid;
-                    });
+                <!-- State 3: Draft Reveal -->
+                <?php
+                $seen_reveal = $is_logged_in ? get_user_meta( $uid, 'fishotel_lastcall_seen_reveal_' . $slug, true ) : true;
+                $start_live  = ! $seen_reveal;
                 ?>
-                    <?php if ( ! empty( $my_picks ) ) : ?>
-                    <h3 class="fhlc-wl-title">Your Draft Picks</h3>
-                    <div class="fhlc-pool">
-                        <?php foreach ( $my_picks as $pick ) : ?>
-                        <div class="fhlc-card" style="border-color:#27ae60;">
-                            <p class="fhlc-card-name"><?php echo esc_html( $pick['fish_name'] ); ?></p>
-                            <div class="fhlc-card-row">
-                                <span>Round</span>
-                                <span class="fhlc-card-qty"><?php echo intval( $pick['round'] ); ?></span>
-                            </div>
-                            <div class="fhlc-card-row">
-                                <span>Qty</span>
-                                <span class="fhlc-card-qty"><?php echo intval( $pick['qty'] ); ?></span>
-                            </div>
+                <style>
+                /* ── Reveal stage ── */
+                .fhlc-reveal{position:relative;min-height:320px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+                .fhlc-reveal-card{position:absolute;text-align:center;opacity:0;transform:translateY(60px);transition:opacity 0.6s ease,transform 0.6s ease;pointer-events:none;}
+                .fhlc-reveal-card.fhlc-active{opacity:1;transform:translateY(0);pointer-events:auto;}
+                .fhlc-reveal-card.fhlc-exit{opacity:0;transform:translateY(-40px);}
+                .fhlc-reveal-round{font-family:'Courier New',monospace;font-size:0.7rem;color:#666;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:6px;}
+                .fhlc-reveal-user{font-family:'Oswald',sans-serif;font-size:1.6rem;font-weight:700;color:#e0ddd5;letter-spacing:0.05em;margin-bottom:4px;}
+                .fhlc-reveal-fish{font-family:'Oswald',sans-serif;font-size:1.15rem;font-weight:600;color:#c9a84c;letter-spacing:0.08em;}
+                .fhlc-reveal-final{font-family:'Oswald',sans-serif;font-size:2rem;font-weight:700;color:#c9a84c;letter-spacing:0.2em;text-transform:uppercase;}
+                .fhlc-loader{display:flex;gap:6px;justify-content:center;align-items:center;height:40px;}
+                .fhlc-loader span{width:6px;height:6px;background:#555;border-radius:50%;animation:fhlcPulse 1.2s ease-in-out infinite;}
+                .fhlc-loader span:nth-child(2){animation-delay:0.2s;}
+                .fhlc-loader span:nth-child(3){animation-delay:0.4s;}
+                @keyframes fhlcPulse{0%,100%{opacity:0.3;transform:scale(1);}50%{opacity:1;transform:scale(1.4);}}
+
+                /* ── Controls ── */
+                .fhlc-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+                .fhlc-speed{display:flex;gap:4px;}
+                .fhlc-speed button{background:#222;border:1px solid #444;color:#888;font-size:0.7rem;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:'Courier New',monospace;}
+                .fhlc-speed button.fhlc-speed-active{border-color:#c9a84c;color:#c9a84c;}
+                .fhlc-skip{background:none;border:1px solid #444;color:#888;font-size:0.72rem;padding:4px 14px;border-radius:4px;cursor:pointer;font-family:'Courier New',monospace;}
+                .fhlc-skip:hover{color:#c9a84c;border-color:#c9a84c;}
+                .fhlc-replay{background:none;border:none;color:#888;font-size:0.75rem;cursor:pointer;font-family:'Courier New',monospace;text-decoration:underline;}
+                .fhlc-replay:hover{color:#c9a84c;}
+
+                /* ── Running log ── */
+                .fhlc-log{margin-top:24px;border-top:1px solid #333;padding-top:16px;}
+                .fhlc-log-title{font-family:'Courier New',monospace;font-size:0.7rem;color:#666;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 8px;}
+                .fhlc-log-list{list-style:none;margin:0;padding:0;max-height:300px;overflow-y:auto;}
+                .fhlc-log-item{font-size:0.78rem;padding:4px 0;border-bottom:1px solid #222;color:#888;font-family:'Courier New',monospace;}
+                .fhlc-log-item .fhlc-log-user{color:#e0ddd5;}
+                .fhlc-log-item .fhlc-log-fish{color:#c9a84c;}
+
+                /* ── Summary table ── */
+                .fhlc-summary{margin-top:16px;}
+                .fhlc-summary table{width:100%;border-collapse:collapse;}
+                .fhlc-summary th{font-family:'Courier New',monospace;font-size:0.72rem;color:#888;text-transform:uppercase;letter-spacing:0.08em;padding:8px;text-align:left;border-bottom:2px solid #333;}
+                .fhlc-summary td{padding:8px;font-size:0.85rem;border-bottom:1px solid #222;color:#aaa;}
+                .fhlc-summary .fhlc-row-mine td{color:#c9a84c;font-weight:600;}
+                .fhlc-summary .fhlc-round-divider td{padding:12px 8px 4px;color:#555;font-family:'Courier New',monospace;font-size:0.7rem;letter-spacing:0.12em;border-bottom:1px solid #333;font-weight:700;}
+                </style>
+
+                <div id="fhlc-stage" style="display:<?php echo $start_live ? 'block' : 'none'; ?>;">
+                    <div class="fhlc-controls">
+                        <div class="fhlc-speed">
+                            <button data-speed="4000" class="fhlc-speed-btn">Slow</button>
+                            <button data-speed="2500" class="fhlc-speed-btn fhlc-speed-active">Normal</button>
+                            <button data-speed="1200" class="fhlc-speed-btn">Fast</button>
                         </div>
-                        <?php endforeach; ?>
+                        <button class="fhlc-skip" id="fhlc-skip">Skip to results &raquo;</button>
                     </div>
-                    <?php else : ?>
-                    <div class="fhlc-closed-msg">
-                        <p>The draft is complete.<br>No picks were made for you this round.</p>
+                    <div class="fhlc-reveal" id="fhlc-reveal">
+                        <div class="fhlc-loader" id="fhlc-loader"><span></span><span></span><span></span></div>
                     </div>
+                    <div class="fhlc-log" id="fhlc-log" style="display:none;">
+                        <p class="fhlc-log-title">Draft Log</p>
+                        <ul class="fhlc-log-list" id="fhlc-log-list"></ul>
+                    </div>
+                </div>
+
+                <div id="fhlc-summary" style="display:<?php echo $start_live ? 'none' : 'block'; ?>;">
+                    <?php if ( $is_logged_in && ! $seen_reveal ) : ?>
+                    <?php elseif ( $is_logged_in ) : ?>
+                        <div style="text-align:right;margin-bottom:8px;">
+                            <button class="fhlc-replay" id="fhlc-replay">&#9654; Replay Draft</button>
+                        </div>
                     <?php endif; ?>
-                <?php else : ?>
-                    <div class="fhlc-login-note">
-                        <p>The draft is complete. Log in to see your results.</p>
-                        <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" style="color:#c9a84c;text-decoration:underline;">Log In</a>
-                    </div>
-                <?php endif; ?>
+                    <h3 class="fhlc-wl-title">Draft Results</h3>
+                    <div class="fhlc-summary" id="fhlc-summary-table"></div>
+                </div>
+
+                <script>
+                (function(){
+                    var ajaxUrl = '<?php echo esc_url( $ajax_url ); ?>';
+                    var nonce   = '<?php echo esc_js( $nonce ); ?>';
+                    var batchName = '<?php echo esc_js( $batch_name ); ?>';
+                    var myUid   = <?php echo $uid ?: 0; ?>;
+                    var startLive = <?php echo $start_live ? 'true' : 'false'; ?>;
+                    var stageEl   = document.getElementById('fhlc-stage');
+                    var summaryEl = document.getElementById('fhlc-summary');
+                    var revealEl  = document.getElementById('fhlc-reveal');
+                    var loaderEl  = document.getElementById('fhlc-loader');
+                    var logEl     = document.getElementById('fhlc-log');
+                    var logList   = document.getElementById('fhlc-log-list');
+                    var skipBtn   = document.getElementById('fhlc-skip');
+                    var replayBtn = document.getElementById('fhlc-replay');
+                    var summaryTableEl = document.getElementById('fhlc-summary-table');
+
+                    var holdTime = 2500;
+                    var picks = [];
+                    var skipped = false;
+
+                    /* Speed controls */
+                    document.querySelectorAll('.fhlc-speed-btn').forEach(function(btn){
+                        btn.addEventListener('click', function(){
+                            document.querySelectorAll('.fhlc-speed-btn').forEach(function(b){ b.classList.remove('fhlc-speed-active'); });
+                            btn.classList.add('fhlc-speed-active');
+                            holdTime = parseInt(btn.dataset.speed, 10);
+                        });
+                    });
+
+                    /* Fetch results */
+                    var fd = new FormData();
+                    fd.append('action', 'fishotel_get_lastcall_results');
+                    fd.append('nonce', nonce);
+                    fd.append('batch_name', batchName);
+                    fetch(ajaxUrl, { method:'POST', body:fd, credentials:'same-origin' })
+                        .then(function(r){ return r.json(); })
+                        .then(function(d){
+                            if(!d.success || !d.data.picks) return;
+                            picks = d.data.picks;
+                            buildSummaryTable(picks);
+                            if(startLive) runReveal();
+                        });
+
+                    /* Skip */
+                    if(skipBtn) skipBtn.addEventListener('click', function(){
+                        skipped = true;
+                        showSummary();
+                        markSeen();
+                    });
+
+                    /* Replay */
+                    if(replayBtn) replayBtn.addEventListener('click', function(){
+                        skipped = false;
+                        logList.innerHTML = '';
+                        logEl.style.display = 'none';
+                        stageEl.style.display = 'block';
+                        summaryEl.style.display = 'none';
+                        runReveal();
+                    });
+
+                    function showSummary(){
+                        stageEl.style.display = 'none';
+                        summaryEl.style.display = 'block';
+                        /* Show replay button */
+                        if(!replayBtn){
+                            var rb = document.createElement('button');
+                            rb.className = 'fhlc-replay';
+                            rb.id = 'fhlc-replay';
+                            rb.innerHTML = '&#9654; Replay Draft';
+                            rb.addEventListener('click', function(){
+                                skipped = false;
+                                logList.innerHTML = '';
+                                logEl.style.display = 'none';
+                                stageEl.style.display = 'block';
+                                summaryEl.style.display = 'none';
+                                runReveal();
+                            });
+                            var wrap = document.createElement('div');
+                            wrap.style.cssText = 'text-align:right;margin-bottom:8px;';
+                            wrap.appendChild(rb);
+                            summaryEl.insertBefore(wrap, summaryEl.firstChild);
+                            replayBtn = rb;
+                        }
+                    }
+
+                    function markSeen(){
+                        if(!myUid) return;
+                        var fd2 = new FormData();
+                        fd2.append('action', 'fishotel_mark_lastcall_seen');
+                        fd2.append('nonce', nonce);
+                        fd2.append('batch_name', batchName);
+                        fetch(ajaxUrl, { method:'POST', body:fd2, credentials:'same-origin' });
+                    }
+
+                    function escH(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+                    /* ── Reveal animation ── */
+                    function runReveal(){
+                        loaderEl.style.display = 'flex';
+                        var idx = 0;
+                        function showNext(){
+                            if(skipped) return;
+                            if(idx >= picks.length){
+                                showFinal();
+                                return;
+                            }
+                            var p = picks[idx];
+                            idx++;
+
+                            /* Hide loader */
+                            loaderEl.style.display = 'none';
+
+                            /* Create card */
+                            var card = document.createElement('div');
+                            card.className = 'fhlc-reveal-card';
+                            card.innerHTML =
+                                '<div class="fhlc-reveal-round">Round ' + p.round + '</div>' +
+                                '<div class="fhlc-reveal-user">' + escH(p.hf_username) + '</div>' +
+                                '<div class="fhlc-reveal-fish">' + escH(p.fish_name) + '</div>';
+                            revealEl.appendChild(card);
+
+                            /* Animate in */
+                            requestAnimationFrame(function(){
+                                requestAnimationFrame(function(){
+                                    card.classList.add('fhlc-active');
+                                });
+                            });
+
+                            /* Add to log */
+                            logEl.style.display = 'block';
+                            var li = document.createElement('li');
+                            li.className = 'fhlc-log-item';
+                            li.innerHTML = 'Rd ' + p.round + ' &mdash; <span class="fhlc-log-user">' + escH(p.hf_username) + '</span> &rarr; <span class="fhlc-log-fish">' + escH(p.fish_name) + '</span>';
+                            logList.appendChild(li);
+                            logList.scrollTop = logList.scrollHeight;
+
+                            /* Hold, then exit */
+                            setTimeout(function(){
+                                if(skipped) return;
+                                card.classList.remove('fhlc-active');
+                                card.classList.add('fhlc-exit');
+                                setTimeout(function(){
+                                    card.remove();
+                                    /* Pause with loader */
+                                    loaderEl.style.display = 'flex';
+                                    setTimeout(showNext, 600);
+                                }, 500);
+                            }, holdTime);
+                        }
+                        setTimeout(showNext, 800);
+                    }
+
+                    function showFinal(){
+                        loaderEl.style.display = 'none';
+                        var card = document.createElement('div');
+                        card.className = 'fhlc-reveal-card';
+                        card.innerHTML = '<div class="fhlc-reveal-final">Draft Complete</div>';
+                        revealEl.appendChild(card);
+                        requestAnimationFrame(function(){
+                            requestAnimationFrame(function(){
+                                card.classList.add('fhlc-active');
+                            });
+                        });
+                        markSeen();
+                        setTimeout(function(){
+                            if(!skipped) showSummary();
+                        }, 3000);
+                    }
+
+                    /* ── Summary table builder ── */
+                    function buildSummaryTable(picks){
+                        if(!picks.length){
+                            summaryTableEl.innerHTML = '<p style="color:#888;font-family:\'Special Elite\',monospace;">No picks were made in this draft.</p>';
+                            return;
+                        }
+                        var html = '<table><thead><tr><th>Round</th><th>Customer</th><th>Fish</th><th>Qty</th></tr></thead><tbody>';
+                        var lastRound = 0;
+                        picks.forEach(function(p){
+                            if(p.round !== lastRound){
+                                if(lastRound > 0) html += '<tr class="fhlc-round-divider"><td colspan="4">Round ' + p.round + '</td></tr>';
+                                lastRound = p.round;
+                            }
+                            var isMine = myUid && parseInt(p.user_id,10) === myUid;
+                            html += '<tr class="' + (isMine ? 'fhlc-row-mine' : '') + '">';
+                            html += '<td style="text-align:center;">' + p.round + '</td>';
+                            html += '<td>' + escH(p.hf_username) + '</td>';
+                            html += '<td>' + escH(p.fish_name) + '</td>';
+                            html += '<td style="text-align:center;">' + p.qty + '</td>';
+                            html += '</tr>';
+                        });
+                        html += '</tbody></table>';
+                        summaryTableEl.innerHTML = html;
+                    }
+                })();
+                </script>
 
             <?php elseif ( $window_closed_no_results ) : ?>
                 <!-- State 2: Window closed, no results yet -->

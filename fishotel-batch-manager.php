@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v6.33 - Last Call draft engine, admin runner, and results display.
- * Version:           6.33
+ * Description:       v6.34 - Last Call community reveal animation.
+ * Version:           6.34
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '6.33' );
+define( 'FISHOTEL_VERSION', '6.34' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -258,7 +258,10 @@ class FisHotel_Batch_Manager {
 
         // Last Call AJAX
         add_action( 'wp_ajax_fishotel_save_lastcall_wishlist', [$this, 'ajax_save_lastcall_wishlist'] );
-        add_action( 'wp_ajax_fishotel_run_lastcall_draft',   [$this, 'ajax_run_lastcall_draft'] );
+        add_action( 'wp_ajax_fishotel_run_lastcall_draft',      [$this, 'ajax_run_lastcall_draft'] );
+        add_action( 'wp_ajax_fishotel_get_lastcall_results',   [$this, 'ajax_get_lastcall_results'] );
+        add_action( 'wp_ajax_nopriv_fishotel_get_lastcall_results', [$this, 'ajax_get_lastcall_results'] );
+        add_action( 'wp_ajax_fishotel_mark_lastcall_seen',     [$this, 'ajax_mark_lastcall_seen'] );
 
         add_action( 'woocommerce_after_checkout_form', [$this, 'add_return_to_fish_button'] );
         add_action( 'woocommerce_thankyou', [$this, 'add_return_to_fish_button'] );

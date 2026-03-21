@@ -1107,4 +1107,60 @@ trait FisHotel_Ajax {
         wp_send_json_success( $results );
     }
 
+    /* ─────────────────────────────────────────────
+     *  Last Call: Get Results (public — spectators too)
+     * ───────────────────────────────────────────── */
+
+    public function ajax_get_lastcall_results() {
+        if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'fishotel_lastcall_nonce' ) ) {
+            wp_send_json_error( [ 'message' => 'Security check failed.' ] );
+        }
+
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        if ( ! $batch_name ) {
+            wp_send_json_error( [ 'message' => 'No batch specified.' ] );
+        }
+
+        $slug    = sanitize_title( $batch_name );
+        $results = get_option( 'fishotel_lastcall_results_' . $slug, [] );
+        if ( empty( $results['picks'] ) ) {
+            wp_send_json_success( [ 'picks' => [] ] );
+        }
+
+        // Enrich with HF usernames
+        foreach ( $results['picks'] as &$pick ) {
+            $uid      = intval( $pick['user_id'] );
+            $hf_name  = get_user_meta( $uid, '_fishotel_humble_username', true );
+            if ( ! $hf_name ) {
+                $user    = get_user_by( 'id', $uid );
+                $hf_name = $user ? $user->display_name : 'Guest #' . $uid;
+            }
+            $pick['hf_username'] = $hf_name;
+        }
+        unset( $pick );
+
+        wp_send_json_success( $results );
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Last Call: Mark Reveal Seen
+     * ───────────────────────────────────────────── */
+
+    public function ajax_mark_lastcall_seen() {
+        if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'fishotel_lastcall_nonce' ) ) {
+            wp_send_json_error( [ 'message' => 'Security check failed.' ] );
+        }
+
+        $uid = get_current_user_id();
+        if ( ! $uid ) {
+            wp_send_json_error( [ 'message' => 'Not logged in.' ] );
+        }
+
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        $slug       = sanitize_title( $batch_name );
+
+        update_user_meta( $uid, 'fishotel_lastcall_seen_reveal_' . $slug, 1 );
+        wp_send_json_success();
+    }
+
 }
