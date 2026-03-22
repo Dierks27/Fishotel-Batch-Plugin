@@ -10,17 +10,17 @@ function fh_generate_chip_scatter( $batch_name, $user_id ) {
         $seed    = abs( crc32( $batch_name . $user_id . $i ) );
         $variant = $variants[ $seed % 3 ];
         $src     = plugins_url( 'assists/casino/' . $variant, FISHOTEL_PLUGIN_FILE );
-        // X: 2-15% or 75-95%
+        // X: 2-15% or 75-80%
         $x_seed  = ( $seed >> 4 ) % 100;
-        $x       = $x_seed < 50 ? 2 + ( $x_seed % 14 ) : 75 + ( $x_seed % 21 );
-        // Y: 5-85%
-        $y       = 5 + ( ( $seed >> 8 ) % 81 );
+        $x       = $x_seed < 50 ? 2 + ( $x_seed % 14 ) : 75 + ( $x_seed % 6 );
+        // Y: 5-82%
+        $y       = 5 + ( ( $seed >> 8 ) % 78 );
         // Rotation: -15 to +15
         $rot     = ( $seed % 31 ) - 15;
-        // Size: 44-64px
-        $size    = 44 + ( ( $seed >> 12 ) % 21 );
-        // Opacity: 0.55-0.75
-        $opacity = 0.55 + ( ( ( $seed >> 16 ) % 21 ) / 100 );
+        // Size: 60-80px
+        $size    = 60 + ( ( $seed >> 12 ) % 21 );
+        // Opacity: 0.85-0.95
+        $opacity = 0.85 + ( ( ( $seed >> 16 ) % 11 ) / 100 );
 
         $html .= sprintf(
             '<img src="%s" alt="" style="position:absolute;left:%d%%;top:%d%%;width:%dpx;height:auto;transform:rotate(%ddeg);opacity:%.2f;pointer-events:none;z-index:1;" />',
