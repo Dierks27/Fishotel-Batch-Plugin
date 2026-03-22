@@ -4079,8 +4079,8 @@ trait FisHotel_Shortcodes {
             .fhlc-wl-center{max-width:600px;margin:0 auto;text-align:center;}
             .fhlc-wl-title{text-align:left;color:#fff;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;text-shadow:none;margin:0 0 8px;padding:6px 12px;background:rgba(0,0,0,0.55);border-radius:4px;display:inline-block;}
             .fhlc-wl-desc{text-align:left;color:rgba(255,255,255,0.75);font-size:12px;margin:0 0 16px;padding:4px 10px;background:rgba(0,0,0,0.55);border-radius:4px;display:inline-block;}
-            .fhlc-wl-list{list-style:none;margin:0;padding:10px;background:#faf8f2;border:1px solid #bbb;border-top:3px solid #111;outline:3px solid #faf8f2;outline-offset:-7px;border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,0.5);}
-            .fhlc-wl-item{display:flex;align-items:center;gap:10px;background:transparent;border:none;border-bottom:1px dashed rgba(0,0,0,0.1);border-radius:0;padding:10px 14px;margin-bottom:0;cursor:grab;user-select:none;color:#1a1a1a;transition:background 0.2s;}
+            .fhlc-wl-list{list-style:none;margin:0;padding:10px;background:#faf8f2;border:1px solid #bbb;border-top:3px solid #111;outline:3px solid #faf8f2;outline-offset:-7px;border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,0.5);text-align:left;}
+            .fhlc-wl-item{display:flex;align-items:center;gap:10px;background:transparent;border:none;border-bottom:1px dashed rgba(0,0,0,0.1);border-radius:0;padding:10px 14px;margin-bottom:0;cursor:grab;user-select:none;color:#1a1a1a;transition:background 0.2s;text-align:left;}
             .fhlc-wl-item:last-child{border-bottom:none;}
             .fhlc-wl-item:active{cursor:grabbing;}
             .fhlc-wl-item.fhlc-dragging{opacity:0.5;}
