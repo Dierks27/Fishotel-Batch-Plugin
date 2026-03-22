@@ -4136,7 +4136,7 @@ trait FisHotel_Shortcodes {
 
             /* ── Folio napkin ── */
             .fhlc-napkin{position:absolute;top:50px;left:32px;width:200px;height:260px;background:url('<?php echo esc_url( $napkin_url ); ?>') top center / cover no-repeat;z-index:2;pointer-events:none;filter:drop-shadow(2px 4px 8px rgba(0,0,0,0.5));}
-            .fhlc-napkin-text{position:absolute;top:82px;left:34px;right:40px;font-family:'Dancing Script',cursive;font-weight:600;font-size:14px;line-height:20px;color:#1a3a8b;}
+            .fhlc-napkin-text{position:absolute;top:44px;left:34px;right:40px;font-family:'Dancing Script',cursive;font-weight:600;font-size:14px;line-height:20px;color:#1a3a8b;}
             .fhlc-napkin-divider{border:none;border-top:1px solid rgba(26,58,139,0.3);margin:6px 0;}
             .fhlc-napkin-total{text-align:right;color:#4a6aab;font-size:13px;margin-top:6px;}
             @media (max-width:680px){
@@ -4148,51 +4148,22 @@ trait FisHotel_Shortcodes {
         <div class="fhlc-wrap">
             <?php echo fh_generate_chip_scatter( $batch_name, $uid ); ?>
 
-            <?php if ( $is_logged_in && ( $has_folio || ! empty( $wishlist ) ) ) : ?>
+            <?php if ( $is_logged_in && $has_folio ) : ?>
             <!-- Folio napkin -->
             <div class="fhlc-napkin">
                 <div class="fhlc-napkin-text">
-                    <?php if ( $has_folio ) : ?>
-                        <?php foreach ( $folio_items as $fi ) : ?>
-                            <div>&#x2713; <?php echo esc_html( $fi['name'] ); ?> &times;<?php echo $fi['qty']; ?></div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                    <?php if ( $has_folio && ! empty( $wishlist ) ) : ?>
-                        <hr class="fhlc-napkin-divider">
-                    <?php endif; ?>
-                    <?php if ( ! empty( $wishlist ) ) : ?>
-                        <?php
-                        $wl_rank = 1;
-                        foreach ( $wishlist as $wl_item ) {
-                            $wl_name = '';
-                            foreach ( $pool as $p ) {
-                                if ( intval( $p['fish_id'] ) === intval( $wl_item['fish_id'] ) ) { $wl_name = $p['name']; break; }
-                            }
-                            if ( ! $wl_name ) continue;
-                            $wl_qty = isset( $wl_item['qty'] ) ? intval( $wl_item['qty'] ) : 1;
-                            ?>
-                            <div><?php echo $wl_rank; ?>. <?php echo esc_html( $wl_name ); ?> &times;<?php echo $wl_qty; ?></div>
-                            <?php
-                            $wl_rank++;
-                        }
-                        ?>
-                    <?php endif; ?>
                     <?php
-                    $wl_total = 0;
-                    if ( ! empty( $wishlist ) ) {
-                        foreach ( $wishlist as $wl_item ) {
-                            foreach ( $pool as $p ) {
-                                if ( intval( $p['fish_id'] ) === intval( $wl_item['fish_id'] ) ) {
-                                    $wl_qty = isset( $wl_item['qty'] ) ? intval( $wl_item['qty'] ) : 1;
-                                    $wl_total += $p['price'] * $wl_qty;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    $napkin_total = $folio_total + $wl_total;
-                    if ( $napkin_total > 0 ) : ?>
-                        <div class="fhlc-napkin-total">~$<?php echo number_format( $napkin_total, 2 ); ?></div>
+                    $folio_visible = array_slice( $folio_items, 0, 5 );
+                    $folio_extra   = count( $folio_items ) - 5;
+                    foreach ( $folio_visible as $fi ) : ?>
+                        <div>&#x2713; <?php echo esc_html( $fi['name'] ); ?> &times;<?php echo $fi['qty']; ?></div>
+                    <?php endforeach; ?>
+                    <?php if ( $folio_extra > 0 ) : ?>
+                        <div style="font-size:11px;opacity:0.7;margin-top:2px;">&hellip;and <?php echo $folio_extra; ?> more</div>
+                    <?php endif; ?>
+                    <hr class="fhlc-napkin-divider">
+                    <?php if ( $folio_total > 0 ) : ?>
+                        <div class="fhlc-napkin-total">Committed: $<?php echo number_format( $folio_total, 2 ); ?></div>
                     <?php endif; ?>
                 </div>
             </div>
