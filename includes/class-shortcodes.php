@@ -4138,7 +4138,7 @@ trait FisHotel_Shortcodes {
             .fhlc-napkin{position:absolute;top:50px;left:32px;width:200px;height:260px;background:url('<?php echo esc_url( $napkin_url ); ?>') top center / cover no-repeat;z-index:2;pointer-events:none;filter:drop-shadow(2px 4px 8px rgba(0,0,0,0.5));}
             .fhlc-napkin-text{position:absolute;top:44px;left:34px;right:40px;font-family:'Dancing Script',cursive;font-weight:600;font-size:14px;line-height:20px;color:#1a3a8b;}
             .fhlc-napkin-header{margin-top:8px;font-size:15px;font-weight:700;text-decoration:underline;color:#1a3a8b;transform:rotate(-1.2deg) translateY(1px);display:block;}
-            .fhlc-napkin-divider{border:none;border-top:1px solid rgba(26,58,139,0.25);margin:6px 0;}
+            .fhlc-napkin .fhlc-napkin-divider{border:none !important;border-top:1px solid rgba(26,58,139,0.25) !important;margin:6px 0 !important;padding:0 !important;height:0 !important;}
             .fhlc-napkin-total{text-align:right;color:#1a3a8b;font-weight:700;font-size:15px;transform:rotate(0.8deg) translateY(-1px);display:block;margin-top:0;}
             .fhlc-napkin-text > div:nth-child(2){transform:rotate(-1.4deg) translateY(-1px);}
             .fhlc-napkin-text > div:nth-child(3){transform:rotate(0.9deg) translateY(2px);}
