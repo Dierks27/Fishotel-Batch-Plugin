@@ -4017,9 +4017,17 @@ trait FisHotel_Shortcodes {
         ?>
         <link href="<?php echo esc_url( $fonts_url ); ?>" rel="stylesheet">
         <style>
-            /* ── Casino felt wrapper ── */
-            .fhlc-wrap{max-width:720px;margin:40px auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#e0ddd5;background:url('<?php echo esc_url( $felt_url ); ?>') center center / cover;padding:40px 32px;position:relative;border-radius:48% / 18%;border:18px solid #2a1005;outline:4px solid #6b3a1a;box-shadow:0 0 0 6px #1a0a02,0 30px 80px rgba(0,0,0,0.95),0 10px 30px rgba(0,0,0,0.8),inset 0 0 120px rgba(0,0,0,0.55),inset 0 0 40px rgba(0,0,0,0.4);overflow:hidden;}
-            .fhlc-wrap::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.45) 100%);pointer-events:none;z-index:0;}
+            /* ── Casino table outer rail ── */
+            .fhlc-table-rail{max-width:760px;margin:40px auto;border-radius:48% / 18%;padding:20px;position:relative;background:linear-gradient(160deg,#5c2e0e 0%,#3b1a08 40%,#2a1005 70%,#1a0a02 100%);box-shadow:0 30px 80px rgba(0,0,0,0.95),0 10px 30px rgba(0,0,0,0.8),0 0 0 4px #1a0a02;overflow:hidden;}
+            /* Curved rail highlight — light catching the top edge */
+            .fhlc-table-rail::before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(175deg,rgba(160,110,60,0.45) 0%,rgba(120,75,35,0.2) 15%,transparent 40%,rgba(0,0,0,0.3) 100%);pointer-events:none;z-index:1;}
+            /* Inner lip shadow where rail meets felt */
+            .fhlc-table-rail::after{content:'';position:absolute;inset:16px;border-radius:48% / 18%;box-shadow:inset 0 4px 16px rgba(0,0,0,0.85),inset 0 2px 6px rgba(0,0,0,0.6);pointer-events:none;z-index:2;}
+
+            /* ── Felt surface (sunken inside rail) ── */
+            .fhlc-wrap{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#e0ddd5;background:url('<?php echo esc_url( $felt_url ); ?>') center center / cover;padding:40px 32px;position:relative;border-radius:48% / 18%;overflow:hidden;}
+            /* Felt vignette — darker at edges, lighter center */
+            .fhlc-wrap::before{content:'';position:absolute;inset:0;border-radius:inherit;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 0%,rgba(0,0,0,0.15) 40%,rgba(0,0,0,0.5) 80%,rgba(0,0,0,0.7) 100%);pointer-events:none;z-index:0;}
             .fhlc-wrap > *{position:relative;z-index:1;}
             .fhlc-wrap *{box-sizing:border-box;}
 
@@ -4089,8 +4097,8 @@ trait FisHotel_Shortcodes {
             .fhlc-wl-remove:hover{color:#800;}
 
             /* ── Save button ── */
-            .fhlc-save-row{margin-top:16px;display:flex;align-items:center;gap:12px;}
-            .fhlc-save-btn{background:#111;color:#faf8f2;font-family:'Oswald',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.2em;text-transform:uppercase;border:none;border-radius:2px;padding:10px 28px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.5);transition:background 0.2s;}
+            .fhlc-save-row{margin-top:16px;text-align:center;}
+            .fhlc-save-btn{display:block;margin:16px auto 8px;background:#111;color:#faf8f2;font-family:'Oswald',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.2em;text-transform:uppercase;border:none;border-radius:50% / 40%;padding:12px 48px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.5);transition:background 0.2s;float:none;}
             .fhlc-save-btn:hover{background:#333;}
             .fhlc-save-btn:disabled{opacity:0.5;cursor:not-allowed;}
             .fhlc-save-status{font-size:0.78rem;color:#27ae60;font-family:'Courier New',monospace;}
@@ -4101,6 +4109,7 @@ trait FisHotel_Shortcodes {
             .fhlc-results-stub{text-align:center;font-family:'Special Elite',monospace;font-size:1rem;color:rgba(255,255,255,0.5);margin:32px 0;}
         </style>
 
+        <div class="fhlc-table-rail">
         <div class="fhlc-wrap">
             <?php echo fh_generate_chip_scatter( $batch_name, $uid ); ?>
             <!-- Header -->
@@ -4471,6 +4480,7 @@ trait FisHotel_Shortcodes {
                 <?php endif; ?>
             <?php endif; ?>
         </div>
+        </div><!-- /.fhlc-table-rail -->
 
         <?php if ( $window_open ) : ?>
         <script>
@@ -4503,6 +4513,17 @@ trait FisHotel_Shortcodes {
 
             function escHtml(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
+            /* ── Empty-state for wishlist list ── */
+            function toggleWlEmpty(){
+                var hasItems = list.querySelectorAll('.fhlc-wl-item').length > 0;
+                if(!hasItems){
+                    list.style.background='transparent';list.style.border='none';list.style.height='0';list.style.padding='0';list.style.margin='0';list.style.outline='none';list.style.boxShadow='none';
+                } else {
+                    list.style.background='';list.style.border='';list.style.height='';list.style.padding='';list.style.margin='';list.style.outline='';list.style.boxShadow='';
+                }
+            }
+            toggleWlEmpty();
+
             /* ── Pool card click → add to wishlist ── */
             document.querySelectorAll('.fhlc-card-add').forEach(function(btn){
                 btn.addEventListener('click', function(){
@@ -4517,6 +4538,7 @@ trait FisHotel_Shortcodes {
                     list.appendChild(li);
                     renumber();
                     markPoolButtons();
+                    toggleWlEmpty();
                     saveStatus.textContent = '';
                 });
             });
@@ -4557,6 +4579,7 @@ trait FisHotel_Shortcodes {
                     e.target.closest('.fhlc-wl-item').remove();
                     renumber();
                     markPoolButtons();
+                    toggleWlEmpty();
                     saveStatus.textContent = '';
                 }
                 if(e.target.classList.contains('fhlc-wl-alt-toggle')){
