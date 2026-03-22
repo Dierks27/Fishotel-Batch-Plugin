@@ -4007,7 +4007,7 @@ trait FisHotel_Shortcodes {
         }
         unset( $item );
 
-        $fonts_url = 'https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Special+Elite&family=Klee+One&display=swap';
+        $fonts_url = 'https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Special+Elite&family=Klee+One&family=Righteous&display=swap';
         $ajax_url  = admin_url( 'admin-ajax.php' );
         $nonce     = wp_create_nonce( 'fishotel_lastcall_nonce' );
         $felt_url  = plugins_url( 'assists/casino/Felt-Table.jpg', FISHOTEL_PLUGIN_FILE );
@@ -4033,9 +4033,10 @@ trait FisHotel_Shortcodes {
 
             /* ── Header ── */
             .fhlc-header{text-align:center;margin-bottom:32px;}
-            .fhlc-hotel{font-family:'Oswald',sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:0.25em;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,0.9);margin:0;}
-            .fhlc-subtitle{font-family:'Courier New',monospace;color:rgba(255,255,255,0.5);letter-spacing:0.35em;font-size:11px;text-transform:uppercase;margin:6px 0 0;}
-            .fhlc-timer{font-family:'Courier New',monospace;color:#ffd700;font-size:38px;text-shadow:0 0 24px rgba(255,215,0,0.5);letter-spacing:0.15em;margin:16px 0 0;}
+            .fhlc-hotel{font-family:'Oswald',sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:0.25em;color:#f5f0e8;text-shadow:none;margin:0;}
+            .fhlc-header-rule{width:80px;border:none;border-top:1px solid #96885f;margin:10px auto;}
+            .fhlc-subtitle{font-family:'Courier New',monospace;color:rgba(245,240,232,0.65);letter-spacing:0.35em;font-size:11px;text-transform:uppercase;margin:8px 0 0;}
+            .fhlc-timer{font-family:'Righteous',cursive;color:#c8a84b;font-size:38px;text-shadow:0 0 24px rgba(200,168,75,0.4);letter-spacing:4px;margin:16px 0 0;}
             .fhlc-timer-label{color:rgba(255,255,255,0.4);letter-spacing:0.35em;font-size:10px;text-transform:uppercase;display:block;margin-bottom:4px;}
 
             /* ── Pool grid ── */
@@ -4077,8 +4078,8 @@ trait FisHotel_Shortcodes {
             }
 
             /* ── Wishlist ── */
-            .fhlc-wl-title{color:#fff;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;text-shadow:0 1px 6px rgba(0,0,0,0.8);margin:0 0 8px;padding-bottom:8px;}
-            .fhlc-wl-desc{color:rgba(255,255,255,0.4);font-size:12px;margin:0 0 16px;}
+            .fhlc-wl-title{color:#fff;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;text-shadow:none;margin:0 0 8px;padding:6px 12px;background:rgba(0,0,0,0.55);border-radius:4px;display:inline-block;}
+            .fhlc-wl-desc{color:rgba(255,255,255,0.75);font-size:12px;margin:0 0 16px;padding:4px 10px;background:rgba(0,0,0,0.55);border-radius:4px;display:inline-block;}
             .fhlc-wl-list{list-style:none;margin:0;padding:10px;background:#faf8f2;border:1px solid #bbb;border-top:3px solid #111;outline:3px solid #faf8f2;outline-offset:-7px;border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,0.5);}
             .fhlc-wl-item{display:flex;align-items:center;gap:10px;background:transparent;border:none;border-bottom:1px dashed rgba(0,0,0,0.1);border-radius:0;padding:10px 14px;margin-bottom:0;cursor:grab;user-select:none;color:#1a1a1a;transition:background 0.2s;}
             .fhlc-wl-item:last-child{border-bottom:none;}
@@ -4097,9 +4098,9 @@ trait FisHotel_Shortcodes {
             .fhlc-wl-remove:hover{color:#800;}
 
             /* ── Save button ── */
-            .fhlc-save-row{margin-top:16px;text-align:center;}
-            .fhlc-save-btn{display:block;margin:16px auto 8px;background:#111;color:#faf8f2;font-family:'Oswald',sans-serif;font-weight:700;font-size:0.9rem;letter-spacing:0.2em;text-transform:uppercase;border:none;border-radius:50% / 40%;padding:12px 48px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.5);transition:background 0.2s;float:none;}
-            .fhlc-save-btn:hover{background:#333;}
+            .fhlc-save-row{margin-top:16px;width:100%;text-align:center;}
+            .fhlc-save-btn{display:inline-block;margin:16px auto;background:linear-gradient(160deg,#1a3a6b,#0f2448,#162f5c);color:#f5f0e8;font-family:'Righteous',cursive;font-weight:400;font-size:0.9rem;letter-spacing:3px;text-transform:uppercase;border:2px solid #96885f;border-radius:50% / 40%;padding:12px 48px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.5);transition:background 0.2s,border-color 0.2s;float:none;}
+            .fhlc-save-btn:hover{background:linear-gradient(160deg,#224a85,#153060,#1d3c72);border-color:#c8a84b;}
             .fhlc-save-btn:disabled{opacity:0.5;cursor:not-allowed;}
             .fhlc-save-status{font-size:0.78rem;color:#27ae60;font-family:'Courier New',monospace;}
 
@@ -4115,7 +4116,8 @@ trait FisHotel_Shortcodes {
             <!-- Header -->
             <div class="fhlc-header">
                 <h2 class="fhlc-hotel">THE FISHOTEL</h2>
-                <p class="fhlc-subtitle">Last Call &mdash; Draft Pool</p>
+                <hr class="fhlc-header-rule">
+                <p class="fhlc-subtitle">The Deal &mdash; Place Your Bets</p>
                 <?php if ( $window_open ) : ?>
                     <div class="fhlc-timer">
                         <span class="fhlc-timer-label">Wishlist closes in</span>
