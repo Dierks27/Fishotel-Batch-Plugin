@@ -4007,11 +4007,37 @@ trait FisHotel_Shortcodes {
         }
         unset( $item );
 
-        $fonts_url = 'https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Special+Elite&family=Klee+One&family=Righteous&display=swap';
+        // Build folio napkin data for logged-in users
+        $folio_items   = [];
+        $folio_total   = 0;
+        if ( $is_logged_in ) {
+            $queue_data = get_option( 'fishotel_verification_queue_' . $slug, [] );
+            if ( ! empty( $queue_data['species'] ) ) {
+                foreach ( $queue_data['species'] as $fish_id => $species ) {
+                    if ( empty( $species['queue'] ) ) continue;
+                    foreach ( $species['queue'] as $entry ) {
+                        if ( intval( $entry['user_id'] ) === $uid && $entry['status'] === 'accepted' && $entry['accepted_qty'] > 0 ) {
+                            $master_id = get_post_meta( $fish_id, '_master_id', true );
+                            $price     = $master_id ? floatval( get_post_meta( $master_id, '_selling_price', true ) ) : 0;
+                            $folio_items[] = [
+                                'name'  => $species['name'],
+                                'qty'   => intval( $entry['accepted_qty'] ),
+                                'price' => $price,
+                            ];
+                            $folio_total += $price * intval( $entry['accepted_qty'] );
+                        }
+                    }
+                }
+            }
+        }
+        $has_folio = ! empty( $folio_items );
+
+        $fonts_url = 'https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Special+Elite&family=Klee+One&family=Righteous&family=Dancing+Script:wght@600&display=swap';
         $ajax_url  = admin_url( 'admin-ajax.php' );
         $nonce     = wp_create_nonce( 'fishotel_lastcall_nonce' );
         $felt_url  = plugins_url( 'assists/casino/Felt-Table.jpg', FISHOTEL_PLUGIN_FILE );
         $card_url  = plugins_url( 'assists/casino/FisHotel-Face-Card.png', FISHOTEL_PLUGIN_FILE );
+        $napkin_url = plugins_url( 'assists/casino/Blank-Napkin.png', FISHOTEL_PLUGIN_FILE );
 
         ob_start();
         ?>
@@ -4107,11 +4133,71 @@ trait FisHotel_Shortcodes {
             .fhlc-closed-msg{text-align:center;font-family:'Special Elite',monospace;font-size:1rem;color:rgba(255,255,255,0.6);margin:32px 0;line-height:1.6;}
             .fhlc-login-note{text-align:center;font-family:'Special Elite',monospace;font-size:0.85rem;color:rgba(255,255,255,0.5);margin:24px 0;padding:20px;border:1px dashed rgba(255,255,255,0.2);border-radius:8px;}
             .fhlc-results-stub{text-align:center;font-family:'Special Elite',monospace;font-size:1rem;color:rgba(255,255,255,0.5);margin:32px 0;}
+
+            /* ── Folio napkin ── */
+            .fhlc-napkin{position:absolute;top:50px;left:32px;width:200px;height:260px;background:url('<?php echo esc_url( $napkin_url ); ?>') top center / cover no-repeat;z-index:2;pointer-events:none;filter:drop-shadow(2px 4px 8px rgba(0,0,0,0.5));}
+            .fhlc-napkin-text{position:absolute;top:82px;left:34px;right:40px;font-family:'Dancing Script',cursive;font-weight:600;font-size:14px;line-height:20px;color:#1a3a8b;}
+            .fhlc-napkin-divider{border:none;border-top:1px solid rgba(26,58,139,0.3);margin:6px 0;}
+            .fhlc-napkin-total{text-align:right;color:#4a6aab;font-size:13px;margin-top:6px;}
+            @media (max-width:680px){
+                .fhlc-napkin{display:none;}
+            }
         </style>
 
         <div class="fhlc-table-rail">
         <div class="fhlc-wrap">
             <?php echo fh_generate_chip_scatter( $batch_name, $uid ); ?>
+
+            <?php if ( $is_logged_in && ( $has_folio || ! empty( $wishlist ) ) ) : ?>
+            <!-- Folio napkin -->
+            <div class="fhlc-napkin">
+                <div class="fhlc-napkin-text">
+                    <?php if ( $has_folio ) : ?>
+                        <?php foreach ( $folio_items as $fi ) : ?>
+                            <div>&#x2713; <?php echo esc_html( $fi['name'] ); ?> &times;<?php echo $fi['qty']; ?></div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    <?php if ( $has_folio && ! empty( $wishlist ) ) : ?>
+                        <hr class="fhlc-napkin-divider">
+                    <?php endif; ?>
+                    <?php if ( ! empty( $wishlist ) ) : ?>
+                        <?php
+                        $wl_rank = 1;
+                        foreach ( $wishlist as $wl_item ) {
+                            $wl_name = '';
+                            foreach ( $pool as $p ) {
+                                if ( intval( $p['fish_id'] ) === intval( $wl_item['fish_id'] ) ) { $wl_name = $p['name']; break; }
+                            }
+                            if ( ! $wl_name ) continue;
+                            $wl_qty = isset( $wl_item['qty'] ) ? intval( $wl_item['qty'] ) : 1;
+                            ?>
+                            <div><?php echo $wl_rank; ?>. <?php echo esc_html( $wl_name ); ?> &times;<?php echo $wl_qty; ?></div>
+                            <?php
+                            $wl_rank++;
+                        }
+                        ?>
+                    <?php endif; ?>
+                    <?php
+                    $wl_total = 0;
+                    if ( ! empty( $wishlist ) ) {
+                        foreach ( $wishlist as $wl_item ) {
+                            foreach ( $pool as $p ) {
+                                if ( intval( $p['fish_id'] ) === intval( $wl_item['fish_id'] ) ) {
+                                    $wl_qty = isset( $wl_item['qty'] ) ? intval( $wl_item['qty'] ) : 1;
+                                    $wl_total += $p['price'] * $wl_qty;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    $napkin_total = $folio_total + $wl_total;
+                    if ( $napkin_total > 0 ) : ?>
+                        <div class="fhlc-napkin-total">~$<?php echo number_format( $napkin_total, 2 ); ?></div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <!-- Header -->
             <div class="fhlc-header">
                 <img src="<?php echo esc_url( plugins_url( 'assists/casino/FisHotel-Casino.png', FISHOTEL_PLUGIN_FILE ) ); ?>" alt="FisHotel Casino" class="fhlc-logo">
