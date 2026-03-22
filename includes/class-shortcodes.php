@@ -4137,9 +4137,14 @@ trait FisHotel_Shortcodes {
             /* ── Folio napkin ── */
             .fhlc-napkin{position:absolute;top:50px;left:32px;width:200px;height:260px;background:url('<?php echo esc_url( $napkin_url ); ?>') top center / cover no-repeat;z-index:2;pointer-events:none;filter:drop-shadow(2px 4px 8px rgba(0,0,0,0.5));}
             .fhlc-napkin-text{position:absolute;top:44px;left:34px;right:40px;font-family:'Dancing Script',cursive;font-weight:600;font-size:14px;line-height:20px;color:#1a3a8b;}
-            .fhlc-napkin-header{font-size:11px;color:#1a3a8b;margin:0 0 4px;padding-bottom:4px;border-bottom:1px solid rgba(26,58,139,0.3);}
-            .fhlc-napkin-divider{border:none;border-top:1px solid rgba(26,58,139,0.3);margin:6px 0;}
-            .fhlc-napkin-total{text-align:right;color:#4a6aab;font-size:13px;margin-top:0;}
+            .fhlc-napkin-header{margin-top:8px;font-size:15px;font-weight:700;text-decoration:underline;color:#1a3a8b;transform:rotate(-1.2deg) translateY(1px);display:block;}
+            .fhlc-napkin-divider{border:none;border-top:1px solid rgba(26,58,139,0.25);margin:6px 0;}
+            .fhlc-napkin-total{text-align:right;color:#1a3a8b;font-weight:700;font-size:15px;transform:rotate(0.8deg) translateY(-1px);display:block;margin-top:0;}
+            .fhlc-napkin-text > div:nth-child(2){transform:rotate(-1.4deg) translateY(-1px);}
+            .fhlc-napkin-text > div:nth-child(3){transform:rotate(0.9deg) translateY(2px);}
+            .fhlc-napkin-text > div:nth-child(4){transform:rotate(-0.6deg) translateY(-1.5px);}
+            .fhlc-napkin-text > div:nth-child(5){transform:rotate(1.2deg) translateY(0.5px);}
+            .fhlc-napkin-text > div:nth-child(6){transform:rotate(-0.3deg) translateY(1.5px);}
             @media (max-width:680px){
                 .fhlc-napkin{display:none;}
             }
@@ -4739,6 +4744,20 @@ trait FisHotel_Shortcodes {
                     });
             });
             <?php endif; ?>
+        })();
+        </script>
+        <?php endif; ?>
+
+        <?php if ( $is_logged_in && $has_folio ) : ?>
+        <script>
+        (function(){
+            var nt = document.querySelector('.fhlc-napkin-text');
+            if(!nt) return;
+            var divs = nt.querySelectorAll('div');
+            var maxLen = 0;
+            divs.forEach(function(d){ var t = d.textContent.trim(); if(t.length > maxLen) maxLen = t.length; });
+            if(maxLen > 22) nt.style.fontSize = '10px';
+            else if(maxLen > 16) nt.style.fontSize = '12px';
         })();
         </script>
         <?php endif; ?>
