@@ -4156,11 +4156,10 @@ trait FisHotel_Shortcodes {
 
             <?php if ( $is_logged_in && $has_folio ) :
                 $napkin_seed = abs( crc32( $batch_name ) );
-                $napkin_rot  = ( $napkin_seed % 9 ) - 5;
-                $napkin_nudge = ( $napkin_seed % 8 ) - 2;
+                $napkin_rot  = ( $napkin_seed % 9 ) - 4;
             ?>
             <!-- Folio napkin -->
-            <div class="fhlc-napkin" style="transform:rotate(<?php echo $napkin_rot; ?>deg) translateX(<?php echo $napkin_nudge; ?>px);transform-origin:top center;box-shadow:3px 5px 14px rgba(0,0,0,0.55),1px 2px 4px rgba(0,0,0,0.3);">
+            <div class="fhlc-napkin" style="transform:rotate(<?php echo $napkin_rot; ?>deg);">
                 <div class="fhlc-napkin-text">
                     <div class="fhlc-napkin-header">My Current Fish List</div>
                     <?php
