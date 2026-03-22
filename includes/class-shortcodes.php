@@ -4018,7 +4018,7 @@ trait FisHotel_Shortcodes {
         <link href="<?php echo esc_url( $fonts_url ); ?>" rel="stylesheet">
         <style>
             /* ── Casino table outer rail ── */
-            .fhlc-table-rail{max-width:760px;margin:40px auto;border-radius:48% / 18%;padding:20px;position:relative;background:linear-gradient(160deg,#5c2e0e 0%,#3b1a08 40%,#2a1005 70%,#1a0a02 100%);box-shadow:0 30px 80px rgba(0,0,0,0.95),0 10px 30px rgba(0,0,0,0.8),0 0 0 4px #1a0a02;overflow:hidden;}
+            .fhlc-table-rail{max-width:760px;margin:40px auto;border-radius:48% / 18%;padding:20px;position:relative;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.06) 0px,transparent 1px,transparent 3px,rgba(0,0,0,0.04) 4px,transparent 5px,transparent 8px,rgba(0,0,0,0.07) 9px,transparent 10px,transparent 14px),repeating-linear-gradient(2deg,rgba(120,70,30,0.07) 0px,transparent 2px,transparent 6px,rgba(80,40,10,0.05) 7px,transparent 8px,transparent 13px),linear-gradient(160deg,#5c2e0e 0%,#3b1a08 40%,#2a1005 70%,#1a0a02 100%);box-shadow:0 30px 80px rgba(0,0,0,0.95),0 10px 30px rgba(0,0,0,0.8),0 0 0 4px #1a0a02;overflow:hidden;}
             /* Curved rail highlight — light catching the top edge */
             .fhlc-table-rail::before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(175deg,rgba(160,110,60,0.45) 0%,rgba(120,75,35,0.2) 15%,transparent 40%,rgba(0,0,0,0.3) 100%);pointer-events:none;z-index:1;}
             /* Inner lip shadow where rail meets felt */
@@ -4026,8 +4026,8 @@ trait FisHotel_Shortcodes {
 
             /* ── Felt surface (sunken inside rail) ── */
             .fhlc-wrap{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#e0ddd5;background:url('<?php echo esc_url( $felt_url ); ?>') center center / cover;padding:40px 32px;position:relative;border-radius:48% / 18%;overflow:hidden;}
-            /* Felt vignette — darker at edges, lighter center */
-            .fhlc-wrap::before{content:'';position:absolute;inset:0;border-radius:inherit;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 0%,rgba(0,0,0,0.15) 40%,rgba(0,0,0,0.5) 80%,rgba(0,0,0,0.7) 100%);pointer-events:none;z-index:0;}
+            /* Felt vignette — darker at edges, lighter center, even lighting */
+            .fhlc-wrap::before{content:'';position:absolute;inset:0;border-radius:inherit;background:radial-gradient(ellipse at 50% 48%,rgba(0,0,0,0) 0%,rgba(0,0,0,0.1) 35%,rgba(0,0,0,0.3) 65%,rgba(0,0,0,0.45) 85%,rgba(0,0,0,0.5) 100%);pointer-events:none;z-index:0;}
             .fhlc-wrap > *{position:relative;z-index:1;}
             .fhlc-wrap *{box-sizing:border-box;}
 

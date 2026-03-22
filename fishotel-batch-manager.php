@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v6.53 - Casino table rail, empty wishlist, oval save btn.
- * Version:           6.53
+ * Description:       v6.54 - Wood grain on rail, more even felt lighting.
+ * Version:           6.54
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '6.53' );
+define( 'FISHOTEL_VERSION', '6.54' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
