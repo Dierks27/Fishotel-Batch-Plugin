@@ -4137,8 +4137,9 @@ trait FisHotel_Shortcodes {
             /* ── Folio napkin ── */
             .fhlc-napkin{position:absolute;top:50px;left:32px;width:200px;height:260px;background:url('<?php echo esc_url( $napkin_url ); ?>') top center / cover no-repeat;z-index:2;pointer-events:none;filter:drop-shadow(2px 4px 8px rgba(0,0,0,0.5));}
             .fhlc-napkin-text{position:absolute;top:44px;left:34px;right:40px;font-family:'Dancing Script',cursive;font-weight:600;font-size:14px;line-height:20px;color:#1a3a8b;}
+            .fhlc-napkin-header{font-size:11px;color:#1a3a8b;margin:0 0 4px;padding-bottom:4px;border-bottom:1px solid rgba(26,58,139,0.3);}
             .fhlc-napkin-divider{border:none;border-top:1px solid rgba(26,58,139,0.3);margin:6px 0;}
-            .fhlc-napkin-total{text-align:right;color:#4a6aab;font-size:13px;margin-top:6px;}
+            .fhlc-napkin-total{text-align:right;color:#4a6aab;font-size:13px;margin-top:0;}
             @media (max-width:680px){
                 .fhlc-napkin{display:none;}
             }
@@ -4152,6 +4153,7 @@ trait FisHotel_Shortcodes {
             <!-- Folio napkin -->
             <div class="fhlc-napkin">
                 <div class="fhlc-napkin-text">
+                    <div class="fhlc-napkin-header">My Current Fish List</div>
                     <?php
                     $folio_visible = array_slice( $folio_items, 0, 5 );
                     $folio_extra   = count( $folio_items ) - 5;
