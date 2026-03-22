@@ -23,7 +23,7 @@ function fh_generate_chip_scatter( $batch_name, $user_id ) {
         $opacity = 0.85 + ( ( ( $seed >> 16 ) % 11 ) / 100 );
 
         $html .= sprintf(
-            '<img src="%s" alt="" style="position:absolute;left:%d%%;top:%d%%;width:%dpx;height:auto;transform:rotate(%ddeg);opacity:%.2f;pointer-events:none;z-index:1;" />',
+            '<img src="%s" alt="" style="position:absolute;left:%d%%;top:%d%%;width:%dpx;height:auto;transform:rotate(%ddeg);opacity:%.2f;pointer-events:none;z-index:1;filter:drop-shadow(2px 4px 6px rgba(0,0,0,0.7)) drop-shadow(0px 1px 2px rgba(0,0,0,0.9));" />',
             esc_url( $src ), $x, $y, $size, $rot, $opacity
         );
     }
@@ -4018,7 +4018,7 @@ trait FisHotel_Shortcodes {
         <link href="<?php echo esc_url( $fonts_url ); ?>" rel="stylesheet">
         <style>
             /* ── Casino felt wrapper ── */
-            .fhlc-wrap{max-width:720px;margin:40px auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#e0ddd5;background:url('<?php echo esc_url( $felt_url ); ?>') center center / cover;padding:40px 32px;position:relative;}
+            .fhlc-wrap{max-width:720px;margin:40px auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#e0ddd5;background:url('<?php echo esc_url( $felt_url ); ?>') center center / cover;padding:40px 32px;position:relative;border-radius:48% / 18%;border:18px solid #2a1005;outline:4px solid #6b3a1a;box-shadow:0 0 0 6px #1a0a02,0 30px 80px rgba(0,0,0,0.95),0 10px 30px rgba(0,0,0,0.8),inset 0 0 120px rgba(0,0,0,0.55),inset 0 0 40px rgba(0,0,0,0.4);overflow:hidden;}
             .fhlc-wrap::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.45) 100%);pointer-events:none;z-index:0;}
             .fhlc-wrap > *{position:relative;z-index:1;}
             .fhlc-wrap *{box-sizing:border-box;}
