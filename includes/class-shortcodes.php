@@ -3,6 +3,33 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+function fh_generate_chip_scatter( $batch_name, $user_id ) {
+    $variants = [ 'Casino-Chip.png', 'Casino-Chip-02.png', 'Casino-Chip-03.png' ];
+    $html     = '';
+    for ( $i = 0; $i < 5; $i++ ) {
+        $seed    = abs( crc32( $batch_name . $user_id . $i ) );
+        $variant = $variants[ $seed % 3 ];
+        $src     = plugins_url( 'assists/casino/' . $variant, FISHOTEL_PLUGIN_FILE );
+        // X: 2-15% or 75-95%
+        $x_seed  = ( $seed >> 4 ) % 100;
+        $x       = $x_seed < 50 ? 2 + ( $x_seed % 14 ) : 75 + ( $x_seed % 21 );
+        // Y: 5-85%
+        $y       = 5 + ( ( $seed >> 8 ) % 81 );
+        // Rotation: -15 to +15
+        $rot     = ( $seed % 31 ) - 15;
+        // Size: 44-64px
+        $size    = 44 + ( ( $seed >> 12 ) % 21 );
+        // Opacity: 0.55-0.75
+        $opacity = 0.55 + ( ( ( $seed >> 16 ) % 21 ) / 100 );
+
+        $html .= sprintf(
+            '<img src="%s" alt="" style="position:absolute;left:%d%%;top:%d%%;width:%dpx;height:auto;transform:rotate(%ddeg);opacity:%.2f;pointer-events:none;z-index:1;" />',
+            esc_url( $src ), $x, $y, $size, $rot, $opacity
+        );
+    }
+    return $html;
+}
+
 trait FisHotel_Shortcodes {
 
     public function wallet_deposit_shortcode() {
@@ -4075,6 +4102,7 @@ trait FisHotel_Shortcodes {
         </style>
 
         <div class="fhlc-wrap">
+            <?php echo fh_generate_chip_scatter( $batch_name, $uid ); ?>
             <!-- Header -->
             <div class="fhlc-header">
                 <h2 class="fhlc-hotel">THE FISHOTEL</h2>
