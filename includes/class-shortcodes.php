@@ -4033,9 +4033,7 @@ trait FisHotel_Shortcodes {
 
             /* ── Header ── */
             .fhlc-header{text-align:center;margin-bottom:32px;}
-            .fhlc-hotel{font-family:'Oswald',sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:0.25em;color:#f5f0e8;text-shadow:none;margin:0;}
-            .fhlc-header-rule{width:80px;border:none;border-top:1px solid #96885f;margin:10px auto;}
-            .fhlc-subtitle{font-family:'Courier New',monospace;color:rgba(245,240,232,0.65);letter-spacing:0.35em;font-size:11px;text-transform:uppercase;margin:8px 0 0;}
+            .fhlc-logo{width:200px;height:auto;display:block;margin:0 auto;filter:drop-shadow(0 0 1.5px #0a1f1a) drop-shadow(0 0 1.5px #0a1f1a) drop-shadow(0 0 1.5px #0a1f1a) drop-shadow(0 0 1.5px #0a1f1a);}
             .fhlc-timer{font-family:'Righteous',cursive;color:#c8a84b;font-size:38px;text-shadow:0 0 24px rgba(200,168,75,0.4);letter-spacing:4px;margin:16px 0 0;}
             .fhlc-timer-label{color:rgba(255,255,255,0.4);letter-spacing:0.35em;font-size:10px;text-transform:uppercase;display:block;margin-bottom:4px;}
 
@@ -4115,9 +4113,7 @@ trait FisHotel_Shortcodes {
             <?php echo fh_generate_chip_scatter( $batch_name, $uid ); ?>
             <!-- Header -->
             <div class="fhlc-header">
-                <h2 class="fhlc-hotel">THE FISHOTEL</h2>
-                <hr class="fhlc-header-rule">
-                <p class="fhlc-subtitle">The Deal &mdash; Place Your Bets</p>
+                <img src="<?php echo esc_url( plugins_url( 'assists/casino/FisHotel-Casino.png', FISHOTEL_PLUGIN_FILE ) ); ?>" alt="FisHotel Casino" class="fhlc-logo">
                 <?php if ( $window_open ) : ?>
                     <div class="fhlc-timer">
                         <span class="fhlc-timer-label">Wishlist closes in</span>
