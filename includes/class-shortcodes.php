@@ -4135,7 +4135,7 @@ trait FisHotel_Shortcodes {
             .fhlc-results-stub{text-align:center;font-family:'Special Elite',monospace;font-size:1rem;color:rgba(255,255,255,0.5);margin:32px 0;}
 
             /* ── Folio napkin ── */
-            .fhlc-napkin{position:absolute;top:50px;left:32px;width:200px;height:260px;background:url('<?php echo esc_url( $napkin_url ); ?>') top center / cover no-repeat;z-index:2;pointer-events:none;filter:drop-shadow(2px 4px 8px rgba(0,0,0,0.5));}
+            .fhlc-napkin{position:absolute;top:50px;left:32px;width:200px;height:260px;background:url('<?php echo esc_url( $napkin_url ); ?>') top center / cover no-repeat;z-index:2;pointer-events:none;}
             .fhlc-napkin-text{position:absolute;top:44px;left:34px;right:40px;font-family:'Dancing Script',cursive;font-weight:600;font-size:14px;line-height:20px;color:#1a3a8b;}
             .fhlc-napkin-header{margin-top:8px;font-size:15px;font-weight:700;text-decoration:underline;color:#1a3a8b;transform:rotate(-1.2deg) translateY(1px);display:block;}
             .fhlc-napkin .fhlc-napkin-divider{border:none !important;border-top:1px solid rgba(26,58,139,0.25) !important;margin:6px 0 !important;padding:0 !important;height:0 !important;}
@@ -4154,9 +4154,13 @@ trait FisHotel_Shortcodes {
         <div class="fhlc-wrap">
             <?php echo fh_generate_chip_scatter( $batch_name, $uid ); ?>
 
-            <?php if ( $is_logged_in && $has_folio ) : ?>
+            <?php if ( $is_logged_in && $has_folio ) :
+                $napkin_seed = abs( crc32( $batch_name ) );
+                $napkin_rot  = ( $napkin_seed % 9 ) - 5;
+                $napkin_nudge = ( $napkin_seed % 8 ) - 2;
+            ?>
             <!-- Folio napkin -->
-            <div class="fhlc-napkin">
+            <div class="fhlc-napkin" style="transform:rotate(<?php echo $napkin_rot; ?>deg) translateX(<?php echo $napkin_nudge; ?>px);transform-origin:top center;box-shadow:3px 5px 14px rgba(0,0,0,0.55),1px 2px 4px rgba(0,0,0,0.3);">
                 <div class="fhlc-napkin-text">
                     <div class="fhlc-napkin-header">My Current Fish List</div>
                     <?php
