@@ -4531,7 +4531,7 @@ trait FisHotel_Shortcodes {
                     <h3 class="fhlc-wl-title">Your Wishlist</h3>
                     <p class="fhlc-wl-desc">Click a fish above to add it. Drag to reorder. The draft awards one fish per round in wishlist order.</p>
 
-                    <div style="position:relative;">
+                    <div style="position:relative;padding-top:20px;">
                         <span class="fhlc-slip-detach">DO NOT DETACH</span>
                         <ul class="fhlc-wl-list" id="fhlc-wishlist">
                             <li class="fhlc-slip-header" style="list-style:none;">
@@ -4591,7 +4591,7 @@ trait FisHotel_Shortcodes {
 
                     <div class="fhlc-save-row">
                         <button type="button" class="fhlc-save-btn" id="fhlc-save-btn">Save Wishlist</button>
-                        <span class="fhlc-save-status" id="fhlc-save-status"><?php echo ! empty( $wishlist ) ? '&#x2713; Saved' : ''; ?></span>
+                        <div class="fhlc-save-status" id="fhlc-save-status" style="display:block;margin-top:8px;"><?php echo ! empty( $wishlist ) ? '&#x2713; Saved' : ''; ?></div>
                     </div>
                 </div><!-- /.fhlc-wl-center -->
 
