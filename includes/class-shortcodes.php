@@ -4216,10 +4216,19 @@ trait FisHotel_Shortcodes {
             </div>
 
             <!-- Pool Section (visible to ALL) -->
-            <?php if ( ! empty( $pool ) ) : ?>
+            <?php
+            $drafted_fish_ids = [];
+            if ( $has_results && ! empty( $results['picks'] ) ) {
+                $drafted_fish_ids = array_unique( array_column( $results['picks'], 'fish_id' ) );
+            }
+            $visible_pool = array_filter( $pool, function( $item ) use ( $drafted_fish_ids ) {
+                return ! in_array( intval( $item['fish_id'] ), array_map( 'intval', $drafted_fish_ids ), true );
+            });
+            ?>
+            <?php if ( ! empty( $visible_pool ) ) : ?>
             <h3 class="fhlc-pool-title">The Pool</h3>
             <div class="fhlc-pool">
-                <?php foreach ( $pool as $ci => $item ) : ?>
+                <?php foreach ( $visible_pool as $ci => $item ) : ?>
                 <div class="fhlc-card" data-fish-id="<?php echo esc_attr( $item['fish_id'] ); ?>">
                     <span class="fhlc-card-suit"><?php echo ( $ci % 2 === 0 ) ? '&#9824;' : '&#9829;'; ?></span>
                     <p class="fhlc-card-name"><?php echo esc_html( $item['name'] ); ?></p>
@@ -4256,7 +4265,7 @@ trait FisHotel_Shortcodes {
                 .fhlc-roulette-wheel-wrap{position:relative;width:min(400px,90vw);height:min(400px,90vw);margin:0 auto;}
                 .fhlc-wheel-img{width:100%;height:100%;transform-origin:center;transition:transform 0s;}
                 .fhlc-wheel-overlay{position:absolute;top:0;left:0;width:100%;height:100%;transform-origin:center;transition:transform 0s;}
-                .fhlc-segment-text{position:absolute;top:50%;left:50%;margin-top:-5px;transform-origin:0 50%;font-family:Georgia,serif;font-size:8px;font-weight:bold;white-space:nowrap;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,0.3);}
+                .fhlc-segment-text{position:absolute;top:50%;left:50%;margin-top:-7px;transform-origin:0 50%;font-family:Georgia,serif;font-size:12px;font-weight:600;white-space:nowrap;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,0.5);}
                 .fhlc-segment-text.fhlc-winning{animation:fhlcPulseGold 1s ease-in-out 3;}
                 @keyframes fhlcPulseGold{0%,100%{text-shadow:0 1px 2px rgba(0,0,0,0.3);}50%{text-shadow:0 0 20px #FFD700,0 0 30px #FFD700;}}
                 .fhlc-ball{position:absolute;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ffffff,#e0e0e0);box-shadow:0 2px 8px rgba(0,0,0,0.4),inset 0 1px 3px rgba(255,255,255,0.5);top:50%;left:50%;margin-top:-7px;margin-left:-7px;transform-origin:7px 7px;opacity:0;z-index:10;}
@@ -4292,7 +4301,7 @@ trait FisHotel_Shortcodes {
                 <?php $wheel_url = plugins_url( 'assists/casino/Roulette-Wheel.png', FISHOTEL_PLUGIN_FILE ); ?>
 
                 <div id="fhlc-stage" style="display:<?php echo $start_live ? 'block' : 'none'; ?>;">
-                    <div class="fhlc-controls">
+                    <div class="fhlc-controls" id="fhlc-controls">
                         <div class="fhlc-speed">
                             <button data-speed="4" class="fhlc-speed-btn">Slow</button>
                             <button data-speed="2.5" class="fhlc-speed-btn fhlc-speed-active">Normal</button>
@@ -4392,7 +4401,7 @@ trait FisHotel_Shortcodes {
                     });
 
                     function showSummary(){
-                        stageEl.style.display = 'none';
+                        document.getElementById('fhlc-controls').style.display = 'none';
                         summaryEl.style.display = 'block';
                         if(!replayBtn){
                             var rb = document.createElement('button');
@@ -4494,6 +4503,10 @@ trait FisHotel_Shortcodes {
 
                                         setTimeout(function(){
                                             if(skipped) return;
+                                            // Ball drop into segment
+                                            var cBallAngle = 360 - winAngle + spins * 360;
+                                            ballEl.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+                                            ballEl.style.transform = 'rotate(' + cBallAngle + 'deg) translateY(-120px)';
                                             var winEl = wheelOvl.querySelector('.fhlc-segment-' + pick.wheel_segment);
                                             if(winEl) winEl.classList.add('fhlc-winning');
 
@@ -4505,7 +4518,7 @@ trait FisHotel_Shortcodes {
                                             logList.scrollTop = logList.scrollHeight;
 
                                             setTimeout(function(){
-                                                ballEl.style.opacity = '0';
+                                                if(idx < picks.length) ballEl.style.opacity = '0';
                                                 showNext();
                                             }, 1200);
                                         }, spinSpeed * 1000 + 200);

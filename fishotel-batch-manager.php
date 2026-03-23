@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v6.84 - Roulette wheel: spoke-style fish name layout.
- * Version:           6.84
+ * Description:       v6.85 - Roulette fixes: pool filter, persist wheel, ball drop, bigger text.
+ * Version:           6.85
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '6.84' );
+define( 'FISHOTEL_VERSION', '6.85' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

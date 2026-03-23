@@ -3768,10 +3768,11 @@ trait FisHotel_Admin {
             .fhlc-roulette-wheel-wrap{position:relative;width:500px;height:500px;margin:0 auto;}
             .fhlc-wheel-img{width:100%;height:100%;transform-origin:center;transition:transform 0s;}
             .fhlc-wheel-overlay{position:absolute;top:0;left:0;width:100%;height:100%;transform-origin:center;transition:transform 0s;}
-            .fhlc-segment-text{position:absolute;top:50%;left:50%;margin-top:-5px;transform-origin:0 50%;font-family:Georgia,serif;font-size:9px;font-weight:bold;white-space:nowrap;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,0.3);}
+            .fhlc-segment-text{position:absolute;top:50%;left:50%;margin-top:-7px;transform-origin:0 50%;font-family:Georgia,serif;font-size:13px;font-weight:600;white-space:nowrap;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,0.5);}
             .fhlc-segment-text.fhlc-winning{animation:fhlcPulseGold 1s ease-in-out 3;}
             @keyframes fhlcPulseGold{0%,100%{text-shadow:0 1px 2px rgba(0,0,0,0.3);}50%{text-shadow:0 0 20px #FFD700,0 0 30px #FFD700;}}
             .fhlc-ball{position:absolute;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ffffff,#e0e0e0);box-shadow:0 2px 8px rgba(0,0,0,0.4),inset 0 1px 3px rgba(255,255,255,0.5);top:50%;left:50%;margin-top:-8px;margin-left:-8px;transform-origin:8px 8px;opacity:0;z-index:10;}
+            .fhlc-ball.fhlc-ball-dropped{animation:fhlcBallDrop 0.4s ease-out forwards;}
             .fhlc-pointer{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:20px solid #FFD700;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));z-index:20;}
             .fhlc-running-log{margin-top:24px;background:#111;border:1px solid #333;padding:16px;max-height:300px;overflow-y:auto;font-family:'Courier New',monospace;font-size:12px;color:#aaa;border-radius:4px;text-align:left;max-width:600px;margin-left:auto;margin-right:auto;}
             .fhlc-running-log>div{padding:3px 0;border-bottom:1px solid rgba(212,201,168,0.15);}
@@ -3949,9 +3950,14 @@ trait FisHotel_Admin {
                                 ball.style.opacity = '1';
                                 ball.style.transform = 'rotate(' + (360 - winAngle + spins * 360) + 'deg) translateY(-210px)';
 
-                                // After spin completes
+                                // After spin completes — ball drops into segment
                                 setTimeout(function(){
                                     if(!isRevealing) return;
+                                    // Ball drop: shrink radius from 210px to 150px
+                                    var ballAngle = 360 - winAngle + spins * 360;
+                                    ball.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+                                    ball.style.transform = 'rotate(' + ballAngle + 'deg) translateY(-150px)';
+
                                     // Highlight winning segment
                                     var winEl = wheelOvl.querySelector('.fhlc-segment-' + pick.wheel_segment);
                                     if(winEl) winEl.classList.add('fhlc-winning');
@@ -3964,8 +3970,8 @@ trait FisHotel_Admin {
 
                                     // Brief pause then next pick
                                     setTimeout(function(){
-                                        ball.style.opacity = '0';
                                         currentPickIndex++;
+                                        if(currentPickIndex < totalPicks) ball.style.opacity = '0';
                                         revealNextPick();
                                     }, 1200);
                                 }, spinSpeed * 1000 + 200);
@@ -3975,7 +3981,6 @@ trait FisHotel_Admin {
 
                 skipBtn.addEventListener('click', function(){
                     isRevealing = false;
-                    revealWrap.style.display = 'none';
                     showResults();
                 });
 
@@ -4078,10 +4083,11 @@ trait FisHotel_Admin {
             .fhlc-roulette-wheel-wrap{position:relative;width:500px;height:500px;margin:0 auto;}
             .fhlc-wheel-img{width:100%;height:100%;transform-origin:center;transition:transform 0s;}
             .fhlc-wheel-overlay{position:absolute;top:0;left:0;width:100%;height:100%;transform-origin:center;transition:transform 0s;}
-            .fhlc-segment-text{position:absolute;top:50%;left:50%;margin-top:-5px;transform-origin:0 50%;font-family:Georgia,serif;font-size:9px;font-weight:bold;white-space:nowrap;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,0.3);}
+            .fhlc-segment-text{position:absolute;top:50%;left:50%;margin-top:-7px;transform-origin:0 50%;font-family:Georgia,serif;font-size:13px;font-weight:600;white-space:nowrap;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,0.5);}
             .fhlc-segment-text.fhlc-winning{animation:fhlcPulseGold 1s ease-in-out 3;}
             @keyframes fhlcPulseGold{0%,100%{text-shadow:0 1px 2px rgba(0,0,0,0.3);}50%{text-shadow:0 0 20px #FFD700,0 0 30px #FFD700;}}
             .fhlc-ball{position:absolute;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ffffff,#e0e0e0);box-shadow:0 2px 8px rgba(0,0,0,0.4),inset 0 1px 3px rgba(255,255,255,0.5);top:50%;left:50%;margin-top:-8px;margin-left:-8px;transform-origin:8px 8px;opacity:0;z-index:10;}
+            .fhlc-ball.fhlc-ball-dropped{animation:fhlcBallDrop 0.4s ease-out forwards;}
             .fhlc-pointer{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:20px solid #FFD700;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));z-index:20;}
             .fhlc-running-log{margin-top:24px;background:#111;border:1px solid #333;padding:16px;max-height:300px;overflow-y:auto;font-family:'Courier New',monospace;font-size:12px;color:#aaa;border-radius:4px;text-align:left;max-width:600px;margin-left:auto;margin-right:auto;}
             .fhlc-running-log>div{padding:3px 0;border-bottom:1px solid rgba(212,201,168,0.15);}
@@ -4194,13 +4200,17 @@ trait FisHotel_Admin {
                                 rpBall.style.transform = 'rotate(' + (360 - winAngle + spins * 360) + 'deg) translateY(-210px)';
                                 setTimeout(function(){
                                     if(!rpRunning) return;
+                                    // Ball drop into segment
+                                    var rpBallAngle = 360 - winAngle + spins * 360;
+                                    rpBall.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
+                                    rpBall.style.transform = 'rotate(' + rpBallAngle + 'deg) translateY(-150px)';
                                     var winEl = rpWheelOvl.querySelector('.fhlc-segment-' + p.wheel_segment);
                                     if(winEl) winEl.classList.add('fhlc-winning');
                                     var entry = document.createElement('div');
                                     entry.textContent = 'Pick ' + p.pick_number + ': ' + p.customer_name + ' \u2192 ' + p.fish_name + ' \u00D7 ' + p.qty;
                                     rpLog.appendChild(entry);
                                     rpLog.scrollTop = rpLog.scrollHeight;
-                                    setTimeout(function(){ rpBall.style.opacity = '0'; rpIdx++; rpReveal(); }, 1200);
+                                    setTimeout(function(){ rpIdx++; if(rpIdx < totalPicks) rpBall.style.opacity = '0'; rpReveal(); }, 1200);
                                 }, rpSpeed * 1000 + 200);
                             }, 300);
                         });
