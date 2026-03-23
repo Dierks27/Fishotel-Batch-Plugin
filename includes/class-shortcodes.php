@@ -25,9 +25,9 @@ function fh_generate_chip_scatter( $batch_name, $user_id ) {
         $seed    = abs( crc32( $batch_name . $user_id . $time_block . $i ) );
         $variant = $variants[ $seed % 3 ];
         $src     = plugins_url( 'assists/casino/' . $variant, FISHOTEL_PLUGIN_FILE );
-        // Clustered position: center ± 15%
-        $x       = $center_x + ( ( $seed >> 4 ) % 31 ) - 15;
-        $y       = $center_y + ( ( $seed >> 8 ) % 31 ) - 15;
+        // Clustered position: center ± 5%
+        $x       = $center_x + ( ( $seed >> 4 ) % 11 ) - 5;
+        $y       = $center_y + ( ( $seed >> 8 ) % 11 ) - 5;
         // Rotation: -30 to +30
         $rot     = ( $seed % 61 ) - 30;
         // Size: 60-80px
