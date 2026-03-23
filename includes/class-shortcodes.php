@@ -4256,7 +4256,7 @@ trait FisHotel_Shortcodes {
                 .fhlc-roulette-wheel-wrap{position:relative;width:min(400px,90vw);height:min(400px,90vw);margin:0 auto;}
                 .fhlc-wheel-img{width:100%;height:100%;transform-origin:center;transition:transform 0s;}
                 .fhlc-wheel-overlay{position:absolute;top:0;left:0;width:100%;height:100%;transform-origin:center;transition:transform 0s;}
-                .fhlc-segment-text{position:absolute;top:50%;left:50%;transform-origin:0 0;font-family:Georgia,serif;font-size:10px;font-weight:bold;white-space:nowrap;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,0.3);}
+                .fhlc-segment-text{position:absolute;top:50%;left:50%;margin-top:-5px;transform-origin:0 50%;font-family:Georgia,serif;font-size:8px;font-weight:bold;white-space:nowrap;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,0.3);}
                 .fhlc-segment-text.fhlc-winning{animation:fhlcPulseGold 1s ease-in-out 3;}
                 @keyframes fhlcPulseGold{0%,100%{text-shadow:0 1px 2px rgba(0,0,0,0.3);}50%{text-shadow:0 0 20px #FFD700,0 0 30px #FFD700;}}
                 .fhlc-ball{position:absolute;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ffffff,#e0e0e0);box-shadow:0 2px 8px rgba(0,0,0,0.4),inset 0 1px 3px rgba(255,255,255,0.5);top:50%;left:50%;margin-top:-7px;margin-left:-7px;transform-origin:7px 7px;opacity:0;z-index:10;}
@@ -4433,7 +4433,8 @@ trait FisHotel_Shortcodes {
                         for(var i = 0; i < 24; i++){
                             var div = document.createElement('div');
                             div.className = 'fhlc-segment-text fhlc-segment-' + (i+1);
-                            div.style.transform = 'rotate(' + (i * segAngle + segAngle / 2) + 'deg) translateY(-160px)';
+                            var rot = i * segAngle + segAngle / 2 - 90;
+                            div.style.transform = 'rotate(' + rot + 'deg) translateX(50px)';
                             div.style.color = (i % 2 === 0) ? '#f5f5f5' : '#2e2418';
                             div.textContent = fishNames[i] || '';
                             wheelOvl.appendChild(div);
