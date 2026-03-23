@@ -18,8 +18,8 @@ function fh_generate_chip_scatter( $batch_name, $user_id ) {
     $chip_count   = max( 1, min( 11, 5 + $chip_delta ) );
 
     // Cluster chips in a pile around a center point
-    $center_x = 65;
-    $center_y = 65;
+    $center_x = 73;
+    $center_y = 18;
 
     for ( $i = 0; $i < $chip_count; $i++ ) {
         $seed    = abs( crc32( $batch_name . $user_id . $time_block . $i ) );
