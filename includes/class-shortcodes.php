@@ -4090,7 +4090,13 @@ trait FisHotel_Shortcodes {
             .fhlc-card:nth-child(even) .fhlc-card-add{color:#b00;border:1px solid #b00;}
             .fhlc-card:nth-child(even) .fhlc-card-add:hover{background:#b00;color:#fff;}
             .fhlc-card-add.fhlc-added{background:transparent;color:#bbb;border-color:#ccc;cursor:default;pointer-events:none;}
+            @media (max-width:768px){
+                .fhlc-table-rail{margin:20px auto;max-width:95%;}
+                .fhlc-wrap{padding:32px 20px;}
+            }
             @media (max-width:480px){
+                .fhlc-table-rail{margin:12px auto;max-width:98%;}
+                .fhlc-wrap{padding:24px 14px;}
                 .fhlc-pool{gap:12px;}
                 .fhlc-card{width:130px;height:201px;flex:0 0 130px;}
                 .fhlc-card-suit{top:22px;left:8px;font-size:11px;}
@@ -4145,7 +4151,7 @@ trait FisHotel_Shortcodes {
             .fhlc-napkin-text > div:nth-child(4){transform:rotate(-0.6deg) translateY(-1.5px);}
             .fhlc-napkin-text > div:nth-child(5){transform:rotate(1.2deg) translateY(0.5px);}
             .fhlc-napkin-text > div:nth-child(6){transform:rotate(-0.3deg) translateY(1.5px);}
-            @media (max-width:680px){
+            @media (max-width:600px){
                 .fhlc-napkin{display:none;}
             }
         </style>
