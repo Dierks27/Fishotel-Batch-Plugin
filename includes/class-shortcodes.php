@@ -6,17 +6,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 function fh_generate_chip_scatter( $batch_name, $user_id ) {
     $variants = [ 'Casino-Chip.png', 'Casino-Chip-02.png', 'Casino-Chip-03.png' ];
     $html     = '';
-    for ( $i = 0; $i < 5; $i++ ) {
-        $seed    = abs( crc32( $batch_name . $user_id . $i ) );
+
+    // Time-based chip stack (changes every 4 hours)
+    $time_block = floor( time() / ( 4 * 3600 ) );
+    $stack_seed = abs( crc32( $batch_name . $user_id . $time_block ) );
+
+    // Dice roll: plus or minus (bit 0), amount 1-6 (bits 1-3)
+    $is_plus      = ( $stack_seed & 1 ) === 1;
+    $change_amount = 1 + ( ( $stack_seed >> 1 ) % 6 );
+    $chip_delta   = $is_plus ? $change_amount : -$change_amount;
+    $chip_count   = max( 1, min( 11, 5 + $chip_delta ) );
+
+    // Cluster chips in a pile around a center point
+    $center_x = 65;
+    $center_y = 65;
+
+    for ( $i = 0; $i < $chip_count; $i++ ) {
+        $seed    = abs( crc32( $batch_name . $user_id . $time_block . $i ) );
         $variant = $variants[ $seed % 3 ];
         $src     = plugins_url( 'assists/casino/' . $variant, FISHOTEL_PLUGIN_FILE );
-        // X: 2-15% or 75-80%
-        $x_seed  = ( $seed >> 4 ) % 100;
-        $x       = $x_seed < 50 ? 2 + ( $x_seed % 14 ) : 75 + ( $x_seed % 6 );
-        // Y: 5-82%
-        $y       = 5 + ( ( $seed >> 8 ) % 78 );
-        // Rotation: -15 to +15
-        $rot     = ( $seed % 31 ) - 15;
+        // Clustered position: center ± 15%
+        $x       = $center_x + ( ( $seed >> 4 ) % 31 ) - 15;
+        $y       = $center_y + ( ( $seed >> 8 ) % 31 ) - 15;
+        // Rotation: -30 to +30
+        $rot     = ( $seed % 61 ) - 30;
         // Size: 60-80px
         $size    = 60 + ( ( $seed >> 12 ) % 21 );
         // Opacity: 0.85-0.95
