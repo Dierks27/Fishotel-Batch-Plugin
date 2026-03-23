@@ -4093,6 +4093,7 @@ trait FisHotel_Shortcodes {
             @media (max-width:768px){
                 .fhlc-table-rail{margin:20px auto;max-width:95%;}
                 .fhlc-wrap{padding:32px 20px;}
+                .fhlc-napkin{top:420px;}
             }
             @media (max-width:480px){
                 .fhlc-table-rail{margin:12px auto;max-width:98%;}
@@ -4152,10 +4153,10 @@ trait FisHotel_Shortcodes {
             .fhlc-napkin-text > div:nth-child(5){transform:rotate(1.2deg) translateY(0.5px);}
             .fhlc-napkin-text > div:nth-child(6){transform:rotate(-0.3deg) translateY(1.5px);}
             @media (max-width:600px){
-                .fhlc-napkin{transform:rotate(var(--napkin-rot)) scale(0.65) !important;transform-origin:left top;}
+                .fhlc-napkin{top:400px;transform:rotate(var(--napkin-rot)) scale(0.65) !important;transform-origin:left top;}
             }
             @media (max-width:480px){
-                .fhlc-napkin{transform:rotate(var(--napkin-rot)) scale(0.55) !important;transform-origin:left top;}
+                .fhlc-napkin{top:380px;transform:rotate(var(--napkin-rot)) scale(0.55) !important;transform-origin:left top;}
             }
         </style>
 
@@ -4165,7 +4166,7 @@ trait FisHotel_Shortcodes {
 
             <?php if ( $is_logged_in && $has_folio ) :
                 $napkin_seed = abs( crc32( $batch_name ) );
-                $napkin_rot  = ( $napkin_seed % 9 ) - 4;
+                $napkin_rot  = ( $napkin_seed % 25 ) - 12;
             ?>
             <!-- Folio napkin -->
             <div class="fhlc-napkin" style="--napkin-rot:<?php echo $napkin_rot; ?>deg;transform:rotate(var(--napkin-rot));">
