@@ -4147,7 +4147,7 @@ trait FisHotel_Shortcodes {
             .fhlc-slip-col-headers{display:flex;font-size:10px;font-weight:bold;color:#666;padding:4px 8px;border-bottom:2px solid #333;font-family:'Courier New',monospace;position:relative;z-index:1;}
             .fhlc-slip-barcode{margin-top:16px;padding:12px 0;border-top:1px solid #ccc;position:relative;z-index:1;}
             .fhlc-slip-footer{font-size:8px;color:#666;text-align:center;margin-top:8px;font-family:'Courier New',monospace;line-height:1.3;position:relative;z-index:1;}
-            .fhlc-slip-detach{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:8px;color:#666;letter-spacing:1px;font-family:'Courier New',monospace;}
+            .fhlc-slip-detach{position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:8px;color:#666;letter-spacing:1px;font-family:'Courier New',monospace;z-index:3;}
 
             /* ── Save button ── */
             .fhlc-save-row{margin-top:16px;width:100%;text-align:center;}
