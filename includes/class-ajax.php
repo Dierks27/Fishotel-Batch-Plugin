@@ -1147,10 +1147,13 @@ trait FisHotel_Ajax {
      * ───────────────────────────────────────────── */
 
     public function ajax_get_lastcall_pick() {
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        // Allow both admins and logged-in users (for customer-side reveal)
+        if ( ! is_user_logged_in() ) {
+            wp_send_json_error( [ 'message' => 'Not logged in.' ] );
         }
-        if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'fishotel_lastcall_draft_nonce' ) ) {
+        $nonce_valid = wp_verify_nonce( $_POST['nonce'] ?? '', 'fishotel_lastcall_draft_nonce' )
+                    || wp_verify_nonce( $_POST['nonce'] ?? '', 'fishotel_lastcall_nonce' );
+        if ( ! $nonce_valid ) {
             wp_send_json_error( [ 'message' => 'Security check failed.' ] );
         }
 
@@ -1166,13 +1169,58 @@ trait FisHotel_Ajax {
         $pick = $results['picks'][ $pick_index ];
         $user = get_user_by( 'id', $pick['user_id'] );
 
+        // Build wheel fish array (24 segments)
+        $pool       = get_option( 'fishotel_lastcall_pool_' . $slug, [] );
+        $pool_names = array_column( $pool, 'name' );
+
+        if ( count( $pool_names ) >= 24 ) {
+            $wheel_fish = array_slice( $pool_names, 0, 24 );
+        } else {
+            $filler_count = max( 0, 24 - count( $pool_names ) );
+            $fillers      = get_posts( [
+                'post_type'      => 'fish_master',
+                'posts_per_page' => $filler_count * 2,
+                'orderby'        => 'rand',
+                'fields'         => 'ids',
+            ] );
+            $filler_names = [];
+            foreach ( $fillers as $fid ) {
+                $name = get_the_title( $fid );
+                if ( ! in_array( $name, $pool_names, true ) && ! in_array( $name, $filler_names, true ) ) {
+                    $filler_names[] = $name;
+                }
+                if ( count( $filler_names ) >= $filler_count ) break;
+            }
+            $wheel_fish = array_merge( $pool_names, $filler_names );
+            // Pad if still short
+            while ( count( $wheel_fish ) < 24 ) {
+                $wheel_fish[] = $wheel_fish[ count( $wheel_fish ) % max( 1, count( $pool_names ) ) ];
+            }
+        }
+
+        // Seeded shuffle so same pick always shows same wheel layout
+        $pick_seed = abs( crc32( $batch_name . $pick_index ) );
+        mt_srand( $pick_seed );
+        shuffle( $wheel_fish );
+        mt_srand();
+
+        // Ensure winning fish is in the wheel at a random position
+        $winning_name = $pick['fish_name'];
+        $winning_key  = array_search( $winning_name, $wheel_fish );
+        if ( $winning_key === false ) {
+            $winning_key = $pick_seed % 24;
+            $wheel_fish[ $winning_key ] = $winning_name;
+        }
+
         wp_send_json_success( [
             'round'         => intval( $pick['round'] ),
             'pick_number'   => $pick_index + 1,
             'customer_name' => $user ? $user->display_name : 'User #' . $pick['user_id'],
-            'fish_name'     => $pick['fish_name'],
+            'fish_name'     => $winning_name,
             'qty'           => intval( $pick['qty'] ),
             'is_last'       => $pick_index >= count( $results['picks'] ) - 1,
+            'wheel_segment' => $winning_key + 1,
+            'wheel_fish'    => array_values( $wheel_fish ),
         ] );
     }
 
