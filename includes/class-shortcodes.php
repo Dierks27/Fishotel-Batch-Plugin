@@ -4152,10 +4152,10 @@ trait FisHotel_Shortcodes {
             .fhlc-napkin-text > div:nth-child(5){transform:rotate(1.2deg) translateY(0.5px);}
             .fhlc-napkin-text > div:nth-child(6){transform:rotate(-0.3deg) translateY(1.5px);}
             @media (max-width:600px){
-                .fhlc-napkin{transform:scale(0.65);transform-origin:top left;}
+                .fhlc-napkin{transform:rotate(var(--napkin-rot)) scale(0.65) !important;transform-origin:left top;}
             }
             @media (max-width:480px){
-                .fhlc-napkin{transform:scale(0.55);transform-origin:top left;}
+                .fhlc-napkin{transform:rotate(var(--napkin-rot)) scale(0.55) !important;transform-origin:left top;}
             }
         </style>
 
@@ -4168,7 +4168,7 @@ trait FisHotel_Shortcodes {
                 $napkin_rot  = ( $napkin_seed % 9 ) - 4;
             ?>
             <!-- Folio napkin -->
-            <div class="fhlc-napkin" style="transform:rotate(<?php echo $napkin_rot; ?>deg);">
+            <div class="fhlc-napkin" style="--napkin-rot:<?php echo $napkin_rot; ?>deg;transform:rotate(var(--napkin-rot));">
                 <div class="fhlc-napkin-text">
                     <div class="fhlc-napkin-header">My Current Fish List</div>
                     <?php
