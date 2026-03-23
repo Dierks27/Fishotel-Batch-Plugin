@@ -4142,7 +4142,7 @@ trait FisHotel_Shortcodes {
             .fhlc-results-stub{text-align:center;font-family:'Special Elite',monospace;font-size:1rem;color:rgba(255,255,255,0.5);margin:32px 0;}
 
             /* ── Folio napkin ── */
-            .fhlc-napkin{position:absolute;top:50px;left:32px;width:200px;height:260px;background:url('<?php echo esc_url( $napkin_url ); ?>') top center / cover no-repeat;z-index:2;pointer-events:none;}
+            .fhlc-napkin{position:absolute;top:60px;left:32px;width:200px;height:260px;background:url('<?php echo esc_url( $napkin_url ); ?>') top center / cover no-repeat;z-index:2;pointer-events:none;}
             .fhlc-napkin-text{position:absolute;top:44px;left:34px;right:40px;font-family:'Dancing Script',cursive;font-weight:600;font-size:14px;line-height:20px;color:#1a3a8b;}
             .fhlc-napkin-header{margin-top:8px;font-size:15px;font-weight:700;text-decoration:underline;color:#1a3a8b;transform:rotate(-1.2deg) translateY(1px);display:block;}
             .fhlc-napkin .fhlc-napkin-divider{border:none !important;border-top:1px solid rgba(26,58,139,0.25) !important;margin:6px 0 !important;padding:0 !important;height:0 !important;}
@@ -4152,15 +4152,7 @@ trait FisHotel_Shortcodes {
             .fhlc-napkin-text > div:nth-child(4){transform:rotate(-0.6deg) translateY(-1.5px);}
             .fhlc-napkin-text > div:nth-child(5){transform:rotate(1.2deg) translateY(0.5px);}
             .fhlc-napkin-text > div:nth-child(6){transform:rotate(-0.3deg) translateY(1.5px);}
-            @media (max-width:900px){
-                .fhlc-napkin{transform:rotate(var(--napkin-rot)) scale(0.75) !important;transform-origin:left top;}
-            }
-            @media (max-width:600px){
-                .fhlc-napkin{transform:rotate(var(--napkin-rot)) scale(0.65) !important;transform-origin:left top;}
-            }
-            @media (max-width:480px){
-                .fhlc-napkin{transform:rotate(var(--napkin-rot)) scale(0.55) !important;transform-origin:left top;}
-            }
+
         </style>
 
         <div class="fhlc-table-rail">
@@ -4777,6 +4769,25 @@ trait FisHotel_Shortcodes {
         })();
         </script>
         <?php endif; ?>
+
+        <script>
+        (function(){
+            var napkin = document.querySelector('.fhlc-napkin');
+            if (!napkin) return;
+            function scaleNapkin(){
+                var vw = window.innerWidth;
+                var scale = 1.0;
+                if (vw <= 900) {
+                    scale = 0.55 + ((vw - 390) / (900 - 390)) * 0.45;
+                    scale = Math.max(0.55, Math.min(1.0, scale));
+                }
+                napkin.style.transformOrigin = 'left top';
+                napkin.style.transform = 'rotate(var(--napkin-rot)) scale(' + scale + ')';
+            }
+            window.addEventListener('resize', scaleNapkin);
+            scaleNapkin();
+        })();
+        </script>
 
         <?php
         return ob_get_clean();
