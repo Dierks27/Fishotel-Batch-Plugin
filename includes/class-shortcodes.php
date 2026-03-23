@@ -4121,18 +4121,20 @@ trait FisHotel_Shortcodes {
                 .fhlc-card-add{bottom:29px;left:22px;right:22px;font-size:8px;padding:3px 0;}
             }
 
-            /* ── Wishlist ── */
+            /* ── Wishlist (betting slip) ── */
             .fhlc-wl-center{max-width:600px;margin:0 auto;text-align:center;}
             .fhlc-wl-title{text-align:left;color:#fff;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;text-shadow:none;margin:0 0 8px;padding:6px 12px;background:rgba(0,0,0,0.55);border-radius:4px;display:inline-block;}
             .fhlc-wl-desc{text-align:left;color:rgba(255,255,255,0.75);font-size:12px;margin:0 0 16px;padding:4px 10px;background:rgba(0,0,0,0.55);border-radius:4px;display:inline-block;}
-            .fhlc-wl-list{list-style:none;margin:0;padding:10px;background:#faf8f2;border:1px solid #bbb;border-top:3px solid #111;outline:3px solid #faf8f2;outline-offset:-7px;border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,0.5);text-align:left;}
-            .fhlc-wl-item{display:flex;align-items:center;gap:10px;background:transparent;border:none;border-bottom:1px dashed rgba(0,0,0,0.1);border-radius:0;padding:10px 14px;margin-bottom:0;cursor:grab;user-select:none;color:#1a1a1a;transition:background 0.2s;text-align:left;}
+            .fhlc-wl-list{list-style:none;margin:0;padding:10px;background:#f5f0e0;border:1px solid #bbb;border-top:3px solid #111;outline:3px solid #f5f0e0;outline-offset:-7px;border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,0.5);text-align:left;position:relative;overflow:hidden;}
+            .fhlc-wl-list::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background-image:repeating-linear-gradient(to right,#999 0px,#999 4px,transparent 4px,transparent 8px);z-index:2;}
+            .fhlc-wl-list::after{content:'CUSTOMER COPY';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-15deg);font-size:48px;color:rgba(200,0,0,0.03);font-weight:bold;pointer-events:none;letter-spacing:4px;z-index:0;}
+            .fhlc-wl-item{display:flex;align-items:center;gap:10px;background:linear-gradient(to right,#f0ead6 0%,#f0ead6 8%,transparent 8%);border:none;border-bottom:1px solid #ddd;border-radius:0;padding:10px 8px;margin-bottom:0;cursor:grab;user-select:none;color:#1a1a1a;transition:background 0.2s;text-align:left;position:relative;z-index:1;}
             .fhlc-wl-item:last-child{border-bottom:none;}
             .fhlc-wl-item:active{cursor:grabbing;}
             .fhlc-wl-item.fhlc-dragging{opacity:0.5;}
             .fhlc-wl-item.fhlc-drag-over{background:rgba(0,0,0,0.05);}
             .fhlc-wl-handle{color:#ccc;font-size:1.1rem;flex-shrink:0;cursor:grab;}
-            .fhlc-wl-rank{color:#b00;font-family:Georgia,serif;font-weight:700;font-size:15px;font-style:italic;width:20px;text-align:center;flex-shrink:0;}
+            .fhlc-wl-rank{color:#8b0000;font-family:Georgia,serif;font-weight:900;font-size:15px;font-style:italic;width:20px;text-align:center;flex-shrink:0;filter:blur(0.3px);}
             .fhlc-wl-name{font-family:'Oswald',sans-serif;font-size:0.9rem;color:#111;flex:1;}
             .fhlc-wl-alt-toggle{background:transparent;border:1px solid #ccc;color:#888;font-style:italic;font-size:11px;font-family:Georgia,serif;cursor:pointer;padding:3px 8px;border-radius:4px;flex-shrink:0;white-space:nowrap;transition:color 0.2s,border-color 0.2s;}
             .fhlc-wl-alt-toggle:hover{color:#666;border-color:#999;}
@@ -4141,6 +4143,11 @@ trait FisHotel_Shortcodes {
             .fhlc-wl-item.fhlc-wl-alt-item::before{content:'\21B3';position:absolute;left:-22px;top:50%;transform:translateY(-50%);color:#b00;font-size:0.9rem;}
             .fhlc-wl-remove{background:none;border:none;color:#b00;font-size:1rem;cursor:pointer;padding:0 4px;flex-shrink:0;}
             .fhlc-wl-remove:hover{color:#800;}
+            .fhlc-slip-header{border-bottom:2px solid #333;padding:8px 12px;margin-bottom:4px;font-family:'Courier New',monospace;font-size:11px;line-height:1.4;color:#333;position:relative;z-index:1;}
+            .fhlc-slip-col-headers{display:flex;font-size:10px;font-weight:bold;color:#666;padding:4px 8px;border-bottom:2px solid #333;font-family:'Courier New',monospace;position:relative;z-index:1;}
+            .fhlc-slip-barcode{margin-top:16px;padding:12px 0;border-top:1px solid #ccc;position:relative;z-index:1;}
+            .fhlc-slip-footer{font-size:8px;color:#666;text-align:center;margin-top:8px;font-family:'Courier New',monospace;line-height:1.3;position:relative;z-index:1;}
+            .fhlc-slip-detach{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:8px;color:#666;letter-spacing:1px;font-family:'Courier New',monospace;}
 
             /* ── Save button ── */
             .fhlc-save-row{margin-top:16px;width:100%;text-align:center;}
@@ -4524,33 +4531,63 @@ trait FisHotel_Shortcodes {
                     <h3 class="fhlc-wl-title">Your Wishlist</h3>
                     <p class="fhlc-wl-desc">Click a fish above to add it. Drag to reorder. The draft awards one fish per round in wishlist order.</p>
 
-                    <ul class="fhlc-wl-list" id="fhlc-wishlist">
-                        <?php
-                        if ( ! empty( $wishlist ) ) {
-                            foreach ( $wishlist as $i => $wl_item ) {
-                                $name = '';
-                                foreach ( $pool as $p ) {
-                                    if ( intval( $p['fish_id'] ) === intval( $wl_item['fish_id'] ) ) { $name = $p['name']; break; }
+                    <div style="position:relative;">
+                        <span class="fhlc-slip-detach">DO NOT DETACH</span>
+                        <ul class="fhlc-wl-list" id="fhlc-wishlist">
+                            <li class="fhlc-slip-header" style="list-style:none;">
+                                <div style="font-weight:bold;font-size:13px;">THE FISHOTEL CASINO</div>
+                                <div style="display:flex;justify-content:space-between;margin-top:4px;">
+                                    <span>BETTING SLIP #<?php echo substr( md5( $batch_name . $uid ), 0, 6 ); ?></span>
+                                    <span><?php echo date( 'M d, Y' ); ?> &middot; <?php echo date( 'H:i' ); ?></span>
+                                </div>
+                            </li>
+                            <li style="list-style:none;" class="fhlc-slip-col-headers">
+                                <span style="width:40px;">RANK</span>
+                                <span style="flex:1;margin-left:12px;">SELECTION</span>
+                                <span style="width:140px;text-align:center;">ALTERNATE</span>
+                            </li>
+                            <?php
+                            if ( ! empty( $wishlist ) ) {
+                                foreach ( $wishlist as $i => $wl_item ) {
+                                    $name = '';
+                                    foreach ( $pool as $p ) {
+                                        if ( intval( $p['fish_id'] ) === intval( $wl_item['fish_id'] ) ) { $name = $p['name']; break; }
+                                    }
+                                    if ( ! $name ) continue;
+                                    $is_alt   = ! empty( $wl_item['is_alternative_to'] );
+                                    $is_first = $i === 0;
+                                    $above_rank = $i;
+                                    ?>
+                                    <li class="fhlc-wl-item<?php echo $is_alt ? ' fhlc-wl-alt-item' : ''; ?>" draggable="true" data-fish-id="<?php echo esc_attr( $wl_item['fish_id'] ); ?>">
+                                        <span class="fhlc-wl-handle">&#x2630;</span>
+                                        <span class="fhlc-wl-rank"><?php echo $i + 1; ?></span>
+                                        <span class="fhlc-wl-name"><?php echo esc_html( $name ); ?></span>
+                                        <?php if ( ! $is_first ) : ?>
+                                        <button type="button" class="fhlc-wl-alt-toggle<?php echo $is_alt ? ' fhlc-alt-on' : ''; ?>">Only if I don&rsquo;t get #<?php echo $above_rank; ?></button>
+                                        <?php endif; ?>
+                                        <button type="button" class="fhlc-wl-remove" title="Remove">&times;</button>
+                                    </li>
+                                    <?php
                                 }
-                                if ( ! $name ) continue;
-                                $is_alt   = ! empty( $wl_item['is_alternative_to'] );
-                                $is_first = $i === 0;
-                                $above_rank = $i; // rank of item above (1-based = $i since this is 0-indexed)
-                                ?>
-                                <li class="fhlc-wl-item<?php echo $is_alt ? ' fhlc-wl-alt-item' : ''; ?>" draggable="true" data-fish-id="<?php echo esc_attr( $wl_item['fish_id'] ); ?>">
-                                    <span class="fhlc-wl-handle">&#x2630;</span>
-                                    <span class="fhlc-wl-rank"><?php echo $i + 1; ?></span>
-                                    <span class="fhlc-wl-name"><?php echo esc_html( $name ); ?></span>
-                                    <?php if ( ! $is_first ) : ?>
-                                    <button type="button" class="fhlc-wl-alt-toggle<?php echo $is_alt ? ' fhlc-alt-on' : ''; ?>">Only if I don&rsquo;t get #<?php echo $above_rank; ?></button>
-                                    <?php endif; ?>
-                                    <button type="button" class="fhlc-wl-remove" title="Remove">&times;</button>
-                                </li>
-                                <?php
                             }
-                        }
-                        ?>
-                    </ul>
+                            ?>
+                            <li style="list-style:none;" class="fhlc-slip-barcode">
+                                <div style="display:flex;justify-content:center;gap:2px;height:40px;">
+                                    <?php
+                                    $barcode_seed = abs( crc32( $batch_name . $uid ) );
+                                    for ( $bc = 0; $bc < 40; $bc++ ) {
+                                        $bw = ( ( $barcode_seed >> ( $bc % 30 ) ) % 3 ) + 1;
+                                        echo '<div style="width:' . $bw . 'px;background:#000;height:100%;"></div>';
+                                    }
+                                    ?>
+                                </div>
+                            </li>
+                            <li style="list-style:none;" class="fhlc-slip-footer">
+                                ALL WAGERS FINAL UPON SUBMISSION &middot; MANAGEMENT RESERVES ALL RIGHTS<br>
+                                TICKET VALIDATION: <?php echo strtoupper( substr( md5( $batch_name ), 0, 12 ) ); ?>
+                            </li>
+                        </ul>
+                    </div>
 
                     <div class="fhlc-save-row">
                         <button type="button" class="fhlc-save-btn" id="fhlc-save-btn">Save Wishlist</button>
