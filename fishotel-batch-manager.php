@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v6.81 - Move DO NOT DETACH down to top:18px.
- * Version:           6.81
+ * Description:       v6.82 - Admin draft reveal animation.
+ * Version:           6.82
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '6.81' );
+define( 'FISHOTEL_VERSION', '6.82' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -268,6 +268,7 @@ class FisHotel_Batch_Manager {
         // Last Call AJAX
         add_action( 'wp_ajax_fishotel_save_lastcall_wishlist', [$this, 'ajax_save_lastcall_wishlist'] );
         add_action( 'wp_ajax_fishotel_run_lastcall_draft',      [$this, 'ajax_run_lastcall_draft'] );
+        add_action( 'wp_ajax_fishotel_get_lastcall_pick',      [$this, 'ajax_get_lastcall_pick'] );
         add_action( 'wp_ajax_fishotel_get_lastcall_results',   [$this, 'ajax_get_lastcall_results'] );
         add_action( 'wp_ajax_nopriv_fishotel_get_lastcall_results', [$this, 'ajax_get_lastcall_results'] );
         add_action( 'wp_ajax_fishotel_mark_lastcall_seen',     [$this, 'ajax_mark_lastcall_seen'] );

@@ -1143,6 +1143,40 @@ trait FisHotel_Ajax {
     }
 
     /* ─────────────────────────────────────────────
+     *  Last Call: Get Single Draft Pick (for reveal animation)
+     * ───────────────────────────────────────────── */
+
+    public function ajax_get_lastcall_pick() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+        if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'fishotel_lastcall_draft_nonce' ) ) {
+            wp_send_json_error( [ 'message' => 'Security check failed.' ] );
+        }
+
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        $pick_index = intval( $_POST['pick_index'] ?? -1 );
+        $slug       = sanitize_title( $batch_name );
+        $results    = get_option( 'fishotel_lastcall_results_' . $slug, [] );
+
+        if ( empty( $results['picks'] ) || $pick_index < 0 || $pick_index >= count( $results['picks'] ) ) {
+            wp_send_json_error( [ 'message' => 'Invalid pick index.' ] );
+        }
+
+        $pick = $results['picks'][ $pick_index ];
+        $user = get_user_by( 'id', $pick['user_id'] );
+
+        wp_send_json_success( [
+            'round'         => intval( $pick['round'] ),
+            'pick_number'   => $pick_index + 1,
+            'customer_name' => $user ? $user->display_name : 'User #' . $pick['user_id'],
+            'fish_name'     => $pick['fish_name'],
+            'qty'           => intval( $pick['qty'] ),
+            'is_last'       => $pick_index >= count( $results['picks'] ) - 1,
+        ] );
+    }
+
+    /* ─────────────────────────────────────────────
      *  Last Call: Mark Reveal Seen
      * ───────────────────────────────────────────── */
 

@@ -3758,28 +3758,210 @@ trait FisHotel_Admin {
             echo '</form>';
 
         } elseif ( $lc_window_closed && ! $lc_has_results ) {
-            // Window closed, no results — run draft
+            // Window closed, no results — run draft with reveal animation
             $draft_nonce = wp_create_nonce( 'fishotel_lastcall_draft_nonce' );
-            echo '<p style="color:#e67e22;font-size:13px;margin-bottom:12px;">Wishlist window has closed. Ready to run the draft.</p>';
-            echo '<button type="button" id="fh-run-draft-btn" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Run Draft</button>';
-            echo '<span id="fh-draft-status" style="margin-left:12px;font-size:12px;color:#aaa;"></span>';
             ?>
+            <div class="fh-draft-control-panel">
+                <p style="color:#e67e22;font-size:13px;margin-bottom:12px;">Wishlist window has closed. Ready to run the draft.</p>
+                <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                    <button type="button" id="fh-run-draft-btn" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">&#x25B6; Run Draft</button>
+                    <span id="fh-draft-status" style="font-size:12px;color:#aaa;"></span>
+                </div>
+                <div id="fh-reveal-controls" style="display:none;margin-top:16px;display:none;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <button type="button" id="fh-skip-reveal-btn" class="button" style="background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:6px 16px;font-size:12px;cursor:pointer;">&#x23E9; Skip to Results</button>
+                    <button type="button" id="fh-replay-draft-btn" class="button" style="background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:6px 16px;font-size:12px;cursor:pointer;">&#x1F504; Replay</button>
+                    <label style="color:#aaa;font-size:12px;">Speed:
+                        <select id="fh-reveal-speed" style="padding:4px 6px;border:1px solid #555;background:#2a2a2a;color:#fff;border-radius:4px;font-size:11px;">
+                            <option value="4000">Slow (4s)</option>
+                            <option value="2500" selected>Normal (2.5s)</option>
+                            <option value="1200">Fast (1.2s)</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Reveal animation area -->
+            <div id="fh-reveal-container" style="display:none;margin:32px 0;">
+                <div id="fh-reveal-card" style="background:#f5f0e8;border:4px double #2e2418;padding:24px;text-align:center;min-height:120px;position:relative;overflow:hidden;">
+                    <div id="fh-current-pick" style="opacity:0;transition:opacity 0.6s ease-out,transform 0.6s ease-out;transform:translateY(40px);">
+                        <div class="fh-pick-round" style="font-size:14px;color:#8b0000;margin-bottom:8px;font-family:'Courier New',monospace;letter-spacing:2px;"></div>
+                        <div class="fh-pick-customer" style="font-size:24px;font-weight:bold;margin-bottom:12px;color:#2e2418;font-family:Georgia,serif;"></div>
+                        <div class="fh-pick-fish" style="font-size:20px;color:#96885f;font-family:'Courier New',monospace;"></div>
+                    </div>
+                </div>
+                <div id="fh-reveal-log" style="margin-top:24px;background:#111;border:1px solid #333;padding:16px;max-height:300px;overflow-y:auto;font-family:'Courier New',monospace;font-size:12px;color:#aaa;border-radius:4px;">
+                </div>
+            </div>
+
+            <!-- Results table (shown after reveal) -->
+            <div id="fh-results-container" style="display:none;margin:32px 0;">
+                <h4 style="color:#27ae60;font-size:1em;margin:0 0 8px;">Draft Results</h4>
+                <p id="fh-results-meta" style="color:#aaa;font-size:12px;margin-bottom:8px;"></p>
+                <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
+                    <thead><tr style="border-bottom:2px solid #444;">
+                        <th style="padding:6px 8px;color:#b5a165;text-align:center;">Rd</th>
+                        <th style="padding:6px 8px;color:#b5a165;text-align:center;">Pick</th>
+                        <th style="padding:6px 8px;color:#b5a165;text-align:left;">Customer</th>
+                        <th style="padding:6px 8px;color:#b5a165;text-align:left;">Fish</th>
+                        <th style="padding:6px 8px;color:#b5a165;text-align:center;">Qty</th>
+                    </tr></thead>
+                    <tbody id="fh-results-tbody"></tbody>
+                </table>
+                <p style="color:#aaa;font-size:12px;">Page will reload in a moment to show full controls...</p>
+            </div>
+
             <script>
-            document.getElementById('fh-run-draft-btn').addEventListener('click', function(){
-                var btn = this, status = document.getElementById('fh-draft-status');
-                if(!confirm('Run the Last Call draft? This cannot be undone.')) return;
-                btn.disabled = true; status.textContent = 'Running draft...';
-                var fd = new FormData();
-                fd.append('action', 'fishotel_run_lastcall_draft');
-                fd.append('nonce', '<?php echo esc_js( $draft_nonce ); ?>');
-                fd.append('batch_name', '<?php echo esc_js( $selected ); ?>');
-                fetch('<?php echo esc_url( admin_url( "admin-ajax.php" ) ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
-                    .then(function(r){ return r.json(); })
-                    .then(function(d){
-                        if(d.success){ status.textContent = 'Draft complete! ' + d.data.picks.length + ' picks.'; status.style.color='#27ae60'; setTimeout(function(){ location.reload(); }, 1500); }
-                        else { status.textContent = 'Error: ' + (d.data&&d.data.message||'Unknown'); status.style.color='#e74c3c'; btn.disabled=false; }
-                    }).catch(function(){ status.textContent = 'Network error'; status.style.color='#e74c3c'; btn.disabled=false; });
-            });
+            (function(){
+                var ajaxUrl   = '<?php echo esc_url( admin_url( "admin-ajax.php" ) ); ?>';
+                var draftNonce = '<?php echo esc_js( $draft_nonce ); ?>';
+                var batchName = '<?php echo esc_js( $selected ); ?>';
+                var currentPickIndex = 0, totalPicks = 0, revealSpeed = 2500, isRevealing = false;
+
+                var runBtn     = document.getElementById('fh-run-draft-btn');
+                var statusEl   = document.getElementById('fh-draft-status');
+                var controls   = document.getElementById('fh-reveal-controls');
+                var skipBtn    = document.getElementById('fh-skip-reveal-btn');
+                var replayBtn  = document.getElementById('fh-replay-draft-btn');
+                var speedSel   = document.getElementById('fh-reveal-speed');
+                var revealWrap = document.getElementById('fh-reveal-container');
+                var pickEl     = document.getElementById('fh-current-pick');
+                var logEl      = document.getElementById('fh-reveal-log');
+                var resultsWrap = document.getElementById('fh-results-container');
+
+                runBtn.addEventListener('click', function(){
+                    if(!confirm('Run the Last Call draft? This cannot be undone.')) return;
+                    runBtn.disabled = true;
+                    statusEl.textContent = 'Running draft...';
+                    statusEl.style.color = '#aaa';
+                    var fd = new FormData();
+                    fd.append('action', 'fishotel_run_lastcall_draft');
+                    fd.append('nonce', draftNonce);
+                    fd.append('batch_name', batchName);
+                    fetch(ajaxUrl, { method:'POST', body:fd, credentials:'same-origin' })
+                        .then(function(r){ return r.json(); })
+                        .then(function(d){
+                            if(d.success){
+                                totalPicks = d.data.picks.length;
+                                currentPickIndex = 0;
+                                statusEl.textContent = 'Draft complete (' + totalPicks + ' picks). Starting reveal...';
+                                statusEl.style.color = '#27ae60';
+                                runBtn.style.display = 'none';
+                                controls.style.display = 'flex';
+                                startReveal();
+                            } else {
+                                statusEl.textContent = 'Error: ' + (d.data && d.data.message || 'Unknown');
+                                statusEl.style.color = '#e74c3c';
+                                runBtn.disabled = false;
+                            }
+                        }).catch(function(){
+                            statusEl.textContent = 'Network error';
+                            statusEl.style.color = '#e74c3c';
+                            runBtn.disabled = false;
+                        });
+                });
+
+                function startReveal(){
+                    isRevealing = true;
+                    revealWrap.style.display = 'block';
+                    logEl.innerHTML = '';
+                    revealNextPick();
+                }
+
+                function revealNextPick(){
+                    if(currentPickIndex >= totalPicks || !isRevealing){
+                        isRevealing = false;
+                        showResults();
+                        return;
+                    }
+                    var fd = new FormData();
+                    fd.append('action', 'fishotel_get_lastcall_pick');
+                    fd.append('nonce', draftNonce);
+                    fd.append('batch_name', batchName);
+                    fd.append('pick_index', currentPickIndex);
+                    fetch(ajaxUrl, { method:'POST', body:fd, credentials:'same-origin' })
+                        .then(function(r){ return r.json(); })
+                        .then(function(d){
+                            if(!d.success || !isRevealing) return;
+                            var pick = d.data;
+                            // Update card
+                            document.querySelector('.fh-pick-round').textContent = 'ROUND ' + pick.round;
+                            document.querySelector('.fh-pick-customer').textContent = pick.customer_name;
+                            document.querySelector('.fh-pick-fish').textContent = pick.fish_name + ' \u00D7 ' + pick.qty;
+                            // Slide in
+                            pickEl.style.opacity = '0';
+                            pickEl.style.transform = 'translateY(40px)';
+                            requestAnimationFrame(function(){
+                                requestAnimationFrame(function(){
+                                    pickEl.style.opacity = '1';
+                                    pickEl.style.transform = 'translateY(0)';
+                                });
+                            });
+                            // Hold, then fade out and advance
+                            setTimeout(function(){
+                                pickEl.style.opacity = '0';
+                                pickEl.style.transform = 'translateY(-40px)';
+                                // Log entry
+                                var entry = document.createElement('div');
+                                entry.style.padding = '2px 0';
+                                entry.textContent = 'Pick ' + pick.pick_number + ': ' + pick.customer_name + ' \u2192 ' + pick.fish_name + ' \u00D7 ' + pick.qty;
+                                logEl.appendChild(entry);
+                                logEl.scrollTop = logEl.scrollHeight;
+                                setTimeout(function(){
+                                    currentPickIndex++;
+                                    revealNextPick();
+                                }, 600);
+                            }, revealSpeed);
+                        });
+                }
+
+                skipBtn.addEventListener('click', function(){
+                    isRevealing = false;
+                    revealWrap.style.display = 'none';
+                    showResults();
+                });
+
+                replayBtn.addEventListener('click', function(){
+                    currentPickIndex = 0;
+                    resultsWrap.style.display = 'none';
+                    startReveal();
+                });
+
+                speedSel.addEventListener('change', function(){
+                    revealSpeed = parseInt(this.value);
+                });
+
+                function showResults(){
+                    controls.style.display = 'flex';
+                    var fd = new FormData();
+                    fd.append('action', 'fishotel_get_lastcall_results');
+                    fd.append('nonce', '<?php echo esc_js( wp_create_nonce( "fishotel_lastcall_nonce" ) ); ?>');
+                    fd.append('batch_name', batchName);
+                    fetch(ajaxUrl, { method:'POST', body:fd, credentials:'same-origin' })
+                        .then(function(r){ return r.json(); })
+                        .then(function(d){
+                            if(!d.success) return;
+                            var tbody = document.getElementById('fh-results-tbody');
+                            tbody.innerHTML = '';
+                            var picks = d.data.picks || [];
+                            picks.forEach(function(pick, idx){
+                                var name = pick.hf_username || pick.display_name || 'User #' + pick.user_id;
+                                var tr = document.createElement('tr');
+                                tr.style.borderBottom = '1px solid #333';
+                                tr.innerHTML = '<td style="padding:6px 8px;text-align:center;color:#888;">' + pick.round + '</td>'
+                                    + '<td style="padding:6px 8px;text-align:center;color:#888;">' + (idx+1) + '</td>'
+                                    + '<td style="padding:6px 8px;color:#ddd;">' + name + '</td>'
+                                    + '<td style="padding:6px 8px;color:#ddd;">' + pick.fish_name + '</td>'
+                                    + '<td style="padding:6px 8px;text-align:center;color:#ddd;">' + pick.qty + '</td>';
+                                tbody.appendChild(tr);
+                            });
+                            var meta = document.getElementById('fh-results-meta');
+                            meta.textContent = picks.length + ' picks, ' + d.data.rounds + ' rounds';
+                            resultsWrap.style.display = 'block';
+                            // Reload after 5s to show full controls (advance to invoicing, reset)
+                            setTimeout(function(){ location.reload(); }, 5000);
+                        });
+                }
+            })();
             </script>
             <?php
 
@@ -3810,6 +3992,9 @@ trait FisHotel_Admin {
             echo '<p style="color:#aaa;font-size:12px;"><strong>' . count( $lc_results['picks'] ) . '</strong> picks &mdash; <strong>' . $total_fish . '</strong> fish distributed</p>';
 
             echo '<div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">';
+
+            echo '<button type="button" id="fh-replay-results-btn" style="background:#444;color:#ddd;border:1px solid #666;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;">&#x1F504; Replay Reveal</button>';
+
             echo '<form method="post" action="' . $admin_post_url . '" style="margin:0;">';
             wp_nonce_field( 'fishotel_advance_stage_nonce' );
             echo '<input type="hidden" name="action" value="fishotel_advance_stage">';
@@ -3825,6 +4010,97 @@ trait FisHotel_Admin {
             echo '<button type="submit" style="background:#333;color:#e74c3c;font-weight:700;border:1px solid #e74c3c;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;">Reset Draft</button>';
             echo '</form>';
             echo '</div>';
+
+            // Replay reveal area (hidden initially)
+            $replay_nonce = wp_create_nonce( 'fishotel_lastcall_draft_nonce' );
+            ?>
+            <div id="fh-replay-container" style="display:none;margin:32px 0;">
+                <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+                    <button type="button" id="fh-replay-skip" style="background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:6px 16px;font-size:12px;cursor:pointer;">&#x23E9; Skip</button>
+                    <label style="color:#aaa;font-size:12px;">Speed:
+                        <select id="fh-replay-speed" style="padding:4px 6px;border:1px solid #555;background:#2a2a2a;color:#fff;border-radius:4px;font-size:11px;">
+                            <option value="4000">Slow (4s)</option>
+                            <option value="2500" selected>Normal (2.5s)</option>
+                            <option value="1200">Fast (1.2s)</option>
+                        </select>
+                    </label>
+                </div>
+                <div style="background:#f5f0e8;border:4px double #2e2418;padding:24px;text-align:center;min-height:120px;position:relative;overflow:hidden;">
+                    <div id="fh-replay-pick" style="opacity:0;transition:opacity 0.6s ease-out,transform 0.6s ease-out;transform:translateY(40px);">
+                        <div class="fh-rp-round" style="font-size:14px;color:#8b0000;margin-bottom:8px;font-family:'Courier New',monospace;letter-spacing:2px;"></div>
+                        <div class="fh-rp-customer" style="font-size:24px;font-weight:bold;margin-bottom:12px;color:#2e2418;font-family:Georgia,serif;"></div>
+                        <div class="fh-rp-fish" style="font-size:20px;color:#96885f;font-family:'Courier New',monospace;"></div>
+                    </div>
+                </div>
+                <div id="fh-replay-log" style="margin-top:24px;background:#111;border:1px solid #333;padding:16px;max-height:300px;overflow-y:auto;font-family:'Courier New',monospace;font-size:12px;color:#aaa;border-radius:4px;"></div>
+            </div>
+            <script>
+            (function(){
+                var ajaxUrl = '<?php echo esc_url( admin_url( "admin-ajax.php" ) ); ?>';
+                var replayNonce = '<?php echo esc_js( $replay_nonce ); ?>';
+                var batchName = '<?php echo esc_js( $selected ); ?>';
+                var totalPicks = <?php echo count( $lc_results['picks'] ); ?>;
+                var rpIdx = 0, rpSpeed = 2500, rpRunning = false;
+                var rpWrap = document.getElementById('fh-replay-container');
+                var rpPick = document.getElementById('fh-replay-pick');
+                var rpLog  = document.getElementById('fh-replay-log');
+
+                document.getElementById('fh-replay-results-btn').addEventListener('click', function(){
+                    rpIdx = 0; rpRunning = true;
+                    rpLog.innerHTML = '';
+                    rpWrap.style.display = 'block';
+                    this.style.display = 'none';
+                    rpReveal();
+                });
+                document.getElementById('fh-replay-skip').addEventListener('click', function(){
+                    rpRunning = false;
+                    rpWrap.style.display = 'none';
+                    document.getElementById('fh-replay-results-btn').style.display = '';
+                });
+                document.getElementById('fh-replay-speed').addEventListener('change', function(){
+                    rpSpeed = parseInt(this.value);
+                });
+
+                function rpReveal(){
+                    if(rpIdx >= totalPicks || !rpRunning){
+                        rpRunning = false;
+                        setTimeout(function(){
+                            rpWrap.style.display = 'none';
+                            document.getElementById('fh-replay-results-btn').style.display = '';
+                        }, 1500);
+                        return;
+                    }
+                    var fd = new FormData();
+                    fd.append('action', 'fishotel_get_lastcall_pick');
+                    fd.append('nonce', replayNonce);
+                    fd.append('batch_name', batchName);
+                    fd.append('pick_index', rpIdx);
+                    fetch(ajaxUrl, { method:'POST', body:fd, credentials:'same-origin' })
+                        .then(function(r){ return r.json(); })
+                        .then(function(d){
+                            if(!d.success || !rpRunning) return;
+                            var p = d.data;
+                            document.querySelector('.fh-rp-round').textContent = 'ROUND ' + p.round;
+                            document.querySelector('.fh-rp-customer').textContent = p.customer_name;
+                            document.querySelector('.fh-rp-fish').textContent = p.fish_name + ' \u00D7 ' + p.qty;
+                            rpPick.style.opacity = '0'; rpPick.style.transform = 'translateY(40px)';
+                            requestAnimationFrame(function(){ requestAnimationFrame(function(){
+                                rpPick.style.opacity = '1'; rpPick.style.transform = 'translateY(0)';
+                            }); });
+                            setTimeout(function(){
+                                rpPick.style.opacity = '0'; rpPick.style.transform = 'translateY(-40px)';
+                                var entry = document.createElement('div');
+                                entry.style.padding = '2px 0';
+                                entry.textContent = 'Pick ' + p.pick_number + ': ' + p.customer_name + ' \u2192 ' + p.fish_name + ' \u00D7 ' + p.qty;
+                                rpLog.appendChild(entry);
+                                rpLog.scrollTop = rpLog.scrollHeight;
+                                setTimeout(function(){ rpIdx++; rpReveal(); }, 600);
+                            }, rpSpeed);
+                        });
+                }
+            })();
+            </script>
+            <?php
         }
 
         echo '</div>';
