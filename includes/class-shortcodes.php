@@ -4152,6 +4152,9 @@ trait FisHotel_Shortcodes {
             .fhlc-napkin-text > div:nth-child(4){transform:rotate(-0.6deg) translateY(-1.5px);}
             .fhlc-napkin-text > div:nth-child(5){transform:rotate(1.2deg) translateY(0.5px);}
             .fhlc-napkin-text > div:nth-child(6){transform:rotate(-0.3deg) translateY(1.5px);}
+            @media (max-width:900px){
+                .fhlc-napkin{transform:rotate(var(--napkin-rot)) scale(0.75) !important;transform-origin:left top;}
+            }
             @media (max-width:600px){
                 .fhlc-napkin{transform:rotate(var(--napkin-rot)) scale(0.65) !important;transform-origin:left top;}
             }
