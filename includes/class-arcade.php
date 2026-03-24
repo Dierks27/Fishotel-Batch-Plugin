@@ -111,18 +111,6 @@ class FisHotel_Arcade {
                 <?php endforeach; ?>
             </div>
 
-            <!-- Game Modal Overlay -->
-            <div id="fh-arc-overlay" class="fh-arc-overlay" style="display:none;">
-                <div class="fh-arc-overlay-header">
-                    <button id="fh-arc-back" class="fh-arc-btn-back">&larr; Back to Arcade</button>
-                    <div class="fh-arc-chips fh-arc-chips-mini">
-                        <img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" class="fh-arc-chip-icon">
-                        <span class="fh-arc-chip-mirror"><?php echo number_format( $chips ); ?></span>
-                    </div>
-                </div>
-                <div id="fh-arc-game-area"></div>
-            </div>
-
             <!-- Prize Shop Button (floating over building) -->
             <button id="fh-arc-shop-btn" class="fh-arc-shop-btn">PRIZE SHOP</button>
 
@@ -194,14 +182,13 @@ class FisHotel_Arcade {
         .fh-arc-room-label{font-family:'Oswald',sans-serif;font-size:clamp(10px,1.3vw,16px);font-weight:600;color:#f5f0e8;text-transform:uppercase;letter-spacing:1.5px;text-shadow:0 2px 6px rgba(0,0,0,.9),0 0 12px rgba(0,0,0,.6);opacity:0;transition:opacity .3s ease;pointer-events:none}
         .fh-arc-room:hover .fh-arc-room-label{opacity:1}
 
-        /* ─── Game Overlay ─── */
+        /* ─── Shared Buttons ─── */
         .fh-arc-overlay{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#1a1a1a 0%,#1a3a5c 100%);overflow-y:auto;padding:20px}
         .fh-arc-overlay-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding:0 10px}
         .fh-arc-btn-back{padding:10px 20px;border:1px solid rgba(150,136,95,.5);border-radius:10px;background:rgba(255,255,255,.08);color:#96885f;font-weight:600;cursor:pointer;font-size:.95em;transition:all .2s}
         .fh-arc-btn-back:hover{background:rgba(255,255,255,.15);border-color:#96885f}
         .fh-arc-btn-gold{background:linear-gradient(135deg,#96885f,#c8a84b);color:#1a1a1a;font-weight:700;padding:12px 32px;border:none;border-radius:10px;cursor:pointer;font-size:1em;transition:all .2s}
         .fh-arc-btn-gold:hover{filter:brightness(1.15);transform:translateY(-1px)}
-        #fh-arc-game-area{max-width:900px;margin:0 auto}
 
         /* ─── Sticker Unlock Modal ─── */
         #fh-arc-sticker-modal{position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center}
@@ -238,6 +225,19 @@ class FisHotel_Arcade {
         .fh-arc-shop-buy:hover{filter:brightness(1.15)}
         .fh-arc-shop-buy:disabled{opacity:.4;cursor:not-allowed}
         .fh-arc-shop-soldout{color:#e74c3c;font-weight:600;font-size:.85em}
+
+        /* ─── Room Zoom + Popup (hotel-style) ─── */
+        .fh-arc-zoom-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:99;opacity:0;transition:opacity .3s ease;cursor:pointer}
+        .fh-arc-zoom-backdrop--visible{opacity:1}
+        .fh-arc-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(480px,90vw);max-height:85vh;overflow-y:auto;background:#111;border:1px solid rgba(150,136,95,.35);border-radius:12px;padding:28px 32px;box-sizing:border-box;z-index:10001;opacity:0;transition:opacity 200ms ease;font-family:'Oswald',sans-serif;color:#f5f0e8;text-align:center}
+        .fh-arc-popup-close{position:absolute;top:10px;right:14px;background:none;border:none;color:#888;font-size:24px;cursor:pointer;line-height:1;z-index:2}
+        .fh-arc-popup-close:hover{color:#f5f0e8}
+        .fh-arc-popup-header{margin-bottom:4px}
+        .fh-arc-popup-icon{font-size:2.4em;display:block;margin-bottom:4px;filter:drop-shadow(0 2px 8px rgba(150,136,95,.4))}
+        .fh-arc-popup-title{font-size:1em;font-variant:small-caps;letter-spacing:3px;color:#96885f}
+        .fh-arc-popup-sub{font-size:.8em;color:#888;letter-spacing:1px;margin-top:2px}
+        .fh-arc-popup-divider{height:1px;background:rgba(150,136,95,.25);margin:12px 0}
+        .fh-arc-popup-body{min-height:60px}
 
         /* ─── Jackpot Modal ─── */
         #fh-arc-jackpot-modal{position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center}
@@ -327,113 +327,177 @@ class FisHotel_Arcade {
                 return r.json();
             }
 
-            /* ─── Room Click → Open Game ─── */
-            const overlay  = document.getElementById('fh-arc-overlay');
-            const gameArea = document.getElementById('fh-arc-game-area');
+            /* ═══════════════════════════════════════════════
+             *  ROOM ZOOM + THEMED POPUP (hotel-style)
+             * ═══════════════════════════════════════════════ */
+            let _arcZoomOpen = false;
+            let _arcZoomBuilding = null;
+            let _arcZoomRoom = null;
+            let _arcEscHandler = null;
 
+            /* Room theme configs */
+            const roomThemes = {
+                bar:       { title: 'THE BAR', icon: '🍸', subtitle: 'Daily Chip Bonus' },
+                sports:    { title: 'SPORTS LOUNGE', icon: '🏈', subtitle: 'Coming Soon' },
+                roulette:  { title: 'ROULETTE ROOM', icon: '🎰', subtitle: 'Spin the Wheel' },
+                blackjack: { title: 'BLACKJACK TABLE', icon: '🃏', subtitle: 'Beat the Dealer' },
+                slots:     { title: 'SLOT MACHINES', icon: '🐠', subtitle: 'Fish Slots' },
+                poker:     { title: 'POKER LOUNGE', icon: '♠', subtitle: 'Video Poker' },
+            };
+
+            function arcadeZoomClose() {
+                if (!_arcZoomOpen) return;
+                _arcZoomOpen = false;
+                /* Fade card out */
+                const card = document.querySelector('.fh-arc-popup');
+                if (card) {
+                    card.style.opacity = '0';
+                    card.addEventListener('transitionend', () => card.remove(), { once: true });
+                }
+                /* Unzoom building */
+                if (_arcZoomBuilding) {
+                    _arcZoomBuilding.style.transform = 'translate(0px, 0px) scale(1)';
+                    _arcZoomBuilding.addEventListener('transitionend', function onUz(e) {
+                        if (e.propertyName !== 'transform') return;
+                        _arcZoomBuilding.removeEventListener('transitionend', onUz);
+                        _arcZoomBuilding.style.transform = '';
+                        _arcZoomBuilding.style.transition = '';
+                        _arcZoomBuilding = null;
+                    });
+                }
+                /* Fade backdrop */
+                const bd = document.querySelector('.fh-arc-zoom-backdrop');
+                if (bd) {
+                    bd.classList.remove('fh-arc-zoom-backdrop--visible');
+                    bd.addEventListener('transitionend', () => bd.remove(), { once: true });
+                }
+                if (_arcEscHandler) {
+                    document.removeEventListener('keydown', _arcEscHandler);
+                    _arcEscHandler = null;
+                }
+            }
+
+            /* Build themed popup card HTML */
+            function buildRoomPopup(roomKey, game) {
+                const theme = roomThemes[roomKey] || { title: 'ROOM', icon: '', subtitle: '' };
+                const card = document.createElement('div');
+                card.className = 'fh-arc-popup';
+                card.innerHTML =
+                    '<button class="fh-arc-popup-close" onclick="event.stopPropagation();">&times;</button>' +
+                    '<div class="fh-arc-popup-header">' +
+                        '<span class="fh-arc-popup-icon">' + theme.icon + '</span>' +
+                        '<div class="fh-arc-popup-title">' + theme.title + '</div>' +
+                        '<div class="fh-arc-popup-sub">' + theme.subtitle + '</div>' +
+                    '</div>' +
+                    '<div class="fh-arc-popup-divider"></div>' +
+                    '<div class="fh-arc-popup-body" id="fh-arc-popup-body"></div>';
+                return card;
+            }
+
+            /* Casino AJAX helper */
+            async function casinoPost(action, data={}) {
+                const fd = new FormData();
+                fd.append('action', action);
+                fd.append('nonce', casinoNonce);
+                for (const k in data) fd.append(k, data[k]);
+                const r = await fetch(ajax, {method:'POST', body:fd, credentials:'same-origin'});
+                return r.json();
+            }
+
+            /* ─── Room click handler ─── */
             document.querySelectorAll('.fh-arc-room').forEach(room => {
                 room.addEventListener('click', function() {
-                    const game = this.dataset.game;
-                    overlay.style.display = '';
-                    gameArea.innerHTML = '<p style="text-align:center;color:#888;padding:40px;">Loading…</p>';
-                    document.body.style.overflow = 'hidden';
-                    openGame(game);
+                    if (_arcZoomOpen) { arcadeZoomClose(); return; }
+
+                    const roomKey = this.dataset.room;
+                    const game    = this.dataset.game;
+                    const isMobile = window.innerWidth <= 640;
+                    const building = this.closest('.fh-arc-building');
+
+                    _arcZoomRoom = this;
+                    _arcZoomOpen = true;
+
+                    /* Backdrop */
+                    const backdrop = document.createElement('div');
+                    backdrop.className = 'fh-arc-zoom-backdrop';
+                    backdrop.addEventListener('click', arcadeZoomClose);
+                    document.body.appendChild(backdrop);
+                    requestAnimationFrame(() => backdrop.classList.add('fh-arc-zoom-backdrop--visible'));
+
+                    /* Desktop: zoom building into room */
+                    if (!isMobile && building) {
+                        _arcZoomBuilding = building;
+                        const bRect = building.getBoundingClientRect();
+                        const rRect = this.getBoundingClientRect();
+                        const rCx = rRect.left - bRect.left + rRect.width / 2;
+                        const rCy = rRect.top - bRect.top + rRect.height / 2;
+                        const scale = Math.min(bRect.width / rRect.width, bRect.height / rRect.height) * 0.75;
+                        const tx = bRect.width / 2 - rCx * scale;
+                        const ty = bRect.height / 2 - rCy * scale;
+                        building.style.transformOrigin = '0 0';
+                        building.style.transition = 'transform 420ms cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                        building.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
+                    }
+
+                    /* Show popup after zoom */
+                    const card = buildRoomPopup(roomKey, game);
+                    setTimeout(() => {
+                        document.body.appendChild(card);
+                        requestAnimationFrame(() => card.style.opacity = '1');
+                        card.querySelector('.fh-arc-popup-close').addEventListener('click', arcadeZoomClose);
+                        /* Load room content */
+                        const body = document.getElementById('fh-arc-popup-body');
+                        loadRoomContent(game, body);
+                    }, isMobile ? 0 : 320);
+
+                    /* Escape key */
+                    _arcEscHandler = (e) => { if (e.key === 'Escape') arcadeZoomClose(); };
+                    document.addEventListener('keydown', _arcEscHandler);
                 });
             });
 
-            document.getElementById('fh-arc-back').addEventListener('click', () => {
-                overlay.style.display = 'none';
-                gameArea.innerHTML = '';
-                document.body.style.overflow = '';
-            });
-
-            function openGame(name) {
-                switch(name) {
-                    case 'daily_bonus': renderDailyBonus(); break;
-                    case 'coming_soon': renderComingSoon(); break;
-                    case 'roulette':    loadCasinoGame('roulette'); break;
-                    case 'blackjack':   loadCasinoGame('blackjack'); break;
-                    case 'slots':       loadCasinoGame('slots'); break;
-                    case 'poker':       loadCasinoGame('poker'); break;
+            /* ─── Load content into popup body ─── */
+            function loadRoomContent(game, body) {
+                switch(game) {
+                    case 'daily_bonus': renderDailyBonus(body); break;
+                    case 'coming_soon': renderComingSoon(body); break;
+                    default:
+                        body.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;font-family:Special Elite,cursive;">Game being rebuilt — coming soon!</p>';
+                        break;
                 }
             }
 
             /* ─── Daily Bonus ─── */
-            function renderDailyBonus() {
+            function renderDailyBonus(body) {
                 if (canClaim) {
-                    gameArea.innerHTML = `
-                        <div class="fh-arc-daily">
-                            <h2>Welcome to the Bar!</h2>
-                            <p>Grab your daily chip bonus on the house.</p>
-                            <button id="fh-arc-claim-daily" class="fh-arc-btn-gold" style="font-size:1.2em;padding:16px 48px;margin-top:20px;">Claim <?php echo self::DAILY_BONUS_CHIPS; ?> Free Chips</button>
-                            <div id="fh-arc-daily-msg" style="margin-top:16px;"></div>
-                        </div>`;
+                    body.innerHTML =
+                        '<p style="color:#f5f0e8;margin:0 0 16px;">Grab your daily chip bonus on the house.</p>' +
+                        '<button id="fh-arc-claim-daily" class="fh-arc-btn-gold" style="font-size:1.1em;padding:12px 36px;">Claim <?php echo self::DAILY_BONUS_CHIPS; ?> Free Chips</button>' +
+                        '<div id="fh-arc-daily-msg" style="margin-top:12px;"></div>';
                     document.getElementById('fh-arc-claim-daily').addEventListener('click', async function() {
                         this.disabled = true;
                         const res = await postAjax('fishotel_arcade_daily_bonus');
                         if (res.success) {
                             updateChips(res.data.chips);
                             canClaim = false;
-                            document.getElementById('fh-arc-daily-msg').innerHTML = '<p class="fh-arc-daily-claimed">Here\'s your daily <?php echo self::DAILY_BONUS_CHIPS; ?> chips! Come back tomorrow for more.</p>';
+                            document.getElementById('fh-arc-daily-msg').innerHTML = '<p style="color:#96885f;font-family:Special Elite,cursive;">Here\'s your daily <?php echo self::DAILY_BONUS_CHIPS; ?> chips! Come back tomorrow.</p>';
                             this.style.display = 'none';
                         } else {
                             document.getElementById('fh-arc-daily-msg').innerHTML = '<p style="color:#e74c3c;">' + (res.data.message || 'Already claimed!') + '</p>';
                         }
                     });
                 } else {
-                    gameArea.innerHTML = `
-                        <div class="fh-arc-daily">
-                            <h2>Welcome to the Bar!</h2>
-                            <p class="fh-arc-daily-claimed">You already grabbed your daily bonus. Come back tomorrow!</p>
-                        </div>`;
+                    body.innerHTML = '<p style="color:#96885f;font-family:Special Elite,cursive;padding:20px 0;">You already grabbed your daily bonus. Come back tomorrow!</p>';
                 }
             }
 
             /* ─── Coming Soon ─── */
-            function renderComingSoon() {
-                gameArea.innerHTML = `
-                    <div class="fh-arc-coming-soon">
-                        <h2>Sports Lounge</h2>
-                        <p>Draft Results & more coming soon…</p>
-                        <p style="font-family:'Special Elite',cursive;color:#96885f;margin-top:24px;">Stay tuned!</p>
-                    </div>`;
+            function renderComingSoon(body) {
+                body.innerHTML = '<p style="color:#aaa;padding:20px 0;">Draft Results &amp; more coming soon…</p>' +
+                    '<p style="font-family:Special Elite,cursive;color:#96885f;">Stay tuned!</p>';
             }
 
-            /* ─── Casino Games (delegates to FisHotel_Casino JS) ─── */
-            function loadCasinoGame(gameName) {
-                /* We inject a mini casino app container that the casino class JS can target */
-                gameArea.innerHTML = `
-                    <div id="fhc-casino-app" data-nonce="${casinoNonce}" data-ajax="${ajax}" style="display:none;"></div>
-                    <div id="fhc-game-area-inline"></div>`;
-
-                /* Build the casino post helper */
-                const casinoApp = document.getElementById('fhc-casino-app');
-                async function casinoPost(action, data={}) {
-                    const fd = new FormData();
-                    fd.append('action', action);
-                    fd.append('nonce', casinoNonce);
-                    for (const k in data) fd.append(k, data[k]);
-                    const r = await fetch(ajax, {method:'POST', body:fd, credentials:'same-origin'});
-                    return r.json();
-                }
-
-                const inlineArea = document.getElementById('fhc-game-area-inline');
-
-                /* We need to inline the game renderers from class-casino.php.
-                   Rather than duplicating, we create a micro-casino bridge. */
-                switch(gameName) {
-                    case 'roulette':  renderArcadeRoulette(inlineArea, casinoPost); break;
-                    case 'blackjack': renderArcadeBlackjack(inlineArea, casinoPost); break;
-                    case 'slots':     renderArcadeSlots(inlineArea, casinoPost); break;
-                    case 'poker':     renderArcadePoker(inlineArea, casinoPost); break;
-                }
-            }
-
-            /* ═══════════════════════════════════════════════
-             *  INLINE GAME RENDERERS (bridge to casino AJAX)
-             * ═══════════════════════════════════════════════ */
-
-            /* ── Shared card renderer (available to all games) ── */
+            /* ─── Shared helpers (for future game rebuilds) ─── */
             function fhCard(c, faceDown, isHeld) {
                 if (faceDown) return '<div class="fh-card fh-card-back"></div>';
                 const isRed = c.suit === '♥' || c.suit === '♦';
@@ -445,30 +509,13 @@ class FisHotel_Arcade {
                     '<div class="fh-card-br">' + c.rank + '<span class="fh-card-suit-sm">' + c.suit + '</span></div>' +
                 '</div>';
             }
-
-            /* ── Floating chip animation ── */
             function fhChipFloat(amount, win) {
                 const el = document.createElement('div');
                 el.className = 'fh-chip-float ' + (win ? 'win' : 'lose');
                 el.textContent = (win ? '+' : '') + Number(Math.abs(amount)).toLocaleString();
-                el.style.left = '50%';
-                el.style.top = '40%';
+                el.style.left = '50%'; el.style.top = '40%';
                 document.body.appendChild(el);
                 setTimeout(() => el.remove(), 1600);
-            }
-
-            /* ── Game renderers (placeholder — will be rebuilt) ── */
-            function renderArcadeRoulette(area, post) {
-                area.innerHTML = '<div style="text-align:center;padding:60px 20px;"><h2 style="font-family:Oswald,sans-serif;color:#96885f;text-transform:uppercase;letter-spacing:2px;">Roulette</h2><p style="color:#aaa;">Game being rebuilt — coming soon!</p></div>';
-            }
-            function renderArcadeBlackjack(area, post) {
-                area.innerHTML = '<div style="text-align:center;padding:60px 20px;"><h2 style="font-family:Oswald,sans-serif;color:#96885f;text-transform:uppercase;letter-spacing:2px;">Blackjack</h2><p style="color:#aaa;">Game being rebuilt — coming soon!</p></div>';
-            }
-            function renderArcadeSlots(area, post) {
-                area.innerHTML = '<div style="text-align:center;padding:60px 20px;"><h2 style="font-family:Oswald,sans-serif;color:#96885f;text-transform:uppercase;letter-spacing:2px;">Slots</h2><p style="color:#aaa;">Game being rebuilt — coming soon!</p></div>';
-            }
-            function renderArcadePoker(area, post) {
-                area.innerHTML = '<div style="text-align:center;padding:60px 20px;"><h2 style="font-family:Oswald,sans-serif;color:#96885f;text-transform:uppercase;letter-spacing:2px;">Video Poker</h2><p style="color:#aaa;">Game being rebuilt — coming soon!</p></div>';
             }
 
             /* ─── Sticker Check (after game wins) ─── */

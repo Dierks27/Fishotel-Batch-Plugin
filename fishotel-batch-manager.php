@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v7.9 - Code cleanup: remove 1,254 lines of dead/duplicate casino code.
- * Version:           7.9
+ * Description:       v8.0 - Hotel-style room zoom + themed popup cards for casino building.
+ * Version:           8.0
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '7.9' );
+define( 'FISHOTEL_VERSION', '8.0' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
