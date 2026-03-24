@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v7.2 - Casino Arcade: building cutaway, 4 games, daily bonus, sticker badges, trophy case.
- * Version:           7.2
+ * Description:       v7.3 - Casino Arcade: building cutaway, 4 games, daily bonus, sticker badges, trophy case.
+ * Version:           7.3
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '7.2' );
+define( 'FISHOTEL_VERSION', '7.3' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

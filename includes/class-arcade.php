@@ -55,7 +55,7 @@ class FisHotel_Arcade {
         $ajax_url  = admin_url( 'admin-ajax.php' );
         $casino_nonce = wp_create_nonce( 'fishotel_casino_nonce' );
 
-        $building_img = plugins_url( 'assists/casino/Casino-Building.jpg', FISHOTEL_PLUGIN_FILE );
+        $building_img = plugins_url( 'assists/casino/Casino.jpg', FISHOTEL_PLUGIN_FILE );
         $casino_img   = plugins_url( 'assists/casino/FisHotel-Casino.png', FISHOTEL_PLUGIN_FILE );
         $chip_url     = plugins_url( 'assists/casino/Casino-Chip.png', FISHOTEL_PLUGIN_FILE );
         $felt_url     = plugins_url( 'assists/casino/Felt-Table.jpg', FISHOTEL_PLUGIN_FILE );
