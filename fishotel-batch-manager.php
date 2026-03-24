@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v7.8.1 - Fix casino styles: move CSS/JS from roulette heredoc to main output.
- * Version:           7.8.1
+ * Description:       v7.9 - Code cleanup: remove 1,254 lines of dead/duplicate casino code.
+ * Version:           7.9
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '7.8.1' );
+define( 'FISHOTEL_VERSION', '7.9' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
