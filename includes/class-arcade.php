@@ -1192,23 +1192,13 @@ JS;
      *  ADMIN PAGE — Arcade
      * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-    public function add_admin_menu() {
-        add_submenu_page(
-            'fishotel-batch-manager',
-            'Arcade',
-            'Arcade',
-            'manage_options',
-            'fishotel-arcade',
-            [ $this, 'render_admin_page' ]
-        );
-    }
-
     public function render_admin_page() {
-        $tab  = sanitize_text_field( $_GET['tab'] ?? 'stickers' );
-        $page = sanitize_text_field( $_GET['page'] ?? 'fishotel-arcade' );
+        $ctab = sanitize_text_field( $_GET['casino_tab'] ?? 'stickers' );
+        $page = sanitize_text_field( $_GET['page'] ?? 'fishotel-batch-hq' );
 
-        echo '<div class="wrap"><h1>FisHotel Arcade</h1>';
-        echo '<h2 class="nav-tab-wrapper">';
+        echo '<div style="margin-top:16px;">';
+        echo '<h2 style="margin:0 0 12px 0;color:#333;">Casino Management</h2>';
+        echo '<nav class="nav-tab-wrapper" style="margin-bottom:16px;">';
         $tabs = [
             'stickers'  => 'Badges &amp; Prizes',
             'winners'   => 'Prize Winners',
@@ -1217,12 +1207,12 @@ JS;
             'chips'     => 'Chip Balances',
         ];
         foreach ( $tabs as $slug => $label ) {
-            $active = $tab === $slug ? ' nav-tab-active' : '';
-            echo '<a href="?page=' . $page . '&tab=' . $slug . '" class="nav-tab' . $active . '">' . $label . '</a>';
+            $active = $ctab === $slug ? ' nav-tab-active' : '';
+            echo '<a href="?page=' . esc_attr( $page ) . '&tab=casino&casino_tab=' . $slug . '" class="nav-tab' . $active . '">' . $label . '</a>';
         }
-        echo '</h2>';
+        echo '</nav>';
 
-        switch ( $tab ) {
+        switch ( $ctab ) {
             case 'stickers':  $this->render_admin_stickers(); break;
             case 'winners':   $this->render_admin_winners(); break;
             case 'inventory': $this->render_admin_inventory(); break;

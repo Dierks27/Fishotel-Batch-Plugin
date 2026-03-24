@@ -103,7 +103,7 @@ trait FisHotel_Admin {
             'requests' => 'Requests',
             'summary'  => 'Order Summary',
             'wallets'  => 'Wallets',
-            'casino'   => [ 'label' => 'Casino', 'url' => admin_url( 'admin.php?page=fishotel-arcade' ) ],
+            'casino'   => 'Casino',
         ];
         $this->render_admin_tabs( 'fishotel-batch-hq', 'Batch HQ', $tabs, $tab );
 
@@ -111,8 +111,16 @@ trait FisHotel_Admin {
             case 'requests': $this->batch_orders_html(); break;
             case 'summary':  $this->order_summary_html(); break;
             case 'wallets':  $this->wallets_html(); break;
+            case 'casino':   $this->batch_casino_html(); break;
             default:         $this->batch_settings_html(); break;
         }
+    }
+
+    // ─── Casino tab: delegates to FisHotel_Arcade admin ────────────
+
+    private function batch_casino_html() {
+        $arcade = new FisHotel_Arcade();
+        $arcade->render_admin_page();
     }
 
     // ─── Tab wrapper: Sourcing ──────────────────────────────────────
