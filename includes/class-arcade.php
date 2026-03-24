@@ -34,11 +34,10 @@ class FisHotel_Arcade {
         add_shortcode( 'fishotel_trophy_case', [ $this, 'trophy_case_shortcode' ] );
 
         /* AJAX */
-        add_action( 'wp_ajax_fishotel_arcade_daily_bonus',  [ $this, 'ajax_daily_bonus' ] );
+        add_action( 'wp_ajax_fishotel_arcade_daily_bonus',    [ $this, 'ajax_daily_bonus' ] );
         add_action( 'wp_ajax_fishotel_arcade_check_stickers', [ $this, 'ajax_check_stickers' ] );
-
-        /* Admin */
-        add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
+        add_action( 'wp_ajax_fishotel_arcade_shop_purchase',  [ $this, 'ajax_shop_purchase' ] );
+        add_action( 'wp_ajax_fishotel_arcade_shop_items',     [ $this, 'ajax_shop_items' ] );
     }
 
     /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -124,6 +123,9 @@ class FisHotel_Arcade {
                 <div id="fh-arc-game-area"></div>
             </div>
 
+            <!-- Prize Shop Button (floating over building) -->
+            <button id="fh-arc-shop-btn" class="fh-arc-shop-btn">PRIZE SHOP</button>
+
             <!-- Sticker Unlock Modal -->
             <div id="fh-arc-sticker-modal" style="display:none;">
                 <div class="fh-arc-sticker-modal-inner">
@@ -132,6 +134,37 @@ class FisHotel_Arcade {
                     <div id="fh-arc-sticker-img"></div>
                     <div id="fh-arc-sticker-name"></div>
                     <button id="fh-arc-sticker-close" class="fh-arc-btn-gold">Awesome!</button>
+                </div>
+            </div>
+
+            <!-- Jackpot Modal -->
+            <div id="fh-arc-jackpot-modal" style="display:none;">
+                <div class="fh-arc-sticker-modal-inner">
+                    <div class="fh-arc-sticker-modal-glow" style="background:radial-gradient(circle,rgba(255,215,0,.4) 0%,transparent 70%);"></div>
+                    <h2 class="fh-arc-sticker-title" style="color:#ffd700;">JACKPOT!</h2>
+                    <div id="fh-arc-jackpot-img"></div>
+                    <div id="fh-arc-jackpot-name" style="font-family:'Special Elite',cursive;font-size:1.3em;color:#f5f0e8;margin-bottom:8px;position:relative;"></div>
+                    <div style="color:#96885f;font-size:.95em;margin-bottom:20px;position:relative;">Included FREE with your fish shipment!</div>
+                    <button id="fh-arc-jackpot-close" class="fh-arc-btn-gold">Amazing!</button>
+                </div>
+            </div>
+
+            <!-- Prize Shop Modal -->
+            <div id="fh-arc-shop-modal" class="fh-arc-overlay" style="display:none;">
+                <div class="fh-arc-overlay-header">
+                    <button id="fh-arc-shop-back" class="fh-arc-btn-back">&larr; Back to Arcade</button>
+                    <div class="fh-arc-chips fh-arc-chips-mini">
+                        <img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" class="fh-arc-chip-icon">
+                        <span class="fh-arc-chip-mirror"><?php echo number_format( $chips ); ?></span>
+                    </div>
+                </div>
+                <div style="max-width:900px;margin:0 auto;">
+                    <div style="text-align:center;margin-bottom:24px;">
+                        <h2 style="font-family:'Oswald',sans-serif;color:#96885f;font-size:2em;text-transform:uppercase;letter-spacing:3px;margin:0;">FISHOTEL PRIZE SHOP</h2>
+                        <p style="color:#aaa;font-family:'Special Elite',cursive;">Spend your chips on real sticker prizes — included with your fish shipment!</p>
+                    </div>
+                    <div id="fh-arc-shop-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;padding:0 16px;"></div>
+                    <div id="fh-arc-shop-empty" style="display:none;text-align:center;color:#888;padding:40px;">No prizes available right now. Check back soon!</div>
                 </div>
             </div>
         </div>
@@ -190,12 +223,33 @@ class FisHotel_Arcade {
         .fh-arc-coming-soon h2{font-family:'Oswald',sans-serif;color:#96885f;font-size:2em;text-transform:uppercase;letter-spacing:2px}
         .fh-arc-coming-soon p{color:#aaa;font-size:1.1em;margin-top:12px}
 
+        /* ─── Prize Shop Button ─── */
+        .fh-arc-shop-btn{position:absolute;top:12px;right:12px;z-index:10;background:linear-gradient(135deg,#96885f,#c8a84b);color:#1a1a1a;font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(11px,1.2vw,15px);text-transform:uppercase;letter-spacing:2px;padding:10px 20px;border:none;border-radius:10px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.5);transition:all .2s}
+        .fh-arc-shop-btn:hover{filter:brightness(1.15);transform:translateY(-2px);box-shadow:0 6px 24px rgba(150,136,95,.4)}
+
+        /* ─── Shop Card ─── */
+        .fh-arc-shop-card{background:#1a1a1a;border:2px solid rgba(150,136,95,.3);border-radius:16px;padding:20px;text-align:center;transition:all .3s}
+        .fh-arc-shop-card:hover{border-color:#96885f;transform:translateY(-3px)}
+        .fh-arc-shop-card img{width:80px;height:80px;object-fit:contain;border-radius:8px;margin-bottom:10px}
+        .fh-arc-shop-card-name{font-family:'Oswald',sans-serif;color:#f5f0e8;font-size:.95em;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+        .fh-arc-shop-card-price{color:#96885f;font-weight:700;font-size:1.1em;margin-bottom:4px}
+        .fh-arc-shop-card-stock{color:#888;font-size:.8em;margin-bottom:12px}
+        .fh-arc-shop-buy{background:linear-gradient(135deg,#96885f,#c8a84b);color:#1a1a1a;font-weight:700;padding:8px 24px;border:none;border-radius:8px;cursor:pointer;font-size:.9em;transition:all .2s}
+        .fh-arc-shop-buy:hover{filter:brightness(1.15)}
+        .fh-arc-shop-buy:disabled{opacity:.4;cursor:not-allowed}
+        .fh-arc-shop-soldout{color:#e74c3c;font-weight:600;font-size:.85em}
+
+        /* ─── Jackpot Modal ─── */
+        #fh-arc-jackpot-modal{position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center}
+        #fh-arc-jackpot-img img{width:120px;height:120px;object-fit:contain;filter:drop-shadow(0 4px 16px rgba(255,215,0,.6));margin-bottom:16px}
+
         /* ─── Mobile ─── */
         @media(max-width:640px){
             .fh-arc-topbar{padding:10px 14px}
             .fh-arc-logo{height:32px}
             .fh-arc-room-label{font-size:9px}
             .fh-arc-overlay{padding:10px}
+            .fh-arc-shop-btn{padding:7px 14px;font-size:10px}
         }
         </style>
 
@@ -362,8 +416,91 @@ class FisHotel_Arcade {
                 });
             }
 
-            /* Expose checkStickers globally so casino game wins can trigger it */
+            /* ─── Jackpot Modal ─── */
+            function showJackpotModal(jp) {
+                return new Promise(resolve => {
+                    const modal = document.getElementById('fh-arc-jackpot-modal');
+                    document.getElementById('fh-arc-jackpot-img').innerHTML = jp.sticker_image ? '<img src="' + jp.sticker_image + '" alt="' + jp.sticker_name + '">' : '';
+                    document.getElementById('fh-arc-jackpot-name').textContent = jp.sticker_name;
+                    modal.style.display = '';
+                    document.getElementById('fh-arc-jackpot-close').onclick = () => {
+                        modal.style.display = 'none';
+                        resolve();
+                    };
+                });
+            }
+
+            /* ─── Combined post-win handler: jackpot + sticker check ─── */
+            async function handleWin(gameResult) {
+                if (gameResult && gameResult.jackpot) {
+                    await showJackpotModal(gameResult.jackpot);
+                }
+                await checkStickers();
+            }
             window.fhArcadeCheckStickers = checkStickers;
+            window.fhArcadeHandleWin = handleWin;
+
+            /* ─── Prize Shop ─── */
+            const shopModal = document.getElementById('fh-arc-shop-modal');
+            const shopGrid  = document.getElementById('fh-arc-shop-grid');
+            const shopEmpty = document.getElementById('fh-arc-shop-empty');
+
+            document.getElementById('fh-arc-shop-btn').addEventListener('click', () => {
+                shopModal.style.display = '';
+                document.body.style.overflow = 'hidden';
+                loadShop();
+            });
+            document.getElementById('fh-arc-shop-back').addEventListener('click', () => {
+                shopModal.style.display = 'none';
+                document.body.style.overflow = '';
+            });
+
+            async function loadShop() {
+                shopGrid.innerHTML = '<p style="text-align:center;color:#888;padding:40px;grid-column:1/-1;">Loading...</p>';
+                shopEmpty.style.display = 'none';
+                const res = await postAjax('fishotel_arcade_shop_items');
+                if (!res.success) return;
+                const items = res.data.items;
+                if (!items || items.length === 0) {
+                    shopGrid.innerHTML = '';
+                    shopEmpty.style.display = '';
+                    return;
+                }
+                shopGrid.innerHTML = items.map(item => {
+                    const inStock = item.stock === -1 || item.stock > 0;
+                    const canBuy = inStock && chips >= item.price;
+                    const stockText = item.stock === -1 ? '' : (item.stock > 0 ? item.stock + ' left' : 'SOLD OUT');
+                    return `<div class="fh-arc-shop-card" data-id="${item.id}">
+                        ${item.image ? '<img src="'+item.image+'" alt="'+item.name+'">' : '<div style="font-size:3em;margin-bottom:10px;">&#127942;</div>'}
+                        <div class="fh-arc-shop-card-name">${item.name}</div>
+                        <div class="fh-arc-shop-card-price">${item.price.toLocaleString()} chips</div>
+                        ${stockText ? '<div class="fh-arc-shop-card-stock'+(item.stock===0?' fh-arc-shop-soldout':'')+'">'+stockText+'</div>' : ''}
+                        ${inStock ? '<button class="fh-arc-shop-buy" data-id="'+item.id+'" data-price="'+item.price+'" '+(canBuy?'':'disabled')+'>BUY</button>' : '<div class="fh-arc-shop-soldout">SOLD OUT</div>'}
+                    </div>`;
+                }).join('');
+
+                shopGrid.querySelectorAll('.fh-arc-shop-buy').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        if (this.disabled) return;
+                        this.disabled = true;
+                        this.textContent = 'Buying...';
+                        const res = await postAjax('fishotel_arcade_shop_purchase', {sticker_id: this.dataset.id});
+                        if (res.success) {
+                            updateChips(res.data.chips);
+                            this.textContent = 'PURCHASED!';
+                            this.style.background = '#27ae60';
+                            this.style.color = '#fff';
+                            /* Show success briefly then reload shop */
+                            setTimeout(() => loadShop(), 1500);
+                        } else {
+                            this.textContent = res.data.message || 'Error';
+                            this.style.background = '#e74c3c';
+                            this.style.color = '#fff';
+                            setTimeout(() => { this.textContent = 'BUY'; this.style.background = ''; this.style.color = ''; this.disabled = false; }, 2000);
+                        }
+                    });
+                });
+            }
 
         })();
         </script>
@@ -503,7 +640,7 @@ class FisHotel_Arcade {
                         if(t<1){requestAnimationFrame(animate);}else{
                             wheelRotation=totalRotation%360; updateChips(d.chips);
                             const r=document.getElementById('fh-arc-roul-result');
-                            if(d.payout>0){r.textContent=`${d.label||d.number} ${d.color}! Won ${d.payout.toLocaleString()} chips!`;r.className='fhc-result win';if(window.fhArcadeCheckStickers)window.fhArcadeCheckStickers();}
+                            if(d.payout>0){r.textContent=`${d.label||d.number} ${d.color}! Won ${d.payout.toLocaleString()} chips!`;r.className='fhc-result win';if(window.fhArcadeHandleWin)window.fhArcadeHandleWin(d);}
                             else{r.textContent=`${d.label||d.number} ${d.color}. Lost ${bet.toLocaleString()} chips.`;r.className='fhc-result lose';}
                             spinning=false; document.getElementById('fh-arc-roul-spin').disabled=false;
                         }
@@ -548,7 +685,7 @@ JS;
 
                 document.querySelectorAll('#fh-arc-bj-bets .fhc-bet-btn').forEach(b=>{b.addEventListener('click',()=>{document.querySelectorAll('#fh-arc-bj-bets .fhc-bet-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');bet=parseInt(b.dataset.amt);});});
 
-                function endHand(d){const r=document.getElementById('fh-arc-bj-result');if(d.result==='blackjack'){r.textContent=`Blackjack! +${d.payout.toLocaleString()}`;r.className='fhc-result win';}else if(d.result==='win'){r.textContent=`You win! +${d.payout.toLocaleString()}`;r.className='fhc-result win';}else if(d.result==='push'){r.textContent='Push — bet returned.';r.className='fhc-result push';}else{r.textContent=`Dealer wins. -${d.wager.toLocaleString()}`;r.className='fhc-result lose';}showPhase('done');if(d.result==='blackjack'||d.result==='win'){if(window.fhArcadeCheckStickers)window.fhArcadeCheckStickers();}}
+                function endHand(d){const r=document.getElementById('fh-arc-bj-result');if(d.result==='blackjack'){r.textContent=`Blackjack! +${d.payout.toLocaleString()}`;r.className='fhc-result win';}else if(d.result==='win'){r.textContent=`You win! +${d.payout.toLocaleString()}`;r.className='fhc-result win';}else if(d.result==='push'){r.textContent='Push — bet returned.';r.className='fhc-result push';}else{r.textContent=`Dealer wins. -${d.wager.toLocaleString()}`;r.className='fhc-result lose';}showPhase('done');if(d.result==='blackjack'||d.result==='win'){if(window.fhArcadeHandleWin)window.fhArcadeHandleWin(d);}}
 
                 document.getElementById('fh-arc-bj-deal').addEventListener('click',async()=>{
                     if(bet>chips){document.getElementById('fh-arc-bj-result').textContent='Not enough chips!';document.getElementById('fh-arc-bj-result').className='fhc-result lose';return;}
@@ -606,7 +743,7 @@ JS;
                     for(let i=0;i<3;i++){await new Promise(r=>setTimeout(r,600+i*500));reels[i].classList.remove('spinning');reels[i].textContent=d.reels[i];}
                     clearInterval(si); updateChips(d.chips);
                     const r=document.getElementById('fh-arc-slots-result');
-                    if(d.payout>0){r.textContent=`Winner! +${d.payout.toLocaleString()} chips! (${d.multiplier}×)`;r.className='fhc-result win';if(window.fhArcadeCheckStickers)window.fhArcadeCheckStickers();}
+                    if(d.payout>0){r.textContent=`Winner! +${d.payout.toLocaleString()} chips! (${d.multiplier}×)`;r.className='fhc-result win';if(window.fhArcadeHandleWin)window.fhArcadeHandleWin(d);}
                     else{r.textContent=`No match. -${bet.toLocaleString()} chips.`;r.className='fhc-result lose';}
                     spinning=false;document.getElementById('fh-arc-slots-spin').disabled=false;
                 });
@@ -662,7 +799,7 @@ JS;
                     hand=res.data.hand;updateChips(res.data.chips);phase='done';renderCards();
                     document.getElementById('fh-arc-pk-name').textContent=res.data.hand_name;
                     const r=document.getElementById('fh-arc-pk-result');
-                    if(res.data.payout>0){r.textContent=`You win ${res.data.payout.toLocaleString()} chips! (${res.data.multiplier}×)`;r.className='fhc-result win';if(window.fhArcadeCheckStickers)window.fhArcadeCheckStickers();}
+                    if(res.data.payout>0){r.textContent=`You win ${res.data.payout.toLocaleString()} chips! (${res.data.multiplier}×)`;r.className='fhc-result win';if(window.fhArcadeHandleWin)window.fhArcadeHandleWin(res.data);}
                     else{r.textContent=`No winning hand. -${bet.toLocaleString()} chips.`;r.className='fhc-result lose';}
                     showPhase('done');
                 });
@@ -696,6 +833,110 @@ JS;
         wp_send_json_success( [
             'chips'   => $current + self::DAILY_BONUS_CHIPS,
             'message' => 'Here\'s your daily ' . self::DAILY_BONUS_CHIPS . ' chips! Come back tomorrow for more.',
+        ] );
+    }
+
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     *  PRIZE SHOP AJAX
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    /** Return shop items for the frontend grid. */
+    public function ajax_shop_items() {
+        check_ajax_referer( 'fishotel_arcade_nonce', 'nonce' );
+        if ( ! get_current_user_id() ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
+
+        $stickers = get_posts( [
+            'post_type'   => 'fishotel_sticker',
+            'numberposts' => -1,
+            'post_status' => 'publish',
+            'meta_query'  => [ [ 'key' => '_sticker_shop_enabled', 'value' => '1' ] ],
+        ] );
+
+        $items = [];
+        foreach ( $stickers as $s ) {
+            $stock = (int) get_post_meta( $s->ID, '_sticker_shop_stock', true );
+            $items[] = [
+                'id'    => $s->ID,
+                'name'  => $s->post_title,
+                'image' => get_the_post_thumbnail_url( $s->ID, 'medium' ) ?: '',
+                'price' => (int) get_post_meta( $s->ID, '_sticker_shop_price', true ),
+                'stock' => $stock, // -1 = unlimited
+            ];
+        }
+
+        wp_send_json_success( [ 'items' => $items ] );
+    }
+
+    /** Purchase a sticker from the shop. */
+    public function ajax_shop_purchase() {
+        check_ajax_referer( 'fishotel_arcade_nonce', 'nonce' );
+        $uid = get_current_user_id();
+        if ( ! $uid ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
+
+        $sticker_id = (int) ( $_POST['sticker_id'] ?? 0 );
+        if ( ! $sticker_id ) wp_send_json_error( [ 'message' => 'Invalid item.' ] );
+
+        $sticker = get_post( $sticker_id );
+        if ( ! $sticker || $sticker->post_type !== 'fishotel_sticker' ) {
+            wp_send_json_error( [ 'message' => 'Item not found.' ] );
+        }
+
+        if ( get_post_meta( $sticker_id, '_sticker_shop_enabled', true ) !== '1' ) {
+            wp_send_json_error( [ 'message' => 'Item not available in shop.' ] );
+        }
+
+        $price = (int) get_post_meta( $sticker_id, '_sticker_shop_price', true );
+        $stock = (int) get_post_meta( $sticker_id, '_sticker_shop_stock', true );
+        $chips = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
+
+        if ( $chips < $price ) {
+            wp_send_json_error( [ 'message' => 'Not enough chips! You need ' . number_format( $price ) . '.' ] );
+        }
+
+        if ( $stock !== -1 && $stock <= 0 ) {
+            wp_send_json_error( [ 'message' => 'Sold out!' ] );
+        }
+
+        /* Deduct chips */
+        update_user_meta( $uid, '_fishotel_casino_chips', $chips - $price );
+
+        /* Decrement stock */
+        if ( $stock !== -1 ) {
+            update_post_meta( $sticker_id, '_sticker_shop_stock', max( 0, $stock - 1 ) );
+        }
+
+        /* Track shop revenue */
+        $revenue = (int) get_post_meta( $sticker_id, '_sticker_shop_sold', true );
+        update_post_meta( $sticker_id, '_sticker_shop_sold', $revenue + 1 );
+        $total_rev = (int) get_post_meta( $sticker_id, '_sticker_shop_revenue', true );
+        update_post_meta( $sticker_id, '_sticker_shop_revenue', $total_rev + $price );
+
+        /* Determine current batch */
+        $statuses   = get_option( 'fishotel_batch_statuses', [] );
+        $batch_name = '';
+        foreach ( $statuses as $name => $status ) {
+            if ( $status === 'casino' ) { $batch_name = $name; break; }
+        }
+
+        /* Add to physical prizes */
+        $prizes = get_user_meta( $uid, '_fishotel_physical_prizes', true );
+        $prizes = is_array( $prizes ) ? $prizes : [];
+        $prizes[] = [
+            'sticker_id'   => $sticker_id,
+            'sticker_name' => $sticker->post_title,
+            'source'       => 'shop',
+            'game_type'    => null,
+            'earned_at'    => time(),
+            'batch_name'   => $batch_name,
+            'chip_cost'    => $price,
+            'added_to_box' => false,
+        ];
+        update_user_meta( $uid, '_fishotel_physical_prizes', $prizes );
+
+        wp_send_json_success( [
+            'chips'   => $chips - $price,
+            'message' => 'Purchase complete! ' . $sticker->post_title . ' will be included with your fish shipment!',
         ] );
     }
 
@@ -869,6 +1110,56 @@ JS;
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>
+
+            <?php
+            /* ─── Physical Prizes Section ─── */
+            $prizes = get_user_meta( $uid, '_fishotel_physical_prizes', true );
+            $prizes = is_array( $prizes ) ? $prizes : [];
+            if ( ! empty( $prizes ) ) :
+                $jackpot_prizes = array_filter( $prizes, function( $p ) { return $p['source'] === 'jackpot'; } );
+                $shop_prizes    = array_filter( $prizes, function( $p ) { return $p['source'] === 'shop'; } );
+            ?>
+                <div class="fh-trophy-header" style="margin-top:40px;">
+                    <h2>Physical Prizes</h2>
+                    <span class="fh-trophy-count">Coming with your fish!</span>
+                </div>
+
+                <?php if ( ! empty( $jackpot_prizes ) ) : ?>
+                    <h3 style="font-family:'Oswald',sans-serif;color:#ffd700;text-transform:uppercase;letter-spacing:2px;padding-left:16px;font-size:1em;">Won via Jackpot</h3>
+                    <div class="fh-trophy-grid">
+                        <?php foreach ( $jackpot_prizes as $p ) :
+                            $img = get_the_post_thumbnail_url( $p['sticker_id'], 'medium' );
+                        ?>
+                            <div class="fh-trophy-card fh-trophy-earned" style="border-color:#ffd700;">
+                                <div class="fh-trophy-badge">
+                                    <span class="fh-trophy-earned-tag" style="background:#ffd700;">JACKPOT</span>
+                                    <?php if ( $img ) : ?><img src="<?php echo esc_url( $img ); ?>" alt=""><?php else : ?><div class="fh-trophy-placeholder">&#127942;</div><?php endif; ?>
+                                </div>
+                                <div class="fh-trophy-name"><?php echo esc_html( $p['sticker_name'] ); ?></div>
+                                <div class="fh-trophy-desc" style="color:#ffd700;">FREE — <?php echo esc_html( ucfirst( $p['game_type'] ?? '' ) ); ?> jackpot</div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ( ! empty( $shop_prizes ) ) : ?>
+                    <h3 style="font-family:'Oswald',sans-serif;color:#96885f;text-transform:uppercase;letter-spacing:2px;padding-left:16px;font-size:1em;margin-top:20px;">Purchased in Shop</h3>
+                    <div class="fh-trophy-grid">
+                        <?php foreach ( $shop_prizes as $p ) :
+                            $img = get_the_post_thumbnail_url( $p['sticker_id'], 'medium' );
+                        ?>
+                            <div class="fh-trophy-card fh-trophy-earned">
+                                <div class="fh-trophy-badge">
+                                    <span class="fh-trophy-earned-tag">PURCHASED</span>
+                                    <?php if ( $img ) : ?><img src="<?php echo esc_url( $img ); ?>" alt=""><?php else : ?><div class="fh-trophy-placeholder">&#127942;</div><?php endif; ?>
+                                </div>
+                                <div class="fh-trophy-name"><?php echo esc_html( $p['sticker_name'] ); ?></div>
+                                <div class="fh-trophy-desc"><?php echo number_format( $p['chip_cost'] ); ?> chips</div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
         </div>
 
         <style>
@@ -913,19 +1204,30 @@ JS;
     }
 
     public function render_admin_page() {
-        $tab = sanitize_text_field( $_GET['tab'] ?? 'stickers' );
+        $tab  = sanitize_text_field( $_GET['tab'] ?? 'stickers' );
+        $page = sanitize_text_field( $_GET['page'] ?? 'fishotel-arcade' );
 
         echo '<div class="wrap"><h1>FisHotel Arcade</h1>';
         echo '<h2 class="nav-tab-wrapper">';
-        echo '<a href="?page=fishotel-arcade&tab=stickers" class="nav-tab ' . ( $tab === 'stickers' ? 'nav-tab-active' : '' ) . '">Manage Stickers</a>';
-        echo '<a href="?page=fishotel-arcade&tab=stats" class="nav-tab ' . ( $tab === 'stats' ? 'nav-tab-active' : '' ) . '">User Stats</a>';
-        echo '<a href="?page=fishotel-arcade&tab=chips" class="nav-tab ' . ( $tab === 'chips' ? 'nav-tab-active' : '' ) . '">Chip Balances</a>';
+        $tabs = [
+            'stickers'  => 'Badges &amp; Prizes',
+            'winners'   => 'Prize Winners',
+            'inventory' => 'Shop Inventory',
+            'stats'     => 'User Stats',
+            'chips'     => 'Chip Balances',
+        ];
+        foreach ( $tabs as $slug => $label ) {
+            $active = $tab === $slug ? ' nav-tab-active' : '';
+            echo '<a href="?page=' . $page . '&tab=' . $slug . '" class="nav-tab' . $active . '">' . $label . '</a>';
+        }
         echo '</h2>';
 
         switch ( $tab ) {
-            case 'stickers': $this->render_admin_stickers(); break;
-            case 'stats':    $this->render_admin_stats(); break;
-            case 'chips':    $this->render_admin_chips(); break;
+            case 'stickers':  $this->render_admin_stickers(); break;
+            case 'winners':   $this->render_admin_winners(); break;
+            case 'inventory': $this->render_admin_inventory(); break;
+            case 'stats':     $this->render_admin_stats(); break;
+            case 'chips':     $this->render_admin_chips(); break;
         }
 
         echo '</div>';
@@ -941,6 +1243,13 @@ JS;
                 $trigger = sanitize_text_field( $_POST['sticker_trigger_type'] ?? '' );
                 $value   = max( 1, (int) ( $_POST['sticker_trigger_value'] ?? 1 ) );
 
+                /* Shop & Jackpot fields */
+                $shop_enabled    = ! empty( $_POST['sticker_shop_enabled'] ) ? '1' : '0';
+                $shop_price      = max( 0, (int) ( $_POST['sticker_shop_price'] ?? 0 ) );
+                $shop_stock      = (int) ( $_POST['sticker_shop_stock'] ?? -1 );
+                $jackpot_enabled = ! empty( $_POST['sticker_jackpot_enabled'] ) ? '1' : '0';
+                $jackpot_game    = sanitize_text_field( $_POST['sticker_jackpot_game'] ?? '' );
+
                 if ( $action === 'create' && ! empty( $title ) ) {
                     $post_id = wp_insert_post( [
                         'post_type'   => 'fishotel_sticker',
@@ -950,6 +1259,11 @@ JS;
                     if ( $post_id ) {
                         update_post_meta( $post_id, '_sticker_trigger_type', $trigger );
                         update_post_meta( $post_id, '_sticker_trigger_value', $value );
+                        update_post_meta( $post_id, '_sticker_shop_enabled', $shop_enabled );
+                        update_post_meta( $post_id, '_sticker_shop_price', $shop_price );
+                        update_post_meta( $post_id, '_sticker_shop_stock', $shop_stock );
+                        update_post_meta( $post_id, '_sticker_jackpot_enabled', $jackpot_enabled );
+                        update_post_meta( $post_id, '_sticker_jackpot_game', $jackpot_game );
                         echo '<div class="notice notice-success"><p>Sticker created!</p></div>';
                     }
                 } elseif ( $action === 'update' ) {
@@ -958,6 +1272,11 @@ JS;
                         wp_update_post( [ 'ID' => $post_id, 'post_title' => $title ] );
                         update_post_meta( $post_id, '_sticker_trigger_type', $trigger );
                         update_post_meta( $post_id, '_sticker_trigger_value', $value );
+                        update_post_meta( $post_id, '_sticker_shop_enabled', $shop_enabled );
+                        update_post_meta( $post_id, '_sticker_shop_price', $shop_price );
+                        update_post_meta( $post_id, '_sticker_shop_stock', $shop_stock );
+                        update_post_meta( $post_id, '_sticker_jackpot_enabled', $jackpot_enabled );
+                        update_post_meta( $post_id, '_sticker_jackpot_game', $jackpot_game );
                         echo '<div class="notice notice-success"><p>Sticker updated!</p></div>';
                     }
                 }
@@ -998,6 +1317,20 @@ JS;
                 </select></td></tr>
                 <tr><th>Trigger Value</th><td><input type="number" name="sticker_trigger_value" min="1" value="10" style="width:100px;"> <em>(user must reach this number)</em></td></tr>
                 <tr><th>Badge Image</th><td><em>Set via Featured Image after creating (edit the sticker post in WP admin).</em></td></tr>
+                <tr><th>Available in Shop</th><td>
+                    <label><input type="checkbox" name="sticker_shop_enabled" value="1"> Enable in Prize Shop</label><br>
+                    <span style="margin-left:24px;">Price: <input type="number" name="sticker_shop_price" min="0" value="500" style="width:100px;"> chips</span>
+                    <span style="margin-left:12px;">Stock: <input type="number" name="sticker_shop_stock" value="-1" style="width:80px;"> <em>(-1 = unlimited)</em></span>
+                </td></tr>
+                <tr><th>Jackpot Prize</th><td>
+                    <label><input type="checkbox" name="sticker_jackpot_enabled" value="1"> Award on natural jackpot</label><br>
+                    <span style="margin-left:24px;">Game: <select name="sticker_jackpot_game">
+                        <option value="slots">Slots (50x+)</option>
+                        <option value="blackjack">Blackjack (Natural 21)</option>
+                        <option value="roulette">Roulette (00)</option>
+                        <option value="poker">Poker (Royal Flush)</option>
+                    </select></span>
+                </td></tr>
             </table>
             <p><input type="submit" class="button button-primary" value="Create Sticker"></p>
         </form>
@@ -1007,17 +1340,23 @@ JS;
             <p>No stickers yet. Create one above!</p>
         <?php else : ?>
             <table class="widefat striped">
-                <thead><tr><th>Name</th><th>Trigger</th><th>Value</th><th>Image</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Name</th><th>Badge Trigger</th><th>Shop</th><th>Jackpot</th><th>Image</th><th>Actions</th></tr></thead>
                 <tbody>
                 <?php foreach ( $stickers as $s ) :
                     $tt = get_post_meta( $s->ID, '_sticker_trigger_type', true );
                     $tv = get_post_meta( $s->ID, '_sticker_trigger_value', true );
                     $thumb = get_the_post_thumbnail_url( $s->ID, 'thumbnail' );
+                    $shop_on = get_post_meta( $s->ID, '_sticker_shop_enabled', true ) === '1';
+                    $shop_price = (int) get_post_meta( $s->ID, '_sticker_shop_price', true );
+                    $shop_stock = (int) get_post_meta( $s->ID, '_sticker_shop_stock', true );
+                    $jp_on = get_post_meta( $s->ID, '_sticker_jackpot_enabled', true ) === '1';
+                    $jp_game = get_post_meta( $s->ID, '_sticker_jackpot_game', true );
                 ?>
                     <tr>
                         <td><strong><?php echo esc_html( $s->post_title ); ?></strong></td>
-                        <td><?php echo esc_html( $trigger_types[ $tt ] ?? $tt ); ?></td>
-                        <td><?php echo esc_html( $tv ); ?></td>
+                        <td><?php echo $tt ? esc_html( ( $trigger_types[ $tt ] ?? $tt ) . ' (' . $tv . ')' ) : '—'; ?></td>
+                        <td><?php echo $shop_on ? number_format( $shop_price ) . ' chips' . ( $shop_stock >= 0 ? ' (' . $shop_stock . ' left)' : '' ) : '—'; ?></td>
+                        <td><?php echo $jp_on ? esc_html( ucfirst( $jp_game ) ) : '—'; ?></td>
                         <td><?php if ( $thumb ) : ?><img src="<?php echo esc_url( $thumb ); ?>" style="width:40px;height:40px;object-fit:contain;border-radius:4px;"><?php else : ?>—<?php endif; ?></td>
                         <td>
                             <a href="<?php echo get_edit_post_link( $s->ID ); ?>" class="button button-small">Edit</a>
@@ -1032,6 +1371,145 @@ JS;
                 <?php endforeach; ?>
                 </tbody>
             </table>
+        <?php endif;
+    }
+
+    /* ─── Tab 2: Prize Winners (Packing List) ─── */
+    private function render_admin_winners() {
+        /* Handle mark-as-added */
+        if ( isset( $_POST['fh_prize_mark'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'fh_prize_mark' ) ) {
+            $target_uid = (int) $_POST['prize_user_id'];
+            $target_idx = (int) $_POST['prize_index'];
+            $prizes = get_user_meta( $target_uid, '_fishotel_physical_prizes', true );
+            if ( is_array( $prizes ) && isset( $prizes[ $target_idx ] ) ) {
+                $prizes[ $target_idx ]['added_to_box'] = true;
+                update_user_meta( $target_uid, '_fishotel_physical_prizes', $prizes );
+            }
+        }
+
+        global $wpdb;
+        $all_users = $wpdb->get_results(
+            "SELECT u.ID, u.display_name, um.meta_value AS prizes_raw
+             FROM {$wpdb->users} u
+             INNER JOIN {$wpdb->usermeta} um ON um.user_id = u.ID AND um.meta_key = '_fishotel_physical_prizes'
+             WHERE um.meta_value != '' AND um.meta_value != 'a:0:{}'
+             LIMIT 200"
+        );
+
+        $rows = [];
+        foreach ( $all_users as $u ) {
+            $prizes = maybe_unserialize( $u->prizes_raw );
+            if ( ! is_array( $prizes ) ) continue;
+            foreach ( $prizes as $idx => $p ) {
+                $rows[] = array_merge( $p, [ 'user_id' => $u->ID, 'user_name' => $u->display_name, 'idx' => $idx ] );
+            }
+        }
+        usort( $rows, function( $a, $b ) { return ( $b['earned_at'] ?? 0 ) - ( $a['earned_at'] ?? 0 ); } );
+
+        $admin_post_url = admin_url( 'admin-post.php' );
+        ?>
+        <h3>Prize Winners — Packing List (<?php echo count( $rows ); ?> prizes)</h3>
+        <?php if ( empty( $rows ) ) : ?>
+            <p>No prizes won or purchased yet.</p>
+        <?php else : ?>
+            <table class="widefat striped">
+                <thead><tr><th>User</th><th>Batch</th><th>Prize</th><th>Source</th><th>Chips</th><th>Date</th><th>Packed?</th></tr></thead>
+                <tbody>
+                <?php foreach ( $rows as $r ) : ?>
+                    <tr>
+                        <td><?php echo esc_html( $r['user_name'] ); ?></td>
+                        <td><?php echo esc_html( $r['batch_name'] ?? '—' ); ?></td>
+                        <td><strong><?php echo esc_html( $r['sticker_name'] ); ?></strong></td>
+                        <td><?php echo $r['source'] === 'jackpot'
+                            ? '<span style="color:#ffd700;">JACKPOT (Free)</span>'
+                            : '<span style="color:#96885f;">SHOP (' . number_format( $r['chip_cost'] ?? 0 ) . ' chips)</span>'; ?></td>
+                        <td><?php echo $r['source'] === 'shop' ? number_format( $r['chip_cost'] ?? 0 ) : '0'; ?></td>
+                        <td><?php echo $r['earned_at'] ? date( 'M j, Y g:ia', $r['earned_at'] ) : '—'; ?></td>
+                        <td><?php if ( ! empty( $r['added_to_box'] ) ) : ?>
+                            <span style="color:#27ae60;">Added</span>
+                        <?php else : ?>
+                            <form method="post" style="display:inline;">
+                                <?php wp_nonce_field( 'fh_prize_mark' ); ?>
+                                <input type="hidden" name="fh_prize_mark" value="1">
+                                <input type="hidden" name="prize_user_id" value="<?php echo $r['user_id']; ?>">
+                                <input type="hidden" name="prize_index" value="<?php echo $r['idx']; ?>">
+                                <input type="submit" class="button button-small" value="Mark Added">
+                            </form>
+                        <?php endif; ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif;
+    }
+
+    /* ─── Tab 3: Shop Inventory ─── */
+    private function render_admin_inventory() {
+        /* Handle restock */
+        if ( isset( $_POST['fh_restock'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'fh_restock' ) ) {
+            $sid = (int) $_POST['restock_sticker_id'];
+            $add = max( 1, (int) $_POST['restock_qty'] );
+            $current = (int) get_post_meta( $sid, '_sticker_shop_stock', true );
+            if ( $current >= 0 ) {
+                update_post_meta( $sid, '_sticker_shop_stock', $current + $add );
+                echo '<div class="notice notice-success"><p>Restocked +' . $add . '!</p></div>';
+            }
+        }
+
+        $stickers = get_posts( [
+            'post_type'   => 'fishotel_sticker',
+            'numberposts' => -1,
+            'post_status' => 'publish',
+            'meta_query'  => [ [ 'key' => '_sticker_shop_enabled', 'value' => '1' ] ],
+        ] );
+
+        $total_revenue = 0;
+        $total_sold    = 0;
+        $most_popular  = [ 'name' => '—', 'sold' => 0 ];
+
+        ?>
+        <h3>Shop Inventory</h3>
+        <?php if ( empty( $stickers ) ) : ?>
+            <p>No items enabled in the shop yet. Go to Badges &amp; Prizes tab to enable shop items.</p>
+        <?php else : ?>
+            <table class="widefat striped">
+                <thead><tr><th>Sticker</th><th>Price</th><th>Stock</th><th>Sold</th><th>Revenue</th><th>Restock</th></tr></thead>
+                <tbody>
+                <?php foreach ( $stickers as $s ) :
+                    $price   = (int) get_post_meta( $s->ID, '_sticker_shop_price', true );
+                    $stock   = (int) get_post_meta( $s->ID, '_sticker_shop_stock', true );
+                    $sold    = (int) get_post_meta( $s->ID, '_sticker_shop_sold', true );
+                    $revenue = (int) get_post_meta( $s->ID, '_sticker_shop_revenue', true );
+                    $total_revenue += $revenue;
+                    $total_sold    += $sold;
+                    if ( $sold > $most_popular['sold'] ) { $most_popular = [ 'name' => $s->post_title, 'sold' => $sold ]; }
+                ?>
+                    <tr<?php echo ( $stock >= 0 && $stock <= 3 && $stock !== -1 ) ? ' style="background:#fff3cd;"' : ''; ?>>
+                        <td><strong><?php echo esc_html( $s->post_title ); ?></strong></td>
+                        <td><?php echo number_format( $price ); ?> chips</td>
+                        <td><?php echo $stock === -1 ? 'Unlimited' : $stock . ( $stock <= 3 ? ' <span style="color:#e74c3c;">(LOW)</span>' : '' ); ?></td>
+                        <td><?php echo $sold; ?></td>
+                        <td><?php echo number_format( $revenue ); ?> chips</td>
+                        <td><?php if ( $stock >= 0 ) : ?>
+                            <form method="post" style="display:inline;">
+                                <?php wp_nonce_field( 'fh_restock' ); ?>
+                                <input type="hidden" name="fh_restock" value="1">
+                                <input type="hidden" name="restock_sticker_id" value="<?php echo $s->ID; ?>">
+                                <input type="number" name="restock_qty" value="10" min="1" style="width:60px;">
+                                <input type="submit" class="button button-small" value="Restock">
+                            </form>
+                        <?php else : ?>—<?php endif; ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+
+            <div style="margin-top:20px;padding:16px;background:#f9f9f9;border:1px solid #ddd;border-radius:8px;">
+                <strong>Shop Stats:</strong>
+                Total Revenue: <?php echo number_format( $total_revenue ); ?> chips |
+                Total Sold: <?php echo $total_sold; ?> items |
+                Most Popular: <?php echo esc_html( $most_popular['name'] ); ?> (<?php echo $most_popular['sold']; ?> sold)
+            </div>
         <?php endif;
     }
 

@@ -139,6 +139,85 @@ class FisHotel_Casino {
         }
     }
 
+    /* ─── Jackpot Detection ─────────────────────────────────── */
+
+    /**
+     * Check if a game result qualifies as a jackpot and award physical prize.
+     * Returns jackpot data array if won, false otherwise.
+     *
+     * Jackpot criteria:
+     *   Slots: multiplier >= 50 (⭐⭐⭐)
+     *   Blackjack: natural 21 (first two cards)
+     *   Roulette: landed on 00
+     *   Poker: Royal Flush (multiplier = 250)
+     */
+    public function check_jackpot( $user_id, $game, $result_data = [] ) {
+        $is_jackpot = false;
+
+        switch ( $game ) {
+            case 'slots':
+                $is_jackpot = ( $result_data['multiplier'] ?? 0 ) >= 50;
+                break;
+            case 'blackjack':
+                $is_jackpot = ( $result_data['result'] ?? '' ) === 'blackjack';
+                break;
+            case 'roulette':
+                $is_jackpot = ( $result_data['label'] ?? '' ) === '00';
+                break;
+            case 'poker':
+                $is_jackpot = ( $result_data['multiplier'] ?? 0 ) >= 250;
+                break;
+        }
+
+        if ( ! $is_jackpot ) return false;
+
+        /* Find a jackpot prize sticker for this game */
+        $stickers = get_posts( [
+            'post_type'   => 'fishotel_sticker',
+            'numberposts' => 1,
+            'post_status' => 'publish',
+            'meta_query'  => [
+                [ 'key' => '_sticker_jackpot_enabled', 'value' => '1' ],
+                [ 'key' => '_sticker_jackpot_game', 'value' => $game ],
+            ],
+        ] );
+
+        if ( empty( $stickers ) ) return false;
+
+        $sticker = $stickers[0];
+
+        /* Award physical prize */
+        $prizes = get_user_meta( $user_id, '_fishotel_physical_prizes', true );
+        $prizes = is_array( $prizes ) ? $prizes : [];
+
+        /* Determine current batch */
+        $statuses = get_option( 'fishotel_batch_statuses', [] );
+        $batch_name = '';
+        foreach ( $statuses as $name => $status ) {
+            if ( $status === 'casino' ) { $batch_name = $name; break; }
+        }
+
+        $prizes[] = [
+            'sticker_id'   => $sticker->ID,
+            'sticker_name' => $sticker->post_title,
+            'source'       => 'jackpot',
+            'game_type'    => $game,
+            'earned_at'    => time(),
+            'batch_name'   => $batch_name,
+            'chip_cost'    => 0,
+            'added_to_box' => false,
+        ];
+        update_user_meta( $user_id, '_fishotel_physical_prizes', $prizes );
+
+        return [
+            'jackpot'      => true,
+            'sticker_id'   => $sticker->ID,
+            'sticker_name' => $sticker->post_title,
+            'sticker_image' => get_the_post_thumbnail_url( $sticker->ID, 'medium' ) ?: '',
+            'game'         => $game,
+        ];
+    }
+
     /* ─── AJAX: get chips ───────────────────────────────────── */
     public function fishotel_casino_get_chips() {
         check_ajax_referer( 'fishotel_casino_nonce', 'nonce' );
@@ -1071,12 +1150,15 @@ class FisHotel_Casino {
         }
         $this->record_game( $uid, 'roulette', $bet, $payout );
 
+        $jackpot = $this->check_jackpot( $uid, 'roulette', [ 'label' => $winner['label'], 'payout' => $payout ] );
+
         wp_send_json_success( [
-            'number' => $winner['number'],
-            'color'  => $winner['color'],
-            'label'  => $winner['label'],
-            'payout' => $payout,
-            'chips'  => $this->get_chips( $uid ),
+            'number'  => $winner['number'],
+            'color'   => $winner['color'],
+            'label'   => $winner['label'],
+            'payout'  => $payout,
+            'chips'   => $this->get_chips( $uid ),
+            'jackpot' => $jackpot ?: null,
         ] );
     }
 
@@ -1168,6 +1250,7 @@ class FisHotel_Casino {
                 $payout = (int) ( $bet * 2.5 );
                 $this->add_chips( $uid, $payout );
                 $this->record_game( $uid, 'blackjack', $bet, $payout );
+                $jackpot = $this->check_jackpot( $uid, 'blackjack', [ 'result' => 'blackjack' ] );
                 set_transient( "fhc_bj_{$uid}_{$game_id}", $state, 3600 );
                 wp_send_json_success( [
                     'game_id' => $game_id,
@@ -1176,6 +1259,7 @@ class FisHotel_Casino {
                     'payout'  => $payout,
                     'wager'   => $bet,
                     'chips'   => $this->get_chips( $uid ),
+                    'jackpot' => $jackpot ?: null,
                 ] );
             }
 
@@ -1315,11 +1399,14 @@ class FisHotel_Casino {
         }
         $this->record_game( $uid, 'slots', $bet, $payout );
 
+        $jackpot = $this->check_jackpot( $uid, 'slots', [ 'multiplier' => $multiplier ] );
+
         wp_send_json_success( [
             'reels'      => $reels,
             'multiplier' => $multiplier,
             'payout'     => $payout,
             'chips'      => $this->get_chips( $uid ),
+            'jackpot'    => $jackpot ?: null,
         ] );
     }
 
@@ -1431,12 +1518,15 @@ class FisHotel_Casino {
             $this->record_game( $uid, 'poker', $bet, $payout );
             delete_transient( "fhc_pk_{$uid}_{$game_id}" );
 
+            $jackpot = $this->check_jackpot( $uid, 'poker', [ 'multiplier' => $multiplier ] );
+
             wp_send_json_success( [
                 'hand'       => $hand,
                 'hand_name'  => $hand_name,
                 'multiplier' => $multiplier,
                 'payout'     => $payout,
                 'chips'      => $this->get_chips( $uid ),
+                'jackpot'    => $jackpot ?: null,
             ] );
         }
     }

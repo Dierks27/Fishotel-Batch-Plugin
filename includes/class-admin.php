@@ -103,6 +103,7 @@ trait FisHotel_Admin {
             'requests' => 'Requests',
             'summary'  => 'Order Summary',
             'wallets'  => 'Wallets',
+            'casino'   => [ 'label' => 'Casino', 'url' => admin_url( 'admin.php?page=fishotel-arcade' ) ],
         ];
         $this->render_admin_tabs( 'fishotel-batch-hq', 'Batch HQ', $tabs, $tab );
 
