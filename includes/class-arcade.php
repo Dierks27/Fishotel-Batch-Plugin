@@ -1205,6 +1205,7 @@ JS;
             'inventory' => 'Shop Inventory',
             'stats'     => 'User Stats',
             'chips'     => 'Chip Balances',
+            'player'    => 'Player Stats',
         ];
         foreach ( $tabs as $slug => $label ) {
             $active = $ctab === $slug ? ' nav-tab-active' : '';
@@ -1218,6 +1219,7 @@ JS;
             case 'inventory': $this->render_admin_inventory(); break;
             case 'stats':     $this->render_admin_stats(); break;
             case 'chips':     $this->render_admin_chips(); break;
+            case 'player':    $this->render_admin_player_stats(); break;
         }
 
         echo '</div>';
@@ -1803,6 +1805,391 @@ JS;
                 </tbody>
             </table>
         <?php endif;
+    }
+
+    /* ─── Tab 6: Player Stats Debug Panel ─── */
+    private function render_admin_player_stats() {
+        $page = sanitize_text_field( $_GET['page'] ?? 'fishotel-batch-hq' );
+        $base_url = admin_url( "admin.php?page={$page}&tab=casino&casino_tab=player" );
+
+        /* ── Handle POST actions ── */
+        if ( isset( $_POST['fh_player_action'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'fh_player_debug' ) ) {
+            $target = (int) $_POST['target_user_id'];
+            $act    = sanitize_text_field( $_POST['fh_player_action'] );
+
+            if ( $target ) {
+                $stats  = get_user_meta( $target, '_fishotel_casino_stats', true );
+                $stats  = is_array( $stats ) ? $stats : [];
+                $chips  = (int) get_user_meta( $target, '_fishotel_casino_chips', true );
+
+                switch ( $act ) {
+                    case 'adjust_chips':
+                        $op  = sanitize_text_field( $_POST['chip_op'] ?? 'add' );
+                        $amt = max( 0, (int) $_POST['chip_amt'] );
+                        if ( $op === 'add' )      $chips += $amt;
+                        elseif ( $op === 'subtract' ) $chips = max( 0, $chips - $amt );
+                        elseif ( $op === 'set' )   $chips = $amt;
+                        update_user_meta( $target, '_fishotel_casino_chips', $chips );
+                        echo '<div class="notice notice-success"><p>Chips updated to ' . number_format( $chips ) . '.</p></div>';
+                        break;
+
+                    case 'reset_streak':
+                        $game = sanitize_text_field( $_POST['streak_game'] ?? '' );
+                        if ( $game === 'blackjack' ) update_user_meta( $target, '_fishotel_bj_streak', 0 );
+                        if ( $game === 'roulette' ) {
+                            update_user_meta( $target, '_fishotel_roul_streak', 0 );
+                            update_user_meta( $target, '_fishotel_roul_color_streak', 0 );
+                        }
+                        echo '<div class="notice notice-success"><p>' . ucfirst( $game ) . ' streak reset.</p></div>';
+                        break;
+
+                    case 'reset_game_count':
+                        $game = sanitize_text_field( $_POST['reset_game'] ?? '' );
+                        $map = [ 'blackjack' => 'blackjack_hands', 'roulette' => 'roulette_spins', 'slots' => 'slots_spins', 'poker' => 'poker_hands' ];
+                        if ( $game === 'all' ) {
+                            foreach ( $map as $k ) $stats[ $k ] = 0;
+                            $stats['games_played'] = 0;
+                            $stats['total_wagered'] = 0;
+                            $stats['total_won'] = 0;
+                            $stats['total_lost'] = 0;
+                            $stats['biggest_win'] = 0;
+                            update_user_meta( $target, '_fishotel_bj_streak', 0 );
+                            update_user_meta( $target, '_fishotel_roul_streak', 0 );
+                            update_user_meta( $target, '_fishotel_roul_color_streak', 0 );
+                            update_user_meta( $target, '_fishotel_roul_last_label', '' );
+                        } elseif ( isset( $map[ $game ] ) ) {
+                            $stats[ $map[ $game ] ] = 0;
+                        }
+                        update_user_meta( $target, '_fishotel_casino_stats', $stats );
+                        echo '<div class="notice notice-success"><p>Game counts reset.</p></div>';
+                        break;
+
+                    case 'award_badge':
+                        $sid    = (int) $_POST['badge_sticker_id'];
+                        $earned = get_user_meta( $target, '_fishotel_earned_stickers', true );
+                        $earned = is_array( $earned ) ? $earned : [];
+                        if ( ! in_array( $sid, $earned ) ) {
+                            $earned[] = $sid;
+                            update_user_meta( $target, '_fishotel_earned_stickers', $earned );
+                        }
+                        echo '<div class="notice notice-success"><p>Badge awarded.</p></div>';
+                        break;
+
+                    case 'remove_badge':
+                        $sid    = (int) $_POST['badge_sticker_id'];
+                        $earned = get_user_meta( $target, '_fishotel_earned_stickers', true );
+                        $earned = is_array( $earned ) ? $earned : [];
+                        $earned = array_values( array_diff( $earned, [ $sid ] ) );
+                        update_user_meta( $target, '_fishotel_earned_stickers', $earned );
+                        echo '<div class="notice notice-success"><p>Badge removed.</p></div>';
+                        break;
+
+                    case 'award_prize':
+                        $sid    = (int) $_POST['prize_sticker_id'];
+                        $source = sanitize_text_field( $_POST['prize_source'] ?? 'shop' );
+                        $s      = get_post( $sid );
+                        if ( $s ) {
+                            $statuses   = get_option( 'fishotel_batch_statuses', [] );
+                            $batch_name = '';
+                            foreach ( $statuses as $n => $st ) { if ( $st === 'casino' ) { $batch_name = $n; break; } }
+                            $prizes = get_user_meta( $target, '_fishotel_physical_prizes', true );
+                            $prizes = is_array( $prizes ) ? $prizes : [];
+                            $prizes[] = [
+                                'sticker_id' => $sid, 'sticker_name' => $s->post_title,
+                                'source' => $source, 'game_type' => $source === 'jackpot' ? 'admin' : null,
+                                'earned_at' => time(), 'batch_name' => $batch_name,
+                                'chip_cost' => 0, 'added_to_box' => false,
+                            ];
+                            update_user_meta( $target, '_fishotel_physical_prizes', $prizes );
+                        }
+                        echo '<div class="notice notice-success"><p>Prize awarded.</p></div>';
+                        break;
+
+                    case 'remove_prize':
+                        $idx    = (int) $_POST['prize_index'];
+                        $prizes = get_user_meta( $target, '_fishotel_physical_prizes', true );
+                        if ( is_array( $prizes ) && isset( $prizes[ $idx ] ) ) {
+                            array_splice( $prizes, $idx, 1 );
+                            update_user_meta( $target, '_fishotel_physical_prizes', array_values( $prizes ) );
+                        }
+                        echo '<div class="notice notice-success"><p>Prize removed.</p></div>';
+                        break;
+
+                    case 'mark_prize_added':
+                        $idx    = (int) $_POST['prize_index'];
+                        $prizes = get_user_meta( $target, '_fishotel_physical_prizes', true );
+                        if ( is_array( $prizes ) && isset( $prizes[ $idx ] ) ) {
+                            $prizes[ $idx ]['added_to_box'] = true;
+                            update_user_meta( $target, '_fishotel_physical_prizes', $prizes );
+                        }
+                        echo '<div class="notice notice-success"><p>Prize marked as added.</p></div>';
+                        break;
+
+                    case 'nuclear_reset':
+                        $scope = sanitize_text_field( $_POST['reset_scope'] ?? '' );
+                        if ( $scope === 'all' || $scope === 'chips' ) {
+                            update_user_meta( $target, '_fishotel_casino_chips', 1000 );
+                        }
+                        if ( $scope === 'all' || $scope === 'games' ) {
+                            delete_user_meta( $target, '_fishotel_casino_stats' );
+                            update_user_meta( $target, '_fishotel_bj_streak', 0 );
+                            update_user_meta( $target, '_fishotel_roul_streak', 0 );
+                            update_user_meta( $target, '_fishotel_roul_color_streak', 0 );
+                            update_user_meta( $target, '_fishotel_roul_last_label', '' );
+                            delete_user_meta( $target, '_fishotel_casino_total_winnings' );
+                            delete_user_meta( $target, '_fishotel_casino_last_daily' );
+                        }
+                        if ( $scope === 'all' || $scope === 'stickers' ) {
+                            delete_user_meta( $target, '_fishotel_earned_stickers' );
+                            delete_user_meta( $target, '_fishotel_physical_prizes' );
+                        }
+                        echo '<div class="notice notice-warning"><p>Reset complete (' . $scope . ').</p></div>';
+                        break;
+                }
+            }
+        }
+
+        /* ── Player dropdown ── */
+        global $wpdb;
+        $players = $wpdb->get_results(
+            "SELECT DISTINCT u.ID, u.display_name
+             FROM {$wpdb->users} u
+             INNER JOIN {$wpdb->usermeta} um ON um.user_id = u.ID
+             WHERE um.meta_key = '_fishotel_casino_stats'
+             ORDER BY u.display_name ASC
+             LIMIT 200"
+        );
+
+        $sel_uid = (int) ( $_GET['player_id'] ?? $_POST['target_user_id'] ?? 0 );
+        ?>
+        <h3>Player Stats &amp; Debug Panel</h3>
+
+        <form method="get" style="margin-bottom:20px;">
+            <input type="hidden" name="page" value="<?php echo esc_attr( $page ); ?>">
+            <input type="hidden" name="tab" value="casino">
+            <input type="hidden" name="casino_tab" value="player">
+            <label><strong>Player:</strong>
+            <select name="player_id" style="min-width:250px;">
+                <option value="0">— Select a player —</option>
+                <?php foreach ( $players as $p ) : ?>
+                    <option value="<?php echo $p->ID; ?>" <?php selected( $sel_uid, $p->ID ); ?>><?php echo esc_html( $p->display_name ); ?> (ID: <?php echo $p->ID; ?>)</option>
+                <?php endforeach; ?>
+            </select></label>
+            <input type="submit" class="button" value="Load Stats">
+        </form>
+
+        <?php if ( ! $sel_uid ) { echo '<p style="color:#888;">Select a player to view their stats.</p>'; return; }
+
+        $user = get_user_by( 'ID', $sel_uid );
+        if ( ! $user ) { echo '<p style="color:#e74c3c;">User not found.</p>'; return; }
+
+        $chips   = (int) get_user_meta( $sel_uid, '_fishotel_casino_chips', true );
+        $stats   = get_user_meta( $sel_uid, '_fishotel_casino_stats', true );
+        $stats   = is_array( $stats ) ? $stats : [];
+        $earned  = get_user_meta( $sel_uid, '_fishotel_earned_stickers', true );
+        $earned  = is_array( $earned ) ? $earned : [];
+        $prizes  = get_user_meta( $sel_uid, '_fishotel_physical_prizes', true );
+        $prizes  = is_array( $prizes ) ? $prizes : [];
+        $bj_streak     = (int) get_user_meta( $sel_uid, '_fishotel_bj_streak', true );
+        $roul_streak   = (int) get_user_meta( $sel_uid, '_fishotel_roul_streak', true );
+        $roul_last     = get_user_meta( $sel_uid, '_fishotel_roul_last_label', true );
+        $roul_color_sk = (int) get_user_meta( $sel_uid, '_fishotel_roul_color_streak', true );
+        $daily_last    = get_user_meta( $sel_uid, '_fishotel_casino_last_daily', true );
+        $leaderboard   = (int) get_user_meta( $sel_uid, '_fishotel_casino_total_winnings', true );
+
+        $nonce_field = wp_nonce_field( 'fh_player_debug', '_wpnonce', true, false );
+        $hidden_uid  = '<input type="hidden" name="target_user_id" value="' . $sel_uid . '">';
+
+        $box = 'style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px;"';
+        $btn = 'style="background:#FF7F00;color:#fff;border:none;border-radius:4px;padding:6px 14px;cursor:pointer;font-weight:600;"';
+        $btn_danger = 'style="background:#c0392b;color:#fff;border:none;border-radius:4px;padding:6px 14px;cursor:pointer;font-weight:600;"';
+        ?>
+
+        <!-- PLAYER INFO -->
+        <div <?php echo $box; ?>>
+            <h4 style="margin:0 0 8px 0;color:#1a3a5c;">Player Info</h4>
+            <table style="border-collapse:collapse;">
+                <tr><td style="padding:3px 12px 3px 0;color:#888;">Username:</td><td><strong><?php echo esc_html( $user->display_name ); ?></strong></td></tr>
+                <tr><td style="padding:3px 12px 3px 0;color:#888;">User ID:</td><td><?php echo $sel_uid; ?></td></tr>
+                <tr><td style="padding:3px 12px 3px 0;color:#888;">Registered:</td><td><?php echo date( 'M j, Y', strtotime( $user->user_registered ) ); ?></td></tr>
+                <tr><td style="padding:3px 12px 3px 0;color:#888;">Last Daily Bonus:</td><td><?php echo $daily_last ?: '—'; ?></td></tr>
+                <tr><td style="padding:3px 12px 3px 0;color:#888;">Leaderboard Winnings:</td><td><?php echo number_format( $leaderboard ); ?> chips</td></tr>
+            </table>
+        </div>
+
+        <!-- CHIP BALANCE -->
+        <div <?php echo $box; ?>>
+            <h4 style="margin:0 0 8px 0;color:#1a3a5c;">Chip Balance: <span style="color:#96885f;font-size:1.2em;"><?php echo number_format( $chips ); ?></span></h4>
+            <form method="post" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+                <?php echo $nonce_field . $hidden_uid; ?>
+                <input type="hidden" name="fh_player_action" value="adjust_chips">
+                <label><input type="radio" name="chip_op" value="add" checked> Add</label>
+                <label><input type="radio" name="chip_op" value="subtract"> Subtract</label>
+                <label><input type="radio" name="chip_op" value="set"> Set To</label>
+                <input type="number" name="chip_amt" value="100" min="0" style="width:100px;"> chips
+                <button type="submit" <?php echo $btn; ?>>Apply</button>
+            </form>
+            <div style="color:#666;font-size:.9em;line-height:1.6;">
+                Total Wagered: <?php echo number_format( (int) ( $stats['total_wagered'] ?? 0 ) ); ?> |
+                Total Won: +<?php echo number_format( (int) ( $stats['total_won'] ?? 0 ) ); ?> |
+                Total Lost: -<?php echo number_format( (int) ( $stats['total_lost'] ?? 0 ) ); ?> |
+                Biggest Win: <?php echo number_format( (int) ( $stats['biggest_win'] ?? 0 ) ); ?>
+            </div>
+        </div>
+
+        <!-- GAME STATISTICS -->
+        <div <?php echo $box; ?>>
+            <h4 style="margin:0 0 12px 0;color:#1a3a5c;">Game Statistics — Total Played: <?php echo number_format( (int) ( $stats['games_played'] ?? 0 ) ); ?></h4>
+            <?php
+            $games = [
+                'blackjack' => [ 'key' => 'blackjack_hands', 'label' => 'Blackjack', 'streak' => $bj_streak, 'streak_label' => 'Win Streak' ],
+                'roulette'  => [ 'key' => 'roulette_spins',  'label' => 'Roulette',  'streak' => $roul_streak, 'streak_label' => 'Same Number Streak', 'extra' => 'Last: ' . ( $roul_last ?: '—' ) . ' | Color Streak: ' . $roul_color_sk ],
+                'slots'     => [ 'key' => 'slots_spins',     'label' => 'Slots',     'streak' => null ],
+                'poker'     => [ 'key' => 'poker_hands',     'label' => 'Video Poker', 'streak' => null ],
+            ];
+            foreach ( $games as $gk => $gi ) :
+                $count = (int) ( $stats[ $gi['key'] ] ?? 0 );
+            ?>
+            <div style="padding:8px 0;border-bottom:1px solid #eee;">
+                <strong><?php echo $gi['label']; ?>:</strong> <?php echo $count; ?> games
+                <?php if ( $gi['streak'] !== null ) : ?>
+                    | <?php echo $gi['streak_label']; ?>: <strong><?php echo $gi['streak']; ?></strong>
+                    <form method="post" style="display:inline;">
+                        <?php echo $nonce_field . $hidden_uid; ?>
+                        <input type="hidden" name="fh_player_action" value="reset_streak">
+                        <input type="hidden" name="streak_game" value="<?php echo $gk; ?>">
+                        <button type="submit" class="button button-small" onclick="return confirm('Reset streak?');">Reset Streak</button>
+                    </form>
+                <?php endif; ?>
+                <?php if ( ! empty( $gi['extra'] ) ) : ?>
+                    | <?php echo $gi['extra']; ?>
+                <?php endif; ?>
+                <form method="post" style="display:inline;margin-left:8px;">
+                    <?php echo $nonce_field . $hidden_uid; ?>
+                    <input type="hidden" name="fh_player_action" value="reset_game_count">
+                    <input type="hidden" name="reset_game" value="<?php echo $gk; ?>">
+                    <button type="submit" class="button button-small" onclick="return confirm('Reset <?php echo $gi['label']; ?> count?');">Reset Count</button>
+                </form>
+            </div>
+            <?php endforeach; ?>
+            <div style="margin-top:12px;">
+                <form method="post" style="display:inline;">
+                    <?php echo $nonce_field . $hidden_uid; ?>
+                    <input type="hidden" name="fh_player_action" value="reset_game_count">
+                    <input type="hidden" name="reset_game" value="all">
+                    <button type="submit" <?php echo $btn; ?> onclick="return confirm('Reset ALL game counts and streaks?');">Reset All Game Counts</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- STICKERS & ACHIEVEMENTS -->
+        <div <?php echo $box; ?>>
+            <h4 style="margin:0 0 12px 0;color:#1a3a5c;">Virtual Badges (<?php echo count( $earned ); ?>)</h4>
+            <?php if ( empty( $earned ) ) : ?>
+                <p style="color:#888;">No badges earned.</p>
+            <?php else : ?>
+                <?php foreach ( $earned as $sid ) :
+                    $s = get_post( $sid );
+                    if ( ! $s ) continue;
+                ?>
+                <div style="display:inline-flex;align-items:center;gap:6px;margin:0 12px 8px 0;">
+                    <span><?php echo esc_html( $s->post_title ); ?></span>
+                    <form method="post" style="display:inline;">
+                        <?php echo $nonce_field . $hidden_uid; ?>
+                        <input type="hidden" name="fh_player_action" value="remove_badge">
+                        <input type="hidden" name="badge_sticker_id" value="<?php echo $sid; ?>">
+                        <button type="submit" class="button button-small" onclick="return confirm('Remove this badge?');">Remove</button>
+                    </form>
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+
+            <div style="margin-top:10px;">
+                <form method="post" style="display:flex;align-items:center;gap:8px;">
+                    <?php echo $nonce_field . $hidden_uid; ?>
+                    <input type="hidden" name="fh_player_action" value="award_badge">
+                    <select name="badge_sticker_id">
+                        <?php
+                        $all_stickers = get_posts( [ 'post_type' => 'fishotel_sticker', 'numberposts' => -1, 'post_status' => 'publish' ] );
+                        foreach ( $all_stickers as $s ) {
+                            if ( ! in_array( $s->ID, $earned ) ) {
+                                echo '<option value="' . $s->ID . '">' . esc_html( $s->post_title ) . '</option>';
+                            }
+                        }
+                        ?>
+                    </select>
+                    <button type="submit" <?php echo $btn; ?>>Award Badge</button>
+                </form>
+            </div>
+
+            <h4 style="margin:20px 0 12px 0;color:#1a3a5c;">Physical Prizes (<?php echo count( $prizes ); ?>)</h4>
+            <?php if ( empty( $prizes ) ) : ?>
+                <p style="color:#888;">No prizes.</p>
+            <?php else : ?>
+                <table class="widefat striped" style="margin-bottom:12px;">
+                    <thead><tr><th>Prize</th><th>Source</th><th>Cost</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody>
+                    <?php foreach ( $prizes as $idx => $pr ) : ?>
+                        <tr>
+                            <td><?php echo esc_html( $pr['sticker_name'] ); ?></td>
+                            <td><?php echo $pr['source'] === 'jackpot' ? '<span style="color:#ffd700;">JACKPOT</span>' : '<span style="color:#96885f;">SHOP</span>'; ?></td>
+                            <td><?php echo $pr['source'] === 'shop' ? number_format( $pr['chip_cost'] ?? 0 ) : 'Free'; ?></td>
+                            <td><?php echo $pr['earned_at'] ? date( 'M j g:ia', $pr['earned_at'] ) : '—'; ?></td>
+                            <td><?php echo ! empty( $pr['added_to_box'] ) ? '<span style="color:#27ae60;">Added</span>' : 'Pending'; ?></td>
+                            <td>
+                                <?php if ( empty( $pr['added_to_box'] ) ) : ?>
+                                <form method="post" style="display:inline;">
+                                    <?php echo $nonce_field . $hidden_uid; ?>
+                                    <input type="hidden" name="fh_player_action" value="mark_prize_added">
+                                    <input type="hidden" name="prize_index" value="<?php echo $idx; ?>">
+                                    <button type="submit" class="button button-small">Mark Added</button>
+                                </form>
+                                <?php endif; ?>
+                                <form method="post" style="display:inline;">
+                                    <?php echo $nonce_field . $hidden_uid; ?>
+                                    <input type="hidden" name="fh_player_action" value="remove_prize">
+                                    <input type="hidden" name="prize_index" value="<?php echo $idx; ?>">
+                                    <button type="submit" class="button button-small" onclick="return confirm('Remove this prize?');">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+
+            <div style="margin-top:10px;">
+                <form method="post" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <?php echo $nonce_field . $hidden_uid; ?>
+                    <input type="hidden" name="fh_player_action" value="award_prize">
+                    <select name="prize_sticker_id">
+                        <?php foreach ( $all_stickers as $s ) : ?>
+                            <option value="<?php echo $s->ID; ?>"><?php echo esc_html( $s->post_title ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <label><input type="radio" name="prize_source" value="shop" checked> Shop</label>
+                    <label><input type="radio" name="prize_source" value="jackpot"> Jackpot</label>
+                    <button type="submit" <?php echo $btn; ?>>Award Prize</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- DANGER ZONE -->
+        <div style="background:#fff5f5;border:2px solid #e74c3c;border-radius:8px;padding:16px;margin-bottom:16px;">
+            <h4 style="margin:0 0 12px 0;color:#c0392b;">Danger Zone</h4>
+            <p style="color:#888;font-size:.9em;margin:0 0 12px 0;">These actions cannot be undone. Player will need to re-earn everything.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <?php foreach ( [ 'all' => 'Reset Everything', 'chips' => 'Reset Chips (to 1000)', 'games' => 'Reset Games &amp; Streaks', 'stickers' => 'Reset Badges &amp; Prizes' ] as $scope => $label ) : ?>
+                <form method="post" style="display:inline;">
+                    <?php echo $nonce_field . $hidden_uid; ?>
+                    <input type="hidden" name="fh_player_action" value="nuclear_reset">
+                    <input type="hidden" name="reset_scope" value="<?php echo $scope; ?>">
+                    <button type="submit" <?php echo $btn_danger; ?> onclick="return confirm('Are you sure? This cannot be undone!');"><?php echo $label; ?></button>
+                </form>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php
     }
 
 } /* end class FisHotel_Arcade */
