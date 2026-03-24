@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v8.4 - Fix slot reel selectors (nth-child → ID selectors).
- * Version:           8.4
+ * Description:       v8.5 - Move slot reels up 50px for perfect cabinet alignment.
+ * Version:           8.5
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '8.4' );
+define( 'FISHOTEL_VERSION', '8.5' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
