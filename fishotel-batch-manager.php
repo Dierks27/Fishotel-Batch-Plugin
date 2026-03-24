@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       FisHotel Batch Manager
  * Description:       v8.1 - Vintage slot machine with 8 marine symbols and spinning reels.
- * Version:           8.0.1
+ * Version:           8.1
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
