@@ -1234,7 +1234,30 @@ JS;
     }
 
     private function render_admin_stickers() {
-        /* Handle form submissions */
+        /* Handle jackpot trigger save */
+        if ( isset( $_POST['fh_jackpot_save'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'fh_jackpot_triggers' ) ) {
+            $games = [ 'blackjack', 'roulette', 'slots', 'poker' ];
+            $triggers = [];
+            foreach ( $games as $g ) {
+                $triggers[ $g ] = [
+                    'enabled'      => ! empty( $_POST["jp_{$g}_enabled"] ),
+                    'trigger_type' => sanitize_text_field( $_POST["jp_{$g}_type"] ?? '' ),
+                    'parameters'   => [],
+                ];
+                /* Collect all params for this game */
+                foreach ( $_POST as $k => $v ) {
+                    $prefix = "jp_{$g}_param_";
+                    if ( strpos( $k, $prefix ) === 0 ) {
+                        $param_key = substr( $k, strlen( $prefix ) );
+                        $triggers[ $g ]['parameters'][ $param_key ] = sanitize_text_field( $v );
+                    }
+                }
+            }
+            update_option( 'fishotel_jackpot_triggers', $triggers );
+            echo '<div class="notice notice-success"><p>Jackpot triggers saved!</p></div>';
+        }
+
+        /* Handle sticker form submissions */
         if ( isset( $_POST['fh_sticker_action'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'fh_sticker_save' ) ) {
             $action = sanitize_text_field( $_POST['fh_sticker_action'] );
 
@@ -1304,6 +1327,182 @@ JS;
         ];
 
         ?>
+        <?php
+        /* ─── Jackpot Trigger Builder ─── */
+        $triggers = get_option( 'fishotel_jackpot_triggers', [] );
+        $defaults = [
+            'blackjack' => [ 'enabled' => false, 'trigger_type' => 'win_streak', 'parameters' => [ 'streak_length' => 3 ] ],
+            'roulette'  => [ 'enabled' => false, 'trigger_type' => 'specific_number', 'parameters' => [ 'number' => '0' ] ],
+            'slots'     => [ 'enabled' => false, 'trigger_type' => 'multiplier_threshold', 'parameters' => [ 'multiplier' => 50 ] ],
+            'poker'     => [ 'enabled' => false, 'trigger_type' => 'specific_hand', 'parameters' => [ 'hand_type' => 'royal_flush' ] ],
+        ];
+        foreach ( $defaults as $g => $d ) {
+            if ( ! isset( $triggers[ $g ] ) ) $triggers[ $g ] = $d;
+        }
+        ?>
+        <h3>Jackpot Trigger Settings</h3>
+        <form method="post" style="background:#f0f0f0;padding:20px;border:1px solid #ccc;border-radius:8px;margin-bottom:30px;">
+            <?php wp_nonce_field( 'fh_jackpot_triggers' ); ?>
+            <input type="hidden" name="fh_jackpot_save" value="1">
+
+            <?php
+            $game_configs = [
+                'blackjack' => [
+                    'label' => 'Blackjack',
+                    'types' => [
+                        'win_streak'  => 'Win Streak',
+                        'natural_21'  => 'Natural 21 (Specific)',
+                        'chip_threshold' => 'Chip Threshold',
+                        'hand_value'  => 'Specific Hand Value',
+                    ],
+                ],
+                'roulette' => [
+                    'label' => 'Roulette',
+                    'types' => [
+                        'specific_number'    => 'Specific Number',
+                        'number_range'       => 'Number Range',
+                        'same_number_streak' => 'Same Number Streak',
+                        'color_streak'       => 'Color Streak',
+                        'chip_threshold'     => 'Chip Threshold',
+                    ],
+                ],
+                'slots' => [
+                    'label' => 'Slots',
+                    'types' => [
+                        'multiplier_threshold' => 'Multiplier Threshold',
+                        'specific_symbol'      => 'Specific Symbol Match',
+                        'chip_threshold'       => 'Chip Threshold',
+                    ],
+                ],
+                'poker' => [
+                    'label' => 'Video Poker',
+                    'types' => [
+                        'specific_hand'  => 'Specific Hand Type',
+                        'chip_threshold' => 'Chip Threshold',
+                    ],
+                ],
+            ];
+
+            foreach ( $game_configs as $g => $cfg ) :
+                $t = $triggers[ $g ];
+                $enabled = ! empty( $t['enabled'] );
+                $cur_type = $t['trigger_type'] ?? '';
+                $p = $t['parameters'] ?? [];
+            ?>
+            <fieldset style="border:1px solid #ddd;padding:12px 16px;margin-bottom:16px;border-radius:6px;background:#fff;">
+                <legend style="font-weight:700;font-size:1.05em;padding:0 8px;"><?php echo $cfg['label']; ?> Jackpot</legend>
+                <label><input type="checkbox" name="jp_<?php echo $g; ?>_enabled" value="1" <?php checked( $enabled ); ?>> Enable Jackpot</label>
+
+                <div style="margin:10px 0 0 24px;">
+                    <label>Trigger Type:
+                    <select name="jp_<?php echo $g; ?>_type" class="fh-jp-type" data-game="<?php echo $g; ?>">
+                        <?php foreach ( $cfg['types'] as $tk => $tl ) : ?>
+                            <option value="<?php echo esc_attr( $tk ); ?>" <?php selected( $cur_type, $tk ); ?>><?php echo esc_html( $tl ); ?></option>
+                        <?php endforeach; ?>
+                    </select></label>
+
+                    <!-- Parameter panels -->
+                    <div class="fh-jp-params" data-game="<?php echo $g; ?>" style="margin-top:10px;">
+
+                    <?php if ( $g === 'blackjack' ) : ?>
+                        <div class="fh-jp-panel" data-type="win_streak">
+                            Win <input type="number" name="jp_blackjack_param_streak_length" value="<?php echo esc_attr( $p['streak_length'] ?? 3 ); ?>" min="2" style="width:60px;"> hands in a row
+                            <span class="fh-jp-odds" style="color:#888;font-size:.85em;margin-left:8px;"></span>
+                        </div>
+                        <div class="fh-jp-panel" data-type="natural_21" style="display:none;">
+                            <label><input type="radio" name="jp_blackjack_param_variant" value="any" <?php checked( ( $p['variant'] ?? 'any' ), 'any' ); ?>> Any natural 21 (~5%)</label><br>
+                            <label><input type="radio" name="jp_blackjack_param_variant" value="suited" <?php checked( ( $p['variant'] ?? '' ), 'suited' ); ?>> Suited natural 21 (~1.25%)</label><br>
+                            <label><input type="radio" name="jp_blackjack_param_variant" value="ace_of_spades" <?php checked( ( $p['variant'] ?? '' ), 'ace_of_spades' ); ?>> With Ace of Spades (~0.4%)</label>
+                        </div>
+                        <div class="fh-jp-panel" data-type="chip_threshold" style="display:none;">
+                            Win <input type="number" name="jp_blackjack_param_threshold" value="<?php echo esc_attr( $p['threshold'] ?? 5000 ); ?>" min="1" style="width:100px;"> chips or more
+                        </div>
+                        <div class="fh-jp-panel" data-type="hand_value" style="display:none;">
+                            Win with exactly <input type="number" name="jp_blackjack_param_target_value" value="<?php echo esc_attr( $p['target_value'] ?? 21 ); ?>" min="2" max="21" style="width:60px;">
+                            using <input type="number" name="jp_blackjack_param_card_count" value="<?php echo esc_attr( $p['card_count'] ?? 5 ); ?>" min="0" style="width:60px;"> cards (0 = any)
+                        </div>
+
+                    <?php elseif ( $g === 'roulette' ) : ?>
+                        <div class="fh-jp-panel" data-type="specific_number">
+                            Land on number: <input type="text" name="jp_roulette_param_number" value="<?php echo esc_attr( $p['number'] ?? '00' ); ?>" style="width:60px;" placeholder="0-36 or 00">
+                            <span style="color:#888;font-size:.85em;margin-left:8px;">(~2.6% per spin)</span>
+                        </div>
+                        <div class="fh-jp-panel" data-type="number_range" style="display:none;">
+                            <select name="jp_roulette_param_range">
+                                <option value="zeros" <?php selected( $p['range'] ?? '', 'zeros' ); ?>>Zeros (0/00) ~5.3%</option>
+                                <option value="first" <?php selected( $p['range'] ?? '', 'first' ); ?>>1st Dozen (1-12) ~31.6%</option>
+                                <option value="second" <?php selected( $p['range'] ?? '', 'second' ); ?>>2nd Dozen (13-24) ~31.6%</option>
+                                <option value="third" <?php selected( $p['range'] ?? '', 'third' ); ?>>3rd Dozen (25-36) ~31.6%</option>
+                            </select>
+                        </div>
+                        <div class="fh-jp-panel" data-type="same_number_streak" style="display:none;">
+                            Same number <input type="number" name="jp_roulette_param_streak_length" value="<?php echo esc_attr( $p['streak_length'] ?? 2 ); ?>" min="2" style="width:60px;"> times in a row
+                            <span style="color:#888;font-size:.85em;margin-left:8px;">(2 = ~0.07%)</span>
+                        </div>
+                        <div class="fh-jp-panel" data-type="color_streak" style="display:none;">
+                            <select name="jp_roulette_param_color">
+                                <option value="red" <?php selected( $p['color'] ?? '', 'red' ); ?>>Red</option>
+                                <option value="black" <?php selected( $p['color'] ?? '', 'black' ); ?>>Black</option>
+                            </select>
+                            <input type="number" name="jp_roulette_param_streak_length" value="<?php echo esc_attr( $p['streak_length'] ?? 5 ); ?>" min="2" style="width:60px;"> times in a row
+                        </div>
+                        <div class="fh-jp-panel" data-type="chip_threshold" style="display:none;">
+                            Win <input type="number" name="jp_roulette_param_threshold" value="<?php echo esc_attr( $p['threshold'] ?? 5000 ); ?>" min="1" style="width:100px;"> chips or more
+                        </div>
+
+                    <?php elseif ( $g === 'slots' ) : ?>
+                        <div class="fh-jp-panel" data-type="multiplier_threshold">
+                            Get <input type="number" name="jp_slots_param_multiplier" value="<?php echo esc_attr( $p['multiplier'] ?? 50 ); ?>" min="2" style="width:80px;">x or higher
+                        </div>
+                        <div class="fh-jp-panel" data-type="specific_symbol" style="display:none;">
+                            Symbol: <select name="jp_slots_param_symbol">
+                                <?php foreach ( ['⭐','🌊','🐙','🦀','🦈','🐡','🐚','🐠','🐟'] as $sym ) : ?>
+                                    <option value="<?php echo $sym; ?>" <?php selected( $p['symbol'] ?? '', $sym ); ?>><?php echo $sym; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            × <input type="number" name="jp_slots_param_count" value="<?php echo esc_attr( $p['count'] ?? 3 ); ?>" min="2" max="3" style="width:50px;">
+                        </div>
+                        <div class="fh-jp-panel" data-type="chip_threshold" style="display:none;">
+                            Win <input type="number" name="jp_slots_param_threshold" value="<?php echo esc_attr( $p['threshold'] ?? 5000 ); ?>" min="1" style="width:100px;"> chips or more
+                        </div>
+
+                    <?php elseif ( $g === 'poker' ) : ?>
+                        <div class="fh-jp-panel" data-type="specific_hand">
+                            <select name="jp_poker_param_hand_type">
+                                <?php foreach ( [ 'royal_flush' => 'Royal Flush (~0.002%)', 'straight_flush' => 'Straight Flush (~0.01%)', 'four_of_a_kind' => 'Four of a Kind (~0.02%)', 'full_house' => 'Full House (~0.14%)', 'flush' => 'Flush (~0.2%)', 'straight' => 'Straight (~0.4%)' ] as $hk => $hl ) : ?>
+                                    <option value="<?php echo $hk; ?>" <?php selected( $p['hand_type'] ?? '', $hk ); ?>><?php echo esc_html( $hl ); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="fh-jp-panel" data-type="chip_threshold" style="display:none;">
+                            Win <input type="number" name="jp_poker_param_threshold" value="<?php echo esc_attr( $p['threshold'] ?? 5000 ); ?>" min="1" style="width:100px;"> chips or more
+                        </div>
+                    <?php endif; ?>
+
+                    </div>
+                </div>
+            </fieldset>
+            <?php endforeach; ?>
+
+            <p><input type="submit" class="button button-primary" value="Save Jackpot Triggers"></p>
+        </form>
+
+        <script>
+        document.querySelectorAll('.fh-jp-type').forEach(sel => {
+            function showPanel() {
+                const game = sel.dataset.game;
+                const type = sel.value;
+                document.querySelectorAll(`.fh-jp-params[data-game="${game}"] .fh-jp-panel`).forEach(p => {
+                    p.style.display = p.dataset.type === type ? '' : 'none';
+                });
+            }
+            sel.addEventListener('change', showPanel);
+            showPanel();
+        });
+        </script>
+
+        <hr style="margin:30px 0;">
+
         <h3>Create New Sticker</h3>
         <form method="post" style="background:#f9f9f9;padding:16px;border:1px solid #ddd;border-radius:8px;margin-bottom:24px;">
             <?php wp_nonce_field( 'fh_sticker_save' ); ?>
