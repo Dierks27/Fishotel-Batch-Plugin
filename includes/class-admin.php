@@ -2425,6 +2425,7 @@ trait FisHotel_Admin {
             'graduation'      => 'Graduation Day',
             'verification'    => 'Accept or Pass',
             'draft'           => 'Draft Pool',
+            'casino'          => 'Casino Night',
             'invoicing'       => 'Invoicing',
         ];
     }
@@ -2441,6 +2442,18 @@ trait FisHotel_Admin {
                 'style'      => 'background:#c0392b;color:#fff;border-color:#a93226;',
                 'confirm'    => "Close ordering for '%s'? This immediately sets the stage to Arrived.",
             ],
+            'draft' => [
+                'next_stage' => 'casino',
+                'label'      => 'Close Draft &amp; Open Casino',
+                'style'      => 'background:#96885f;color:#fff;border-color:#7a6f4e;',
+                'confirm'    => "Close the draft for '%s' and open Casino Night?",
+            ],
+            'casino' => [
+                'next_stage' => 'invoicing',
+                'label'      => 'Close Casino &amp; Open Invoicing',
+                'style'      => 'background:#27ae60;color:#fff;border-color:#1e8449;',
+                'confirm'    => "Close Casino Night for '%s' and move to Invoicing?",
+            ],
         ];
     }
 
@@ -2449,7 +2462,7 @@ trait FisHotel_Admin {
             wp_die( 'Security check failed.' );
         }
         $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
-        $next_stage = sanitize_key( $_POST['next_stage'] ?? '' );
+        $next_stage = sanitize_key( $_POST['next_stage'] ?? $_POST['new_stage'] ?? '' );
         if ( ! $batch_name || ! $next_stage ) {
             wp_die( 'Invalid parameters.' );
         }
@@ -4066,8 +4079,8 @@ trait FisHotel_Admin {
             wp_nonce_field( 'fishotel_advance_stage_nonce' );
             echo '<input type="hidden" name="action" value="fishotel_advance_stage">';
             echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
-            echo '<input type="hidden" name="new_stage" value="invoicing">';
-            echo '<button type="submit" style="background:#27ae60;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;">Advance to Invoicing</button>';
+            echo '<input type="hidden" name="new_stage" value="casino">';
+            echo '<button type="submit" style="background:#96885f;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;" onclick="return confirm(\'Close the draft and open Casino Night?\');">Close Draft &amp; Open Casino</button>';
             echo '</form>';
 
             echo '<form method="post" action="' . $admin_post_url . '" style="margin:0;" onsubmit="return confirm(\'Reset the draft? Clears all results and notifications.\');">';

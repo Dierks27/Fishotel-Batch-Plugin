@@ -2607,10 +2607,17 @@ trait FisHotel_Shortcodes {
             return $this->hotel_postcard_shortcode( $batch_name );
         }
 
-        // ─── Stage 6: Last Call draft pool ──
+        // ─── Stage 6a: Last Call draft pool ──
         if ( $status === 'draft' ) {
             ob_end_clean();
             return $this->render_last_call_page( $batch_name );
+        }
+
+        // ─── Stage 6b: Casino intermission ──
+        if ( $status === 'casino' ) {
+            ob_end_clean();
+            $arcade = new FisHotel_Arcade();
+            return $arcade->arcade_shortcode( [] );
         }
 
         // ─── Stage 7: Invoicing ──
@@ -2634,7 +2641,7 @@ trait FisHotel_Shortcodes {
         }
 
         // ─── Stage 3b: Arrival tracking view (arrived + all post-arrived stages) ──
-        $arrived_stages = [ 'arrived', 'in_quarantine', 'graduation', 'verification', 'draft', 'invoicing' ];
+        $arrived_stages = [ 'arrived', 'in_quarantine', 'graduation', 'verification', 'draft', 'casino', 'invoicing' ];
         if ( in_array( $status, $arrived_stages, true ) ) {
             $arrival_dates = get_option( 'fishotel_batch_arrival_dates', [] );
             $arrival_date  = $arrival_dates[ $batch_name ] ?? '';
