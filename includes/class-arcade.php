@@ -305,9 +305,9 @@ class FisHotel_Arcade {
         .fh-slots-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
         /* Each reel is positioned with calc() from natural pixel coords (784×1168) */
         .fh-slots-rw{position:absolute;overflow:hidden;z-index:1;background:#f5f0e8;border-radius:2px}
-        .fh-slots-rw:nth-child(1){left:calc(195/784*100%);top:calc(658/1168*100%);width:calc(102/784*100%);height:calc(174/1168*100%)}
-        .fh-slots-rw:nth-child(2){left:calc(338/784*100%);top:calc(656/1168*100%);width:calc(102/784*100%);height:calc(174/1168*100%)}
-        .fh-slots-rw:nth-child(3){left:calc(482/784*100%);top:calc(658/1168*100%);width:calc(102/784*100%);height:calc(174/1168*100%)}
+        #fh-sw-0{left:calc(195/784*100%);top:calc(658/1168*100%);width:calc(102/784*100%);height:calc(174/1168*100%)}
+        #fh-sw-1{left:calc(338/784*100%);top:calc(656/1168*100%);width:calc(102/784*100%);height:calc(174/1168*100%)}
+        #fh-sw-2{left:calc(482/784*100%);top:calc(658/1168*100%);width:calc(102/784*100%);height:calc(174/1168*100%)}
         .fh-slots-rw.winning{box-shadow:0 0 18px rgba(255,215,0,.7);animation:fh-slots-glow .4s ease-in-out 3}
         @keyframes fh-slots-glow{0%,100%{box-shadow:0 0 18px rgba(255,215,0,.7)}50%{box-shadow:0 0 30px rgba(255,215,0,1)}}
         .fh-slots-strip{position:absolute;top:0;left:0;width:100%;will-change:transform}
