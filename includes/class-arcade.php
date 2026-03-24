@@ -569,19 +569,66 @@ class FisHotel_Arcade {
                     .fhc-result.win{background:rgba(46,204,113,.15);color:#2ecc71;border:1px solid rgba(46,204,113,.3)}
                     .fhc-result.lose{background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.3)}
                     .fhc-result.push{background:rgba(241,196,15,.15);color:#f1c40f;border:1px solid rgba(241,196,15,.3)}
-                    .fhc-card-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;min-height:90px;align-items:center}
-                    .fhc-card{width:60px;height:88px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1em;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.4)}
-                    .fhc-card-red{background:#fff;color:#c0392b;border:2px solid #ddd}
-                    .fhc-card-black{background:#fff;color:#2c3e50;border:2px solid #ddd}
-                    .fhc-card-back{background:linear-gradient(135deg,#1a3a5c,#0f2a44);border:2px solid #96885f;color:#96885f;font-size:.7em}
-                    .fhc-reel{width:100px;height:100px;background:rgba(0,0,0,.5);border:3px solid #96885f;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:3em;box-shadow:inset 0 0 20px rgba(0,0,0,.5)}
-                    .fhc-reel.spinning{animation:fhc-reel-spin .15s infinite}
-                    @keyframes fhc-reel-spin{0%{transform:translateY(-4px)}50%{transform:translateY(4px)}100%{transform:translateY(-4px)}}
-                    .fhc-pk-card{width:72px;height:104px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:1.1em;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.4);cursor:pointer;transition:transform .2s;position:relative}
-                    .fhc-pk-card.held{transform:translateY(-14px);box-shadow:0 8px 24px rgba(150,136,95,.4);border-color:#96885f !important}
-                    .fhc-pk-card .held-tag{position:absolute;top:-10px;background:#96885f;color:#1a1a1a;font-size:.6em;padding:2px 8px;border-radius:6px;display:none}
-                    .fhc-pk-card.held .held-tag{display:block}`;
+                    .fhc-card-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;min-height:130px;align-items:flex-end;padding:30px 0 10px}
+                    /* ── Visual Playing Cards ── */
+                    .fh-card{display:inline-block;width:80px;height:112px;background:#fff;border:2px solid #555;border-radius:8px;position:relative;margin:0 2px;box-shadow:0 3px 10px rgba(0,0,0,.4);font-family:Georgia,serif;font-weight:700;transition:transform .3s}
+                    .fh-card.red{color:#DC143C}.fh-card.black{color:#1a1a1a}
+                    .fh-card .fh-card-tl{position:absolute;top:5px;left:7px;font-size:16px;line-height:1;text-align:center}
+                    .fh-card .fh-card-tl .fh-card-suit-sm{font-size:14px;display:block}
+                    .fh-card .fh-card-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:36px}
+                    .fh-card .fh-card-br{position:absolute;bottom:5px;right:7px;font-size:16px;line-height:1;transform:rotate(180deg);text-align:center}
+                    .fh-card .fh-card-br .fh-card-suit-sm{font-size:14px;display:block}
+                    .fh-card.fh-card-back{background:linear-gradient(135deg,#1a3a5c 0%,#96885f 100%);border-color:#96885f}
+                    .fh-card.fh-card-back::after{content:'\\1F420';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:40px}
+                    .fh-card.fh-card-held{transform:translateY(-18px)}
+                    .fh-card.fh-card-held::before{content:'HELD';position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:#FF7F00;color:#fff;padding:2px 10px;border-radius:4px;font-size:11px;font-family:Oswald,sans-serif;white-space:nowrap;z-index:2}
+                    @media(max-width:480px){.fh-card{width:58px;height:82px}.fh-card .fh-card-tl,.fh-card .fh-card-br{font-size:12px}.fh-card .fh-card-tl .fh-card-suit-sm,.fh-card .fh-card-br .fh-card-suit-sm{font-size:11px}.fh-card .fh-card-center{font-size:24px}}
+                    /* ── Slot Machine ── */
+                    .fh-slot-machine{max-width:500px;margin:0 auto;background:linear-gradient(180deg,#2a1810 0%,#1a0f08 100%);border:4px solid #96885f;border-radius:20px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+                    .fh-slot-title{font-family:'Special Elite',monospace;font-size:clamp(20px,5vw,28px);color:#ffd700;text-align:center;text-shadow:0 0 10px rgba(255,215,0,.6);margin-bottom:6px}
+                    .fh-slot-reels{display:flex;justify-content:center;gap:8px;background:#0a0a0a;padding:16px;border-radius:10px;box-shadow:inset 0 4px 10px rgba(0,0,0,.8);margin:16px 0}
+                    .fh-reel-window{width:110px;height:110px;overflow:hidden;background:#111;border:3px solid #444;border-radius:12px;position:relative}
+                    .fh-reel-window::before,.fh-reel-window::after{content:'';position:absolute;left:0;right:0;height:20px;z-index:2;pointer-events:none}
+                    .fh-reel-window::before{top:0;background:linear-gradient(180deg,#111 0%,transparent 100%)}
+                    .fh-reel-window::after{bottom:0;background:linear-gradient(0deg,#111 0%,transparent 100%)}
+                    .fh-reel-strip{transition:transform .1s linear}
+                    .fh-reel-sym{width:110px;height:110px;display:flex;align-items:center;justify-content:center;font-size:56px}
+                    .fh-reel-window.winning{box-shadow:0 0 20px #ffd700,inset 0 0 20px rgba(255,215,0,.2);border-color:#ffd700;animation:fh-win-pulse .4s ease-in-out 3}
+                    @keyframes fh-win-pulse{0%,100%{border-color:#ffd700}50%{border-color:#fff}}
+                    .fh-slot-spin-btn{font-family:'Oswald',sans-serif;font-size:1.4em;font-weight:700;background:linear-gradient(180deg,#FF7F00 0%,#CC6600 100%);color:#fff;border:none;border-radius:10px;padding:14px 50px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.3);transition:all .2s;display:block;margin:0 auto}
+                    .fh-slot-spin-btn:hover{transform:translateY(-2px);box-shadow:0 6px 15px rgba(0,0,0,.4)}
+                    .fh-slot-spin-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+                    .fh-slot-paytable{color:#888;font-size:.8em;margin-top:16px;text-align:center;line-height:1.6}
+                    .fh-slot-paytable strong{color:#96885f}
+                    /* ── Chip float animation ── */
+                    .fh-chip-float{position:fixed;pointer-events:none;font-weight:700;font-size:1.3em;z-index:99999;animation:fh-float-up 1.5s ease-out forwards}
+                    .fh-chip-float.win{color:#2ecc71}.fh-chip-float.lose{color:#e74c3c}
+                    @keyframes fh-float-up{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}`;
                     document.head.appendChild(ss);
+                }
+
+                /* ── Shared card renderer ── */
+                function fhCard(c, faceDown, isHeld) {
+                    if (faceDown) return '<div class="fh-card fh-card-back"></div>';
+                    const isRed = c.suit === '♥' || c.suit === '♦';
+                    const color = isRed ? 'red' : 'black';
+                    const held = isHeld ? ' fh-card-held' : '';
+                    return '<div class="fh-card ' + color + held + '">' +
+                        '<div class="fh-card-tl">' + c.rank + '<span class="fh-card-suit-sm">' + c.suit + '</span></div>' +
+                        '<div class="fh-card-center">' + c.suit + '</div>' +
+                        '<div class="fh-card-br">' + c.rank + '<span class="fh-card-suit-sm">' + c.suit + '</span></div>' +
+                    '</div>';
+                }
+
+                /* ── Floating chip animation ── */
+                function fhChipFloat(amount, win) {
+                    const el = document.createElement('div');
+                    el.className = 'fh-chip-float ' + (win ? 'win' : 'lose');
+                    el.textContent = (win ? '+' : '') + amount.toLocaleString();
+                    el.style.left = '50%';
+                    el.style.top = '40%';
+                    document.body.appendChild(el);
+                    setTimeout(() => el.remove(), 1600);
                 }
 
                 const canvas = document.getElementById('fh-arc-roul-wheel');
@@ -640,8 +687,8 @@ class FisHotel_Arcade {
                         if(t<1){requestAnimationFrame(animate);}else{
                             wheelRotation=totalRotation%360; updateChips(d.chips);
                             const r=document.getElementById('fh-arc-roul-result');
-                            if(d.payout>0){r.textContent=`${d.label||d.number} ${d.color}! Won ${d.payout.toLocaleString()} chips!`;r.className='fhc-result win';if(window.fhArcadeHandleWin)window.fhArcadeHandleWin(d);}
-                            else{r.textContent=`${d.label||d.number} ${d.color}. Lost ${bet.toLocaleString()} chips.`;r.className='fhc-result lose';}
+                            if(d.payout>0){r.textContent=`${d.label||d.number} ${d.color}! Won ${d.payout.toLocaleString()} chips!`;r.className='fhc-result win';fhChipFloat(d.payout,true);if(window.fhArcadeHandleWin)window.fhArcadeHandleWin(d);}
+                            else{r.textContent=`${d.label||d.number} ${d.color}. Lost ${bet.toLocaleString()} chips.`;r.className='fhc-result lose';fhChipFloat(-bet,false);}
                             spinning=false; document.getElementById('fh-arc-roul-spin').disabled=false;
                         }
                     }
@@ -658,10 +705,10 @@ JS;
                 area.innerHTML = `
                     <div style="text-align:center;font-family:'Oswald',sans-serif;font-size:1.8em;color:#96885f;margin-bottom:16px;text-transform:uppercase;letter-spacing:2px;">Blackjack</div>
                     <div class="fhc-table">
-                        <div style="text-align:center;margin-bottom:24px;"><div style="color:#96885f;font-weight:600;margin-bottom:8px;">Dealer</div>
-                            <div id="fh-arc-bj-dc" class="fhc-card-row"></div><div id="fh-arc-bj-ds" style="color:#aaa;margin-top:6px;"></div></div>
+                        <div style="text-align:center;margin-bottom:16px;"><div style="color:#96885f;font-weight:600;margin-bottom:4px;">Dealer</div>
+                            <div id="fh-arc-bj-dc" class="fhc-card-row"></div><div id="fh-arc-bj-ds" style="color:#aaa;margin-top:6px;font-size:1.1em;"></div></div>
                         <div id="fh-arc-bj-result" class="fhc-result"></div>
-                        <div style="text-align:center;margin-top:24px;"><div style="color:#96885f;font-weight:600;margin-bottom:8px;">Your Hand</div>
+                        <div style="text-align:center;margin-top:16px;"><div style="color:#96885f;font-weight:600;margin-bottom:4px;">Your Hand</div>
                             <div id="fh-arc-bj-pc" class="fhc-card-row"></div><div id="fh-arc-bj-ps" style="color:#96885f;font-weight:700;font-size:1.2em;margin-top:6px;"></div></div>
                         <div style="text-align:center;margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
                             <div id="fh-arc-bj-bet"><label style="color:#96885f;font-weight:600;">Bet:</label>
@@ -678,14 +725,13 @@ JS;
                         </div>
                     </div>`;
 
-                function cardHtml(c,fd){if(fd)return'<div class="fhc-card fhc-card-back">FH</div>';const r=c.suit==='♥'||c.suit==='♦';return`<div class="fhc-card ${r?'fhc-card-red':'fhc-card-black'}">${c.rank}${c.suit}</div>`;}
                 function calcHand(cards){let t=0,a=0;for(const c of cards){if(c.rank==='A'){a++;t+=11;}else if(['K','Q','J'].includes(c.rank))t+=10;else t+=parseInt(c.rank);}while(t>21&&a>0){t-=10;a--;}return t;}
-                function renderHands(show){if(!gameState)return;document.getElementById('fh-arc-bj-dc').innerHTML=gameState.dealer.map((c,i)=>cardHtml(c,!show&&i===1)).join('');document.getElementById('fh-arc-bj-pc').innerHTML=gameState.player.map(c=>cardHtml(c,false)).join('');document.getElementById('fh-arc-bj-ps').textContent='Score: '+calcHand(gameState.player);document.getElementById('fh-arc-bj-ds').textContent=show?'Score: '+calcHand(gameState.dealer):'';}
+                function renderHands(show){if(!gameState)return;document.getElementById('fh-arc-bj-dc').innerHTML=gameState.dealer.map((c,i)=>fhCard(c,!show&&i===1,false)).join('');document.getElementById('fh-arc-bj-pc').innerHTML=gameState.player.map(c=>fhCard(c,false,false)).join('');document.getElementById('fh-arc-bj-ps').textContent='Score: '+calcHand(gameState.player);document.getElementById('fh-arc-bj-ds').textContent=show?'Score: '+calcHand(gameState.dealer):'';}
                 function showPhase(p){document.getElementById('fh-arc-bj-bet').style.display=p==='bet'?'':'none';document.getElementById('fh-arc-bj-play').style.display=p==='play'?'':'none';document.getElementById('fh-arc-bj-done').style.display=p==='done'?'':'none';}
 
                 document.querySelectorAll('#fh-arc-bj-bets .fhc-bet-btn').forEach(b=>{b.addEventListener('click',()=>{document.querySelectorAll('#fh-arc-bj-bets .fhc-bet-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');bet=parseInt(b.dataset.amt);});});
 
-                function endHand(d){const r=document.getElementById('fh-arc-bj-result');if(d.result==='blackjack'){r.textContent=`Blackjack! +${d.payout.toLocaleString()}`;r.className='fhc-result win';}else if(d.result==='win'){r.textContent=`You win! +${d.payout.toLocaleString()}`;r.className='fhc-result win';}else if(d.result==='push'){r.textContent='Push — bet returned.';r.className='fhc-result push';}else{r.textContent=`Dealer wins. -${d.wager.toLocaleString()}`;r.className='fhc-result lose';}showPhase('done');if(d.result==='blackjack'||d.result==='win'){if(window.fhArcadeHandleWin)window.fhArcadeHandleWin(d);}}
+                function endHand(d){const r=document.getElementById('fh-arc-bj-result');const net=d.payout-(d.wager||bet);if(d.result==='blackjack'){r.textContent=`Blackjack! +${d.payout.toLocaleString()}`;r.className='fhc-result win';fhChipFloat(d.payout,true);}else if(d.result==='win'){r.textContent=`You win! +${d.payout.toLocaleString()}`;r.className='fhc-result win';fhChipFloat(d.payout,true);}else if(d.result==='push'){r.textContent='Push — bet returned.';r.className='fhc-result push';}else{r.textContent=`Dealer wins. -${(d.wager||bet).toLocaleString()}`;r.className='fhc-result lose';fhChipFloat(-(d.wager||bet),false);}showPhase('done');if(d.result==='blackjack'||d.result==='win'){if(window.fhArcadeHandleWin)window.fhArcadeHandleWin(d);}}
 
                 document.getElementById('fh-arc-bj-deal').addEventListener('click',async()=>{
                     if(bet>chips){document.getElementById('fh-arc-bj-result').textContent='Not enough chips!';document.getElementById('fh-arc-bj-result').className='fhc-result lose';return;}
@@ -709,43 +755,106 @@ JS;
         return <<<'JS'
             function renderArcadeSlots(area, post) {
                 const SYMBOLS=['🐠','🐟','🐡','🦈','🐙','🦀','🐚','🌊','⭐'];
+                const SYM_H=110;
                 let bet=50, spinning=false;
+
                 area.innerHTML = `
-                    <div style="text-align:center;font-family:'Oswald',sans-serif;font-size:1.8em;color:#96885f;margin-bottom:16px;text-transform:uppercase;letter-spacing:2px;">Fish Slots</div>
-                    <div class="fhc-table" style="text-align:center;">
-                        <div style="display:flex;justify-content:center;gap:12px;margin:30px 0;">
-                            <div class="fhc-reel" id="fh-arc-reel-0">🐠</div><div class="fhc-reel" id="fh-arc-reel-1">🐟</div><div class="fhc-reel" id="fh-arc-reel-2">🦈</div></div>
-                        <div id="fh-arc-slots-result" class="fhc-result"></div>
-                        <div style="margin:16px 0;"><label style="color:#96885f;font-weight:600;">Bet:</label>
-                            <div class="fhc-bet-controls" id="fh-arc-slots-bet">
-                                <button class="fhc-bet-btn" data-amt="10">10</button><button class="fhc-bet-btn active" data-amt="50">50</button>
-                                <button class="fhc-bet-btn" data-amt="100">100</button><button class="fhc-bet-btn" data-amt="250">250</button></div></div>
-                        <button id="fh-arc-slots-spin" class="fh-arc-btn-gold" style="font-size:1.2em;padding:14px 48px;">PULL</button>
-                        <div style="margin-top:24px;color:#888;font-size:.85em;">
-                            <div style="color:#96885f;font-weight:600;margin-bottom:8px;">Payouts (multiplier × bet):</div>
-                            <div>⭐⭐⭐ = 50× &nbsp; 🌊🌊🌊 = 20× &nbsp; 🐙🐙🐙 = 15×</div>
-                            <div>🦀🦀🦀 = 12× &nbsp; 🦈🦈🦈 = 10× &nbsp; 🐡🐡🐡 = 8×</div>
-                            <div>Any 3 match = 5× &nbsp; 2 match = 2×</div></div>
-                    </div>`;
+                <div class="fh-slot-machine">
+                    <div class="fh-slot-title">FISHOTEL SLOTS</div>
+                    <div class="fh-slot-reels">
+                        <div class="fh-reel-window" id="fh-arc-rw-0"><div class="fh-reel-strip" id="fh-arc-rs-0"><div class="fh-reel-sym">🐠</div></div></div>
+                        <div class="fh-reel-window" id="fh-arc-rw-1"><div class="fh-reel-strip" id="fh-arc-rs-1"><div class="fh-reel-sym">🐟</div></div></div>
+                        <div class="fh-reel-window" id="fh-arc-rw-2"><div class="fh-reel-strip" id="fh-arc-rs-2"><div class="fh-reel-sym">🦈</div></div></div>
+                    </div>
+                    <div id="fh-arc-slots-result" class="fhc-result"></div>
+                    <div style="margin:16px 0;text-align:center;"><label style="color:#96885f;font-weight:600;">Bet:</label>
+                        <div class="fhc-bet-controls" id="fh-arc-slots-bet">
+                            <button class="fhc-bet-btn" data-amt="10">10</button><button class="fhc-bet-btn active" data-amt="50">50</button>
+                            <button class="fhc-bet-btn" data-amt="100">100</button><button class="fhc-bet-btn" data-amt="250">250</button></div></div>
+                    <button id="fh-arc-slots-spin" class="fh-slot-spin-btn">SPIN</button>
+                    <div class="fh-slot-paytable">
+                        <strong>Payouts (multiplier x bet):</strong><br>
+                        ⭐⭐⭐ 50x | 🌊🌊🌊 20x | 🐙🐙🐙 15x | 🦀🦀🦀 12x<br>
+                        🦈🦈🦈 10x | 🐡🐡🐡 8x | Any 3-match 5x | 2-match 2x
+                    </div>
+                </div>`;
 
                 document.querySelectorAll('#fh-arc-slots-bet .fhc-bet-btn').forEach(b=>{b.addEventListener('click',()=>{if(spinning)return;document.querySelectorAll('#fh-arc-slots-bet .fhc-bet-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');bet=parseInt(b.dataset.amt);});});
 
+                function buildStrip(finalSym, count) {
+                    let html='';
+                    for(let i=0;i<count;i++) html+='<div class="fh-reel-sym">'+SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)]+'</div>';
+                    html+='<div class="fh-reel-sym">'+finalSym+'</div>';
+                    /* pad one more so the final symbol sits in center of window */
+                    html+='<div class="fh-reel-sym">'+SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)]+'</div>';
+                    return html;
+                }
+
+                function spinReel(idx, finalSym, duration) {
+                    return new Promise(resolve=>{
+                        const strip=document.getElementById('fh-arc-rs-'+idx);
+                        const count=20+idx*8; /* more symbols = longer reel */
+                        strip.innerHTML=buildStrip(finalSym, count);
+                        strip.style.transition='none';
+                        strip.style.transform='translateY(0)';
+                        /* Force reflow */
+                        strip.offsetHeight;
+                        const totalDist=(count)*SYM_H;
+                        strip.style.transition='transform '+duration+'ms cubic-bezier(.2,.8,.3,1)';
+                        strip.style.transform='translateY(-'+totalDist+'px)';
+                        setTimeout(resolve, duration+50);
+                    });
+                }
+
                 document.getElementById('fh-arc-slots-spin').addEventListener('click',async()=>{
-                    if(spinning)return;if(bet>chips){document.getElementById('fh-arc-slots-result').textContent='Not enough chips!';document.getElementById('fh-arc-slots-result').className='fhc-result lose';return;}
-                    spinning=true;document.getElementById('fh-arc-slots-spin').disabled=true;
-                    document.getElementById('fh-arc-slots-result').textContent='';document.getElementById('fh-arc-slots-result').className='fhc-result';
-                    const reels=[0,1,2].map(i=>document.getElementById('fh-arc-reel-'+i));
-                    reels.forEach(r=>r.classList.add('spinning'));
-                    const si=setInterval(()=>{reels.forEach(r=>{r.textContent=SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)];});},80);
+                    if(spinning)return;
+                    if(bet>chips){document.getElementById('fh-arc-slots-result').textContent='Not enough chips!';document.getElementById('fh-arc-slots-result').className='fhc-result lose';return;}
+                    spinning=true;
+                    const spinBtn=document.getElementById('fh-arc-slots-spin');
+                    spinBtn.disabled=true;
+                    document.getElementById('fh-arc-slots-result').textContent='';
+                    document.getElementById('fh-arc-slots-result').className='fhc-result';
+                    [0,1,2].forEach(i=>document.getElementById('fh-arc-rw-'+i).classList.remove('winning'));
+
                     const res=await post('fishotel_casino_slots_spin',{bet:bet});
-                    if(!res.success){clearInterval(si);reels.forEach(r=>r.classList.remove('spinning'));spinning=false;document.getElementById('fh-arc-slots-spin').disabled=false;return;}
+                    if(!res.success){spinning=false;spinBtn.disabled=false;return;}
                     const d=res.data;
-                    for(let i=0;i<3;i++){await new Promise(r=>setTimeout(r,600+i*500));reels[i].classList.remove('spinning');reels[i].textContent=d.reels[i];}
-                    clearInterval(si); updateChips(d.chips);
+
+                    /* Stagger reel stops */
+                    await spinReel(0, d.reels[0], 1200);
+                    await spinReel(1, d.reels[1], 1600);
+                    await spinReel(2, d.reels[2], 2000);
+
+                    updateChips(d.chips);
                     const r=document.getElementById('fh-arc-slots-result');
-                    if(d.payout>0){r.textContent=`Winner! +${d.payout.toLocaleString()} chips! (${d.multiplier}×)`;r.className='fhc-result win';if(window.fhArcadeHandleWin)window.fhArcadeHandleWin(d);}
-                    else{r.textContent=`No match. -${bet.toLocaleString()} chips.`;r.className='fhc-result lose';}
-                    spinning=false;document.getElementById('fh-arc-slots-spin').disabled=false;
+
+                    if(d.payout>0){
+                        /* Highlight winning reels */
+                        if(d.multiplier>=5){[0,1,2].forEach(i=>document.getElementById('fh-arc-rw-'+i).classList.add('winning'));}
+                        else{/* 2-match: find which pair */
+                            if(d.reels[0]===d.reels[1]){document.getElementById('fh-arc-rw-0').classList.add('winning');document.getElementById('fh-arc-rw-1').classList.add('winning');}
+                            if(d.reels[1]===d.reels[2]){document.getElementById('fh-arc-rw-1').classList.add('winning');document.getElementById('fh-arc-rw-2').classList.add('winning');}
+                            if(d.reels[0]===d.reels[2]){document.getElementById('fh-arc-rw-0').classList.add('winning');document.getElementById('fh-arc-rw-2').classList.add('winning');}
+                        }
+                        r.textContent='Winner! +'+d.payout.toLocaleString()+' chips! ('+d.multiplier+'x)';
+                        r.className='fhc-result win';
+                        fhChipFloat(d.payout,true);
+
+                        /* Big win celebration */
+                        if(d.multiplier>=20){
+                            const flash=document.createElement('div');
+                            flash.style.cssText='position:fixed;inset:0;background:radial-gradient(circle,rgba(255,215,0,.6) 0%,transparent 70%);pointer-events:none;z-index:99998;animation:fh-float-up 1.5s ease-out forwards';
+                            document.body.appendChild(flash);
+                            setTimeout(()=>flash.remove(),1600);
+                        }
+
+                        if(window.fhArcadeHandleWin)window.fhArcadeHandleWin(d);
+                    } else {
+                        r.textContent='No match. -'+bet.toLocaleString()+' chips.';
+                        r.className='fhc-result lose';
+                        fhChipFloat(-bet,false);
+                    }
+                    spinning=false;spinBtn.disabled=false;
                 });
             }
 JS;
@@ -758,8 +867,8 @@ JS;
                 area.innerHTML = `
                     <div style="text-align:center;font-family:'Oswald',sans-serif;font-size:1.8em;color:#96885f;margin-bottom:16px;text-transform:uppercase;letter-spacing:2px;">Video Poker</div>
                     <div class="fhc-table" style="text-align:center;">
-                        <div id="fh-arc-pk-cards" class="fhc-card-row" style="min-height:110px;gap:10px;margin:20px 0;"></div>
-                        <div id="fh-arc-pk-name" style="color:#96885f;font-size:1.2em;font-weight:700;min-height:30px;"></div>
+                        <div id="fh-arc-pk-cards" class="fhc-card-row" style="min-height:140px;gap:10px;margin:20px 0;cursor:pointer;"></div>
+                        <div id="fh-arc-pk-name" style="color:#ffd700;font-family:'Oswald',sans-serif;font-size:1.3em;font-weight:700;min-height:30px;text-transform:uppercase;letter-spacing:1px;"></div>
                         <div id="fh-arc-pk-result" class="fhc-result"></div>
                         <div id="fh-arc-pk-bet" style="margin:16px 0;"><label style="color:#96885f;font-weight:600;">Bet:</label>
                             <div class="fhc-bet-controls" id="fh-arc-pk-bets">
@@ -767,21 +876,20 @@ JS;
                                 <button class="fhc-bet-btn" data-amt="100">100</button><button class="fhc-bet-btn" data-amt="250">250</button></div>
                             <button id="fh-arc-pk-deal" class="fh-arc-btn-gold" style="margin-top:12px;padding:12px 40px;">DEAL</button></div>
                         <div id="fh-arc-pk-hold" style="display:none;margin:16px 0;">
-                            <p style="color:#96885f;margin-bottom:12px;">Click cards to hold, then draw.</p>
+                            <p style="color:#96885f;margin-bottom:12px;">Tap cards to hold, then draw.</p>
                             <button id="fh-arc-pk-draw" class="fh-arc-btn-gold" style="padding:12px 40px;">DRAW</button></div>
                         <div id="fh-arc-pk-done" style="display:none;margin:16px 0;">
                             <button id="fh-arc-pk-again" class="fh-arc-btn-gold" style="padding:12px 40px;">NEW HAND</button></div>
-                        <div style="margin-top:24px;color:#888;font-size:.85em;">
-                            <div style="color:#96885f;font-weight:600;margin-bottom:8px;">Payouts (multiplier × bet):</div>
-                            <div>Royal Flush = 250× &nbsp; Straight Flush = 50× &nbsp; 4 of a Kind = 25×</div>
-                            <div>Full House = 9× &nbsp; Flush = 6× &nbsp; Straight = 4×</div>
-                            <div>3 of a Kind = 3× &nbsp; Two Pair = 2× &nbsp; Jacks or Better = 1×</div></div>
+                        <div style="margin-top:24px;color:#888;font-size:.8em;line-height:1.6;">
+                            <div style="color:#96885f;font-weight:600;margin-bottom:6px;">Payouts (multiplier x bet):</div>
+                            Royal Flush 250x | Str. Flush 50x | 4 Kind 25x | Full House 9x<br>
+                            Flush 6x | Straight 4x | 3 Kind 3x | Two Pair 2x | Jacks+ 1x</div>
                     </div>`;
 
                 function renderCards(){
                     const el=document.getElementById('fh-arc-pk-cards');
-                    el.innerHTML=hand.map((c,i)=>{const r=c.suit==='♥'||c.suit==='♦';return`<div class="fhc-pk-card ${r?'fhc-card-red':'fhc-card-black'} ${held[i]?'held':''}" data-idx="${i}"><span class="held-tag">HELD</span><span>${c.rank}</span><span>${c.suit}</span></div>`;}).join('');
-                    if(phase==='hold'){el.querySelectorAll('.fhc-pk-card').forEach(card=>{card.addEventListener('click',()=>{const idx=parseInt(card.dataset.idx);held[idx]=!held[idx];card.classList.toggle('held');card.querySelector('.held-tag').style.display=held[idx]?'block':'none';});});}
+                    el.innerHTML=hand.map((c,i)=>fhCard(c,false,held[i])).join('');
+                    if(phase==='hold'){el.querySelectorAll('.fh-card').forEach((card,idx)=>{card.style.cursor='pointer';card.addEventListener('click',()=>{held[idx]=!held[idx];card.classList.toggle('fh-card-held');});});}
                 }
                 function showPhase(p){phase=p;document.getElementById('fh-arc-pk-bet').style.display=p==='bet'?'':'none';document.getElementById('fh-arc-pk-hold').style.display=p==='hold'?'':'none';document.getElementById('fh-arc-pk-done').style.display=p==='done'?'':'none';}
                 document.querySelectorAll('#fh-arc-pk-bets .fhc-bet-btn').forEach(b=>{b.addEventListener('click',()=>{document.querySelectorAll('#fh-arc-pk-bets .fhc-bet-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');bet=parseInt(b.dataset.amt);});});
@@ -799,8 +907,8 @@ JS;
                     hand=res.data.hand;updateChips(res.data.chips);phase='done';renderCards();
                     document.getElementById('fh-arc-pk-name').textContent=res.data.hand_name;
                     const r=document.getElementById('fh-arc-pk-result');
-                    if(res.data.payout>0){r.textContent=`You win ${res.data.payout.toLocaleString()} chips! (${res.data.multiplier}×)`;r.className='fhc-result win';if(window.fhArcadeHandleWin)window.fhArcadeHandleWin(res.data);}
-                    else{r.textContent=`No winning hand. -${bet.toLocaleString()} chips.`;r.className='fhc-result lose';}
+                    if(res.data.payout>0){r.textContent=`You win ${res.data.payout.toLocaleString()} chips! (${res.data.multiplier}x)`;r.className='fhc-result win';fhChipFloat(res.data.payout,true);if(window.fhArcadeHandleWin)window.fhArcadeHandleWin(res.data);}
+                    else{r.textContent=`No winning hand. -${bet.toLocaleString()} chips.`;r.className='fhc-result lose';fhChipFloat(-bet,false);}
                     showPhase('done');
                 });
 
