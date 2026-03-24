@@ -251,6 +251,51 @@ class FisHotel_Arcade {
             .fh-arc-overlay{padding:10px}
             .fh-arc-shop-btn{padding:7px 14px;font-size:10px}
         }
+
+        /* ═══ Casino Game Styles ═══ */
+        .fhc-table{background:rgba(0,60,0,.4);border:8px solid #5c3a1e;border-radius:24px;padding:30px;box-shadow:inset 0 0 60px rgba(0,0,0,.4),0 8px 32px rgba(0,0,0,.5)}
+        .fhc-bet-controls{display:flex;align-items:center;justify-content:center;gap:12px;margin:16px 0;flex-wrap:wrap}
+        .fhc-bet-btn{background:rgba(255,255,255,.08);border:1px solid rgba(150,136,95,.4);color:#96885f;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;transition:all .2s}
+        .fhc-bet-btn:hover,.fhc-bet-btn.active{background:#96885f;color:#1a1a1a}
+        .fhc-result{text-align:center;font-size:1.3em;font-weight:700;padding:16px;margin:16px 0;border-radius:12px;min-height:52px}
+        .fhc-result.win{background:rgba(46,204,113,.15);color:#2ecc71;border:1px solid rgba(46,204,113,.3)}
+        .fhc-result.lose{background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.3)}
+        .fhc-result.push{background:rgba(241,196,15,.15);color:#f1c40f;border:1px solid rgba(241,196,15,.3)}
+        .fhc-card-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;min-height:130px;align-items:flex-end;padding:30px 0 10px}
+        /* ── Visual Playing Cards ── */
+        .fh-card{display:inline-block;width:80px;height:112px;background:#fff;border:2px solid #555;border-radius:8px;position:relative;margin:0 2px;box-shadow:0 3px 10px rgba(0,0,0,.4);font-family:Georgia,serif;font-weight:700;transition:transform .3s}
+        .fh-card.red{color:#DC143C}.fh-card.black{color:#1a1a1a}
+        .fh-card .fh-card-tl{position:absolute;top:5px;left:7px;font-size:16px;line-height:1;text-align:center}
+        .fh-card .fh-card-tl .fh-card-suit-sm{font-size:14px;display:block}
+        .fh-card .fh-card-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:36px}
+        .fh-card .fh-card-br{position:absolute;bottom:5px;right:7px;font-size:16px;line-height:1;transform:rotate(180deg);text-align:center}
+        .fh-card .fh-card-br .fh-card-suit-sm{font-size:14px;display:block}
+        .fh-card.fh-card-back{background:linear-gradient(135deg,#1a3a5c 0%,#96885f 100%);border-color:#96885f}
+        .fh-card.fh-card-back::after{content:'\1F420';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:40px}
+        .fh-card.fh-card-held{transform:translateY(-18px)}
+        .fh-card.fh-card-held::before{content:'HELD';position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:#FF7F00;color:#fff;padding:2px 10px;border-radius:4px;font-size:11px;font-family:Oswald,sans-serif;white-space:nowrap;z-index:2}
+        @media(max-width:480px){.fh-card{width:58px;height:82px}.fh-card .fh-card-tl,.fh-card .fh-card-br{font-size:12px}.fh-card .fh-card-tl .fh-card-suit-sm,.fh-card .fh-card-br .fh-card-suit-sm{font-size:11px}.fh-card .fh-card-center{font-size:24px}}
+        /* ── Slot Machine ── */
+        .fh-slot-machine{max-width:500px;margin:0 auto;background:linear-gradient(180deg,#2a1810 0%,#1a0f08 100%);border:4px solid #96885f;border-radius:20px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+        .fh-slot-title{font-family:'Special Elite',monospace;font-size:clamp(20px,5vw,28px);color:#ffd700;text-align:center;text-shadow:0 0 10px rgba(255,215,0,.6);margin-bottom:6px}
+        .fh-slot-reels{display:flex;justify-content:center;gap:8px;background:#0a0a0a;padding:16px;border-radius:10px;box-shadow:inset 0 4px 10px rgba(0,0,0,.8);margin:16px 0}
+        .fh-reel-window{width:110px;height:110px;overflow:hidden;background:#111;border:3px solid #444;border-radius:12px;position:relative}
+        .fh-reel-window::before,.fh-reel-window::after{content:'';position:absolute;left:0;right:0;height:20px;z-index:2;pointer-events:none}
+        .fh-reel-window::before{top:0;background:linear-gradient(180deg,#111 0%,transparent 100%)}
+        .fh-reel-window::after{bottom:0;background:linear-gradient(0deg,#111 0%,transparent 100%)}
+        .fh-reel-strip{transition:transform .1s linear}
+        .fh-reel-sym{width:110px;height:110px;display:flex;align-items:center;justify-content:center;font-size:56px}
+        .fh-reel-window.winning{box-shadow:0 0 20px #ffd700,inset 0 0 20px rgba(255,215,0,.2);border-color:#ffd700;animation:fh-win-pulse .4s ease-in-out 3}
+        @keyframes fh-win-pulse{0%,100%{border-color:#ffd700}50%{border-color:#fff}}
+        .fh-slot-spin-btn{font-family:'Oswald',sans-serif;font-size:1.4em;font-weight:700;background:linear-gradient(180deg,#FF7F00 0%,#CC6600 100%);color:#fff;border:none;border-radius:10px;padding:14px 50px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.3);transition:all .2s;display:block;margin:0 auto}
+        .fh-slot-spin-btn:hover{transform:translateY(-2px);box-shadow:0 6px 15px rgba(0,0,0,.4)}
+        .fh-slot-spin-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .fh-slot-paytable{color:#888;font-size:.8em;margin-top:16px;text-align:center;line-height:1.6}
+        .fh-slot-paytable strong{color:#96885f}
+        /* ── Chip float ── */
+        .fh-chip-float{position:fixed;pointer-events:none;font-weight:700;font-size:1.3em;z-index:99999;animation:fh-float-up 1.5s ease-out forwards}
+        .fh-chip-float.win{color:#2ecc71}.fh-chip-float.lose{color:#e74c3c}
+        @keyframes fh-float-up{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
         </style>
 
         <script>
@@ -387,6 +432,30 @@ class FisHotel_Arcade {
             /* ═══════════════════════════════════════════════
              *  INLINE GAME RENDERERS (bridge to casino AJAX)
              * ═══════════════════════════════════════════════ */
+
+            /* ── Shared card renderer (available to all games) ── */
+            function fhCard(c, faceDown, isHeld) {
+                if (faceDown) return '<div class="fh-card fh-card-back"></div>';
+                const isRed = c.suit === '♥' || c.suit === '♦';
+                const color = isRed ? 'red' : 'black';
+                const held = isHeld ? ' fh-card-held' : '';
+                return '<div class="fh-card ' + color + held + '">' +
+                    '<div class="fh-card-tl">' + c.rank + '<span class="fh-card-suit-sm">' + c.suit + '</span></div>' +
+                    '<div class="fh-card-center">' + c.suit + '</div>' +
+                    '<div class="fh-card-br">' + c.rank + '<span class="fh-card-suit-sm">' + c.suit + '</span></div>' +
+                '</div>';
+            }
+
+            /* ── Floating chip animation ── */
+            function fhChipFloat(amount, win) {
+                const el = document.createElement('div');
+                el.className = 'fh-chip-float ' + (win ? 'win' : 'lose');
+                el.textContent = (win ? '+' : '') + Number(Math.abs(amount)).toLocaleString();
+                el.style.left = '50%';
+                el.style.top = '40%';
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 1600);
+            }
 
             <?php echo $this->render_game_js_roulette(); ?>
             <?php echo $this->render_game_js_blackjack(); ?>
@@ -557,79 +626,7 @@ class FisHotel_Arcade {
                         <button id="fh-arc-roul-spin" class="fh-arc-btn-gold" style="font-size:1.2em;padding:14px 48px;margin:16px 0;">SPIN</button>
                     </div>`;
 
-                /* Inject shared casino game styles */
-                if (!document.getElementById('fhc-shared-styles')) {
-                    const ss = document.createElement('style');
-                    ss.id = 'fhc-shared-styles';
-                    ss.textContent = `.fhc-table{background:rgba(0,60,0,.4);border:8px solid #5c3a1e;border-radius:24px;padding:30px;box-shadow:inset 0 0 60px rgba(0,0,0,.4),0 8px 32px rgba(0,0,0,.5)}
-                    .fhc-bet-controls{display:flex;align-items:center;justify-content:center;gap:12px;margin:16px 0;flex-wrap:wrap}
-                    .fhc-bet-btn{background:rgba(255,255,255,.08);border:1px solid rgba(150,136,95,.4);color:#96885f;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;transition:all .2s}
-                    .fhc-bet-btn:hover,.fhc-bet-btn.active{background:#96885f;color:#1a1a1a}
-                    .fhc-result{text-align:center;font-size:1.3em;font-weight:700;padding:16px;margin:16px 0;border-radius:12px;min-height:52px}
-                    .fhc-result.win{background:rgba(46,204,113,.15);color:#2ecc71;border:1px solid rgba(46,204,113,.3)}
-                    .fhc-result.lose{background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.3)}
-                    .fhc-result.push{background:rgba(241,196,15,.15);color:#f1c40f;border:1px solid rgba(241,196,15,.3)}
-                    .fhc-card-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;min-height:130px;align-items:flex-end;padding:30px 0 10px}
-                    /* ── Visual Playing Cards ── */
-                    .fh-card{display:inline-block;width:80px;height:112px;background:#fff;border:2px solid #555;border-radius:8px;position:relative;margin:0 2px;box-shadow:0 3px 10px rgba(0,0,0,.4);font-family:Georgia,serif;font-weight:700;transition:transform .3s}
-                    .fh-card.red{color:#DC143C}.fh-card.black{color:#1a1a1a}
-                    .fh-card .fh-card-tl{position:absolute;top:5px;left:7px;font-size:16px;line-height:1;text-align:center}
-                    .fh-card .fh-card-tl .fh-card-suit-sm{font-size:14px;display:block}
-                    .fh-card .fh-card-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:36px}
-                    .fh-card .fh-card-br{position:absolute;bottom:5px;right:7px;font-size:16px;line-height:1;transform:rotate(180deg);text-align:center}
-                    .fh-card .fh-card-br .fh-card-suit-sm{font-size:14px;display:block}
-                    .fh-card.fh-card-back{background:linear-gradient(135deg,#1a3a5c 0%,#96885f 100%);border-color:#96885f}
-                    .fh-card.fh-card-back::after{content:'\\1F420';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:40px}
-                    .fh-card.fh-card-held{transform:translateY(-18px)}
-                    .fh-card.fh-card-held::before{content:'HELD';position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:#FF7F00;color:#fff;padding:2px 10px;border-radius:4px;font-size:11px;font-family:Oswald,sans-serif;white-space:nowrap;z-index:2}
-                    @media(max-width:480px){.fh-card{width:58px;height:82px}.fh-card .fh-card-tl,.fh-card .fh-card-br{font-size:12px}.fh-card .fh-card-tl .fh-card-suit-sm,.fh-card .fh-card-br .fh-card-suit-sm{font-size:11px}.fh-card .fh-card-center{font-size:24px}}
-                    /* ── Slot Machine ── */
-                    .fh-slot-machine{max-width:500px;margin:0 auto;background:linear-gradient(180deg,#2a1810 0%,#1a0f08 100%);border:4px solid #96885f;border-radius:20px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
-                    .fh-slot-title{font-family:'Special Elite',monospace;font-size:clamp(20px,5vw,28px);color:#ffd700;text-align:center;text-shadow:0 0 10px rgba(255,215,0,.6);margin-bottom:6px}
-                    .fh-slot-reels{display:flex;justify-content:center;gap:8px;background:#0a0a0a;padding:16px;border-radius:10px;box-shadow:inset 0 4px 10px rgba(0,0,0,.8);margin:16px 0}
-                    .fh-reel-window{width:110px;height:110px;overflow:hidden;background:#111;border:3px solid #444;border-radius:12px;position:relative}
-                    .fh-reel-window::before,.fh-reel-window::after{content:'';position:absolute;left:0;right:0;height:20px;z-index:2;pointer-events:none}
-                    .fh-reel-window::before{top:0;background:linear-gradient(180deg,#111 0%,transparent 100%)}
-                    .fh-reel-window::after{bottom:0;background:linear-gradient(0deg,#111 0%,transparent 100%)}
-                    .fh-reel-strip{transition:transform .1s linear}
-                    .fh-reel-sym{width:110px;height:110px;display:flex;align-items:center;justify-content:center;font-size:56px}
-                    .fh-reel-window.winning{box-shadow:0 0 20px #ffd700,inset 0 0 20px rgba(255,215,0,.2);border-color:#ffd700;animation:fh-win-pulse .4s ease-in-out 3}
-                    @keyframes fh-win-pulse{0%,100%{border-color:#ffd700}50%{border-color:#fff}}
-                    .fh-slot-spin-btn{font-family:'Oswald',sans-serif;font-size:1.4em;font-weight:700;background:linear-gradient(180deg,#FF7F00 0%,#CC6600 100%);color:#fff;border:none;border-radius:10px;padding:14px 50px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.3);transition:all .2s;display:block;margin:0 auto}
-                    .fh-slot-spin-btn:hover{transform:translateY(-2px);box-shadow:0 6px 15px rgba(0,0,0,.4)}
-                    .fh-slot-spin-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-                    .fh-slot-paytable{color:#888;font-size:.8em;margin-top:16px;text-align:center;line-height:1.6}
-                    .fh-slot-paytable strong{color:#96885f}
-                    /* ── Chip float animation ── */
-                    .fh-chip-float{position:fixed;pointer-events:none;font-weight:700;font-size:1.3em;z-index:99999;animation:fh-float-up 1.5s ease-out forwards}
-                    .fh-chip-float.win{color:#2ecc71}.fh-chip-float.lose{color:#e74c3c}
-                    @keyframes fh-float-up{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}`;
-                    document.head.appendChild(ss);
-                }
-
-                /* ── Shared card renderer ── */
-                function fhCard(c, faceDown, isHeld) {
-                    if (faceDown) return '<div class="fh-card fh-card-back"></div>';
-                    const isRed = c.suit === '♥' || c.suit === '♦';
-                    const color = isRed ? 'red' : 'black';
-                    const held = isHeld ? ' fh-card-held' : '';
-                    return '<div class="fh-card ' + color + held + '">' +
-                        '<div class="fh-card-tl">' + c.rank + '<span class="fh-card-suit-sm">' + c.suit + '</span></div>' +
-                        '<div class="fh-card-center">' + c.suit + '</div>' +
-                        '<div class="fh-card-br">' + c.rank + '<span class="fh-card-suit-sm">' + c.suit + '</span></div>' +
-                    '</div>';
-                }
-
-                /* ── Floating chip animation ── */
-                function fhChipFloat(amount, win) {
-                    const el = document.createElement('div');
-                    el.className = 'fh-chip-float ' + (win ? 'win' : 'lose');
-                    el.textContent = (win ? '+' : '') + amount.toLocaleString();
-                    el.style.left = '50%';
-                    el.style.top = '40%';
-                    document.body.appendChild(el);
-                    setTimeout(() => el.remove(), 1600);
-                }
+                /* Styles and shared helpers are in main <style> block and arcade script */
 
                 const canvas = document.getElementById('fh-arc-roul-wheel');
                 const ctx = canvas.getContext('2d');
