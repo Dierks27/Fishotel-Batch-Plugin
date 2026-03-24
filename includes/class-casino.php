@@ -690,17 +690,27 @@ class FisHotel_Casino {
             wp_send_json_error( [ 'message' => 'Not enough chips.' ] );
         }
 
-        $symbols = [ '🐠', '🐟', '🐡', '🦈', '🐙', '🦀', '🐚', '🌊', '⭐' ];
-        $reels   = [
-            $symbols[ wp_rand( 0, count( $symbols ) - 1 ) ],
-            $symbols[ wp_rand( 0, count( $symbols ) - 1 ) ],
-            $symbols[ wp_rand( 0, count( $symbols ) - 1 ) ],
+        /* Weighted symbol pool — rarer symbols appear less often */
+        $pool = [
+            'seahorse', 'seahorse', 'seahorse', 'seahorse', 'seahorse', 'seahorse', 'seahorse', 'seahorse', // 8
+            'squid',    'squid',    'squid',    'squid',    'squid',    'squid',    'squid',                 // 7
+            'octopus',  'octopus',  'octopus',  'octopus',  'octopus',  'octopus',                          // 6
+            'dolphin',  'dolphin',  'dolphin',  'dolphin',  'dolphin',                                      // 5
+            'puffer',   'puffer',   'puffer',   'puffer',                                                   // 4
+            'shark',    'shark',    'shark',                                                                 // 3
+            'starfish', 'starfish',                                                                          // 2
+            'whale',                                                                                         // 1
+        ];
+        $reels = [
+            $pool[ wp_rand( 0, count( $pool ) - 1 ) ],
+            $pool[ wp_rand( 0, count( $pool ) - 1 ) ],
+            $pool[ wp_rand( 0, count( $pool ) - 1 ) ],
         ];
 
-        // Payout table
+        // Payout table (3-of-a-kind multipliers)
         $triple_payouts = [
-            '⭐' => 50, '🌊' => 20, '🐙' => 15, '🦀' => 12,
-            '🦈' => 10, '🐡' => 8, '🐚' => 8, '🐠' => 5, '🐟' => 5,
+            'whale' => 50, 'starfish' => 20, 'shark' => 15, 'puffer' => 10,
+            'dolphin' => 8, 'octopus' => 6, 'squid' => 5, 'seahorse' => 5,
         ];
 
         $multiplier = 0;

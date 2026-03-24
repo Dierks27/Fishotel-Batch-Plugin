@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v8.0 - Hotel-style room zoom + themed popup cards for casino building.
+ * Description:       v8.1 - Vintage slot machine with 8 marine symbols and spinning reels.
  * Version:           8.0.1
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '8.0.1' );
+define( 'FISHOTEL_VERSION', '8.1' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

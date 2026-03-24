@@ -296,6 +296,39 @@ class FisHotel_Arcade {
         .fh-chip-float{position:fixed;pointer-events:none;font-weight:700;font-size:1.3em;z-index:99999;animation:fh-float-up 1.5s ease-out forwards}
         .fh-chip-float.win{color:#2ecc71}.fh-chip-float.lose{color:#e74c3c}
         @keyframes fh-float-up{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+
+        /* ═══ SLOT MACHINE ═══ */
+        .fh-slots{position:relative;max-width:480px;margin:0 auto}
+        .fh-slots-cabinet{position:relative;z-index:0}
+        .fh-slots-cabinet img{width:100%;display:block;pointer-events:none}
+        .fh-slots-inner{position:absolute;top:0;left:0;right:0;bottom:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8% 10%}
+        .fh-slots-reels{display:flex;justify-content:center;gap:clamp(6px,2vw,14px);width:100%;margin-bottom:4%}
+        .fh-slots-reel-win{width:32%;aspect-ratio:1/1;background:rgba(255,255,255,.92);border:3px solid #2e2418;border-radius:10px;overflow:hidden;position:relative;box-shadow:inset 0 3px 8px rgba(0,0,0,.25),0 2px 6px rgba(0,0,0,.3)}
+        .fh-slots-reel-win::before,.fh-slots-reel-win::after{content:'';position:absolute;left:0;right:0;height:22%;z-index:2;pointer-events:none}
+        .fh-slots-reel-win::before{top:0;background:linear-gradient(180deg,rgba(255,255,255,.9),transparent)}
+        .fh-slots-reel-win::after{bottom:0;background:linear-gradient(0deg,rgba(255,255,255,.9),transparent)}
+        .fh-slots-reel-win.winning{border-color:#ffd700;box-shadow:inset 0 3px 8px rgba(0,0,0,.25),0 0 20px rgba(255,215,0,.6);animation:fh-slots-glow .4s ease-in-out 3}
+        @keyframes fh-slots-glow{0%,100%{border-color:#ffd700}50%{border-color:#fff}}
+        .fh-slots-strip{position:absolute;top:0;left:0;width:100%}
+        .fh-slots-sym{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;padding:12%}
+        .fh-slots-sym img{width:100%;height:100%;object-fit:contain}
+        .fh-slots-result{text-align:center;font-family:'Oswald',sans-serif;font-size:clamp(14px,3.5vw,22px);color:#96885f;font-weight:700;min-height:28px;margin-bottom:4%}
+        .fh-slots-result.win{color:#ffd700;animation:fh-slots-bounce .5s ease-out}
+        .fh-slots-result.lose{color:#888}
+        @keyframes fh-slots-bounce{0%{transform:scale(0)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+        .fh-slots-controls{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
+        .fh-slots-bets{display:flex;gap:6px;justify-content:center}
+        .fh-slots-bet{background:#2e2418;color:#f5f0e8;border:2px solid #96885f;padding:6px 16px;border-radius:6px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(12px,2vw,15px);transition:all .2s}
+        .fh-slots-bet:hover{background:#3e3428}
+        .fh-slots-bet.active{background:#96885f;color:#2e2418;border-color:#ffd700}
+        .fh-slots-spin{background:linear-gradient(180deg,#FF7F00,#CC6600);color:#fff;border:none;border-radius:10px;padding:12px 40px;font-family:'Oswald',sans-serif;font-size:clamp(16px,3vw,22px);font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);transition:all .2s;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+        .fh-slots-spin:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.4)}
+        .fh-slots-spin:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .fh-slots-paytable{width:100%;background:rgba(46,36,24,.85);border:2px solid #96885f;border-radius:8px;padding:10px;margin-top:4%}
+        .fh-slots-paytable-title{font-family:'Oswald',sans-serif;font-size:12px;color:#ffd700;text-align:center;letter-spacing:2px;margin-bottom:6px}
+        .fh-slots-paytable-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-family:'Courier New',monospace;font-size:11px;color:#f5f0e8}
+        @keyframes fh-slots-bigwin{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+        @media(max-width:480px){.fh-slots-reel-win{border-width:2px}.fh-slots-spin{padding:10px 28px}}
         </style>
 
         <script>
@@ -461,6 +494,7 @@ class FisHotel_Arcade {
                 switch(game) {
                     case 'daily_bonus': renderDailyBonus(body); break;
                     case 'coming_soon': renderComingSoon(body); break;
+                    case 'slots':       renderSlots(body); break;
                     default:
                         body.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;font-family:Special Elite,cursive;">Game being rebuilt — coming soon!</p>';
                         break;
@@ -495,6 +529,166 @@ class FisHotel_Arcade {
             function renderComingSoon(body) {
                 body.innerHTML = '<p style="color:#aaa;padding:20px 0;">Draft Results &amp; more coming soon…</p>' +
                     '<p style="font-family:Special Elite,cursive;color:#96885f;">Stay tuned!</p>';
+            }
+
+            /* ═══════════════════════════════════════════════
+             *  SLOTS GAME
+             * ═══════════════════════════════════════════════ */
+
+            function renderSlots(body) {
+                const cabinetUrl = '<?php echo esc_url( plugins_url( "assists/casino/slots/FisHotel-Slot-Cabnet-01.png", FISHOTEL_PLUGIN_FILE ) ); ?>';
+                const symBase    = '<?php echo esc_url( plugins_url( "assists/casino/slots/", FISHOTEL_PLUGIN_FILE ) ); ?>';
+                const SYMS = [
+                    { id:'whale',    file:'Whale.png',    pay:50 },
+                    { id:'starfish', file:'Starfish.png', pay:20 },
+                    { id:'shark',    file:'Shark.png',    pay:15 },
+                    { id:'puffer',   file:'Puffer.png',   pay:10 },
+                    { id:'dolphin',  file:'Dolphin.png',  pay:8  },
+                    { id:'octopus',  file:'Octopus.png',  pay:6  },
+                    { id:'squid',    file:'Squid.png',    pay:5  },
+                    { id:'seahorse', file:'Seahorse.png', pay:5  },
+                ];
+                const symMap = {}; SYMS.forEach(s => symMap[s.id] = s);
+                /* Weighted pool mirrors server */
+                const pool = [];
+                [8,7,6,5,4,3,2,1].forEach((w,i) => { for(let j=0;j<w;j++) pool.push(SYMS[SYMS.length-1-i]); });
+                /* Reverse so rarest is first in SYMS but pool has seahorse most */
+
+                let bet = 50, spinning = false;
+
+                body.innerHTML =
+                    '<div class="fh-slots">' +
+                        '<div class="fh-slots-cabinet"><img src="' + cabinetUrl + '" alt="Slot Machine"></div>' +
+                        '<div class="fh-slots-inner">' +
+                            '<div class="fh-slots-reels">' +
+                                '<div class="fh-slots-reel-win" id="fh-sw-0"><div class="fh-slots-strip" id="fh-sr-0"><div class="fh-slots-sym"><img src="' + symBase + 'Seahorse.png" alt=""></div></div></div>' +
+                                '<div class="fh-slots-reel-win" id="fh-sw-1"><div class="fh-slots-strip" id="fh-sr-1"><div class="fh-slots-sym"><img src="' + symBase + 'Dolphin.png" alt=""></div></div></div>' +
+                                '<div class="fh-slots-reel-win" id="fh-sw-2"><div class="fh-slots-strip" id="fh-sr-2"><div class="fh-slots-sym"><img src="' + symBase + 'Shark.png" alt=""></div></div></div>' +
+                            '</div>' +
+                            '<div class="fh-slots-result" id="fh-slots-res"></div>' +
+                            '<div class="fh-slots-controls">' +
+                                '<div class="fh-slots-bets">' +
+                                    '<span style="color:#96885f;font-family:Oswald,sans-serif;font-size:13px;margin-right:4px;">BET:</span>' +
+                                    '<button class="fh-slots-bet" data-bet="10">10</button>' +
+                                    '<button class="fh-slots-bet active" data-bet="50">50</button>' +
+                                    '<button class="fh-slots-bet" data-bet="100">100</button>' +
+                                    '<button class="fh-slots-bet" data-bet="250">250</button>' +
+                                '</div>' +
+                                '<button class="fh-slots-spin" id="fh-slots-spin">SPIN</button>' +
+                            '</div>' +
+                            '<div class="fh-slots-paytable">' +
+                                '<div class="fh-slots-paytable-title">PAYOUTS</div>' +
+                                '<div class="fh-slots-paytable-grid">' +
+                                    '<div>Whale x3 = 50x</div><div>Starfish x3 = 20x</div>' +
+                                    '<div>Shark x3 = 15x</div><div>Puffer x3 = 10x</div>' +
+                                    '<div>Dolphin x3 = 8x</div><div>Octopus x3 = 6x</div>' +
+                                    '<div>Any 3-match = 5x</div><div>Any 2-match = 2x</div>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+
+                /* Bet buttons */
+                body.querySelectorAll('.fh-slots-bet').forEach(b => {
+                    b.addEventListener('click', () => {
+                        if (spinning) return;
+                        body.querySelectorAll('.fh-slots-bet').forEach(x => x.classList.remove('active'));
+                        b.classList.add('active');
+                        bet = parseInt(b.dataset.bet);
+                    });
+                });
+
+                /* Build a reel strip of random symbols ending with the final one */
+                function buildStrip(finalId, count) {
+                    let html = '';
+                    for (let i = 0; i < count; i++) {
+                        const s = pool[Math.floor(Math.random() * pool.length)];
+                        html += '<div class="fh-slots-sym"><img src="' + symBase + s.file + '" alt=""></div>';
+                    }
+                    const f = symMap[finalId] || SYMS[7];
+                    html += '<div class="fh-slots-sym"><img src="' + symBase + f.file + '" alt=""></div>';
+                    return html;
+                }
+
+                /* Animate one reel */
+                function spinReel(idx, finalId, duration) {
+                    return new Promise(resolve => {
+                        const strip = document.getElementById('fh-sr-' + idx);
+                        const win   = document.getElementById('fh-sw-' + idx);
+                        const symH  = win.offsetHeight || 120;
+                        const count = 20 + idx * 8;
+                        strip.innerHTML = buildStrip(finalId, count);
+                        strip.style.transition = 'none';
+                        strip.style.transform = 'translateY(0)';
+                        strip.offsetHeight; /* reflow */
+                        const dist = count * symH;
+                        strip.style.transition = 'transform ' + duration + 'ms cubic-bezier(.2,.8,.3,1)';
+                        strip.style.transform = 'translateY(-' + dist + 'px)';
+                        setTimeout(resolve, duration + 50);
+                    });
+                }
+
+                /* Spin button */
+                document.getElementById('fh-slots-spin').addEventListener('click', async () => {
+                    if (spinning) return;
+                    if (bet > chips) {
+                        document.getElementById('fh-slots-res').textContent = 'Not enough chips!';
+                        document.getElementById('fh-slots-res').className = 'fh-slots-result lose';
+                        return;
+                    }
+                    spinning = true;
+                    document.getElementById('fh-slots-spin').disabled = true;
+                    document.getElementById('fh-slots-res').textContent = '';
+                    document.getElementById('fh-slots-res').className = 'fh-slots-result';
+                    [0,1,2].forEach(i => document.getElementById('fh-sw-' + i).classList.remove('winning'));
+
+                    /* Call server */
+                    const res = await casinoPost('fishotel_casino_slots_spin', { bet: bet });
+                    if (!res.success) {
+                        document.getElementById('fh-slots-res').textContent = res.data.message || 'Error';
+                        spinning = false;
+                        document.getElementById('fh-slots-spin').disabled = false;
+                        return;
+                    }
+                    const d = res.data;
+
+                    /* Stagger reel stops */
+                    await spinReel(0, d.reels[0], 1400);
+                    await spinReel(1, d.reels[1], 1900);
+                    await spinReel(2, d.reels[2], 2400);
+
+                    updateChips(d.chips);
+                    const r = document.getElementById('fh-slots-res');
+
+                    if (d.payout > 0) {
+                        /* Highlight winning reels */
+                        if (d.multiplier >= 5) {
+                            [0,1,2].forEach(i => document.getElementById('fh-sw-' + i).classList.add('winning'));
+                        } else {
+                            if (d.reels[0]===d.reels[1]) { document.getElementById('fh-sw-0').classList.add('winning'); document.getElementById('fh-sw-1').classList.add('winning'); }
+                            if (d.reels[1]===d.reels[2]) { document.getElementById('fh-sw-1').classList.add('winning'); document.getElementById('fh-sw-2').classList.add('winning'); }
+                            if (d.reels[0]===d.reels[2]) { document.getElementById('fh-sw-0').classList.add('winning'); document.getElementById('fh-sw-2').classList.add('winning'); }
+                        }
+                        r.textContent = d.multiplier + 'x WIN! +' + d.payout.toLocaleString() + ' chips';
+                        r.className = 'fh-slots-result win';
+                        fhChipFloat(d.payout, true);
+
+                        /* Big win flash */
+                        if (d.multiplier >= 15) {
+                            const flash = document.createElement('div');
+                            flash.style.cssText = 'position:fixed;inset:0;background:radial-gradient(circle,rgba(255,215,0,.5) 0%,transparent 70%);pointer-events:none;z-index:99998;animation:fh-slots-bigwin 1.2s ease-out forwards';
+                            document.body.appendChild(flash);
+                            setTimeout(() => flash.remove(), 1300);
+                        }
+                        if (window.fhArcadeHandleWin) window.fhArcadeHandleWin(d);
+                    } else {
+                        r.textContent = 'No match — try again!';
+                        r.className = 'fh-slots-result lose';
+                        fhChipFloat(-bet, false);
+                    }
+                    spinning = false;
+                    document.getElementById('fh-slots-spin').disabled = false;
+                });
             }
 
             /* ─── Shared helpers (for future game rebuilds) ─── */
@@ -1271,8 +1465,8 @@ class FisHotel_Arcade {
                         </div>
                         <div class="fh-jp-panel" data-type="specific_symbol" style="display:none;">
                             Symbol: <select name="jp_slots_param_symbol">
-                                <?php foreach ( ['⭐','🌊','🐙','🦀','🦈','🐡','🐚','🐠','🐟'] as $sym ) : ?>
-                                    <option value="<?php echo $sym; ?>" <?php selected( $p['symbol'] ?? '', $sym ); ?>><?php echo $sym; ?></option>
+                                <?php foreach ( [ 'whale' => 'Whale (50x)', 'starfish' => 'Starfish (20x)', 'shark' => 'Shark (15x)', 'puffer' => 'Puffer (10x)', 'dolphin' => 'Dolphin (8x)', 'octopus' => 'Octopus (6x)', 'squid' => 'Squid (5x)', 'seahorse' => 'Seahorse (5x)' ] as $sk => $sl ) : ?>
+                                    <option value="<?php echo $sk; ?>" <?php selected( $p['symbol'] ?? '', $sk ); ?>><?php echo esc_html( $sl ); ?></option>
                                 <?php endforeach; ?>
                             </select>
                             × <input type="number" name="jp_slots_param_count" value="<?php echo esc_attr( $p['count'] ?? 3 ); ?>" min="2" max="3" style="width:50px;">
