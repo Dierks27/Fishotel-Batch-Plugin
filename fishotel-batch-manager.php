@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v6.85 - Roulette fixes: pool filter, persist wheel, ball drop, bigger text.
- * Version:           6.85
+ * Description:       v7.0 - Casino buildout: Roulette, Blackjack, Slots, Poker, wallet, leaderboard.
+ * Version:           7.0
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '6.85' );
+define( 'FISHOTEL_VERSION', '7.0' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -23,6 +23,7 @@ require_once FISHOTEL_PLUGIN_DIR . 'includes/class-admin.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-northstar.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-hotel-program.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-updater.php';
+require_once FISHOTEL_PLUGIN_DIR . 'includes/class-casino.php';
 
 // Stage-aware title helpers — shared by all title/heading filters
 function fishotel_stage_label_map() {
@@ -32,6 +33,7 @@ function fishotel_stage_label_map() {
         'arrived'         => 'Arrived — Counting',
         'in_quarantine'   => 'In Quarantine',
         'graduation'      => 'Graduation Day',
+        'casino'          => 'Casino Night',
         'verification'    => 'Accept or Pass',
         'draft'           => 'Draft Pool',
         'invoicing'       => 'Invoicing',
@@ -1051,6 +1053,7 @@ body{background:#0a0908;color:#fff;font-family:'Oswald',sans-serif;overflow-x:hi
 
 $fishotel_instance = new FisHotel_Batch_Manager();
 new FisHotel_GitHub_Updater( __FILE__ );
+new FisHotel_Casino();
 
 register_activation_hook( __FILE__, function() {
     if ( ! wp_next_scheduled( 'fishotel_verification_cron' ) ) {
