@@ -298,19 +298,21 @@ class FisHotel_Arcade {
         @keyframes fh-float-up{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
 
         /* ═══ SLOT MACHINE ═══ */
+        /* Container locks to cabinet's natural 784×1168 aspect ratio */
         .fh-slots{position:relative;max-width:440px;margin:0 auto}
-        /* Cabinet sits on top as the visual frame */
-        .fh-slots-frame{position:relative}
-        .fh-slots-frame img{width:100%;display:block}
-        /* Reel tray sits behind the cabinet using absolute positioning */
-        .fh-slots-tray{position:absolute;z-index:-1;display:flex;justify-content:center;gap:3.5%;
-            /* ── Tweak these 4 values to align with cabinet window cutouts ── */
-            top:28%;left:12%;right:12%;height:30%}
-        .fh-slots-rw{flex:1;overflow:hidden;position:relative;background:#f5f0e8;border-radius:4px}
+        .fh-slots-machine{position:relative;width:100%;aspect-ratio:784/1168}
+        /* Cabinet is foreground (z:2) — fish reels show through transparent windows */
+        .fh-slots-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
+        /* Each reel is positioned with calc() from natural pixel coords (784×1168) */
+        .fh-slots-rw{position:absolute;overflow:hidden;z-index:1;background:#f5f0e8;border-radius:2px}
+        .fh-slots-rw:nth-child(1){left:calc(195/784*100%);top:calc(658/1168*100%);width:calc(102/784*100%);height:calc(174/1168*100%)}
+        .fh-slots-rw:nth-child(2){left:calc(338/784*100%);top:calc(656/1168*100%);width:calc(102/784*100%);height:calc(174/1168*100%)}
+        .fh-slots-rw:nth-child(3){left:calc(482/784*100%);top:calc(658/1168*100%);width:calc(102/784*100%);height:calc(174/1168*100%)}
         .fh-slots-rw.winning{box-shadow:0 0 18px rgba(255,215,0,.7);animation:fh-slots-glow .4s ease-in-out 3}
         @keyframes fh-slots-glow{0%,100%{box-shadow:0 0 18px rgba(255,215,0,.7)}50%{box-shadow:0 0 30px rgba(255,215,0,1)}}
         .fh-slots-strip{position:absolute;top:0;left:0;width:100%;will-change:transform}
-        .fh-slots-sym{display:flex;align-items:center;justify-content:center;padding:14%}
+        /* Each symbol is exactly window height so one fish fills one window */
+        .fh-slots-sym{display:flex;align-items:center;justify-content:center;padding:10%;box-sizing:border-box}
         .fh-slots-sym img{width:100%;height:100%;object-fit:contain}
         /* Result */
         .fh-slots-result{text-align:center;font-family:'Oswald',sans-serif;font-size:clamp(14px,3.5vw,20px);color:#96885f;font-weight:700;min-height:26px;margin:10px 0}
@@ -571,14 +573,12 @@ class FisHotel_Arcade {
                 /* ── Build HTML ── */
                 body.innerHTML =
                     '<div class="fh-slots">' +
-                        /* Cabinet frame with reels behind it */
-                        '<div class="fh-slots-frame">' +
+                        /* Cabinet image + 3 reel windows inside aspect-ratio container */
+                        '<div class="fh-slots-machine">' +
                             '<img src="' + cabinetUrl + '" alt="Slot Machine">' +
-                            '<div class="fh-slots-tray">' +
-                                '<div class="fh-slots-rw" id="fh-sw-0"><div class="fh-slots-strip" id="fh-sr-0"><div class="fh-slots-sym"><img src="'+symBase+'Seahorse.png"></div></div></div>' +
-                                '<div class="fh-slots-rw" id="fh-sw-1"><div class="fh-slots-strip" id="fh-sr-1"><div class="fh-slots-sym"><img src="'+symBase+'Dolphin.png"></div></div></div>' +
-                                '<div class="fh-slots-rw" id="fh-sw-2"><div class="fh-slots-strip" id="fh-sr-2"><div class="fh-slots-sym"><img src="'+symBase+'Shark.png"></div></div></div>' +
-                            '</div>' +
+                            '<div class="fh-slots-rw" id="fh-sw-0"><div class="fh-slots-strip" id="fh-sr-0"><div class="fh-slots-sym"><img src="'+symBase+'Seahorse.png"></div></div></div>' +
+                            '<div class="fh-slots-rw" id="fh-sw-1"><div class="fh-slots-strip" id="fh-sr-1"><div class="fh-slots-sym"><img src="'+symBase+'Dolphin.png"></div></div></div>' +
+                            '<div class="fh-slots-rw" id="fh-sw-2"><div class="fh-slots-strip" id="fh-sr-2"><div class="fh-slots-sym"><img src="'+symBase+'Shark.png"></div></div></div>' +
                         '</div>' +
                         '<div class="fh-slots-result" id="fh-slots-res"></div>' +
                         '<div class="fh-slots-controls">' +
@@ -650,8 +650,8 @@ class FisHotel_Arcade {
                         const symH  = win.offsetHeight;
                         const count = 22 + idx * 6;
                         strip.innerHTML = buildStrip(finalId, count);
-                        /* Each .fh-slots-sym has the same height as the window (aspect-ratio 1:1 via flex) */
-                        /* We scroll exactly count * symH so the last (winning) symbol is visible */
+                        /* Force each symbol to exact window height */
+                        strip.querySelectorAll('.fh-slots-sym').forEach(s => { s.style.height = symH + 'px'; });
                         strip.style.transition = 'none';
                         strip.style.transform = 'translateY(0)';
                         strip.offsetHeight;
