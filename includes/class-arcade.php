@@ -111,8 +111,7 @@ class FisHotel_Arcade {
                 <?php endforeach; ?>
             </div>
 
-            <!-- Prize Shop Button (floating over building) -->
-            <button id="fh-arc-shop-btn" class="fh-arc-shop-btn">PRIZE SHOP</button>
+            <!-- Prize Shop moved to a casino room (future) -->
 
             <!-- Sticker Unlock Modal -->
             <div id="fh-arc-sticker-modal" style="display:none;">
@@ -137,24 +136,7 @@ class FisHotel_Arcade {
                 </div>
             </div>
 
-            <!-- Prize Shop Modal -->
-            <div id="fh-arc-shop-modal" class="fh-arc-overlay" style="display:none;">
-                <div class="fh-arc-overlay-header">
-                    <button id="fh-arc-shop-back" class="fh-arc-btn-back">&larr; Back to Arcade</button>
-                    <div class="fh-arc-chips fh-arc-chips-mini">
-                        <img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" class="fh-arc-chip-icon">
-                        <span class="fh-arc-chip-mirror"><?php echo number_format( $chips ); ?></span>
-                    </div>
-                </div>
-                <div style="max-width:900px;margin:0 auto;">
-                    <div style="text-align:center;margin-bottom:24px;">
-                        <h2 style="font-family:'Oswald',sans-serif;color:#96885f;font-size:2em;text-transform:uppercase;letter-spacing:3px;margin:0;">FISHOTEL PRIZE SHOP</h2>
-                        <p style="color:#aaa;font-family:'Special Elite',cursive;">Spend your chips on real sticker prizes — included with your fish shipment!</p>
-                    </div>
-                    <div id="fh-arc-shop-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;padding:0 16px;"></div>
-                    <div id="fh-arc-shop-empty" style="display:none;text-align:center;color:#888;padding:40px;">No prizes available right now. Check back soon!</div>
-                </div>
-            </div>
+            <!-- Prize Shop will be accessible via a casino room in a future update -->
         </div>
 
         <style>
@@ -210,21 +192,9 @@ class FisHotel_Arcade {
         .fh-arc-coming-soon h2{font-family:'Oswald',sans-serif;color:#96885f;font-size:2em;text-transform:uppercase;letter-spacing:2px}
         .fh-arc-coming-soon p{color:#aaa;font-size:1.1em;margin-top:12px}
 
-        /* ─── Prize Shop Button ─── */
-        .fh-arc-shop-btn{position:absolute;top:12px;right:12px;z-index:10;background:linear-gradient(135deg,#96885f,#c8a84b);color:#1a1a1a;font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(11px,1.2vw,15px);text-transform:uppercase;letter-spacing:2px;padding:10px 20px;border:none;border-radius:10px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.5);transition:all .2s}
-        .fh-arc-shop-btn:hover{filter:brightness(1.15);transform:translateY(-2px);box-shadow:0 6px 24px rgba(150,136,95,.4)}
+        /* (Prize Shop button removed in v8.9.2 — will be a casino room) */
 
         /* ─── Shop Card ─── */
-        .fh-arc-shop-card{background:#1a1a1a;border:2px solid rgba(150,136,95,.3);border-radius:16px;padding:20px;text-align:center;transition:all .3s}
-        .fh-arc-shop-card:hover{border-color:#96885f;transform:translateY(-3px)}
-        .fh-arc-shop-card img{width:80px;height:80px;object-fit:contain;border-radius:8px;margin-bottom:10px}
-        .fh-arc-shop-card-name{font-family:'Oswald',sans-serif;color:#f5f0e8;font-size:.95em;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
-        .fh-arc-shop-card-price{color:#96885f;font-weight:700;font-size:1.1em;margin-bottom:4px}
-        .fh-arc-shop-card-stock{color:#888;font-size:.8em;margin-bottom:12px}
-        .fh-arc-shop-buy{background:linear-gradient(135deg,#96885f,#c8a84b);color:#1a1a1a;font-weight:700;padding:8px 24px;border:none;border-radius:8px;cursor:pointer;font-size:.9em;transition:all .2s}
-        .fh-arc-shop-buy:hover{filter:brightness(1.15)}
-        .fh-arc-shop-buy:disabled{opacity:.4;cursor:not-allowed}
-        .fh-arc-shop-soldout{color:#e74c3c;font-weight:600;font-size:.85em}
 
         /* ─── Room Zoom + Popup (hotel-style) ─── */
         .fh-arc-zoom-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:transparent;z-index:99;opacity:0;transition:opacity .3s ease,background .3s ease;cursor:pointer}
@@ -245,7 +215,6 @@ class FisHotel_Arcade {
             .fh-arc-logo{height:32px}
             .fh-arc-room-label{font-size:9px}
             .fh-arc-overlay{padding:10px}
-            .fh-arc-shop-btn{padding:7px 14px;font-size:10px}
         }
 
         /* ═══ Casino Game Styles ═══ */
@@ -824,67 +793,7 @@ class FisHotel_Arcade {
             window.fhArcadeCheckStickers = checkStickers;
             window.fhArcadeHandleWin = handleWin;
 
-            /* ─── Prize Shop ─── */
-            const shopModal = document.getElementById('fh-arc-shop-modal');
-            const shopGrid  = document.getElementById('fh-arc-shop-grid');
-            const shopEmpty = document.getElementById('fh-arc-shop-empty');
-
-            document.getElementById('fh-arc-shop-btn').addEventListener('click', () => {
-                shopModal.style.display = '';
-                document.body.style.overflow = 'hidden';
-                loadShop();
-            });
-            document.getElementById('fh-arc-shop-back').addEventListener('click', () => {
-                shopModal.style.display = 'none';
-                document.body.style.overflow = '';
-            });
-
-            async function loadShop() {
-                shopGrid.innerHTML = '<p style="text-align:center;color:#888;padding:40px;grid-column:1/-1;">Loading...</p>';
-                shopEmpty.style.display = 'none';
-                const res = await postAjax('fishotel_arcade_shop_items');
-                if (!res.success) return;
-                const items = res.data.items;
-                if (!items || items.length === 0) {
-                    shopGrid.innerHTML = '';
-                    shopEmpty.style.display = '';
-                    return;
-                }
-                shopGrid.innerHTML = items.map(item => {
-                    const inStock = item.stock === -1 || item.stock > 0;
-                    const canBuy = inStock && chips >= item.price;
-                    const stockText = item.stock === -1 ? '' : (item.stock > 0 ? item.stock + ' left' : 'SOLD OUT');
-                    return `<div class="fh-arc-shop-card" data-id="${item.id}">
-                        ${item.image ? '<img src="'+item.image+'" alt="'+item.name+'">' : '<div style="font-size:3em;margin-bottom:10px;">&#127942;</div>'}
-                        <div class="fh-arc-shop-card-name">${item.name}</div>
-                        <div class="fh-arc-shop-card-price">${item.price.toLocaleString()} chips</div>
-                        ${stockText ? '<div class="fh-arc-shop-card-stock'+(item.stock===0?' fh-arc-shop-soldout':'')+'">'+stockText+'</div>' : ''}
-                        ${inStock ? '<button class="fh-arc-shop-buy" data-id="'+item.id+'" data-price="'+item.price+'" '+(canBuy?'':'disabled')+'>BUY</button>' : '<div class="fh-arc-shop-soldout">SOLD OUT</div>'}
-                    </div>`;
-                }).join('');
-
-                shopGrid.querySelectorAll('.fh-arc-shop-buy').forEach(btn => {
-                    btn.addEventListener('click', async function() {
-                        if (this.disabled) return;
-                        this.disabled = true;
-                        this.textContent = 'Buying...';
-                        const res = await postAjax('fishotel_arcade_shop_purchase', {sticker_id: this.dataset.id});
-                        if (res.success) {
-                            updateChips(res.data.chips);
-                            this.textContent = 'PURCHASED!';
-                            this.style.background = '#27ae60';
-                            this.style.color = '#fff';
-                            /* Show success briefly then reload shop */
-                            setTimeout(() => loadShop(), 1500);
-                        } else {
-                            this.textContent = res.data.message || 'Error';
-                            this.style.background = '#e74c3c';
-                            this.style.color = '#fff';
-                            setTimeout(() => { this.textContent = 'BUY'; this.style.background = ''; this.style.color = ''; this.disabled = false; }, 2000);
-                        }
-                    });
-                });
-            }
+            /* Prize Shop removed from top bar — will be accessible via a casino room */
 
         })();
         </script>

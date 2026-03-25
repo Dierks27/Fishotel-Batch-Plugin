@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v8.9.1 - Remove popup title, condense slot controls to reduce scrolling.
- * Version:           8.9.1
+ * Description:       v8.9.2 - Remove Prize Shop button from top bar (will become a casino room).
+ * Version:           8.9.2
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '8.9.1' );
+define( 'FISHOTEL_VERSION', '8.9.2' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
