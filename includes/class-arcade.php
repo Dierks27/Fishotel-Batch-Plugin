@@ -345,6 +345,17 @@ class FisHotel_Arcade {
         .fh-slots-pay-mult{font-family:'Oswald',sans-serif;font-size:clamp(18px,4vw,26px);font-weight:700;color:#ffd700;text-shadow:0 0 8px rgba(255,215,0,.4)}
         .fh-slots-pay-label{font-family:'Oswald',sans-serif;font-size:14px;color:#f5f0e8}
         @media(max-width:480px){.fh-slots-spin{padding:10px 28px}.fh-slots-pay-syms img{width:28px;height:28px}}
+        /* ═══ ROOM ZOOM (game selection) ═══ */
+        .fh-room-zoom{text-align:center;padding:20px 0}
+        .fh-room-zoom-sub{color:#96885f;font-family:'Oswald',sans-serif;font-size:14px;margin:0 0 20px}
+        .fh-room-zoom-items{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+        .fh-room-zoom-item{cursor:pointer;background:rgba(0,0,0,.3);border:2px solid rgba(150,136,95,.3);border-radius:10px;padding:16px;width:140px;text-align:center;transition:all .2s;font-family:'Oswald',sans-serif;color:#f5f0e8;font-size:14px}
+        .fh-room-zoom-item:hover{border-color:#96885f;transform:scale(1.05);background:rgba(0,0,0,.5)}
+        .fh-room-zoom-item img{width:100%;height:auto;margin-bottom:8px;border-radius:6px}
+        .fh-room-zoom-icon{font-size:48px;display:block;margin-bottom:8px}
+        .fh-room-zoom-soon{opacity:.4;cursor:default}
+        .fh-room-zoom-soon:hover{transform:none;border-color:rgba(150,136,95,.3)}
+        .fh-room-zoom-badge{display:block;font-size:10px;color:#96885f;margin-top:4px;text-transform:uppercase;letter-spacing:1px}
         </style>
 
         <script>
@@ -551,7 +562,34 @@ class FisHotel_Arcade {
              *  SLOTS GAME
              * ═══════════════════════════════════════════════ */
 
+            /* ─── Room Zoom: game selection view ─── */
             function renderSlots(body) {
+                const cabinetUrl = '<?php echo esc_url( plugins_url( "assists/casino/slots/FisHotel-Slot-Cabnet-01.png", FISHOTEL_PLUGIN_FILE ) ); ?>';
+                body.innerHTML =
+                    '<div class="fh-room-zoom">' +
+                        '<p class="fh-room-zoom-sub">Choose your game</p>' +
+                        '<div class="fh-room-zoom-items">' +
+                            '<div class="fh-room-zoom-item" data-game="fish-slots">' +
+                                '<img src="' + cabinetUrl + '" alt="Fish Slots">' +
+                                '<span>Fish Slots</span>' +
+                            '</div>' +
+                            '<div class="fh-room-zoom-item fh-room-zoom-soon" data-game="draft-replay">' +
+                                '<span class="fh-room-zoom-icon">\ud83d\udcfa</span>' +
+                                '<span>Draft Replay</span>' +
+                                '<span class="fh-room-zoom-badge">Coming Soon</span>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                body.querySelectorAll('.fh-room-zoom-item:not(.fh-room-zoom-soon)').forEach(function(item) {
+                    item.addEventListener('click', function() {
+                        if (this.dataset.game === 'fish-slots') {
+                            renderSlotMachine(body);
+                        }
+                    });
+                });
+            }
+
+            function renderSlotMachine(body) {
                 const cabinetUrl = '<?php echo esc_url( plugins_url( "assists/casino/slots/FisHotel-Slot-Cabnet-01.png", FISHOTEL_PLUGIN_FILE ) ); ?>';
                 const symBase    = '<?php echo esc_url( plugins_url( "assists/casino/slots/", FISHOTEL_PLUGIN_FILE ) ); ?>';
                 const SYMS = [
@@ -611,6 +649,12 @@ class FisHotel_Arcade {
                             '<div class="fh-slots-pay-row"><div class="fh-slots-pay-label">Any 2-Match</div><div class="fh-slots-pay-mult" style="font-size:20px;">2x</div></div>' +
                         '</div>' +
                     '</div>';
+
+                /* ── Center initial symbols in reel windows ── */
+                document.querySelectorAll('.fh-slots-rw').forEach(function(win) {
+                    var symH = win.offsetHeight;
+                    win.querySelector('.fh-slots-sym').style.height = symH + 'px';
+                });
 
                 /* ── Bet buttons ── */
                 body.querySelectorAll('.fh-slots-bet').forEach(b => {
