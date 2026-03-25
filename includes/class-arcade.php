@@ -285,23 +285,23 @@ class FisHotel_Arcade {
         .fh-slots-result.lose{color:#cc4444;text-shadow:none}
         @keyframes fh-marquee-flash{0%,100%{opacity:1}50%{opacity:.2}}
         /* ═══ GREEN — Payout Table (transparent overlay) ═══ */
-        .fh-slots-payouts-btn{position:absolute;z-index:3;left:calc(315/784*100%);top:calc(815/1168*100%);width:calc(145/784*100%);height:calc(60/1168*100%);background:transparent;border:none;color:transparent;cursor:pointer;border-radius:3px;font-size:0;transition:all .2s}
+        .fh-slots-payouts-btn{position:absolute;z-index:3;left:calc(319/784*100%);top:calc(807/1168*100%);width:calc(145/784*100%);height:calc(60/1168*100%);background:transparent;border:none;color:transparent;cursor:pointer;border-radius:3px;font-size:0;transition:all .2s}
         .fh-slots-payouts-btn:hover{background:rgba(255,215,0,.08);box-shadow:inset 0 0 12px rgba(255,215,0,.15)}
         /* ═══ RED — Chip Balance (dark background) ═══ */
-        .fh-slots-chips{position:absolute;z-index:3;left:calc(475/784*100%);top:calc(815/1168*100%);width:calc(145/784*100%);height:calc(60/1168*100%);background:rgba(0,0,0,.75);border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.6vw,12px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px}
+        .fh-slots-chips{position:absolute;z-index:3;left:calc(481/784*100%);top:calc(807/1168*100%);width:calc(145/784*100%);height:calc(60/1168*100%);background:rgba(0,0,0,.75);border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.6vw,12px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px}
         /* ═══ PINK — SPIN Button ═══ */
-        .fh-slots-spin{position:absolute;z-index:3;left:calc(300/784*100%);top:calc(885/1168*100%);width:calc(175/784*100%);height:calc(45/1168*100%);background:linear-gradient(180deg,rgba(255,127,0,.6),rgba(204,102,0,.6));color:#fff;border:1px solid rgba(255,127,0,.4);border-radius:4px;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(10px,2vw,14px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
+        .fh-slots-spin{position:absolute;z-index:3;left:calc(306/784*100%);top:calc(879/1168*100%);width:calc(175/784*100%);height:calc(45/1168*100%);background:linear-gradient(180deg,rgba(255,127,0,.6),rgba(204,102,0,.6));color:#fff;border:1px solid rgba(255,127,0,.4);border-radius:4px;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(10px,2vw,14px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
         .fh-slots-spin:hover{background:linear-gradient(180deg,rgba(255,127,0,.8),rgba(204,102,0,.8));border-color:rgba(255,127,0,.7);box-shadow:0 0 10px rgba(255,127,0,.3)}
         .fh-slots-spin:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
         /* ═══ YELLOW — Bet Buttons (solid, glow on selected) ═══ */
-        .fh-slots-bet{position:absolute;z-index:3;background:rgba(0,0,0,.6);color:#f5f0e8;border:1px solid rgba(150,136,95,.4);padding:0;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.8vw,12px);font-weight:600;transition:all .2s;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+        .fh-slots-bet{position:absolute;z-index:3;background:rgba(0,0,0,.6);color:#f5f0e8;border:1px solid rgba(150,136,95,.4);padding:0;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.5vw,11px);font-weight:600;transition:all .2s;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
         .fh-slots-bet:hover{background:rgba(0,0,0,.8);border-color:rgba(255,215,0,.5)}
         .fh-slots-bet.active{background:rgba(255,215,0,.2);border-color:#ffd700;color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,.5),inset 0 0 8px rgba(255,215,0,.15)}
-        /* 4 bet buttons evenly spaced in the YELLOW zone */
-        #fh-bet-10{left:calc(130/784*100%);top:calc(955/1168*100%);width:calc(105/784*100%);height:calc(50/1168*100%)}
-        #fh-bet-50{left:calc(240/784*100%);top:calc(955/1168*100%);width:calc(105/784*100%);height:calc(50/1168*100%)}
-        #fh-bet-100{left:calc(350/784*100%);top:calc(955/1168*100%);width:calc(105/784*100%);height:calc(50/1168*100%)}
-        #fh-bet-250{left:calc(460/784*100%);top:calc(955/1168*100%);width:calc(105/784*100%);height:calc(50/1168*100%)}
+        /* 4 bet buttons — user-positioned, smaller to fit tighter spacing */
+        #fh-bet-10{left:calc(132/784*100%);top:calc(959/1168*100%);width:calc(80/784*100%);height:calc(38/1168*100%)}
+        #fh-bet-50{left:calc(219/784*100%);top:calc(959/1168*100%);width:calc(80/784*100%);height:calc(38/1168*100%)}
+        #fh-bet-100{left:calc(311/784*100%);top:calc(959/1168*100%);width:calc(80/784*100%);height:calc(38/1168*100%)}
+        #fh-bet-250{left:calc(400/784*100%);top:calc(959/1168*100%);width:calc(80/784*100%);height:calc(38/1168*100%)}
         /* Paytable modal */
         .fh-slots-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
         .fh-slots-pay-bd{position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer}
