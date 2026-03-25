@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v8.7 - Immersive room zoom with hotspots, slot chip balance, chip float fix.
+ * Description:       v8.7 - Bright room zoom, visible hotspot labels, coming soon items.
  * Version:           8.7
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager

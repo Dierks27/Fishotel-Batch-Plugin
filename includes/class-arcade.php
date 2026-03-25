@@ -227,8 +227,9 @@ class FisHotel_Arcade {
         .fh-arc-shop-soldout{color:#e74c3c;font-weight:600;font-size:.85em}
 
         /* ─── Room Zoom + Popup (hotel-style) ─── */
-        .fh-arc-zoom-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:99;opacity:0;transition:opacity .3s ease;cursor:pointer}
+        .fh-arc-zoom-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:transparent;z-index:99;opacity:0;transition:opacity .3s ease,background .3s ease;cursor:pointer}
         .fh-arc-zoom-backdrop--visible{opacity:1}
+        .fh-arc-zoom-backdrop--dimmed{background:rgba(0,0,0,.6)}
         .fh-arc-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(480px,90vw);max-height:85vh;overflow-y:auto;background:#111;border:1px solid rgba(150,136,95,.35);border-radius:12px;padding:28px 32px;box-sizing:border-box;z-index:10001;opacity:0;transition:opacity 200ms ease;font-family:'Oswald',sans-serif;color:#f5f0e8;text-align:center}
         .fh-arc-popup-close{position:absolute;top:10px;right:14px;background:none;border:none;color:#888;font-size:24px;cursor:pointer;line-height:1;z-index:2}
         .fh-arc-popup-close:hover{color:#f5f0e8}
@@ -357,10 +358,12 @@ class FisHotel_Arcade {
         .fh-room-zoom-soon:hover{transform:none;border-color:rgba(150,136,95,.3)}
         .fh-room-zoom-badge{display:block;font-size:10px;color:#96885f;margin-top:4px;text-transform:uppercase;letter-spacing:1px}
         /* ═══ ROOM HOTSPOTS (in-room clickable items) ═══ */
-        .fh-room-hotspot{position:absolute;cursor:pointer;border:2px solid transparent;border-radius:6px;transition:all .3s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;z-index:3;box-sizing:border-box}
-        .fh-room-hotspot:hover{border-color:rgba(255,215,0,.6);box-shadow:inset 0 0 20px rgba(255,215,0,.15),0 0 15px rgba(255,215,0,.2);background:rgba(255,215,0,.08)}
-        .fh-room-hotspot-label{font-family:'Oswald',sans-serif;font-size:clamp(8px,1vw,13px);color:#ffd700;text-shadow:0 2px 6px rgba(0,0,0,.9);opacity:0;transition:opacity .3s;pointer-events:none;text-transform:uppercase;letter-spacing:1px}
-        .fh-room-hotspot:hover .fh-room-hotspot-label{opacity:1}
+        .fh-room-hotspot{position:absolute;cursor:pointer;border:2px solid rgba(255,215,0,.4);border-radius:6px;transition:all .3s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;z-index:3;box-sizing:border-box;background:rgba(255,215,0,.06)}
+        .fh-room-hotspot:hover{border-color:rgba(255,215,0,.8);box-shadow:inset 0 0 20px rgba(255,215,0,.2),0 0 15px rgba(255,215,0,.3);background:rgba(255,215,0,.12)}
+        .fh-room-hotspot-label{font-family:'Oswald',sans-serif;font-size:clamp(8px,1vw,13px);color:#ffd700;text-shadow:0 2px 6px rgba(0,0,0,.9),0 0 8px rgba(0,0,0,.8);pointer-events:none;text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+        .fh-room-hotspot.soon{border-color:rgba(150,136,95,.2);background:rgba(0,0,0,.15);cursor:default;opacity:.5}
+        .fh-room-hotspot.soon:hover{border-color:rgba(150,136,95,.2);box-shadow:none;background:rgba(0,0,0,.15);transform:none}
+        .fh-room-hotspot.soon .fh-room-hotspot-label{color:#888}
         /* ═══ SLOT CHIP BALANCE ═══ */
         .fh-slots-chips{text-align:center;font-family:'Oswald',sans-serif;font-size:14px;color:#96885f;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px}
         </style>
@@ -416,7 +419,9 @@ class FisHotel_Arcade {
             const roomItems = {
                 slots: [
                     { id: 'fish-slots', label: 'Fish Slots', game: 'slots',
-                      left: 16.9, top: 14.3, width: 13.8, height: 71.4 }
+                      left: 16.9, top: 14.3, width: 13.8, height: 71.4 },
+                    { id: 'draft-replay', label: 'Draft Replay', game: 'draft-replay', soon: true,
+                      left: 55, top: 14.3, width: 13.8, height: 71.4 }
                 ]
             };
 
@@ -464,14 +469,17 @@ class FisHotel_Arcade {
                 }
                 items.forEach(item => {
                     const hotspot = document.createElement('div');
-                    hotspot.className = 'fh-room-hotspot';
+                    hotspot.className = 'fh-room-hotspot' + (item.soon ? ' soon' : '');
                     hotspot.dataset.game = item.game;
-                    hotspot.innerHTML = '<span class="fh-room-hotspot-label">' + item.label + '</span>';
+                    const labelText = item.soon ? item.label + '<br><small style="font-size:0.7em;letter-spacing:0;">Coming Soon</small>' : item.label;
+                    hotspot.innerHTML = '<span class="fh-room-hotspot-label">' + labelText + '</span>';
                     hotspot.style.cssText = 'left:' + item.left + '%;top:' + item.top + '%;width:' + item.width + '%;height:' + item.height + '%';
-                    hotspot.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        openRoomGame(item.game);
-                    });
+                    if (!item.soon) {
+                        hotspot.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            openRoomGame(item.game);
+                        });
+                    }
                     roomEl.appendChild(hotspot);
                 });
             }
@@ -480,11 +488,15 @@ class FisHotel_Arcade {
             function openRoomGame(game) {
                 const roomKey = _arcZoomRoom ? _arcZoomRoom.dataset.room : 'slots';
                 const card = buildRoomPopup(roomKey, game);
+                /* Dim backdrop when popup opens */
+                const bd = document.querySelector('.fh-arc-zoom-backdrop');
+                if (bd) bd.classList.add('fh-arc-zoom-backdrop--dimmed');
                 document.body.appendChild(card);
                 requestAnimationFrame(() => card.style.opacity = '1');
                 card.querySelector('.fh-arc-popup-close').addEventListener('click', () => {
-                    /* Close popup only — stay zoomed in room */
+                    /* Close popup only — stay zoomed in room, un-dim backdrop */
                     card.style.opacity = '0';
+                    if (bd) bd.classList.remove('fh-arc-zoom-backdrop--dimmed');
                     card.addEventListener('transitionend', () => card.remove(), { once: true });
                 });
                 const body = document.getElementById('fh-arc-popup-body');
