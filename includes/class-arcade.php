@@ -310,8 +310,8 @@ class FisHotel_Arcade {
         .fh-slots-pay-sub{text-align:center;font-family:'Oswald',sans-serif;font-size:11px;color:#96885f;margin:0 0 10px}
         .fh-slots-pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
         .fh-slots-pay-row{display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(0,0,0,.25);border:1px solid rgba(150,136,95,.15);border-radius:4px}
-        .fh-slots-pay-syms{flex-shrink:0}
-        .fh-slots-pay-syms img{width:24px;height:24px;object-fit:contain}
+        .fh-slots-pay-syms{flex-shrink:0;display:flex;gap:2px;align-items:center}
+        .fh-slots-pay-syms img{width:18px;height:18px;object-fit:contain}
         .fh-slots-pay-mult{font-family:'Oswald',sans-serif;font-size:clamp(13px,3vw,16px);font-weight:700;color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,.3)}
         .fh-slots-pay-label{font-family:'Oswald',sans-serif;font-size:11px;color:#f5f0e8}
         .fh-slots-pay-footer{grid-column:1/-1;text-align:center;padding:4px 8px;background:rgba(0,0,0,.2);border:1px solid rgba(150,136,95,.15);border-radius:4px;font-family:'Oswald',sans-serif;font-size:12px;color:#96885f;margin-top:2px}
@@ -585,7 +585,7 @@ class FisHotel_Arcade {
                             '<div class="fh-slots-pay-grid">' +
                             SYMS.map(s =>
                                 '<div class="fh-slots-pay-row">' +
-                                    '<div class="fh-slots-pay-syms"><img src="'+symBase+s.file+'"></div>' +
+                                    '<div class="fh-slots-pay-syms"><img src="'+symBase+s.file+'"><img src="'+symBase+s.file+'"><img src="'+symBase+s.file+'"></div>' +
                                     '<div class="fh-slots-pay-mult">'+s.pay+'x</div>' +
                                 '</div>'
                             ).join('') +
