@@ -279,14 +279,12 @@ class FisHotel_Arcade {
         /* Each symbol is exactly window height so one fish fills one window */
         .fh-slots-sym{display:flex;align-items:center;justify-content:center;padding:10%;box-sizing:border-box}
         .fh-slots-sym img{width:100%;height:100%;object-fit:contain}
-        /* ═══ BLUE BAR — LED Lightboard Result Display ═══ */
-        .fh-slots-result{position:absolute;z-index:3;left:calc(155/784*100%);top:calc(440/1168*100%);width:calc(480/784*100%);height:calc(75/1168*100%);background:#0a0a0a;background-image:radial-gradient(circle,rgba(40,40,40,.4) 1px,transparent 1px);background-size:4px 4px;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:clamp(11px,2.8vw,18px);font-weight:700;color:#554;letter-spacing:3px;text-transform:uppercase;border-radius:2px;overflow:hidden;text-align:center;border:1px solid rgba(60,60,60,.5);box-shadow:inset 0 2px 8px rgba(0,0,0,.8),inset 0 -2px 8px rgba(0,0,0,.5)}
-        .fh-slots-result.win{color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,.9),0 0 14px rgba(255,215,0,.5),0 0 28px rgba(255,215,0,.2);animation:fh-led-flash .4s ease-in-out 3}
-        .fh-slots-result.lose{color:#cc4444;text-shadow:0 0 4px rgba(204,68,68,.5)}
-        @keyframes fh-led-flash{0%,100%{text-shadow:0 0 6px rgba(255,215,0,.9),0 0 14px rgba(255,215,0,.5),0 0 28px rgba(255,215,0,.2)}50%{text-shadow:0 0 12px rgba(255,215,0,1),0 0 24px rgba(255,215,0,.8),0 0 40px rgba(255,215,0,.4)}}
+        /* ═══ BLUE BAR — LED Dot-Matrix Lightboard ═══ */
+        .fh-slots-result{position:absolute;z-index:3;left:calc(170/784*100%);top:calc(455/1168*100%);width:calc(450/784*100%);height:calc(70/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
+        .fh-slots-result canvas{width:100%;height:100%;display:block}
         /* ═══ GREEN — Payout Table (transparent overlay) ═══ */
-        .fh-slots-payouts-btn{position:absolute;z-index:3;left:calc(319/784*100%);top:calc(807/1168*100%);width:calc(145/784*100%);height:calc(60/1168*100%);background:transparent;border:none;color:rgba(150,136,95,.6);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(7px,1.3vw,10px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
-        .fh-slots-payouts-btn:hover{background:rgba(255,215,0,.08);box-shadow:inset 0 0 12px rgba(255,215,0,.15);color:rgba(150,136,95,.9)}
+        .fh-slots-payouts-btn{position:absolute;z-index:3;left:calc(335/784*100%);top:calc(807/1168*100%);width:calc(115/784*100%);height:calc(60/1168*100%);background:transparent;border:none;color:rgba(100,90,60,.5);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(6px,1.1vw,9px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
+        .fh-slots-payouts-btn:hover{background:rgba(255,215,0,.06);color:rgba(150,136,95,.7)}
         /* ═══ RED — Chip Balance (dark background) ═══ */
         .fh-slots-chips{position:absolute;z-index:3;left:calc(481/784*100%);top:calc(807/1168*100%);width:calc(145/784*100%);height:calc(60/1168*100%);background:rgba(0,0,0,.75);border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.6vw,12px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px}
         /* ═══ PINK — SPIN Button ═══ */
@@ -562,8 +560,8 @@ class FisHotel_Arcade {
                             '<div class="fh-slots-rw" id="fh-sw-0"><div class="fh-slots-strip" id="fh-sr-0"><div class="fh-slots-sym"><img src="'+symBase+'Seahorse.png"></div></div></div>' +
                             '<div class="fh-slots-rw" id="fh-sw-1"><div class="fh-slots-strip" id="fh-sr-1"><div class="fh-slots-sym"><img src="'+symBase+'Dolphin.png"></div></div></div>' +
                             '<div class="fh-slots-rw" id="fh-sw-2"><div class="fh-slots-strip" id="fh-sr-2"><div class="fh-slots-sym"><img src="'+symBase+'Shark.png"></div></div></div>' +
-                            /* Result text — overlaid between reels and wood panel */
-                            '<div class="fh-slots-result" id="fh-slots-res"></div>' +
+                            /* LED Lightboard — dot-matrix display */
+                            '<div class="fh-slots-result" id="fh-slots-res"><canvas id="fh-led-canvas"></canvas></div>' +
                             /* Chip balance — positioned on cabinet */
                             '<div class="fh-slots-chips"><img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" style="width:16px;height:16px"><span class="fh-arc-chip-mirror">' + Number(chips).toLocaleString() + '</span></div>' +
                             /* Bet + Spin buttons — each positioned exactly on cabinet */
@@ -611,6 +609,186 @@ class FisHotel_Arcade {
                     });
                 });
 
+                /* ═══ LED DOT-MATRIX LIGHTBOARD ENGINE ═══ */
+                const ledCanvas = document.getElementById('fh-led-canvas');
+                const ledCtx = ledCanvas.getContext('2d');
+                let ledAnim = null, ledScrollX = 0, ledText = '', ledColor = '#ffd700', ledMode = 'static';
+
+                /* 5×7 dot-matrix font (uppercase + digits + symbols) */
+                const LED_FONT = {
+                    'A':[0x1F,0x24,0x44,0x24,0x1F],'B':[0x7F,0x49,0x49,0x49,0x36],'C':[0x3E,0x41,0x41,0x41,0x22],
+                    'D':[0x7F,0x41,0x41,0x41,0x3E],'E':[0x7F,0x49,0x49,0x49,0x41],'F':[0x7F,0x48,0x48,0x48,0x40],
+                    'G':[0x3E,0x41,0x49,0x49,0x2E],'H':[0x7F,0x08,0x08,0x08,0x7F],'I':[0x41,0x41,0x7F,0x41,0x41],
+                    'J':[0x02,0x01,0x01,0x01,0x7E],'K':[0x7F,0x08,0x14,0x22,0x41],'L':[0x7F,0x01,0x01,0x01,0x01],
+                    'M':[0x7F,0x20,0x10,0x20,0x7F],'N':[0x7F,0x10,0x08,0x04,0x7F],'O':[0x3E,0x41,0x41,0x41,0x3E],
+                    'P':[0x7F,0x48,0x48,0x48,0x30],'Q':[0x3E,0x41,0x45,0x42,0x3D],'R':[0x7F,0x48,0x4C,0x4A,0x31],
+                    'S':[0x32,0x49,0x49,0x49,0x26],'T':[0x40,0x40,0x7F,0x40,0x40],'U':[0x7E,0x01,0x01,0x01,0x7E],
+                    'V':[0x7C,0x02,0x01,0x02,0x7C],'W':[0x7F,0x02,0x04,0x02,0x7F],'X':[0x63,0x14,0x08,0x14,0x63],
+                    'Y':[0x60,0x10,0x0F,0x10,0x60],'Z':[0x43,0x45,0x49,0x51,0x61],
+                    '0':[0x3E,0x45,0x49,0x51,0x3E],'1':[0x00,0x21,0x7F,0x01,0x00],'2':[0x23,0x45,0x49,0x49,0x31],
+                    '3':[0x22,0x41,0x49,0x49,0x36],'4':[0x0C,0x14,0x24,0x7F,0x04],'5':[0x72,0x51,0x51,0x51,0x4E],
+                    '6':[0x3E,0x49,0x49,0x49,0x26],'7':[0x40,0x47,0x48,0x50,0x60],'8':[0x36,0x49,0x49,0x49,0x36],
+                    '9':[0x32,0x49,0x49,0x49,0x3E],
+                    '+':[0x08,0x08,0x3E,0x08,0x08],'-':[0x08,0x08,0x08,0x08,0x08],'!':[0x00,0x00,0x7D,0x00,0x00],
+                    'x':[0x22,0x14,0x08,0x14,0x22],'X':[0x63,0x14,0x08,0x14,0x63],
+                    ' ':[0x00,0x00,0x00,0x00,0x00],'.':[0x00,0x01,0x00,0x00,0x00],',':[0x00,0x01,0x02,0x00,0x00],
+                    ':':[0x00,0x14,0x00,0x00,0x00],'?':[0x20,0x40,0x4D,0x48,0x30],
+                };
+
+                function ledGetTextWidth(text) {
+                    let w = 0;
+                    for (let i = 0; i < text.length; i++) {
+                        w += (LED_FONT[text[i]] ? 5 : 3) + 1;
+                    }
+                    return w - 1;
+                }
+
+                function ledDraw() {
+                    const el = document.getElementById('fh-slots-res');
+                    if (!el) { cancelAnimationFrame(ledAnim); return; }
+                    const w = el.offsetWidth * 2, h = el.offsetHeight * 2;
+                    if (ledCanvas.width !== w || ledCanvas.height !== h) {
+                        ledCanvas.width = w; ledCanvas.height = h;
+                    }
+                    const ctx = ledCtx;
+                    const dotSize = 3, gap = 1, pitch = dotSize + gap;
+                    const rows = 7, charW = 5;
+                    const totalH = rows * pitch;
+                    const offsetY = Math.floor((h - totalH) / 2);
+                    const textW = ledGetTextWidth(ledText);
+                    const totalPxW = textW * pitch;
+                    const visibleCols = Math.floor(w / pitch);
+
+                    ctx.fillStyle = '#080808';
+                    ctx.fillRect(0, 0, w, h);
+
+                    /* Draw dim dot grid background */
+                    const gridCols = Math.ceil(w / pitch), gridRows = rows;
+                    for (let row = 0; row < gridRows; row++) {
+                        for (let col = 0; col < gridCols; col++) {
+                            ctx.fillStyle = 'rgba(30,30,30,.5)';
+                            ctx.beginPath();
+                            ctx.arc(col * pitch + dotSize/2, offsetY + row * pitch + dotSize/2, dotSize/2, 0, Math.PI*2);
+                            ctx.fill();
+                        }
+                    }
+
+                    /* Determine scroll offset */
+                    let scrollOff = 0;
+                    if (ledMode === 'scroll') {
+                        scrollOff = Math.floor(ledScrollX);
+                    } else {
+                        scrollOff = -Math.floor((w - totalPxW) / 2 / pitch);
+                    }
+
+                    /* Parse color for glow */
+                    const isGold = ledColor === '#ffd700';
+                    const glowR = isGold ? 255 : 204, glowG = isGold ? 215 : 68, glowB = isGold ? 0 : 68;
+
+                    /* Draw lit dots */
+                    let colPos = 0;
+                    for (let ci = 0; ci < ledText.length; ci++) {
+                        const ch = ledText[ci];
+                        const glyph = LED_FONT[ch] || LED_FONT[' '];
+                        const cw = glyph.length;
+                        for (let gc = 0; gc < cw; gc++) {
+                            const screenCol = colPos - scrollOff;
+                            if (screenCol >= -1 && screenCol < gridCols + 1) {
+                                const colData = glyph[gc];
+                                for (let row = 0; row < rows; row++) {
+                                    if (colData & (1 << (rows - 1 - row))) {
+                                        const px = screenCol * pitch + dotSize/2;
+                                        const py = offsetY + row * pitch + dotSize/2;
+                                        /* Glow */
+                                        ctx.fillStyle = 'rgba('+glowR+','+glowG+','+glowB+',.15)';
+                                        ctx.beginPath();
+                                        ctx.arc(px, py, dotSize, 0, Math.PI*2);
+                                        ctx.fill();
+                                        /* Bright dot */
+                                        ctx.fillStyle = ledColor;
+                                        ctx.beginPath();
+                                        ctx.arc(px, py, dotSize/2, 0, Math.PI*2);
+                                        ctx.fill();
+                                    }
+                                }
+                            }
+                            colPos++;
+                        }
+                        colPos++; /* 1-col gap between chars */
+                    }
+
+                    if (ledMode === 'scroll') {
+                        ledScrollX += 0.3;
+                        if (ledScrollX > textW + visibleCols) {
+                            ledScrollX = -visibleCols;
+                        }
+                        ledAnim = requestAnimationFrame(ledDraw);
+                    }
+                }
+
+                function ledShow(text, color, flash) {
+                    if (ledAnim) { cancelAnimationFrame(ledAnim); ledAnim = null; }
+                    ledText = text.toUpperCase();
+                    ledColor = color || '#ffd700';
+                    const el = document.getElementById('fh-slots-res');
+                    const visW = el ? el.offsetWidth * 2 : 300;
+                    const pitch = 4;
+                    const textPxW = ledGetTextWidth(ledText) * pitch;
+
+                    if (textPxW > visW) {
+                        ledMode = 'scroll';
+                        ledScrollX = -Math.floor(visW / pitch);
+                        ledDraw();
+                        ledAnim = requestAnimationFrame(ledDraw);
+                    } else {
+                        ledMode = 'static';
+                        ledScrollX = 0;
+                        ledDraw();
+                        if (flash) {
+                            /* Flash effect — redraw brighter a few times */
+                            let flashes = 0;
+                            const origColor = ledColor;
+                            const flashInterval = setInterval(() => {
+                                ledColor = flashes % 2 === 0 ? '#fff' : origColor;
+                                ledDraw();
+                                flashes++;
+                                if (flashes >= 6) {
+                                    clearInterval(flashInterval);
+                                    ledColor = origColor;
+                                    ledDraw();
+                                }
+                            }, 150);
+                        }
+                    }
+                }
+
+                function ledClear() {
+                    if (ledAnim) { cancelAnimationFrame(ledAnim); ledAnim = null; }
+                    ledText = '';
+                    ledMode = 'static';
+                    const el = document.getElementById('fh-slots-res');
+                    if (el) {
+                        const w = el.offsetWidth * 2, h = el.offsetHeight * 2;
+                        ledCanvas.width = w; ledCanvas.height = h;
+                        ledCtx.fillStyle = '#080808';
+                        ledCtx.fillRect(0, 0, w, h);
+                        /* Draw dim dots */
+                        const pitch = 4, dotSize = 3, rows = 7;
+                        const offsetY = Math.floor((h - rows * pitch) / 2);
+                        for (let row = 0; row < rows; row++) {
+                            for (let col = 0; col < Math.ceil(w / pitch); col++) {
+                                ledCtx.fillStyle = 'rgba(30,30,30,.5)';
+                                ledCtx.beginPath();
+                                ledCtx.arc(col * pitch + dotSize/2, offsetY + row * pitch + dotSize/2, dotSize/2, 0, Math.PI*2);
+                                ledCtx.fill();
+                            }
+                        }
+                    }
+                }
+
+                /* Initialize lightboard with dim dots */
+                setTimeout(ledClear, 50);
+
                 /* ── Paytable modal toggle ── */
                 const payModal = document.getElementById('fh-slots-pay');
                 const closePay = () => { payModal.style.display = 'none'; };
@@ -654,19 +832,17 @@ class FisHotel_Arcade {
                 document.getElementById('fh-slots-spin').addEventListener('click', async () => {
                     if (spinning) return;
                     if (bet > chips) {
-                        document.getElementById('fh-slots-res').textContent = 'Not enough chips!';
-                        document.getElementById('fh-slots-res').className = 'fh-slots-result lose';
+                        ledShow('NOT ENOUGH CHIPS', '#cc4444', false);
                         return;
                     }
                     spinning = true;
                     document.getElementById('fh-slots-spin').disabled = true;
-                    document.getElementById('fh-slots-res').textContent = '';
-                    document.getElementById('fh-slots-res').className = 'fh-slots-result';
+                    ledClear();
                     [0,1,2].forEach(i => document.getElementById('fh-sw-' + i).classList.remove('winning'));
 
                     const res = await casinoPost('fishotel_casino_slots_spin', { bet: bet });
                     if (!res.success) {
-                        document.getElementById('fh-slots-res').textContent = res.data.message || 'Error';
+                        ledShow(res.data.message || 'ERROR', '#cc4444', false);
                         spinning = false;
                         document.getElementById('fh-slots-spin').disabled = false;
                         return;
@@ -679,7 +855,6 @@ class FisHotel_Arcade {
                     await spinReel(2, d.reels[2], 2400);
 
                     updateChips(d.chips);
-                    const r = document.getElementById('fh-slots-res');
 
                     if (d.payout > 0) {
                         if (d.multiplier >= 5) {
@@ -689,8 +864,7 @@ class FisHotel_Arcade {
                             if (d.reels[1]===d.reels[2]) { document.getElementById('fh-sw-1').classList.add('winning'); document.getElementById('fh-sw-2').classList.add('winning'); }
                             if (d.reels[0]===d.reels[2]) { document.getElementById('fh-sw-0').classList.add('winning'); document.getElementById('fh-sw-2').classList.add('winning'); }
                         }
-                        r.textContent = d.multiplier + 'x WIN! +' + d.payout.toLocaleString() + ' chips';
-                        r.className = 'fh-slots-result win';
+                        ledShow(d.multiplier + 'x WIN! +' + d.payout.toLocaleString(), '#ffd700', true);
                         fhChipFloat(d.payout, true);
                         if (d.multiplier >= 15) {
                             const flash = document.createElement('div');
@@ -701,8 +875,7 @@ class FisHotel_Arcade {
                         }
                         if (window.fhArcadeHandleWin) window.fhArcadeHandleWin(d);
                     } else {
-                        r.textContent = 'No match — try again!';
-                        r.className = 'fh-slots-result lose';
+                        ledShow('NO MATCH', '#cc4444', false);
                         fhChipFloat(-bet, false);
                     }
                     spinning = false;
