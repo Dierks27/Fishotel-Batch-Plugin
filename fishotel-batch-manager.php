@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.2.3 - Real LED dot-matrix lightboard, red spin, polished controls.
- * Version:           9.2.3
+ * Description:       v9.2.4 - Compact 2-column paytable, no scrolling needed.
+ * Version:           9.2.4
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.2.3' );
+define( 'FISHOTEL_VERSION', '9.2.4' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

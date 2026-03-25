@@ -303,17 +303,18 @@ class FisHotel_Arcade {
         /* Paytable modal */
         .fh-slots-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
         .fh-slots-pay-bd{position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer}
-        .fh-slots-pay-card{position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:28px 24px;max-width:420px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 16px 50px rgba(0,0,0,.6)}
-        .fh-slots-pay-close{position:absolute;top:10px;right:14px;background:none;border:none;color:#96885f;font-size:26px;cursor:pointer;line-height:1}
+        .fh-slots-pay-card{position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:360px;width:90%;box-shadow:0 16px 50px rgba(0,0,0,.6)}
+        .fh-slots-pay-close{position:absolute;top:8px;right:12px;background:none;border:none;color:#96885f;font-size:22px;cursor:pointer;line-height:1}
         .fh-slots-pay-close:hover{color:#ffd700}
-        .fh-slots-pay-title{text-align:center;font-family:'Special Elite',monospace;font-size:clamp(18px,4vw,24px);color:#ffd700;margin:0 0 6px}
-        .fh-slots-pay-sub{text-align:center;font-family:'Oswald',sans-serif;font-size:13px;color:#96885f;margin:0 0 18px}
-        .fh-slots-pay-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(0,0,0,.25);border:1px solid rgba(150,136,95,.2);border-radius:6px;margin-bottom:8px}
-        .fh-slots-pay-syms{display:flex;gap:6px;align-items:center}
-        .fh-slots-pay-syms img{width:36px;height:36px;object-fit:contain}
-        .fh-slots-pay-mult{font-family:'Oswald',sans-serif;font-size:clamp(18px,4vw,26px);font-weight:700;color:#ffd700;text-shadow:0 0 8px rgba(255,215,0,.4)}
-        .fh-slots-pay-label{font-family:'Oswald',sans-serif;font-size:14px;color:#f5f0e8}
-        @media(max-width:480px){.fh-slots-pay-syms img{width:28px;height:28px}}
+        .fh-slots-pay-title{text-align:center;font-family:'Special Elite',monospace;font-size:clamp(14px,3.5vw,18px);color:#ffd700;margin:0 0 2px}
+        .fh-slots-pay-sub{text-align:center;font-family:'Oswald',sans-serif;font-size:11px;color:#96885f;margin:0 0 10px}
+        .fh-slots-pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+        .fh-slots-pay-row{display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(0,0,0,.25);border:1px solid rgba(150,136,95,.15);border-radius:4px}
+        .fh-slots-pay-syms{flex-shrink:0}
+        .fh-slots-pay-syms img{width:24px;height:24px;object-fit:contain}
+        .fh-slots-pay-mult{font-family:'Oswald',sans-serif;font-size:clamp(13px,3vw,16px);font-weight:700;color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,.3)}
+        .fh-slots-pay-label{font-family:'Oswald',sans-serif;font-size:11px;color:#f5f0e8}
+        .fh-slots-pay-footer{grid-column:1/-1;text-align:center;padding:4px 8px;background:rgba(0,0,0,.2);border:1px solid rgba(150,136,95,.15);border-radius:4px;font-family:'Oswald',sans-serif;font-size:12px;color:#96885f;margin-top:2px}
         /* (Room zoom/hotspot/interior CSS removed in v8.9 — simplified to zoom + direct popup) */
         </style>
 
@@ -579,17 +580,17 @@ class FisHotel_Arcade {
                         '<div class="fh-slots-pay-bd" id="fh-slots-pay-bd"></div>' +
                         '<div class="fh-slots-pay-card">' +
                             '<button class="fh-slots-pay-close" id="fh-slots-pay-x">&times;</button>' +
-                            '<div class="fh-slots-pay-title">FISH SLOTS PAYOUTS</div>' +
-                            '<div class="fh-slots-pay-sub">Match 3 symbols to win big!</div>' +
+                            '<div class="fh-slots-pay-title">PAYOUTS</div>' +
+                            '<div class="fh-slots-pay-sub">Match 3 of a kind</div>' +
+                            '<div class="fh-slots-pay-grid">' +
                             SYMS.map(s =>
                                 '<div class="fh-slots-pay-row">' +
-                                    '<div class="fh-slots-pay-syms">' +
-                                        '<img src="'+symBase+s.file+'"><img src="'+symBase+s.file+'"><img src="'+symBase+s.file+'">' +
-                                    '</div>' +
+                                    '<div class="fh-slots-pay-syms"><img src="'+symBase+s.file+'"></div>' +
                                     '<div class="fh-slots-pay-mult">'+s.pay+'x</div>' +
                                 '</div>'
                             ).join('') +
-                            '<div class="fh-slots-pay-row"><div class="fh-slots-pay-label">Any 2-Match</div><div class="fh-slots-pay-mult" style="font-size:20px;">2x</div></div>' +
+                            '<div class="fh-slots-pay-footer">Any 2-Match: <span style="color:#ffd700;font-weight:700;">2x</span></div>' +
+                            '</div>' +
                         '</div>' +
                     '</div>';
 
