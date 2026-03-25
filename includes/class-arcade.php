@@ -279,23 +279,25 @@ class FisHotel_Arcade {
         /* Each symbol is exactly window height so one fish fills one window */
         .fh-slots-sym{display:flex;align-items:center;justify-content:center;padding:10%;box-sizing:border-box}
         .fh-slots-sym img{width:100%;height:100%;object-fit:contain}
-        /* Result */
-        .fh-slots-result{text-align:center;font-family:'Oswald',sans-serif;font-size:clamp(13px,3vw,18px);color:#96885f;font-weight:700;min-height:22px;margin:4px 0}
+        /* Result — overlaid on cabinet between reels and wood panel */
+        .fh-slots-result{position:absolute;left:5%;right:5%;top:calc(782/1168*100%);text-align:center;font-family:'Oswald',sans-serif;font-size:clamp(11px,2.5vw,16px);color:#96885f;font-weight:700;z-index:3}
         .fh-slots-result.win{color:#ffd700;animation:fh-slots-bounce .5s ease-out}
         .fh-slots-result.lose{color:#888}
         @keyframes fh-slots-bounce{0%{transform:scale(0)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+        /* Controls container — overlaid on wood panel area of cabinet */
+        .fh-slots-cab-controls{position:absolute;left:10%;right:10%;top:calc(860/1168*100%);bottom:calc(120/1168*100%);z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(2px,1vw,6px)}
         /* Controls — single row: bets + spin */
-        .fh-slots-controls{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
-        .fh-slots-bets{display:flex;gap:4px;align-items:center}
-        .fh-slots-bet{background:#2e2418;color:#f5f0e8;border:2px solid #96885f;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(11px,2vw,13px);transition:all .2s}
-        .fh-slots-bet:hover{background:#3e3428}
+        .fh-slots-controls{display:flex;align-items:center;justify-content:center;gap:clamp(4px,1vw,8px);flex-wrap:wrap}
+        .fh-slots-bets{display:flex;gap:clamp(2px,.5vw,4px);align-items:center}
+        .fh-slots-bet{background:rgba(30,20,10,.6);color:#f5f0e8;border:1px solid #96885f;padding:clamp(2px,.4vw,4px) clamp(6px,1.2vw,10px);border-radius:4px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.8vw,12px);transition:all .2s}
+        .fh-slots-bet:hover{background:rgba(60,40,20,.7)}
         .fh-slots-bet.active{background:#96885f;color:#2e2418;border-color:#ffd700}
-        .fh-slots-spin{background:linear-gradient(180deg,#FF7F00,#CC6600);color:#fff;border:none;border-radius:8px;padding:8px 28px;font-family:'Oswald',sans-serif;font-size:clamp(14px,2.5vw,18px);font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.3);transition:all .2s;text-shadow:0 1px 3px rgba(0,0,0,.3)}
-        .fh-slots-spin:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(0,0,0,.4)}
+        .fh-slots-spin{background:linear-gradient(180deg,#FF7F00,#CC6600);color:#fff;border:none;border-radius:6px;padding:clamp(4px,.8vw,8px) clamp(16px,3vw,28px);font-family:'Oswald',sans-serif;font-size:clamp(11px,2.2vw,16px);font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:all .2s;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+        .fh-slots-spin:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.4)}
         .fh-slots-spin:disabled{opacity:.4;cursor:not-allowed;transform:none}
-        /* Paytable button — compact */
-        .fh-slots-payouts-btn{display:block;margin:4px auto 0;background:rgba(46,36,24,.7);border:1px solid #96885f;color:#ffd700;padding:4px 16px;border-radius:6px;font-family:'Oswald',sans-serif;font-size:12px;cursor:pointer;letter-spacing:1px;transition:all .2s}
-        .fh-slots-payouts-btn:hover{background:rgba(46,36,24,1)}
+        /* Paytable button — on cabinet */
+        .fh-slots-payouts-btn{background:rgba(30,20,10,.5);border:1px solid rgba(150,136,95,.5);color:#ffd700;padding:clamp(2px,.3vw,3px) clamp(10px,2vw,16px);border-radius:4px;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.5vw,11px);cursor:pointer;letter-spacing:1px;transition:all .2s}
+        .fh-slots-payouts-btn:hover{background:rgba(46,36,24,.8)}
         /* Paytable modal */
         .fh-slots-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
         .fh-slots-pay-bd{position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer}
@@ -309,10 +311,10 @@ class FisHotel_Arcade {
         .fh-slots-pay-syms img{width:36px;height:36px;object-fit:contain}
         .fh-slots-pay-mult{font-family:'Oswald',sans-serif;font-size:clamp(18px,4vw,26px);font-weight:700;color:#ffd700;text-shadow:0 0 8px rgba(255,215,0,.4)}
         .fh-slots-pay-label{font-family:'Oswald',sans-serif;font-size:14px;color:#f5f0e8}
-        @media(max-width:480px){.fh-slots-spin{padding:10px 28px}.fh-slots-pay-syms img{width:28px;height:28px}}
+        @media(max-width:480px){.fh-slots-pay-syms img{width:28px;height:28px}}
         /* (Room zoom/hotspot/interior CSS removed in v8.9 — simplified to zoom + direct popup) */
         /* ═══ SLOT CHIP BALANCE ═══ */
-        .fh-slots-chips{text-align:center;font-family:'Oswald',sans-serif;font-size:13px;color:#ffd700;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 12px;background:rgba(150,136,95,.12);border:1px solid rgba(150,136,95,.25);border-radius:6px;width:fit-content;margin-left:auto;margin-right:auto}
+        .fh-slots-chips{font-family:'Oswald',sans-serif;font-size:clamp(9px,1.8vw,12px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px;padding:clamp(1px,.3vw,3px) clamp(6px,1.2vw,10px);background:rgba(0,0,0,.3);border:1px solid rgba(150,136,95,.3);border-radius:4px}
         </style>
 
         <script>
@@ -551,26 +553,30 @@ class FisHotel_Arcade {
                 /* ── Build HTML ── */
                 body.innerHTML =
                     '<div class="fh-slots">' +
-                        /* Cabinet image + 3 reel windows inside aspect-ratio container */
+                        /* Cabinet image + reels + controls all inside aspect-ratio container */
                         '<div class="fh-slots-machine">' +
                             '<img src="' + cabinetUrl + '" alt="Slot Machine">' +
+                            /* Reel windows */
                             '<div class="fh-slots-rw" id="fh-sw-0"><div class="fh-slots-strip" id="fh-sr-0"><div class="fh-slots-sym"><img src="'+symBase+'Seahorse.png"></div></div></div>' +
                             '<div class="fh-slots-rw" id="fh-sw-1"><div class="fh-slots-strip" id="fh-sr-1"><div class="fh-slots-sym"><img src="'+symBase+'Dolphin.png"></div></div></div>' +
                             '<div class="fh-slots-rw" id="fh-sw-2"><div class="fh-slots-strip" id="fh-sr-2"><div class="fh-slots-sym"><img src="'+symBase+'Shark.png"></div></div></div>' +
-                        '</div>' +
-                        '<div class="fh-slots-result" id="fh-slots-res"></div>' +
-                        '<div class="fh-slots-chips"><img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" style="width:20px;height:20px"><span class="fh-arc-chip-mirror">' + Number(chips).toLocaleString() + '</span> chips</div>' +
-                        '<div class="fh-slots-controls">' +
-                            '<div class="fh-slots-bets">' +
-                                '<span style="color:#96885f;font-family:Oswald,sans-serif;font-size:13px;">BET:</span>' +
-                                '<button class="fh-slots-bet" data-bet="10">10</button>' +
-                                '<button class="fh-slots-bet active" data-bet="50">50</button>' +
-                                '<button class="fh-slots-bet" data-bet="100">100</button>' +
-                                '<button class="fh-slots-bet" data-bet="250">250</button>' +
+                            /* Result text — overlaid between reels and wood panel */
+                            '<div class="fh-slots-result" id="fh-slots-res"></div>' +
+                            /* Controls overlaid on wood panel area of cabinet */
+                            '<div class="fh-slots-cab-controls">' +
+                                '<div class="fh-slots-chips"><img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" style="width:16px;height:16px"><span class="fh-arc-chip-mirror">' + Number(chips).toLocaleString() + '</span> chips</div>' +
+                                '<div class="fh-slots-controls">' +
+                                    '<div class="fh-slots-bets">' +
+                                        '<button class="fh-slots-bet" data-bet="10">10</button>' +
+                                        '<button class="fh-slots-bet active" data-bet="50">50</button>' +
+                                        '<button class="fh-slots-bet" data-bet="100">100</button>' +
+                                        '<button class="fh-slots-bet" data-bet="250">250</button>' +
+                                    '</div>' +
+                                    '<button class="fh-slots-spin" id="fh-slots-spin">SPIN</button>' +
+                                '</div>' +
+                                '<button class="fh-slots-payouts-btn" id="fh-slots-pay-btn">PAYOUTS</button>' +
                             '</div>' +
-                            '<button class="fh-slots-spin" id="fh-slots-spin">SPIN</button>' +
                         '</div>' +
-                        '<button class="fh-slots-payouts-btn" id="fh-slots-pay-btn">VIEW PAYOUTS</button>' +
                     '</div>' +
                     /* Paytable modal (hidden) */
                     '<div class="fh-slots-pay-modal" id="fh-slots-pay" style="display:none;">' +
@@ -722,22 +728,15 @@ class FisHotel_Arcade {
                 const el = document.createElement('div');
                 el.className = 'fh-chip-float ' + (win ? 'win' : 'lose');
                 el.textContent = (win ? '+' : '') + Number(Math.abs(amount)).toLocaleString();
-                /* Position near the result text area, not on top of the cabinet image */
-                const resEl = document.getElementById('fh-slots-res');
-                if (resEl && resEl.parentNode) {
+                /* Position on the cabinet near the result text */
+                const machine = document.querySelector('.fh-slots-machine');
+                if (machine) {
                     el.style.position = 'absolute';
                     el.style.left = '50%';
-                    el.style.top = '-10px';
-                    resEl.style.position = resEl.style.position || 'relative';
-                    resEl.parentNode.style.position = 'relative';
-                    resEl.insertAdjacentElement('beforebegin', el);
+                    el.style.top = 'calc(760/1168*100%)';
+                    el.style.zIndex = '4';
+                    machine.appendChild(el);
                 } else {
-                    const popup = document.querySelector('.fh-arc-popup');
-                    if (popup) {
-                        el.style.position = 'absolute';
-                        el.style.left = '50%'; el.style.bottom = '35%';
-                        popup.appendChild(el);
-                    } else {
                         el.style.position = 'fixed';
                         el.style.left = '50%'; el.style.top = '65%';
                         document.body.appendChild(el);
