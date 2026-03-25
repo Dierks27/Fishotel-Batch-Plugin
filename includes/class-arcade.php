@@ -364,8 +364,27 @@ class FisHotel_Arcade {
         .fh-room-hotspot.soon{border-color:rgba(150,136,95,.2);background:rgba(0,0,0,.15);cursor:default;opacity:.5}
         .fh-room-hotspot.soon:hover{border-color:rgba(150,136,95,.2);box-shadow:none;background:rgba(0,0,0,.15);transform:none}
         .fh-room-hotspot.soon .fh-room-hotspot-label{color:#888}
+        /* ═══ ROOM INTERIOR POPUP ═══ */
+        .fh-room-interior{position:fixed;inset:0;z-index:9998;background:#0a0a0a;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .35s ease}
+        .fh-room-interior--visible{opacity:1}
+        .fh-room-interior-card{position:relative;width:95%;max-width:700px;text-align:center}
+        .fh-room-interior-back{position:absolute;top:-40px;left:0;background:rgba(150,136,95,.2);border:1px solid #96885f;color:#96885f;padding:8px 18px;border-radius:6px;font-family:'Oswald',sans-serif;font-size:13px;cursor:pointer;letter-spacing:1px;transition:all .2s;z-index:2}
+        .fh-room-interior-back:hover{background:#96885f;color:#0a0a0a}
+        .fh-room-interior-header{margin-bottom:20px}
+        .fh-room-interior-icon{font-size:2.4em;display:block;margin-bottom:4px;filter:drop-shadow(0 2px 8px rgba(150,136,95,.4))}
+        .fh-room-interior-title{font-family:'Oswald',sans-serif;font-size:1.2em;font-variant:small-caps;letter-spacing:3px;color:#96885f}
+        .fh-room-interior-sub{font-family:'Oswald',sans-serif;font-size:.8em;color:#888;letter-spacing:1px;margin-top:2px}
+        .fh-room-interior-scene{position:relative;width:100%;max-width:500px;margin:0 auto;border-radius:12px;overflow:hidden;border:3px solid rgba(150,136,95,.3);background:#111}
+        .fh-room-interior-scene img{width:100%;height:auto;display:block}
+        .fh-room-interior-hotspot{position:absolute;cursor:pointer;border:2px solid rgba(255,215,0,.5);border-radius:8px;transition:all .3s;display:flex;align-items:center;justify-content:center;z-index:3;box-sizing:border-box;background:rgba(255,215,0,.08)}
+        .fh-room-interior-hotspot:hover{border-color:rgba(255,215,0,.9);box-shadow:inset 0 0 30px rgba(255,215,0,.15),0 0 20px rgba(255,215,0,.3);background:rgba(255,215,0,.15);transform:scale(1.02)}
+        .fh-room-interior-hotspot-label{font-family:'Oswald',sans-serif;font-size:clamp(12px,2vw,16px);color:#ffd700;text-shadow:0 2px 8px rgba(0,0,0,.9),0 0 12px rgba(0,0,0,.8);pointer-events:none;text-transform:uppercase;letter-spacing:1px;line-height:1.4}
+        .fh-room-interior-hotspot-label small{font-size:.7em;color:#96885f;letter-spacing:0;text-transform:none}
+        .fh-room-interior-hotspot.soon{border-color:rgba(150,136,95,.2);background:rgba(0,0,0,.3);cursor:default;opacity:.5}
+        .fh-room-interior-hotspot.soon:hover{border-color:rgba(150,136,95,.2);box-shadow:none;background:rgba(0,0,0,.3);transform:none}
+        .fh-room-interior-hotspot.soon .fh-room-interior-hotspot-label{color:#666}
         /* ═══ SLOT CHIP BALANCE ═══ */
-        .fh-slots-chips{text-align:center;font-family:'Oswald',sans-serif;font-size:14px;color:#96885f;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px}
+        .fh-slots-chips{text-align:center;font-family:'Oswald',sans-serif;font-size:16px;color:#ffd700;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 16px;background:rgba(150,136,95,.12);border:1px solid rgba(150,136,95,.25);border-radius:8px;width:fit-content;margin-left:auto;margin-right:auto}
         </style>
 
         <script>
@@ -415,14 +434,22 @@ class FisHotel_Arcade {
                 poker:     { title: 'POKER LOUNGE', icon: '♠', subtitle: 'Video Poker' },
             };
 
-            /* Room item hotspots — positions relative to room div (%) */
+            /* Room item hotspots — positions relative to interior image (%) */
             const roomItems = {
                 slots: [
                     { id: 'fish-slots', label: 'Fish Slots', game: 'slots',
-                      left: 16.9, top: 14.3, width: 13.8, height: 71.4 },
+                      left: 30, top: 15, width: 40, height: 60 }
+                ],
+                bar: [
                     { id: 'draft-replay', label: 'Draft Replay', game: 'draft-replay', soon: true,
-                      left: 55, top: 14.3, width: 13.8, height: 71.4 }
+                      left: 50, top: 20, width: 30, height: 50 }
                 ]
+            };
+
+            /* Room interior images — placeholder until real images provided */
+            const roomInteriorImages = {
+                slots: '<?php echo esc_url( plugins_url( "assists/casino/slots/FisHotel-Slot-Cabnet-01.png", FISHOTEL_PLUGIN_FILE ) ); ?>',
+                /* Add more rooms as images become available */
             };
 
             function arcadeZoomClose() {
@@ -434,7 +461,9 @@ class FisHotel_Arcade {
                     card.style.opacity = '0';
                     card.addEventListener('transitionend', () => card.remove(), { once: true });
                 }
-                /* Remove hotspots */
+                /* Remove room interior overlay + hotspots */
+                const interior = document.querySelector('.fh-room-interior');
+                if (interior) interior.remove();
                 document.querySelectorAll('.fh-room-hotspot').forEach(h => h.remove());
                 /* Unzoom building */
                 if (_arcZoomBuilding) {
@@ -459,20 +488,43 @@ class FisHotel_Arcade {
                 }
             }
 
-            /* Show clickable hotspots in a zoomed room */
-            function showRoomItems(roomEl, roomKey) {
+            /* Show room interior popup with clickable hotspots */
+            function showRoomInterior(roomEl, roomKey) {
                 const items = roomItems[roomKey] || [];
                 if (items.length === 0) {
-                    /* No items — open game directly (bar, roulette, etc.) */
+                    /* No items defined — open game directly (roulette, blackjack, etc.) */
                     openRoomGame(roomEl.dataset.game);
                     return;
                 }
+
+                const theme = roomThemes[roomKey] || { title: 'ROOM', icon: '', subtitle: '' };
+                const interiorImg = roomInteriorImages[roomKey] || '';
+
+                /* Build the interior overlay */
+                const overlay = document.createElement('div');
+                overlay.className = 'fh-room-interior';
+                overlay.innerHTML =
+                    '<div class="fh-room-interior-card">' +
+                        '<button class="fh-room-interior-back">&larr; Back to Casino</button>' +
+                        '<div class="fh-room-interior-header">' +
+                            '<span class="fh-room-interior-icon">' + theme.icon + '</span>' +
+                            '<div class="fh-room-interior-title">' + theme.title + '</div>' +
+                            '<div class="fh-room-interior-sub">' + theme.subtitle + '</div>' +
+                        '</div>' +
+                        '<div class="fh-room-interior-scene">' +
+                            (interiorImg ? '<img src="' + interiorImg + '" alt="' + theme.title + '">' : '') +
+                        '</div>' +
+                    '</div>';
+
+                /* Add hotspot overlays on the scene */
+                const scene = overlay.querySelector('.fh-room-interior-scene');
                 items.forEach(item => {
                     const hotspot = document.createElement('div');
-                    hotspot.className = 'fh-room-hotspot' + (item.soon ? ' soon' : '');
-                    hotspot.dataset.game = item.game;
-                    const labelText = item.soon ? item.label + '<br><small style="font-size:0.7em;letter-spacing:0;">Coming Soon</small>' : item.label;
-                    hotspot.innerHTML = '<span class="fh-room-hotspot-label">' + labelText + '</span>';
+                    hotspot.className = 'fh-room-interior-hotspot' + (item.soon ? ' soon' : '');
+                    const labelHtml = item.soon
+                        ? '<span class="fh-room-interior-hotspot-label">' + item.label + '<br><small>Coming Soon</small></span>'
+                        : '<span class="fh-room-interior-hotspot-label">' + item.label + '<br><small>Click to Play</small></span>';
+                    hotspot.innerHTML = labelHtml;
                     hotspot.style.cssText = 'left:' + item.left + '%;top:' + item.top + '%;width:' + item.width + '%;height:' + item.height + '%';
                     if (!item.soon) {
                         hotspot.addEventListener('click', function(e) {
@@ -480,7 +532,18 @@ class FisHotel_Arcade {
                             openRoomGame(item.game);
                         });
                     }
-                    roomEl.appendChild(hotspot);
+                    scene.appendChild(hotspot);
+                });
+
+                document.body.appendChild(overlay);
+                requestAnimationFrame(() => overlay.classList.add('fh-room-interior--visible'));
+
+                /* Back button closes interior + unzooms */
+                overlay.querySelector('.fh-room-interior-back').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    overlay.classList.remove('fh-room-interior--visible');
+                    overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+                    arcadeZoomClose();
                 });
             }
 
@@ -566,7 +629,7 @@ class FisHotel_Arcade {
 
                     /* After zoom, show hotspots (or open game directly) */
                     setTimeout(() => {
-                        showRoomItems(this, roomKey);
+                        showRoomInterior(this, roomKey);
                     }, isMobile ? 0 : 420);
 
                     /* Escape key */
@@ -814,15 +877,26 @@ class FisHotel_Arcade {
                 const el = document.createElement('div');
                 el.className = 'fh-chip-float ' + (win ? 'win' : 'lose');
                 el.textContent = (win ? '+' : '') + Number(Math.abs(amount)).toLocaleString();
-                const popup = document.querySelector('.fh-arc-popup');
-                if (popup) {
+                /* Position near the result text area, not on top of the cabinet image */
+                const resEl = document.getElementById('fh-slots-res');
+                if (resEl && resEl.parentNode) {
                     el.style.position = 'absolute';
-                    el.style.left = '50%'; el.style.bottom = '22%';
-                    popup.appendChild(el);
+                    el.style.left = '50%';
+                    el.style.top = '-10px';
+                    resEl.style.position = resEl.style.position || 'relative';
+                    resEl.parentNode.style.position = 'relative';
+                    resEl.insertAdjacentElement('beforebegin', el);
                 } else {
-                    el.style.position = 'fixed';
-                    el.style.left = '50%'; el.style.top = '65%';
-                    document.body.appendChild(el);
+                    const popup = document.querySelector('.fh-arc-popup');
+                    if (popup) {
+                        el.style.position = 'absolute';
+                        el.style.left = '50%'; el.style.bottom = '35%';
+                        popup.appendChild(el);
+                    } else {
+                        el.style.position = 'fixed';
+                        el.style.left = '50%'; el.style.top = '65%';
+                        document.body.appendChild(el);
+                    }
                 }
                 setTimeout(() => el.remove(), 1600);
             }
