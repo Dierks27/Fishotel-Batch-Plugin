@@ -230,14 +230,9 @@ class FisHotel_Arcade {
         .fh-arc-zoom-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:transparent;z-index:99;opacity:0;transition:opacity .3s ease,background .3s ease;cursor:pointer}
         .fh-arc-zoom-backdrop--visible{opacity:1}
         .fh-arc-zoom-backdrop--dimmed{background:rgba(0,0,0,.6)}
-        .fh-arc-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(480px,90vw);max-height:85vh;overflow-y:auto;background:#111;border:1px solid rgba(150,136,95,.35);border-radius:12px;padding:28px 32px;box-sizing:border-box;z-index:10001;opacity:0;transition:opacity 200ms ease;font-family:'Oswald',sans-serif;color:#f5f0e8;text-align:center}
+        .fh-arc-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(480px,92vw);max-height:92vh;overflow-y:auto;background:#111;border:1px solid rgba(150,136,95,.35);border-radius:12px;padding:12px 16px;box-sizing:border-box;z-index:10001;opacity:0;transition:opacity 200ms ease;font-family:'Oswald',sans-serif;color:#f5f0e8;text-align:center}
         .fh-arc-popup-close{position:absolute;top:10px;right:14px;background:none;border:none;color:#888;font-size:24px;cursor:pointer;line-height:1;z-index:2}
         .fh-arc-popup-close:hover{color:#f5f0e8}
-        .fh-arc-popup-header{margin-bottom:4px}
-        .fh-arc-popup-icon{font-size:2.4em;display:block;margin-bottom:4px;filter:drop-shadow(0 2px 8px rgba(150,136,95,.4))}
-        .fh-arc-popup-title{font-size:1em;font-variant:small-caps;letter-spacing:3px;color:#96885f}
-        .fh-arc-popup-sub{font-size:.8em;color:#888;letter-spacing:1px;margin-top:2px}
-        .fh-arc-popup-divider{height:1px;background:rgba(150,136,95,.25);margin:12px 0}
         .fh-arc-popup-body{min-height:60px}
 
         /* ─── Jackpot Modal ─── */
@@ -300,7 +295,7 @@ class FisHotel_Arcade {
 
         /* ═══ SLOT MACHINE ═══ */
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
-        .fh-slots{position:relative;max-width:440px;margin:0 auto}
+        .fh-slots{position:relative;max-width:380px;margin:0 auto}
         .fh-slots-machine{position:relative;width:100%;aspect-ratio:784/1168}
         /* Cabinet is foreground (z:2) — fish reels show through transparent windows */
         .fh-slots-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
@@ -316,21 +311,21 @@ class FisHotel_Arcade {
         .fh-slots-sym{display:flex;align-items:center;justify-content:center;padding:10%;box-sizing:border-box}
         .fh-slots-sym img{width:100%;height:100%;object-fit:contain}
         /* Result */
-        .fh-slots-result{text-align:center;font-family:'Oswald',sans-serif;font-size:clamp(14px,3.5vw,20px);color:#96885f;font-weight:700;min-height:26px;margin:10px 0}
+        .fh-slots-result{text-align:center;font-family:'Oswald',sans-serif;font-size:clamp(13px,3vw,18px);color:#96885f;font-weight:700;min-height:22px;margin:4px 0}
         .fh-slots-result.win{color:#ffd700;animation:fh-slots-bounce .5s ease-out}
         .fh-slots-result.lose{color:#888}
         @keyframes fh-slots-bounce{0%{transform:scale(0)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
-        /* Controls */
-        .fh-slots-controls{display:flex;flex-direction:column;align-items:center;gap:10px}
-        .fh-slots-bets{display:flex;gap:6px;justify-content:center}
-        .fh-slots-bet{background:#2e2418;color:#f5f0e8;border:2px solid #96885f;padding:5px 14px;border-radius:6px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(12px,2vw,14px);transition:all .2s}
+        /* Controls — single row: bets + spin */
+        .fh-slots-controls{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+        .fh-slots-bets{display:flex;gap:4px;align-items:center}
+        .fh-slots-bet{background:#2e2418;color:#f5f0e8;border:2px solid #96885f;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(11px,2vw,13px);transition:all .2s}
         .fh-slots-bet:hover{background:#3e3428}
         .fh-slots-bet.active{background:#96885f;color:#2e2418;border-color:#ffd700}
-        .fh-slots-spin{background:linear-gradient(180deg,#FF7F00,#CC6600);color:#fff;border:none;border-radius:10px;padding:11px 36px;font-family:'Oswald',sans-serif;font-size:clamp(15px,3vw,20px);font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);transition:all .2s;text-shadow:0 1px 3px rgba(0,0,0,.3)}
-        .fh-slots-spin:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.4)}
+        .fh-slots-spin{background:linear-gradient(180deg,#FF7F00,#CC6600);color:#fff;border:none;border-radius:8px;padding:8px 28px;font-family:'Oswald',sans-serif;font-size:clamp(14px,2.5vw,18px);font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.3);transition:all .2s;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+        .fh-slots-spin:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(0,0,0,.4)}
         .fh-slots-spin:disabled{opacity:.4;cursor:not-allowed;transform:none}
-        /* Paytable button */
-        .fh-slots-payouts-btn{display:block;margin:10px auto 0;background:rgba(46,36,24,.7);border:1px solid #96885f;color:#ffd700;padding:7px 22px;border-radius:6px;font-family:'Oswald',sans-serif;font-size:13px;cursor:pointer;letter-spacing:1px;transition:all .2s}
+        /* Paytable button — compact */
+        .fh-slots-payouts-btn{display:block;margin:4px auto 0;background:rgba(46,36,24,.7);border:1px solid #96885f;color:#ffd700;padding:4px 16px;border-radius:6px;font-family:'Oswald',sans-serif;font-size:12px;cursor:pointer;letter-spacing:1px;transition:all .2s}
         .fh-slots-payouts-btn:hover{background:rgba(46,36,24,1)}
         /* Paytable modal */
         .fh-slots-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
@@ -348,7 +343,7 @@ class FisHotel_Arcade {
         @media(max-width:480px){.fh-slots-spin{padding:10px 28px}.fh-slots-pay-syms img{width:28px;height:28px}}
         /* (Room zoom/hotspot/interior CSS removed in v8.9 — simplified to zoom + direct popup) */
         /* ═══ SLOT CHIP BALANCE ═══ */
-        .fh-slots-chips{text-align:center;font-family:'Oswald',sans-serif;font-size:16px;color:#ffd700;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 16px;background:rgba(150,136,95,.12);border:1px solid rgba(150,136,95,.25);border-radius:8px;width:fit-content;margin-left:auto;margin-right:auto}
+        .fh-slots-chips{text-align:center;font-family:'Oswald',sans-serif;font-size:13px;color:#ffd700;margin-bottom:4px;display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 12px;background:rgba(150,136,95,.12);border:1px solid rgba(150,136,95,.25);border-radius:6px;width:fit-content;margin-left:auto;margin-right:auto}
         </style>
 
         <script>
@@ -459,12 +454,6 @@ class FisHotel_Arcade {
                 card.className = 'fh-arc-popup';
                 card.innerHTML =
                     '<button class="fh-arc-popup-close" onclick="event.stopPropagation();">&times;</button>' +
-                    '<div class="fh-arc-popup-header">' +
-                        '<span class="fh-arc-popup-icon">' + theme.icon + '</span>' +
-                        '<div class="fh-arc-popup-title">' + theme.title + '</div>' +
-                        '<div class="fh-arc-popup-sub">' + theme.subtitle + '</div>' +
-                    '</div>' +
-                    '<div class="fh-arc-popup-divider"></div>' +
                     '<div class="fh-arc-popup-body" id="fh-arc-popup-body"></div>';
                 return card;
             }
