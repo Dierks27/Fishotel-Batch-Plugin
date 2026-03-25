@@ -737,10 +737,9 @@ class FisHotel_Arcade {
                     el.style.zIndex = '4';
                     machine.appendChild(el);
                 } else {
-                        el.style.position = 'fixed';
-                        el.style.left = '50%'; el.style.top = '65%';
-                        document.body.appendChild(el);
-                    }
+                    el.style.position = 'fixed';
+                    el.style.left = '50%'; el.style.top = '65%';
+                    document.body.appendChild(el);
                 }
                 setTimeout(() => el.remove(), 1600);
             }
