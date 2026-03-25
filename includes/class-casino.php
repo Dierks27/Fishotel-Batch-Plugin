@@ -29,6 +29,7 @@ class FisHotel_Casino {
             'fishotel_casino_roulette_spin',
             'fishotel_casino_blackjack_action',
             'fishotel_casino_slots_spin',
+            'fishotel_casino_poker_slots_spin',
             'fishotel_casino_poker_action',
         ];
         foreach ( $actions as $a ) {
@@ -736,6 +737,94 @@ class FisHotel_Casino {
             'multiplier' => $multiplier,
             'payout'     => $payout,
             'chips'      => $this->get_chips( $uid ),
+            'jackpot'    => $jackpot ?: null,
+        ] );
+    }
+
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     *  SECTION 5B — SAPPHIRE POKER SLOTS (4-reel card slot)
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    public function fishotel_casino_poker_slots_spin() {
+        check_ajax_referer( 'fishotel_casino_nonce', 'nonce' );
+        $uid = get_current_user_id();
+        if ( ! $uid ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
+
+        $bet = max( 1, (int) sanitize_text_field( $_POST['bet'] ?? 0 ) );
+        if ( $bet > $this->get_chips( $uid ) ) {
+            wp_send_json_error( [ 'message' => 'Not enough chips.' ] );
+        }
+
+        /* Weighted card pool — 7 is rarest, 10 is most common */
+        $pool = [
+            '10', '10', '10', '10', '10', '10', '10', '10',  // 8
+            'J',  'J',  'J',  'J',  'J',  'J',               // 6
+            'Q',  'Q',  'Q',  'Q',  'Q',                      // 5
+            'K',  'K',  'K',                                   // 3
+            'A',  'A',                                         // 2
+            '7',                                               // 1
+        ];
+
+        /* Generate 4 reel results */
+        $reels = [];
+        for ( $i = 0; $i < 4; $i++ ) {
+            $reels[] = $pool[ wp_rand( 0, count( $pool ) - 1 ) ];
+        }
+
+        /* Count occurrences of each card */
+        $counts = array_count_values( $reels );
+        arsort( $counts );
+        $values = array_values( $counts );
+        $keys   = array_keys( $counts );
+
+        /* 4-of-a-kind payouts */
+        $quad_payouts = [
+            '7' => 100, 'A' => 50, 'K' => 25, 'Q' => 15, 'J' => 10, '10' => 8,
+        ];
+        /* 3-of-a-kind payouts */
+        $triple_payouts = [
+            '7' => 25, 'A' => 15, 'K' => 6, 'Q' => 4, 'J' => 3, '10' => 2,
+        ];
+
+        $multiplier = 0;
+        $match_type = '';
+
+        if ( $values[0] === 4 ) {
+            /* Four of a kind */
+            $multiplier = $quad_payouts[ $keys[0] ] ?? 8;
+            $match_type = 'four';
+        } elseif ( $values[0] === 3 ) {
+            /* Three of a kind */
+            $multiplier = $triple_payouts[ $keys[0] ] ?? 2;
+            $match_type = 'three';
+        } elseif ( $values[0] === 2 && isset( $values[1] ) && $values[1] === 2 ) {
+            /* Two pair */
+            $multiplier = 2;
+            $match_type = 'twopair';
+        } elseif ( $values[0] === 2 && ( $keys[0] === '7' || $keys[0] === 'A' ) ) {
+            /* Pair of 7s or Aces */
+            $multiplier = 1;
+            $match_type = 'pair';
+        }
+
+        $payout = $bet * $multiplier;
+        $this->deduct_chips( $uid, $bet );
+        if ( $payout > 0 ) {
+            $this->add_chips( $uid, $payout );
+        }
+        $this->record_game( $uid, 'poker-slots', $bet, $payout );
+
+        $jackpot = $this->check_jackpot( $uid, 'poker-slots', [
+            'multiplier' => $multiplier, 'reels' => $reels, 'payout' => $payout,
+        ] );
+
+        wp_send_json_success( [
+            'reels'      => $reels,
+            'multiplier' => $multiplier,
+            'payout'     => $payout,
+            'chips'      => $this->get_chips( $uid ),
+            'match_type' => $match_type,
             'jackpot'    => $jackpot ?: null,
         ] );
     }

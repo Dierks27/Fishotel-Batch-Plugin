@@ -316,6 +316,71 @@ class FisHotel_Arcade {
         .fh-slots-pay-label{font-family:'Oswald',sans-serif;font-size:11px;color:#f5f0e8}
         .fh-slots-pay-footer{grid-column:1/-1;text-align:center;padding:4px 8px;background:rgba(0,0,0,.2);border:1px solid rgba(150,136,95,.15);border-radius:4px;font-family:'Oswald',sans-serif;font-size:12px;color:#96885f;margin-top:2px}
         /* (Room zoom/hotspot/interior CSS removed in v8.9 — simplified to zoom + direct popup) */
+
+        /* ═══ SAPPHIRE POKER SLOTS ═══ */
+        /* Slot selection menu */
+        .fh-slot-select{display:flex;gap:16px;justify-content:center;padding:20px 0;flex-wrap:wrap}
+        .fh-slot-select-card{background:rgba(0,0,0,.5);border:2px solid rgba(150,136,95,.4);border-radius:14px;padding:24px 28px;cursor:pointer;text-align:center;transition:all .25s;min-width:120px}
+        .fh-slot-select-card:hover{border-color:#ffd700;background:rgba(255,215,0,.08);box-shadow:0 0 18px rgba(255,215,0,.2);transform:translateY(-3px)}
+        .fh-slot-select-icon{font-size:2.8em;margin-bottom:8px;display:block}
+        .fh-slot-select-name{font-family:'Oswald',sans-serif;font-size:1em;font-weight:600;color:#f5f0e8;letter-spacing:1px;text-transform:uppercase}
+        .fh-slot-select-sub{font-size:.75em;color:#96885f;margin-top:4px;font-family:'Special Elite',cursive}
+
+        /* Container locks to cabinet's natural 784×1168 aspect ratio */
+        .fh-sapphire{position:relative;max-width:380px;margin:0 auto}
+        .fh-sapphire-machine{position:relative;width:100%;aspect-ratio:784/1168}
+        /* Cabinet is foreground (z:2) — card reels show through transparent windows */
+        .fh-sapphire-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
+        /* Each reel is positioned with calc() from natural pixel coords (784×1168) */
+        .fh-sapphire-rw{position:absolute;overflow:hidden;z-index:1;background:#f5f0e8;border-radius:2px}
+        #fh-spw-0{left:calc(108/784*100%);top:calc(385/1168*100%);width:calc(95/784*100%);height:calc(350/1168*100%)}
+        #fh-spw-1{left:calc(210/784*100%);top:calc(385/1168*100%);width:calc(95/784*100%);height:calc(350/1168*100%)}
+        #fh-spw-2{left:calc(312/784*100%);top:calc(385/1168*100%);width:calc(95/784*100%);height:calc(350/1168*100%)}
+        #fh-spw-3{left:calc(414/784*100%);top:calc(385/1168*100%);width:calc(95/784*100%);height:calc(350/1168*100%)}
+        .fh-sapphire-rw.winning{box-shadow:0 0 18px rgba(255,215,0,.7);animation:fh-sapphire-glow .4s ease-in-out 3}
+        @keyframes fh-sapphire-glow{0%,100%{box-shadow:0 0 18px rgba(255,215,0,.7)}50%{box-shadow:0 0 30px rgba(255,215,0,1)}}
+        .fh-sapphire-strip{position:absolute;top:0;left:0;width:100%;will-change:transform}
+        /* Each symbol is exactly window height so one card fills one window */
+        .fh-sapphire-sym{display:flex;align-items:center;justify-content:center;padding:10%;box-sizing:border-box}
+        .fh-sapphire-sym img{width:100%;height:100%;object-fit:contain}
+        /* ═══ LED Dot-Matrix Lightboard (above reels) ═══ */
+        .fh-sapphire-result{position:absolute;z-index:3;left:calc(110/784*100%);top:calc(280/1168*100%);width:calc(410/784*100%);height:calc(55/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
+        /* ═══ SPIN Button (round, right side) ═══ */
+        .fh-sapphire-spin{position:absolute;z-index:3;left:calc(590/784*100%);top:calc(310/1168*100%);width:calc(120/784*100%);height:calc(120/1168*100%);background:linear-gradient(180deg,rgba(200,30,30,.85),rgba(140,15,15,.85));color:#fff;border:3px solid rgba(200,30,30,.6);border-radius:50%;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(10px,2vw,14px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4),inset 0 2px 4px rgba(255,255,255,.15)}
+        .fh-sapphire-spin:hover{background:linear-gradient(180deg,rgba(220,40,40,.95),rgba(160,20,20,.95));border-color:rgba(220,40,40,.8);box-shadow:0 0 16px rgba(220,40,40,.5),inset 0 2px 4px rgba(255,255,255,.15)}
+        .fh-sapphire-spin:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+        /* ═══ Bet Buttons (below reels) ═══ */
+        .fh-sapphire-bet{position:absolute;z-index:3;top:calc(780/1168*100%);height:calc(40/1168*100%);background:rgba(0,0,0,.6);color:#f5f0e8;border:1px solid rgba(150,136,95,.4);padding:0;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.5vw,11px);font-weight:600;transition:all .2s;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+        .fh-sapphire-bet:hover{background:rgba(0,0,0,.8);border-color:rgba(255,215,0,.5)}
+        .fh-sapphire-bet.active{background:rgba(255,215,0,.2);border-color:#ffd700;color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,.5),inset 0 0 8px rgba(255,215,0,.15)}
+        #fh-spbet-10{left:calc(110/784*100%);width:calc(100/784*100%)}
+        #fh-spbet-50{left:calc(213/784*100%);width:calc(100/784*100%)}
+        #fh-spbet-100{left:calc(316/784*100%);width:calc(100/784*100%)}
+        #fh-spbet-250{left:calc(419/784*100%);width:calc(100/784*100%)}
+        /* ═══ Chip Balance (right panel) ═══ */
+        .fh-sapphire-chips{position:absolute;z-index:3;left:calc(600/784*100%);top:calc(620/1168*100%);width:calc(140/784*100%);height:calc(60/1168*100%);background:rgba(0,0,0,.75);border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.6vw,12px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px}
+        /* ═══ Pay Table Button (right panel) ═══ */
+        .fh-sapphire-payouts-btn{position:absolute;z-index:3;left:calc(610/784*100%);top:calc(780/1168*100%);width:calc(120/784*100%);height:calc(50/1168*100%);background:linear-gradient(180deg,rgba(80,75,60,.4),rgba(40,38,30,.6));border:1px solid rgba(150,136,95,.35);color:rgba(150,136,95,.7);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(6px,1.1vw,9px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
+        .fh-sapphire-payouts-btn:hover{background:rgba(255,215,0,.08);color:rgba(150,136,95,.9)}
+        /* ═══ On-Cabinet Paytable (below bets) ═══ */
+        .fh-sapphire-face-pay{position:absolute;z-index:3;left:calc(100/784*100%);top:calc(830/1168*100%);width:calc(430/784*100%);height:calc(130/1168*100%);display:grid;grid-template-columns:1fr 1fr;gap:1px 6px;align-content:center;font-family:'Oswald',sans-serif;font-size:clamp(5px,.9vw,8px);color:rgba(150,136,95,.5);padding:2px 6px;box-sizing:border-box;overflow:hidden}
+        .fh-sapphire-face-pay span{display:flex;align-items:center;justify-content:space-between;padding:0 2px;white-space:nowrap}
+        .fh-sapphire-face-pay .sp-mult{color:rgba(255,215,0,.45);font-weight:700}
+        /* ═══ Paytable Modal ═══ */
+        .fh-sapphire-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
+        .fh-sapphire-pay-bd{position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer}
+        .fh-sapphire-pay-card{position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:380px;width:90%;box-shadow:0 16px 50px rgba(0,0,0,.6)}
+        .fh-sapphire-pay-close{position:absolute;top:8px;right:12px;background:none;border:none;color:#96885f;font-size:22px;cursor:pointer;line-height:1}
+        .fh-sapphire-pay-close:hover{color:#ffd700}
+        .fh-sapphire-pay-title{text-align:center;font-family:'Special Elite',monospace;font-size:clamp(14px,3.5vw,18px);color:#ffd700;margin:0 0 2px}
+        .fh-sapphire-pay-sub{text-align:center;font-family:'Oswald',sans-serif;font-size:11px;color:#96885f;margin:0 0 10px}
+        .fh-sapphire-pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+        .fh-sapphire-pay-row{display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(0,0,0,.25);border:1px solid rgba(150,136,95,.15);border-radius:4px}
+        .fh-sapphire-pay-syms{flex-shrink:0;display:flex;gap:2px;align-items:center}
+        .fh-sapphire-pay-syms img{width:18px;height:18px;object-fit:contain}
+        .fh-sapphire-pay-mult{font-family:'Oswald',sans-serif;font-size:clamp(13px,3vw,16px);font-weight:700;color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,.3)}
+        .fh-sapphire-pay-label{font-family:'Oswald',sans-serif;font-size:11px;color:#f5f0e8}
+        .fh-sapphire-pay-section{grid-column:1/-1;text-align:center;padding:4px 8px;background:rgba(0,0,0,.2);border:1px solid rgba(150,136,95,.15);border-radius:4px;font-family:'Oswald',sans-serif;font-size:12px;color:#96885f;margin-top:2px}
         </style>
 
         <script>
@@ -491,7 +556,7 @@ class FisHotel_Arcade {
                 switch(game) {
                     case 'daily_bonus': renderDailyBonus(body); break;
                     case 'coming_soon': renderComingSoon(body); break;
-                    case 'slots':       renderSlotMachine(body); break;
+                    case 'slots':       renderSlotSelection(body); break;
                     default:
                         body.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;font-family:Special Elite,cursive;">Game being rebuilt — coming soon!</p>';
                         break;
@@ -884,6 +949,444 @@ class FisHotel_Arcade {
                 });
             }
 
+            /* ═══════════════════════════════════════════════
+             *  SLOT SELECTION MENU
+             * ═══════════════════════════════════════════════ */
+
+            function renderSlotSelection(body) {
+                body.innerHTML =
+                    '<div class="fh-slot-select">' +
+                        '<div class="fh-slot-select-card" id="fh-sel-fish">' +
+                            '<span class="fh-slot-select-icon">\uD83D\uDC20</span>' +
+                            '<div class="fh-slot-select-name">Fish Slots</div>' +
+                            '<div class="fh-slot-select-sub">3-Reel Classic</div>' +
+                        '</div>' +
+                        '<div class="fh-slot-select-card" id="fh-sel-sapphire">' +
+                            '<span class="fh-slot-select-icon">\u2660</span>' +
+                            '<div class="fh-slot-select-name">Sapphire Poker</div>' +
+                            '<div class="fh-slot-select-sub">4-Reel Cards</div>' +
+                        '</div>' +
+                    '</div>';
+                document.getElementById('fh-sel-fish').addEventListener('click', () => {
+                    renderSlotMachine(body);
+                });
+                document.getElementById('fh-sel-sapphire').addEventListener('click', () => {
+                    renderSapphirePokerSlots(body);
+                });
+            }
+
+            /* ═══════════════════════════════════════════════
+             *  SAPPHIRE POKER SLOTS (4-reel card machine)
+             * ═══════════════════════════════════════════════ */
+
+            function renderSapphirePokerSlots(body) {
+                const cabinetUrl = '<?php echo esc_url( plugins_url( "assists/casino/slots/FisHotel-Slot-Cabnet-Body-02.png", FISHOTEL_PLUGIN_FILE ) ); ?>?v=<?php echo FISHOTEL_VERSION; ?>';
+                const cardBase   = '<?php echo esc_url( plugins_url( "assists/casino/slots/", FISHOTEL_PLUGIN_FILE ) ); ?>';
+
+                const CARDS = [
+                    { id:'7',  file:'7-Card.png',  pay4:100, pay3:25, label:'Lucky 7' },
+                    { id:'A',  file:'A-Card.png',  pay4:50,  pay3:15, label:'Ace' },
+                    { id:'K',  file:'K-Card.png',  pay4:25,  pay3:6,  label:'King' },
+                    { id:'Q',  file:'Q-Card.png',  pay4:15,  pay3:4,  label:'Queen' },
+                    { id:'J',  file:'J-Card.png',  pay4:10,  pay3:3,  label:'Jack' },
+                    { id:'10', file:'10-Card.png', pay4:8,   pay3:2,  label:'Ten' },
+                ];
+                const cardMap = {}; CARDS.forEach(c => cardMap[c.id] = c);
+
+                /* Build weighted pool matching backend: 10=8, J=6, Q=5, K=3, A=2, 7=1 */
+                const pool = [];
+                [1,2,3,5,6,8].forEach((w,i) => { for(let j=0;j<w;j++) pool.push(CARDS[i]); });
+
+                let bet = 50, spinning = false;
+
+                /* ── Build HTML ── */
+                const facePay =
+                    '<span>7-7-7-7 <em class="sp-mult">100x</em></span>' +
+                    '<span>A-A-A-A <em class="sp-mult">50x</em></span>' +
+                    '<span>K-K-K-K <em class="sp-mult">25x</em></span>' +
+                    '<span>7-7-7 <em class="sp-mult">25x</em></span>' +
+                    '<span>Q-Q-Q-Q <em class="sp-mult">15x</em></span>' +
+                    '<span>A-A-A <em class="sp-mult">15x</em></span>' +
+                    '<span>J-J-J-J <em class="sp-mult">10x</em></span>' +
+                    '<span>K-K-K <em class="sp-mult">6x</em></span>' +
+                    '<span>TWO PAIR <em class="sp-mult">2x</em></span>' +
+                    '<span>PAIR <em class="sp-mult">1x</em></span>';
+
+                body.innerHTML =
+                    '<div class="fh-sapphire">' +
+                        '<div class="fh-sapphire-machine">' +
+                            '<img src="' + cabinetUrl + '" alt="Sapphire Poker Slots">' +
+                            /* 4 reel windows */
+                            '<div class="fh-sapphire-rw" id="fh-spw-0"><div class="fh-sapphire-strip" id="fh-spr-0"><div class="fh-sapphire-sym"><img src="'+cardBase+'K-Card.png"></div></div></div>' +
+                            '<div class="fh-sapphire-rw" id="fh-spw-1"><div class="fh-sapphire-strip" id="fh-spr-1"><div class="fh-sapphire-sym"><img src="'+cardBase+'A-Card.png"></div></div></div>' +
+                            '<div class="fh-sapphire-rw" id="fh-spw-2"><div class="fh-sapphire-strip" id="fh-spr-2"><div class="fh-sapphire-sym"><img src="'+cardBase+'Q-Card.png"></div></div></div>' +
+                            '<div class="fh-sapphire-rw" id="fh-spw-3"><div class="fh-sapphire-strip" id="fh-spr-3"><div class="fh-sapphire-sym"><img src="'+cardBase+'J-Card.png"></div></div></div>' +
+                            /* LED Lightboard */
+                            '<canvas class="fh-sapphire-result" id="fh-sapphire-led" width="400" height="50"></canvas>' +
+                            /* SPIN button (round) */
+                            '<button class="fh-sapphire-spin" id="fh-sapphire-spin">SPIN</button>' +
+                            /* Chip balance */
+                            '<div class="fh-sapphire-chips"><img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" style="width:16px;height:16px"><span class="fh-arc-chip-mirror">' + Number(chips).toLocaleString() + '</span></div>' +
+                            /* Bet buttons */
+                            '<button class="fh-sapphire-bet" id="fh-spbet-10" data-bet="10">10</button>' +
+                            '<button class="fh-sapphire-bet active" id="fh-spbet-50" data-bet="50">50</button>' +
+                            '<button class="fh-sapphire-bet" id="fh-spbet-100" data-bet="100">100</button>' +
+                            '<button class="fh-sapphire-bet" id="fh-spbet-250" data-bet="250">250</button>' +
+                            /* Pay Table button */
+                            '<button class="fh-sapphire-payouts-btn" id="fh-sapphire-pay-btn">PAY TABLE</button>' +
+                            /* On-cabinet paytable */
+                            '<div class="fh-sapphire-face-pay">' + facePay + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    /* Paytable modal (hidden) */
+                    '<div class="fh-sapphire-pay-modal" id="fh-sapphire-pay" style="display:none;">' +
+                        '<div class="fh-sapphire-pay-bd" id="fh-sapphire-pay-bd"></div>' +
+                        '<div class="fh-sapphire-pay-card">' +
+                            '<button class="fh-sapphire-pay-close" id="fh-sapphire-pay-x">&times;</button>' +
+                            '<div class="fh-sapphire-pay-title">SAPPHIRE POKER PAYOUTS</div>' +
+                            '<div class="fh-sapphire-pay-sub">4-of-a-Kind &amp; 3-of-a-Kind</div>' +
+                            '<div class="fh-sapphire-pay-grid">' +
+                            CARDS.map(c =>
+                                '<div class="fh-sapphire-pay-row">' +
+                                    '<div class="fh-sapphire-pay-syms"><img src="'+cardBase+c.file+'"><img src="'+cardBase+c.file+'"><img src="'+cardBase+c.file+'"><img src="'+cardBase+c.file+'"></div>' +
+                                    '<div class="fh-sapphire-pay-mult">'+c.pay4+'x</div>' +
+                                '</div>'
+                            ).join('') +
+                            '<div class="fh-sapphire-pay-section">3-of-a-Kind</div>' +
+                            CARDS.map(c =>
+                                '<div class="fh-sapphire-pay-row">' +
+                                    '<div class="fh-sapphire-pay-syms"><img src="'+cardBase+c.file+'"><img src="'+cardBase+c.file+'"><img src="'+cardBase+c.file+'"></div>' +
+                                    '<div class="fh-sapphire-pay-mult">'+c.pay3+'x</div>' +
+                                '</div>'
+                            ).join('') +
+                            '<div class="fh-sapphire-pay-section">Two Pair: <span style="color:#ffd700;font-weight:700;">2x</span> &nbsp;&bull;&nbsp; Any Pair: <span style="color:#ffd700;font-weight:700;">1x</span></div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+
+                /* ── Center initial symbols in reel windows ── */
+                document.querySelectorAll('.fh-sapphire-rw').forEach(function(win) {
+                    var symH = win.offsetHeight;
+                    win.querySelector('.fh-sapphire-sym').style.height = symH + 'px';
+                });
+
+                /* ── Bet buttons ── */
+                body.querySelectorAll('.fh-sapphire-bet').forEach(b => {
+                    b.addEventListener('click', () => {
+                        if (spinning) return;
+                        body.querySelectorAll('.fh-sapphire-bet').forEach(x => x.classList.remove('active'));
+                        b.classList.add('active');
+                        bet = parseInt(b.dataset.bet);
+                    });
+                });
+
+                /* ═══ LED DOT-MATRIX LIGHTBOARD ENGINE (Sapphire) ═══ */
+                const spLedCanvas = document.getElementById('fh-sapphire-led');
+                const spLedCtx = spLedCanvas.getContext('2d');
+                let spLedAnim = null, spLedScrollX = 0, spLedText = '', spLedColor = '#ffd700', spLedMode = 'static';
+
+                /* 5x7 dot-matrix font — same as Fish Slots */
+                const SP_LED_FONT = {
+                    'A':[0x1F,0x24,0x44,0x24,0x1F],'B':[0x7F,0x49,0x49,0x49,0x36],'C':[0x3E,0x41,0x41,0x41,0x22],
+                    'D':[0x7F,0x41,0x41,0x41,0x3E],'E':[0x7F,0x49,0x49,0x49,0x41],'F':[0x7F,0x48,0x48,0x48,0x40],
+                    'G':[0x3E,0x41,0x49,0x49,0x2E],'H':[0x7F,0x08,0x08,0x08,0x7F],'I':[0x41,0x41,0x7F,0x41,0x41],
+                    'J':[0x02,0x01,0x01,0x01,0x7E],'K':[0x7F,0x08,0x14,0x22,0x41],'L':[0x7F,0x01,0x01,0x01,0x01],
+                    'M':[0x7F,0x20,0x10,0x20,0x7F],'N':[0x7F,0x10,0x08,0x04,0x7F],'O':[0x3E,0x41,0x41,0x41,0x3E],
+                    'P':[0x7F,0x48,0x48,0x48,0x30],'Q':[0x3E,0x41,0x45,0x42,0x3D],'R':[0x7F,0x48,0x4C,0x4A,0x31],
+                    'S':[0x32,0x49,0x49,0x49,0x26],'T':[0x40,0x40,0x7F,0x40,0x40],'U':[0x7E,0x01,0x01,0x01,0x7E],
+                    'V':[0x7C,0x02,0x01,0x02,0x7C],'W':[0x7F,0x02,0x04,0x02,0x7F],'X':[0x63,0x14,0x08,0x14,0x63],
+                    'Y':[0x60,0x10,0x0F,0x10,0x60],'Z':[0x43,0x45,0x49,0x51,0x61],
+                    '0':[0x3E,0x45,0x49,0x51,0x3E],'1':[0x00,0x21,0x7F,0x01,0x00],'2':[0x23,0x45,0x49,0x49,0x31],
+                    '3':[0x22,0x41,0x49,0x49,0x36],'4':[0x0C,0x14,0x24,0x7F,0x04],'5':[0x72,0x51,0x51,0x51,0x4E],
+                    '6':[0x3E,0x49,0x49,0x49,0x26],'7':[0x40,0x47,0x48,0x50,0x60],'8':[0x36,0x49,0x49,0x49,0x36],
+                    '9':[0x32,0x49,0x49,0x49,0x3E],
+                    '+':[0x08,0x08,0x3E,0x08,0x08],'-':[0x08,0x08,0x08,0x08,0x08],'!':[0x00,0x00,0x7D,0x00,0x00],
+                    'x':[0x22,0x14,0x08,0x14,0x22],
+                    ' ':[0x00,0x00,0x00,0x00,0x00],'.':[0x00,0x01,0x00,0x00,0x00],',':[0x00,0x01,0x02,0x00,0x00],
+                    ':':[0x00,0x14,0x00,0x00,0x00],'?':[0x20,0x40,0x4D,0x48,0x30],
+                };
+
+                function spLedGetTextWidth(text) {
+                    let w = 0;
+                    for (let i = 0; i < text.length; i++) {
+                        w += (SP_LED_FONT[text[i]] ? 5 : 3) + 1;
+                    }
+                    return w - 1;
+                }
+
+                function spLedDraw() {
+                    const el = document.getElementById('fh-sapphire-led');
+                    if (!el) { cancelAnimationFrame(spLedAnim); return; }
+                    const w = el.offsetWidth * 2, h = el.offsetHeight * 2;
+                    if (spLedCanvas.width !== w || spLedCanvas.height !== h) {
+                        spLedCanvas.width = w; spLedCanvas.height = h;
+                    }
+                    const ctx = spLedCtx;
+                    const dotSize = 3, gap = 1, pitch = dotSize + gap;
+                    const rows = 7, charW = 5;
+                    const totalH = rows * pitch;
+                    const offsetY = Math.floor((h - totalH) / 2);
+                    const textW = spLedGetTextWidth(spLedText);
+                    const totalPxW = textW * pitch;
+                    const visibleCols = Math.floor(w / pitch);
+
+                    ctx.fillStyle = '#080808';
+                    ctx.fillRect(0, 0, w, h);
+
+                    /* Draw dim dot grid background */
+                    const gridCols = Math.ceil(w / pitch), gridRows = rows;
+                    for (let row = 0; row < gridRows; row++) {
+                        for (let col = 0; col < gridCols; col++) {
+                            ctx.fillStyle = 'rgba(30,30,30,.5)';
+                            ctx.beginPath();
+                            ctx.arc(col * pitch + dotSize/2, offsetY + row * pitch + dotSize/2, dotSize/2, 0, Math.PI*2);
+                            ctx.fill();
+                        }
+                    }
+
+                    /* Determine scroll offset */
+                    let scrollOff = 0;
+                    if (spLedMode === 'scroll') {
+                        scrollOff = Math.floor(spLedScrollX);
+                    } else {
+                        scrollOff = -Math.floor((w - totalPxW) / 2 / pitch);
+                    }
+
+                    /* Parse color for glow */
+                    const isGold = spLedColor === '#ffd700';
+                    const glowR = isGold ? 255 : 204, glowG = isGold ? 215 : 68, glowB = isGold ? 0 : 68;
+
+                    /* Draw lit dots */
+                    let colPos = 0;
+                    for (let ci = 0; ci < spLedText.length; ci++) {
+                        const ch = spLedText[ci];
+                        const glyph = SP_LED_FONT[ch] || SP_LED_FONT[' '];
+                        const cw = glyph.length;
+                        for (let gc = 0; gc < cw; gc++) {
+                            const screenCol = colPos - scrollOff;
+                            if (screenCol >= -1 && screenCol < gridCols + 1) {
+                                const colData = glyph[gc];
+                                for (let row = 0; row < rows; row++) {
+                                    if (colData & (1 << (rows - 1 - row))) {
+                                        const px = screenCol * pitch + dotSize/2;
+                                        const py = offsetY + row * pitch + dotSize/2;
+                                        /* Glow */
+                                        ctx.fillStyle = 'rgba('+glowR+','+glowG+','+glowB+',.15)';
+                                        ctx.beginPath();
+                                        ctx.arc(px, py, dotSize, 0, Math.PI*2);
+                                        ctx.fill();
+                                        /* Bright dot */
+                                        ctx.fillStyle = spLedColor;
+                                        ctx.beginPath();
+                                        ctx.arc(px, py, dotSize/2, 0, Math.PI*2);
+                                        ctx.fill();
+                                    }
+                                }
+                            }
+                            colPos++;
+                        }
+                        colPos++; /* 1-col gap between chars */
+                    }
+
+                    if (spLedMode === 'scroll') {
+                        spLedScrollX += 0.3;
+                        if (spLedScrollX > textW + visibleCols) {
+                            spLedScrollX = -visibleCols;
+                        }
+                        spLedAnim = requestAnimationFrame(spLedDraw);
+                    }
+                }
+
+                function spLedShow(text, color, flash) {
+                    if (spLedAnim) { cancelAnimationFrame(spLedAnim); spLedAnim = null; }
+                    spLedText = text.toUpperCase();
+                    spLedColor = color || '#ffd700';
+                    const el = document.getElementById('fh-sapphire-led');
+                    const visW = el ? el.offsetWidth * 2 : 300;
+                    const pitch = 4;
+                    const textPxW = spLedGetTextWidth(spLedText) * pitch;
+
+                    if (textPxW > visW) {
+                        spLedMode = 'scroll';
+                        spLedScrollX = -Math.floor(visW / pitch);
+                        spLedDraw();
+                        spLedAnim = requestAnimationFrame(spLedDraw);
+                    } else {
+                        spLedMode = 'static';
+                        spLedScrollX = 0;
+                        spLedDraw();
+                        if (flash) {
+                            let flashes = 0;
+                            const origColor = spLedColor;
+                            const flashInterval = setInterval(() => {
+                                spLedColor = flashes % 2 === 0 ? '#fff' : origColor;
+                                spLedDraw();
+                                flashes++;
+                                if (flashes >= 6) {
+                                    clearInterval(flashInterval);
+                                    spLedColor = origColor;
+                                    spLedDraw();
+                                }
+                            }, 150);
+                        }
+                    }
+                }
+
+                function spLedClear() {
+                    if (spLedAnim) { cancelAnimationFrame(spLedAnim); spLedAnim = null; }
+                    spLedText = '';
+                    spLedMode = 'static';
+                    const el = document.getElementById('fh-sapphire-led');
+                    if (el) {
+                        const w = el.offsetWidth * 2, h = el.offsetHeight * 2;
+                        spLedCanvas.width = w; spLedCanvas.height = h;
+                        spLedCtx.fillStyle = '#080808';
+                        spLedCtx.fillRect(0, 0, w, h);
+                        const pitch = 4, dotSize = 3, rows = 7;
+                        const offsetY = Math.floor((h - rows * pitch) / 2);
+                        for (let row = 0; row < rows; row++) {
+                            for (let col = 0; col < Math.ceil(w / pitch); col++) {
+                                spLedCtx.fillStyle = 'rgba(30,30,30,.5)';
+                                spLedCtx.beginPath();
+                                spLedCtx.arc(col * pitch + dotSize/2, offsetY + row * pitch + dotSize/2, dotSize/2, 0, Math.PI*2);
+                                spLedCtx.fill();
+                            }
+                        }
+                    }
+                }
+
+                /* Initialize lightboard with dim dots */
+                setTimeout(spLedClear, 50);
+
+                /* ── Paytable modal toggle ── */
+                const spPayModal = document.getElementById('fh-sapphire-pay');
+                const spClosePay = () => { spPayModal.style.display = 'none'; };
+                document.getElementById('fh-sapphire-pay-btn').addEventListener('click', () => { spPayModal.style.display = 'flex'; });
+                document.getElementById('fh-sapphire-pay-x').addEventListener('click', spClosePay);
+                document.getElementById('fh-sapphire-pay-bd').addEventListener('click', spClosePay);
+
+                /* ── Build reel strip: N random cards + final result ── */
+                function spBuildStrip(finalId, count) {
+                    let html = '';
+                    for (let i = 0; i < count; i++) {
+                        const c = pool[Math.floor(Math.random() * pool.length)];
+                        html += '<div class="fh-sapphire-sym"><img src="' + cardBase + c.file + '"></div>';
+                    }
+                    const f = cardMap[finalId] || CARDS[5];
+                    html += '<div class="fh-sapphire-sym"><img src="' + cardBase + f.file + '"></div>';
+                    return html;
+                }
+
+                /* ── Spin one reel and stop perfectly on the final card ── */
+                function spSpinReel(idx, finalId, duration) {
+                    return new Promise(resolve => {
+                        const strip = document.getElementById('fh-spr-' + idx);
+                        const win   = document.getElementById('fh-spw-' + idx);
+                        const symH  = win.offsetHeight;
+                        const count = 22 + idx * 6;
+                        strip.innerHTML = spBuildStrip(finalId, count);
+                        strip.querySelectorAll('.fh-sapphire-sym').forEach(s => { s.style.height = symH + 'px'; });
+                        strip.style.transition = 'none';
+                        strip.style.transform = 'translateY(0)';
+                        strip.offsetHeight;
+                        strip.style.transition = 'transform ' + duration + 'ms cubic-bezier(.15,.85,.25,1)';
+                        strip.style.transform = 'translateY(-' + (count * symH) + 'px)';
+                        setTimeout(resolve, duration + 60);
+                    });
+                }
+
+                /* ── Win message builder ── */
+                function spWinMessage(d) {
+                    const mt = d.match_type || '';
+                    const cardLabel = cardMap[d.match_card] ? cardMap[d.match_card].label : '';
+                    if (mt === 'four') {
+                        if (d.match_card === '7') return '7777 SUPERPOT!';
+                        return 'FOUR ' + cardLabel.toUpperCase() + 'S! ' + d.multiplier + 'x';
+                    }
+                    if (mt === 'three') {
+                        return 'THREE ' + cardLabel.toUpperCase() + 'S! ' + d.multiplier + 'x WIN';
+                    }
+                    if (mt === 'twopair') {
+                        return 'TWO PAIR! ' + d.multiplier + 'x WIN';
+                    }
+                    if (mt === 'pair') {
+                        return 'PAIR! ' + d.multiplier + 'x';
+                    }
+                    return 'NO MATCH';
+                }
+
+                /* ── Spin button ── */
+                document.getElementById('fh-sapphire-spin').addEventListener('click', async () => {
+                    if (spinning) return;
+                    if (bet > chips) {
+                        spLedShow('NOT ENOUGH CHIPS', '#cc4444', false);
+                        return;
+                    }
+                    spinning = true;
+                    document.getElementById('fh-sapphire-spin').disabled = true;
+                    spLedClear();
+                    [0,1,2,3].forEach(i => document.getElementById('fh-spw-' + i).classList.remove('winning'));
+
+                    const res = await casinoPost('fishotel_casino_poker_slots_spin', { bet: bet });
+                    if (!res.success) {
+                        spLedShow(res.data.message || 'ERROR', '#cc4444', false);
+                        spinning = false;
+                        document.getElementById('fh-sapphire-spin').disabled = false;
+                        return;
+                    }
+                    const d = res.data;
+
+                    /* Stagger reel stops: 1400, 1800, 2200, 2600ms */
+                    await spSpinReel(0, d.reels[0], 1400);
+                    await spSpinReel(1, d.reels[1], 1800);
+                    await spSpinReel(2, d.reels[2], 2200);
+                    await spSpinReel(3, d.reels[3], 2600);
+
+                    updateChips(d.chips);
+
+                    if (d.payout > 0) {
+                        /* Highlight matching reels */
+                        const mt = d.match_type || '';
+                        if (mt === 'four') {
+                            [0,1,2,3].forEach(i => document.getElementById('fh-spw-' + i).classList.add('winning'));
+                        } else if (mt === 'three') {
+                            /* Find which 3 match */
+                            const reels = d.reels;
+                            for (let i = 0; i < 4; i++) {
+                                let matchCount = 0;
+                                for (let j = 0; j < 4; j++) { if (reels[i] === reels[j]) matchCount++; }
+                                if (matchCount >= 3) document.getElementById('fh-spw-' + i).classList.add('winning');
+                            }
+                        } else if (mt === 'twopair' || mt === 'pair') {
+                            const reels = d.reels;
+                            for (let i = 0; i < 4; i++) {
+                                for (let j = i + 1; j < 4; j++) {
+                                    if (reels[i] === reels[j]) {
+                                        document.getElementById('fh-spw-' + i).classList.add('winning');
+                                        document.getElementById('fh-spw-' + j).classList.add('winning');
+                                    }
+                                }
+                            }
+                        }
+                        spLedShow(spWinMessage(d), '#ffd700', true);
+                        fhChipFloat(d.payout, true);
+                        if (d.multiplier >= 25) {
+                            const flash = document.createElement('div');
+                            flash.style.cssText = 'position:fixed;inset:0;background:radial-gradient(circle,rgba(255,215,0,.5) 0%,transparent 70%);pointer-events:none;z-index:99998;opacity:1;transition:opacity 1s';
+                            document.body.appendChild(flash);
+                            setTimeout(() => { flash.style.opacity = '0'; }, 100);
+                            setTimeout(() => flash.remove(), 1200);
+                        }
+                        if (window.fhArcadeHandleWin) window.fhArcadeHandleWin(d);
+                    } else {
+                        spLedShow('NO MATCH', '#cc4444', false);
+                        fhChipFloat(-bet, false);
+                    }
+                    spinning = false;
+                    document.getElementById('fh-sapphire-spin').disabled = false;
+                });
+            }
+
             /* ─── Shared helpers (for future game rebuilds) ─── */
             function fhCard(c, faceDown, isHeld) {
                 if (faceDown) return '<div class="fh-card fh-card-back"></div>';
@@ -901,12 +1404,17 @@ class FisHotel_Arcade {
                 el.className = 'fh-chip-float ' + (win ? 'win' : 'lose');
                 el.textContent = (win ? '+' : '') + Number(Math.abs(amount)).toLocaleString();
                 /* Position near chip balance (RED zone) on cabinet */
-                const machine = document.querySelector('.fh-slots-machine');
+                const machine = document.querySelector('.fh-slots-machine') || document.querySelector('.fh-sapphire-machine');
                 if (machine) {
                     el.style.position = 'absolute';
-                    el.style.left = 'calc(547/784*100%)';
-                    el.style.top = 'calc(800/1168*100%)';
                     el.style.zIndex = '4';
+                    if (machine.classList.contains('fh-sapphire-machine')) {
+                        el.style.left = 'calc(660/784*100%)';
+                        el.style.top = 'calc(610/1168*100%)';
+                    } else {
+                        el.style.left = 'calc(547/784*100%)';
+                        el.style.top = 'calc(800/1168*100%)';
+                    }
                     machine.appendChild(el);
                 } else {
                     el.style.position = 'fixed';
