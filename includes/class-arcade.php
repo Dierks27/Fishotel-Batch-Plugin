@@ -279,29 +279,29 @@ class FisHotel_Arcade {
         /* Each symbol is exactly window height so one fish fills one window */
         .fh-slots-sym{display:flex;align-items:center;justify-content:center;padding:10%;box-sizing:border-box}
         .fh-slots-sym img{width:100%;height:100%;object-fit:contain}
-        /* ═══ BLUE BAR — Letter Board Result Display ═══ */
-        .fh-slots-result{position:absolute;z-index:3;left:calc(155/784*100%);top:calc(448/1168*100%);width:calc(480/784*100%);height:calc(55/1168*100%);background:#000;display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:clamp(10px,2.2vw,15px);font-weight:700;color:#96885f;letter-spacing:2px;text-transform:uppercase;border-radius:2px;overflow:hidden;text-align:center}
-        .fh-slots-result.win{color:#ffd700;animation:fh-marquee-flash .3s ease-in-out 3;text-shadow:0 0 8px rgba(255,215,0,.8),0 0 16px rgba(255,215,0,.4)}
-        .fh-slots-result.lose{color:#cc4444;text-shadow:none}
-        @keyframes fh-marquee-flash{0%,100%{opacity:1}50%{opacity:.2}}
+        /* ═══ BLUE BAR — LED Lightboard Result Display ═══ */
+        .fh-slots-result{position:absolute;z-index:3;left:calc(155/784*100%);top:calc(440/1168*100%);width:calc(480/784*100%);height:calc(75/1168*100%);background:#0a0a0a;background-image:radial-gradient(circle,rgba(40,40,40,.4) 1px,transparent 1px);background-size:4px 4px;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:clamp(11px,2.8vw,18px);font-weight:700;color:#554;letter-spacing:3px;text-transform:uppercase;border-radius:2px;overflow:hidden;text-align:center;border:1px solid rgba(60,60,60,.5);box-shadow:inset 0 2px 8px rgba(0,0,0,.8),inset 0 -2px 8px rgba(0,0,0,.5)}
+        .fh-slots-result.win{color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,.9),0 0 14px rgba(255,215,0,.5),0 0 28px rgba(255,215,0,.2);animation:fh-led-flash .4s ease-in-out 3}
+        .fh-slots-result.lose{color:#cc4444;text-shadow:0 0 4px rgba(204,68,68,.5)}
+        @keyframes fh-led-flash{0%,100%{text-shadow:0 0 6px rgba(255,215,0,.9),0 0 14px rgba(255,215,0,.5),0 0 28px rgba(255,215,0,.2)}50%{text-shadow:0 0 12px rgba(255,215,0,1),0 0 24px rgba(255,215,0,.8),0 0 40px rgba(255,215,0,.4)}}
         /* ═══ GREEN — Payout Table (transparent overlay) ═══ */
-        .fh-slots-payouts-btn{position:absolute;z-index:3;left:calc(319/784*100%);top:calc(807/1168*100%);width:calc(145/784*100%);height:calc(60/1168*100%);background:transparent;border:none;color:transparent;cursor:pointer;border-radius:3px;font-size:0;transition:all .2s}
-        .fh-slots-payouts-btn:hover{background:rgba(255,215,0,.08);box-shadow:inset 0 0 12px rgba(255,215,0,.15)}
+        .fh-slots-payouts-btn{position:absolute;z-index:3;left:calc(319/784*100%);top:calc(807/1168*100%);width:calc(145/784*100%);height:calc(60/1168*100%);background:transparent;border:none;color:rgba(150,136,95,.6);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(7px,1.3vw,10px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
+        .fh-slots-payouts-btn:hover{background:rgba(255,215,0,.08);box-shadow:inset 0 0 12px rgba(255,215,0,.15);color:rgba(150,136,95,.9)}
         /* ═══ RED — Chip Balance (dark background) ═══ */
         .fh-slots-chips{position:absolute;z-index:3;left:calc(481/784*100%);top:calc(807/1168*100%);width:calc(145/784*100%);height:calc(60/1168*100%);background:rgba(0,0,0,.75);border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.6vw,12px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px}
         /* ═══ PINK — SPIN Button ═══ */
-        .fh-slots-spin{position:absolute;z-index:3;left:calc(306/784*100%);top:calc(879/1168*100%);width:calc(175/784*100%);height:calc(45/1168*100%);background:linear-gradient(180deg,rgba(255,127,0,.6),rgba(204,102,0,.6));color:#fff;border:1px solid rgba(255,127,0,.4);border-radius:4px;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(10px,2vw,14px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
-        .fh-slots-spin:hover{background:linear-gradient(180deg,rgba(255,127,0,.8),rgba(204,102,0,.8));border-color:rgba(255,127,0,.7);box-shadow:0 0 10px rgba(255,127,0,.3)}
+        .fh-slots-spin{position:absolute;z-index:3;left:calc(306/784*100%);top:calc(879/1168*100%);width:calc(175/784*100%);height:calc(45/1168*100%);background:linear-gradient(180deg,rgba(200,30,30,.7),rgba(140,15,15,.7));color:#fff;border:1px solid rgba(200,30,30,.5);border-radius:4px;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(10px,2vw,14px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
+        .fh-slots-spin:hover{background:linear-gradient(180deg,rgba(220,40,40,.9),rgba(160,20,20,.9));border-color:rgba(220,40,40,.7);box-shadow:0 0 10px rgba(220,40,40,.4)}
         .fh-slots-spin:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
         /* ═══ YELLOW — Bet Buttons (solid, glow on selected) ═══ */
         .fh-slots-bet{position:absolute;z-index:3;background:rgba(0,0,0,.6);color:#f5f0e8;border:1px solid rgba(150,136,95,.4);padding:0;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.5vw,11px);font-weight:600;transition:all .2s;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
         .fh-slots-bet:hover{background:rgba(0,0,0,.8);border-color:rgba(255,215,0,.5)}
         .fh-slots-bet.active{background:rgba(255,215,0,.2);border-color:#ffd700;color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,.5),inset 0 0 8px rgba(255,215,0,.15)}
         /* 4 bet buttons — user-positioned, smaller to fit tighter spacing */
-        #fh-bet-10{left:calc(132/784*100%);top:calc(959/1168*100%);width:calc(80/784*100%);height:calc(38/1168*100%)}
-        #fh-bet-50{left:calc(219/784*100%);top:calc(959/1168*100%);width:calc(80/784*100%);height:calc(38/1168*100%)}
-        #fh-bet-100{left:calc(311/784*100%);top:calc(959/1168*100%);width:calc(80/784*100%);height:calc(38/1168*100%)}
-        #fh-bet-250{left:calc(400/784*100%);top:calc(959/1168*100%);width:calc(80/784*100%);height:calc(38/1168*100%)}
+        #fh-bet-10{left:calc(132/784*100%);top:calc(959/1168*100%);width:calc(80/784*100%);height:calc(55/1168*100%)}
+        #fh-bet-50{left:calc(219/784*100%);top:calc(959/1168*100%);width:calc(80/784*100%);height:calc(55/1168*100%)}
+        #fh-bet-100{left:calc(311/784*100%);top:calc(959/1168*100%);width:calc(80/784*100%);height:calc(55/1168*100%)}
+        #fh-bet-250{left:calc(400/784*100%);top:calc(959/1168*100%);width:calc(80/784*100%);height:calc(55/1168*100%)}
         /* Paytable modal */
         .fh-slots-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
         .fh-slots-pay-bd{position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer}
@@ -565,7 +565,7 @@ class FisHotel_Arcade {
                             /* Result text — overlaid between reels and wood panel */
                             '<div class="fh-slots-result" id="fh-slots-res"></div>' +
                             /* Chip balance — positioned on cabinet */
-                            '<div class="fh-slots-chips"><img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" style="width:16px;height:16px"><span class="fh-arc-chip-mirror">' + Number(chips).toLocaleString() + '</span> chips</div>' +
+                            '<div class="fh-slots-chips"><img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" style="width:16px;height:16px"><span class="fh-arc-chip-mirror">' + Number(chips).toLocaleString() + '</span></div>' +
                             /* Bet + Spin buttons — each positioned exactly on cabinet */
                             '<button class="fh-slots-bet" id="fh-bet-10" data-bet="10">10</button>' +
                             '<button class="fh-slots-bet active" id="fh-bet-50" data-bet="50">50</button>' +
@@ -573,7 +573,7 @@ class FisHotel_Arcade {
                             '<button class="fh-slots-bet" id="fh-bet-250" data-bet="250">250</button>' +
                             '<button class="fh-slots-spin" id="fh-slots-spin">SPIN</button>' +
                             /* Payouts link */
-                            '<button class="fh-slots-payouts-btn" id="fh-slots-pay-btn">PAYOUTS</button>' +
+                            '<button class="fh-slots-payouts-btn" id="fh-slots-pay-btn">PAY TABLE</button>' +
                         '</div>' +
                     '</div>' +
                     /* Paytable modal (hidden) */

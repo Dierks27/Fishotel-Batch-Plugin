@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.2.1 - User-positioned controls via drag tool, smaller bet buttons.
- * Version:           9.2.1
+ * Description:       v9.2.2 - Polish pass: LED lightboard, red spin, taller bets, pay table label.
+ * Version:           9.2.2
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.2.1' );
+define( 'FISHOTEL_VERSION', '9.2.2' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
