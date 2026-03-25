@@ -293,9 +293,9 @@ class FisHotel_Arcade {
         .fh-slot-paytable{color:#888;font-size:.8em;margin-top:16px;text-align:center;line-height:1.6}
         .fh-slot-paytable strong{color:#96885f}
         /* ── Chip float ── */
-        .fh-chip-float{position:fixed;pointer-events:none;font-weight:700;font-size:1.3em;z-index:99999;animation:fh-float-up 1.5s ease-out forwards}
+        .fh-chip-float{pointer-events:none;font-weight:700;font-size:1.3em;z-index:99999;animation:fh-float-up 1.5s ease-out forwards;transform:translateX(-50%)}
         .fh-chip-float.win{color:#2ecc71}.fh-chip-float.lose{color:#e74c3c}
-        @keyframes fh-float-up{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+        @keyframes fh-float-up{0%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-60px)}}
 
         /* ═══ SLOT MACHINE ═══ */
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
@@ -356,6 +356,13 @@ class FisHotel_Arcade {
         .fh-room-zoom-soon{opacity:.4;cursor:default}
         .fh-room-zoom-soon:hover{transform:none;border-color:rgba(150,136,95,.3)}
         .fh-room-zoom-badge{display:block;font-size:10px;color:#96885f;margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+        /* ═══ ROOM HOTSPOTS (in-room clickable items) ═══ */
+        .fh-room-hotspot{position:absolute;cursor:pointer;border:2px solid transparent;border-radius:6px;transition:all .3s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;z-index:3;box-sizing:border-box}
+        .fh-room-hotspot:hover{border-color:rgba(255,215,0,.6);box-shadow:inset 0 0 20px rgba(255,215,0,.15),0 0 15px rgba(255,215,0,.2);background:rgba(255,215,0,.08)}
+        .fh-room-hotspot-label{font-family:'Oswald',sans-serif;font-size:clamp(8px,1vw,13px);color:#ffd700;text-shadow:0 2px 6px rgba(0,0,0,.9);opacity:0;transition:opacity .3s;pointer-events:none;text-transform:uppercase;letter-spacing:1px}
+        .fh-room-hotspot:hover .fh-room-hotspot-label{opacity:1}
+        /* ═══ SLOT CHIP BALANCE ═══ */
+        .fh-slots-chips{text-align:center;font-family:'Oswald',sans-serif;font-size:14px;color:#96885f;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px}
         </style>
 
         <script>
@@ -405,15 +412,25 @@ class FisHotel_Arcade {
                 poker:     { title: 'POKER LOUNGE', icon: '♠', subtitle: 'Video Poker' },
             };
 
+            /* Room item hotspots — positions relative to room div (%) */
+            const roomItems = {
+                slots: [
+                    { id: 'fish-slots', label: 'Fish Slots', game: 'slots',
+                      left: 16.9, top: 14.3, width: 13.8, height: 71.4 }
+                ]
+            };
+
             function arcadeZoomClose() {
                 if (!_arcZoomOpen) return;
                 _arcZoomOpen = false;
-                /* Fade card out */
+                /* Remove popup if open */
                 const card = document.querySelector('.fh-arc-popup');
                 if (card) {
                     card.style.opacity = '0';
                     card.addEventListener('transitionend', () => card.remove(), { once: true });
                 }
+                /* Remove hotspots */
+                document.querySelectorAll('.fh-room-hotspot').forEach(h => h.remove());
                 /* Unzoom building */
                 if (_arcZoomBuilding) {
                     _arcZoomBuilding.style.transform = 'translate(0px, 0px) scale(1)';
@@ -435,6 +452,43 @@ class FisHotel_Arcade {
                     document.removeEventListener('keydown', _arcEscHandler);
                     _arcEscHandler = null;
                 }
+            }
+
+            /* Show clickable hotspots in a zoomed room */
+            function showRoomItems(roomEl, roomKey) {
+                const items = roomItems[roomKey] || [];
+                if (items.length === 0) {
+                    /* No items — open game directly (bar, roulette, etc.) */
+                    openRoomGame(roomEl.dataset.game);
+                    return;
+                }
+                items.forEach(item => {
+                    const hotspot = document.createElement('div');
+                    hotspot.className = 'fh-room-hotspot';
+                    hotspot.dataset.game = item.game;
+                    hotspot.innerHTML = '<span class="fh-room-hotspot-label">' + item.label + '</span>';
+                    hotspot.style.cssText = 'left:' + item.left + '%;top:' + item.top + '%;width:' + item.width + '%;height:' + item.height + '%';
+                    hotspot.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        openRoomGame(item.game);
+                    });
+                    roomEl.appendChild(hotspot);
+                });
+            }
+
+            /* Open a game popup (from hotspot click or direct room click) */
+            function openRoomGame(game) {
+                const roomKey = _arcZoomRoom ? _arcZoomRoom.dataset.room : 'slots';
+                const card = buildRoomPopup(roomKey, game);
+                document.body.appendChild(card);
+                requestAnimationFrame(() => card.style.opacity = '1');
+                card.querySelector('.fh-arc-popup-close').addEventListener('click', () => {
+                    /* Close popup only — stay zoomed in room */
+                    card.style.opacity = '0';
+                    card.addEventListener('transitionend', () => card.remove(), { once: true });
+                });
+                const body = document.getElementById('fh-arc-popup-body');
+                loadRoomContent(game, body);
             }
 
             /* Build themed popup card HTML */
@@ -464,13 +518,12 @@ class FisHotel_Arcade {
                 return r.json();
             }
 
-            /* ─── Room click handler ─── */
+            /* ─── Room click handler — zoom into room, show hotspots ─── */
             document.querySelectorAll('.fh-arc-room').forEach(room => {
                 room.addEventListener('click', function() {
                     if (_arcZoomOpen) { arcadeZoomClose(); return; }
 
                     const roomKey = this.dataset.room;
-                    const game    = this.dataset.game;
                     const isMobile = window.innerWidth <= 640;
                     const building = this.closest('.fh-arc-building');
 
@@ -499,16 +552,10 @@ class FisHotel_Arcade {
                         building.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
                     }
 
-                    /* Show popup after zoom */
-                    const card = buildRoomPopup(roomKey, game);
+                    /* After zoom, show hotspots (or open game directly) */
                     setTimeout(() => {
-                        document.body.appendChild(card);
-                        requestAnimationFrame(() => card.style.opacity = '1');
-                        card.querySelector('.fh-arc-popup-close').addEventListener('click', arcadeZoomClose);
-                        /* Load room content */
-                        const body = document.getElementById('fh-arc-popup-body');
-                        loadRoomContent(game, body);
-                    }, isMobile ? 0 : 320);
+                        showRoomItems(this, roomKey);
+                    }, isMobile ? 0 : 420);
 
                     /* Escape key */
                     _arcEscHandler = (e) => { if (e.key === 'Escape') arcadeZoomClose(); };
@@ -521,7 +568,7 @@ class FisHotel_Arcade {
                 switch(game) {
                     case 'daily_bonus': renderDailyBonus(body); break;
                     case 'coming_soon': renderComingSoon(body); break;
-                    case 'slots':       renderSlots(body); break;
+                    case 'slots':       renderSlotMachine(body); break;
                     default:
                         body.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;font-family:Special Elite,cursive;">Game being rebuilt — coming soon!</p>';
                         break;
@@ -562,33 +609,6 @@ class FisHotel_Arcade {
              *  SLOTS GAME
              * ═══════════════════════════════════════════════ */
 
-            /* ─── Room Zoom: game selection view ─── */
-            function renderSlots(body) {
-                const cabinetUrl = '<?php echo esc_url( plugins_url( "assists/casino/slots/FisHotel-Slot-Cabnet-01.png", FISHOTEL_PLUGIN_FILE ) ); ?>';
-                body.innerHTML =
-                    '<div class="fh-room-zoom">' +
-                        '<p class="fh-room-zoom-sub">Choose your game</p>' +
-                        '<div class="fh-room-zoom-items">' +
-                            '<div class="fh-room-zoom-item" data-game="fish-slots">' +
-                                '<img src="' + cabinetUrl + '" alt="Fish Slots">' +
-                                '<span>Fish Slots</span>' +
-                            '</div>' +
-                            '<div class="fh-room-zoom-item fh-room-zoom-soon" data-game="draft-replay">' +
-                                '<span class="fh-room-zoom-icon">\ud83d\udcfa</span>' +
-                                '<span>Draft Replay</span>' +
-                                '<span class="fh-room-zoom-badge">Coming Soon</span>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>';
-                body.querySelectorAll('.fh-room-zoom-item:not(.fh-room-zoom-soon)').forEach(function(item) {
-                    item.addEventListener('click', function() {
-                        if (this.dataset.game === 'fish-slots') {
-                            renderSlotMachine(body);
-                        }
-                    });
-                });
-            }
-
             function renderSlotMachine(body) {
                 const cabinetUrl = '<?php echo esc_url( plugins_url( "assists/casino/slots/FisHotel-Slot-Cabnet-01.png", FISHOTEL_PLUGIN_FILE ) ); ?>';
                 const symBase    = '<?php echo esc_url( plugins_url( "assists/casino/slots/", FISHOTEL_PLUGIN_FILE ) ); ?>';
@@ -619,6 +639,7 @@ class FisHotel_Arcade {
                             '<div class="fh-slots-rw" id="fh-sw-2"><div class="fh-slots-strip" id="fh-sr-2"><div class="fh-slots-sym"><img src="'+symBase+'Shark.png"></div></div></div>' +
                         '</div>' +
                         '<div class="fh-slots-result" id="fh-slots-res"></div>' +
+                        '<div class="fh-slots-chips"><img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" style="width:20px;height:20px"><span class="fh-arc-chip-mirror">' + Number(chips).toLocaleString() + '</span> chips</div>' +
                         '<div class="fh-slots-controls">' +
                             '<div class="fh-slots-bets">' +
                                 '<span style="color:#96885f;font-family:Oswald,sans-serif;font-size:13px;">BET:</span>' +
@@ -781,8 +802,16 @@ class FisHotel_Arcade {
                 const el = document.createElement('div');
                 el.className = 'fh-chip-float ' + (win ? 'win' : 'lose');
                 el.textContent = (win ? '+' : '') + Number(Math.abs(amount)).toLocaleString();
-                el.style.left = '50%'; el.style.top = '40%';
-                document.body.appendChild(el);
+                const popup = document.querySelector('.fh-arc-popup');
+                if (popup) {
+                    el.style.position = 'absolute';
+                    el.style.left = '50%'; el.style.bottom = '22%';
+                    popup.appendChild(el);
+                } else {
+                    el.style.position = 'fixed';
+                    el.style.left = '50%'; el.style.top = '65%';
+                    document.body.appendChild(el);
+                }
                 setTimeout(() => el.remove(), 1600);
             }
 
