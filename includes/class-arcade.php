@@ -534,7 +534,7 @@ class FisHotel_Arcade {
              * ═══════════════════════════════════════════════ */
 
             function renderSlotMachine(body) {
-                const cabinetUrl = '<?php echo esc_url( plugins_url( "assists/casino/slots/FisHotel-Slot-Cabnet-01.png", FISHOTEL_PLUGIN_FILE ) ); ?>?v=<?php echo FISHOTEL_VERSION; ?>';
+                const cabinetUrl = '<?php echo esc_url( plugins_url( "assists/casino/slots/FisHotel-Slot-Cabnet-Body-01.png", FISHOTEL_PLUGIN_FILE ) ); ?>?v=<?php echo FISHOTEL_VERSION; ?>';
                 const symBase    = '<?php echo esc_url( plugins_url( "assists/casino/slots/", FISHOTEL_PLUGIN_FILE ) ); ?>';
                 const SYMS = [
                     { id:'whale',    file:'Whale.png',    pay:50, label:'Whale' },

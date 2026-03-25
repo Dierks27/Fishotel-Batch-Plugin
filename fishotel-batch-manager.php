@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.1 - Cabinet controls redesign from template: letter board display, glow bet buttons, transparent overlays.
- * Version:           9.1
+ * Description:       v9.2 - Updated cabinet image filename, cache fix, polish pass.
+ * Version:           9.2
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.1' );
+define( 'FISHOTEL_VERSION', '9.2' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
