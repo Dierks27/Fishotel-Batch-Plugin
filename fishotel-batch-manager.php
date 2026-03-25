@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v8.6 - Immersive room zoom with hotspots, slot chip balance, chip float fix.
- * Version:           8.6
+ * Description:       v8.7 - Immersive room zoom with hotspots, slot chip balance, chip float fix.
+ * Version:           8.7
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '8.6' );
+define( 'FISHOTEL_VERSION', '8.7' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
