@@ -284,20 +284,24 @@ class FisHotel_Arcade {
         .fh-slots-result.win{color:#ffd700;animation:fh-slots-bounce .5s ease-out}
         .fh-slots-result.lose{color:#888}
         @keyframes fh-slots-bounce{0%{transform:scale(0)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
-        /* Controls container — overlaid on wood panel area of cabinet */
-        .fh-slots-cab-controls{position:absolute;left:10%;right:10%;top:calc(860/1168*100%);bottom:calc(120/1168*100%);z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(2px,1vw,6px)}
-        /* Controls — single row: bets + spin */
-        .fh-slots-controls{display:flex;align-items:center;justify-content:center;gap:clamp(4px,1vw,8px);flex-wrap:wrap}
-        .fh-slots-bets{display:flex;gap:clamp(2px,.5vw,4px);align-items:center}
-        .fh-slots-bet{background:rgba(30,20,10,.6);color:#f5f0e8;border:1px solid #96885f;padding:clamp(2px,.4vw,4px) clamp(6px,1.2vw,10px);border-radius:4px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.8vw,12px);transition:all .2s}
-        .fh-slots-bet:hover{background:rgba(60,40,20,.7)}
-        .fh-slots-bet.active{background:#96885f;color:#2e2418;border-color:#ffd700}
-        .fh-slots-spin{background:linear-gradient(180deg,#FF7F00,#CC6600);color:#fff;border:none;border-radius:6px;padding:clamp(4px,.8vw,8px) clamp(16px,3vw,28px);font-family:'Oswald',sans-serif;font-size:clamp(11px,2.2vw,16px);font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:all .2s;text-shadow:0 1px 2px rgba(0,0,0,.3)}
-        .fh-slots-spin:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.4)}
-        .fh-slots-spin:disabled{opacity:.4;cursor:not-allowed;transform:none}
-        /* Paytable button — on cabinet */
-        .fh-slots-payouts-btn{background:rgba(30,20,10,.5);border:1px solid rgba(150,136,95,.5);color:#ffd700;padding:clamp(2px,.3vw,3px) clamp(10px,2vw,16px);border-radius:4px;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.5vw,11px);cursor:pointer;letter-spacing:1px;transition:all .2s}
-        .fh-slots-payouts-btn:hover{background:rgba(46,36,24,.8)}
+        /* ═══ BUTTONS — absolutely positioned on cabinet ═══ */
+        /* User-measured pixel positions at 380×566 rendered size, converted to % */
+        /* Bet buttons — shared style */
+        .fh-slots-bet{position:absolute;z-index:3;background:rgba(30,20,10,.01);color:#f5f0e8;border:1px solid transparent;padding:0;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.8vw,12px);transition:all .15s;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+        .fh-slots-bet:hover{background:rgba(255,215,0,.12);border-color:rgba(255,215,0,.4)}
+        .fh-slots-bet.active{background:rgba(150,136,95,.25);border-color:#ffd700;color:#ffd700}
+        /* Each bet button — exact positions (px measured at 380×566, → %) */
+        #fh-bet-10{left:29.21%;top:83.92%;width:10.00%;height:4.59%}
+        #fh-bet-50{left:40.53%;top:84.10%;width:9.74%;height:4.59%}
+        #fh-bet-100{left:51.05%;top:84.10%;width:11.32%;height:4.59%}
+        #fh-bet-250{left:63.16%;top:83.92%;width:10.53%;height:4.77%}
+        /* Spin button — exact position */
+        .fh-slots-spin{position:absolute;z-index:3;left:74.47%;top:84.10%;width:22.89%;height:4.77%;background:linear-gradient(180deg,rgba(255,127,0,.15),rgba(204,102,0,.15));color:#fff;border:1px solid transparent;border-radius:3px;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(10px,2vw,14px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 2px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center}
+        .fh-slots-spin:hover{background:linear-gradient(180deg,rgba(255,127,0,.35),rgba(204,102,0,.35));border-color:rgba(255,127,0,.5)}
+        .fh-slots-spin:disabled{opacity:.4;cursor:not-allowed}
+        /* Paytable button — below the bet row on cabinet */
+        .fh-slots-payouts-btn{position:absolute;z-index:3;left:30%;right:30%;top:90%;background:rgba(30,20,10,.01);border:1px solid transparent;color:#ffd700;padding:clamp(1px,.2vw,3px) 0;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(7px,1.3vw,10px);cursor:pointer;letter-spacing:1px;transition:all .15s;text-align:center}
+        .fh-slots-payouts-btn:hover{background:rgba(255,215,0,.1);border-color:rgba(255,215,0,.3)}
         /* Paytable modal */
         .fh-slots-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
         .fh-slots-pay-bd{position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer}
@@ -314,7 +318,7 @@ class FisHotel_Arcade {
         @media(max-width:480px){.fh-slots-pay-syms img{width:28px;height:28px}}
         /* (Room zoom/hotspot/interior CSS removed in v8.9 — simplified to zoom + direct popup) */
         /* ═══ SLOT CHIP BALANCE ═══ */
-        .fh-slots-chips{font-family:'Oswald',sans-serif;font-size:clamp(9px,1.8vw,12px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px;padding:clamp(1px,.3vw,3px) clamp(6px,1.2vw,10px);background:rgba(0,0,0,.3);border:1px solid rgba(150,136,95,.3);border-radius:4px}
+        .fh-slots-chips{position:absolute;z-index:3;left:25%;right:25%;top:79%;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.6vw,11px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px;padding:clamp(1px,.2vw,2px) 0;background:rgba(0,0,0,.15);border:1px solid rgba(150,136,95,.2);border-radius:3px}
         </style>
 
         <script>
@@ -562,20 +566,16 @@ class FisHotel_Arcade {
                             '<div class="fh-slots-rw" id="fh-sw-2"><div class="fh-slots-strip" id="fh-sr-2"><div class="fh-slots-sym"><img src="'+symBase+'Shark.png"></div></div></div>' +
                             /* Result text — overlaid between reels and wood panel */
                             '<div class="fh-slots-result" id="fh-slots-res"></div>' +
-                            /* Controls overlaid on wood panel area of cabinet */
-                            '<div class="fh-slots-cab-controls">' +
-                                '<div class="fh-slots-chips"><img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" style="width:16px;height:16px"><span class="fh-arc-chip-mirror">' + Number(chips).toLocaleString() + '</span> chips</div>' +
-                                '<div class="fh-slots-controls">' +
-                                    '<div class="fh-slots-bets">' +
-                                        '<button class="fh-slots-bet" data-bet="10">10</button>' +
-                                        '<button class="fh-slots-bet active" data-bet="50">50</button>' +
-                                        '<button class="fh-slots-bet" data-bet="100">100</button>' +
-                                        '<button class="fh-slots-bet" data-bet="250">250</button>' +
-                                    '</div>' +
-                                    '<button class="fh-slots-spin" id="fh-slots-spin">SPIN</button>' +
-                                '</div>' +
-                                '<button class="fh-slots-payouts-btn" id="fh-slots-pay-btn">PAYOUTS</button>' +
-                            '</div>' +
+                            /* Chip balance — positioned on cabinet */
+                            '<div class="fh-slots-chips"><img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" style="width:16px;height:16px"><span class="fh-arc-chip-mirror">' + Number(chips).toLocaleString() + '</span> chips</div>' +
+                            /* Bet + Spin buttons — each positioned exactly on cabinet */
+                            '<button class="fh-slots-bet" id="fh-bet-10" data-bet="10">10</button>' +
+                            '<button class="fh-slots-bet active" id="fh-bet-50" data-bet="50">50</button>' +
+                            '<button class="fh-slots-bet" id="fh-bet-100" data-bet="100">100</button>' +
+                            '<button class="fh-slots-bet" id="fh-bet-250" data-bet="250">250</button>' +
+                            '<button class="fh-slots-spin" id="fh-slots-spin">SPIN</button>' +
+                            /* Payouts link */
+                            '<button class="fh-slots-payouts-btn" id="fh-slots-pay-btn">PAYOUTS</button>' +
                         '</div>' +
                     '</div>' +
                     /* Paytable modal (hidden) */
