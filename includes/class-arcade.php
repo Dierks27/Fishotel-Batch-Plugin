@@ -241,7 +241,7 @@ class FisHotel_Arcade {
         .fh-card.fh-card-held::before{content:'HELD';position:absolute;top:-22px;left:50%;transform:translateX(-50%);background:#FF7F00;color:#fff;padding:2px 10px;border-radius:4px;font-size:11px;font-family:Oswald,sans-serif;white-space:nowrap;z-index:2}
         @media(max-width:480px){.fh-card{width:58px;height:82px}.fh-card .fh-card-tl,.fh-card .fh-card-br{font-size:12px}.fh-card .fh-card-tl .fh-card-suit-sm,.fh-card .fh-card-br .fh-card-suit-sm{font-size:11px}.fh-card .fh-card-center{font-size:24px}}
         /* ── Slot Machine ── */
-        .fh-slot-machine{max-width:500px;margin:0 auto;background:linear-gradient(180deg,#2a1810 0%,#1a0f08 100%);border:4px solid #96885f;border-radius:20px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+        .fh-slot-machine{max-width:750px;margin:0 auto;background:linear-gradient(180deg,#2a1810 0%,#1a0f08 100%);border:4px solid #96885f;border-radius:20px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
         .fh-slot-title{font-family:'Special Elite',monospace;font-size:clamp(20px,5vw,28px);color:#ffd700;text-align:center;text-shadow:0 0 10px rgba(255,215,0,.6);margin-bottom:6px}
         .fh-slot-reels{display:flex;justify-content:center;gap:8px;background:#0a0a0a;padding:16px;border-radius:10px;box-shadow:inset 0 4px 10px rgba(0,0,0,.8);margin:16px 0}
         .fh-reel-window{width:110px;height:110px;overflow:hidden;background:#111;border:3px solid #444;border-radius:12px;position:relative}
@@ -264,7 +264,7 @@ class FisHotel_Arcade {
 
         /* ═══ SLOT MACHINE ═══ */
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
-        .fh-slots{position:relative;max-width:700px;margin:0 auto}
+        .fh-slots{position:relative;max-width:1000px;margin:0 auto}
         .fh-slots-machine{position:relative;width:100%;aspect-ratio:784/1168}
         /* Cabinet is foreground (z:2) — fish reels show through transparent windows */
         .fh-slots-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
@@ -335,7 +335,7 @@ class FisHotel_Arcade {
         .fh-slot-select-sub{font-size:.75em;color:#96885f;margin-top:4px;font-family:'Special Elite',cursive}
 
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
-        .fh-sapphire{position:relative;max-width:700px;margin:0 auto}
+        .fh-sapphire{position:relative;max-width:1000px;margin:0 auto}
         .fh-sapphire-machine{position:relative;width:100%;aspect-ratio:784/1168}
         /* Cabinet is foreground (z:2) — card reels show through transparent windows */
         .fh-sapphire-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
