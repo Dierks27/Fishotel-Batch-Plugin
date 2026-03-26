@@ -802,8 +802,8 @@ class FisHotel_Casino {
             /* Two pair */
             $multiplier = 2;
             $match_type = 'twopair';
-        } elseif ( $values[0] === 2 && ( $keys[0] === '7' || $keys[0] === 'A' ) ) {
-            /* Pair of 7s or Aces */
+        } elseif ( $values[0] === 2 ) {
+            /* Any pair */
             $multiplier = 1;
             $match_type = 'pair';
         }

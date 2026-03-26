@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.3.8 - Winning symbol lands in middle row (payline fix).
- * Version:           9.3.8
+ * Description:       v9.3.9 - Any pair now pays 1x (was only 7s/Aces).
+ * Version:           9.3.9
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.3.8' );
+define( 'FISHOTEL_VERSION', '9.3.9' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
