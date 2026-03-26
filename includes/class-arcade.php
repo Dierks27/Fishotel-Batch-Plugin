@@ -264,7 +264,7 @@ class FisHotel_Arcade {
 
         /* ═══ SLOT MACHINE ═══ */
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
-        .fh-slots{position:relative;max-width:min(1000px,calc((90vh - 30px)*784/1168));margin:0 auto}
+        .fh-slots{position:relative;max-width:1000px;margin:0 auto}
         .fh-slots-machine{position:relative;width:100%;aspect-ratio:784/1168}
         /* Cabinet is foreground (z:2) — fish reels show through transparent windows */
         .fh-slots-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
@@ -280,7 +280,7 @@ class FisHotel_Arcade {
         .fh-slots-sym{display:flex;align-items:center;justify-content:center;padding:10%;box-sizing:border-box}
         .fh-slots-sym img{width:100%;height:100%;object-fit:contain}
         /* ═══ BLUE BAR — LED Dot-Matrix Lightboard ═══ */
-        .fh-slots-result{position:absolute;z-index:3;left:calc(170/784*100%);top:calc(400/1168*100%);width:calc(450/784*100%);height:calc(120/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
+        .fh-slots-result{position:absolute;z-index:3;left:calc(170/784*100%);top:calc(455/1168*100%);width:calc(450/784*100%);height:calc(70/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
         .fh-slots-result canvas{width:100%;height:100%;display:block}
         /* ═══ GREEN — Payout Table (transparent overlay) ═══ */
         .fh-slots-payouts-btn{position:absolute;z-index:3;left:calc(335/784*100%);top:calc(807/1168*100%);width:calc(115/784*100%);height:calc(60/1168*100%);background:transparent;border:none;color:rgba(100,90,60,.5);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(7px,1.1vw,11px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
@@ -335,7 +335,7 @@ class FisHotel_Arcade {
         .fh-slot-select-sub{font-size:.75em;color:#96885f;margin-top:4px;font-family:'Special Elite',cursive}
 
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
-        .fh-sapphire{position:relative;max-width:min(1000px,calc((90vh - 30px)*784/1168));margin:0 auto}
+        .fh-sapphire{position:relative;max-width:1000px;margin:0 auto}
         .fh-sapphire-machine{position:relative;width:100%;aspect-ratio:784/1168}
         /* Cabinet is foreground (z:2) — card reels show through transparent windows */
         .fh-sapphire-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
@@ -352,7 +352,7 @@ class FisHotel_Arcade {
         .fh-sapphire-sym{display:flex;align-items:center;justify-content:center;padding:2%;box-sizing:border-box}
         .fh-sapphire-sym img{width:100%;height:100%;object-fit:contain}
         /* ═══ LED Dot-Matrix Lightboard (above reels) ═══ */
-        .fh-sapphire-result{position:absolute;z-index:3;left:calc(133/784*100%);top:calc(280/1168*100%);width:calc(324/784*100%);height:calc(100/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
+        .fh-sapphire-result{position:absolute;z-index:3;left:calc(133/784*100%);top:calc(364/1168*100%);width:calc(324/784*100%);height:calc(54/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
         /* ═══ SPIN Button (round, right side) ═══ */
         .fh-sapphire-spin{position:absolute;z-index:3;left:calc(572/784*100%);top:calc(414/1168*100%);width:calc(73/784*100%);height:calc(85/1168*100%);background:linear-gradient(180deg,rgba(200,30,30,.85),rgba(140,15,15,.85));color:#fff;border:3px solid rgba(200,30,30,.6);border-radius:50%;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(11px,2vw,16px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4),inset 0 2px 4px rgba(255,255,255,.15)}
         .fh-sapphire-spin:hover{background:linear-gradient(180deg,rgba(220,40,40,.95),rgba(160,20,20,.95));border-color:rgba(220,40,40,.8);box-shadow:0 0 16px rgba(220,40,40,.5),inset 0 2px 4px rgba(255,255,255,.15)}
