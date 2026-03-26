@@ -264,7 +264,7 @@ class FisHotel_Arcade {
 
         /* ═══ SLOT MACHINE ═══ */
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
-        .fh-slots{position:relative;max-width:380px;margin:0 auto}
+        .fh-slots{position:relative;max-width:520px;margin:0 auto}
         .fh-slots-machine{position:relative;width:100%;aspect-ratio:784/1168}
         /* Cabinet is foreground (z:2) — fish reels show through transparent windows */
         .fh-slots-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
@@ -283,16 +283,16 @@ class FisHotel_Arcade {
         .fh-slots-result{position:absolute;z-index:3;left:calc(170/784*100%);top:calc(455/1168*100%);width:calc(450/784*100%);height:calc(70/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
         .fh-slots-result canvas{width:100%;height:100%;display:block}
         /* ═══ GREEN — Payout Table (transparent overlay) ═══ */
-        .fh-slots-payouts-btn{position:absolute;z-index:3;left:calc(335/784*100%);top:calc(807/1168*100%);width:calc(115/784*100%);height:calc(60/1168*100%);background:transparent;border:none;color:rgba(100,90,60,.5);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(6px,1.1vw,9px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
+        .fh-slots-payouts-btn{position:absolute;z-index:3;left:calc(335/784*100%);top:calc(807/1168*100%);width:calc(115/784*100%);height:calc(60/1168*100%);background:transparent;border:none;color:rgba(100,90,60,.5);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(7px,1.1vw,11px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
         .fh-slots-payouts-btn:hover{background:rgba(255,215,0,.06);color:rgba(150,136,95,.7)}
         /* ═══ RED — Chip Balance (dark background) ═══ */
-        .fh-slots-chips{position:absolute;z-index:3;left:calc(481/784*100%);top:calc(807/1168*100%);width:calc(145/784*100%);height:calc(60/1168*100%);background:rgba(0,0,0,.75);border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.6vw,12px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px}
+        .fh-slots-chips{position:absolute;z-index:3;left:calc(481/784*100%);top:calc(807/1168*100%);width:calc(145/784*100%);height:calc(60/1168*100%);background:rgba(0,0,0,.75);border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.6vw,14px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px}
         /* ═══ PINK — SPIN Button ═══ */
-        .fh-slots-spin{position:absolute;z-index:3;left:calc(306/784*100%);top:calc(879/1168*100%);width:calc(175/784*100%);height:calc(45/1168*100%);background:linear-gradient(180deg,rgba(200,30,30,.7),rgba(140,15,15,.7));color:#fff;border:1px solid rgba(200,30,30,.5);border-radius:4px;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(10px,2vw,14px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
+        .fh-slots-spin{position:absolute;z-index:3;left:calc(306/784*100%);top:calc(879/1168*100%);width:calc(175/784*100%);height:calc(45/1168*100%);background:linear-gradient(180deg,rgba(200,30,30,.7),rgba(140,15,15,.7));color:#fff;border:1px solid rgba(200,30,30,.5);border-radius:4px;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(11px,2vw,16px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
         .fh-slots-spin:hover{background:linear-gradient(180deg,rgba(220,40,40,.9),rgba(160,20,20,.9));border-color:rgba(220,40,40,.7);box-shadow:0 0 10px rgba(220,40,40,.4)}
         .fh-slots-spin:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
         /* ═══ YELLOW — Bet Buttons (solid, glow on selected) ═══ */
-        .fh-slots-bet{position:absolute;z-index:3;background:rgba(0,0,0,.6);color:#f5f0e8;border:1px solid rgba(150,136,95,.4);padding:0;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.5vw,11px);font-weight:600;transition:all .2s;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+        .fh-slots-bet{position:absolute;z-index:3;background:rgba(0,0,0,.6);color:#f5f0e8;border:1px solid rgba(150,136,95,.4);padding:0;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.5vw,13px);font-weight:600;transition:all .2s;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
         .fh-slots-bet:hover{background:rgba(0,0,0,.8);border-color:rgba(255,215,0,.5)}
         .fh-slots-bet.active{background:rgba(255,215,0,.2);border-color:#ffd700;color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,.5),inset 0 0 8px rgba(255,215,0,.15)}
         /* 4 bet buttons — user-positioned, smaller to fit tighter spacing */
@@ -303,7 +303,7 @@ class FisHotel_Arcade {
         /* Paytable modal */
         .fh-slots-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
         .fh-slots-pay-bd{position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer}
-        .fh-slots-pay-card{position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:360px;width:90%;box-shadow:0 16px 50px rgba(0,0,0,.6)}
+        .fh-slots-pay-card{position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:480px;width:90%;box-shadow:0 16px 50px rgba(0,0,0,.6)}
         .fh-slots-pay-close{position:absolute;top:8px;right:12px;background:none;border:none;color:#96885f;font-size:22px;cursor:pointer;line-height:1}
         .fh-slots-pay-close:hover{color:#ffd700}
         .fh-slots-pay-title{text-align:center;font-family:'Special Elite',monospace;font-size:clamp(14px,3.5vw,18px);color:#ffd700;margin:0 0 2px}
@@ -327,7 +327,7 @@ class FisHotel_Arcade {
         .fh-slot-select-sub{font-size:.75em;color:#96885f;margin-top:4px;font-family:'Special Elite',cursive}
 
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
-        .fh-sapphire{position:relative;max-width:380px;margin:0 auto}
+        .fh-sapphire{position:relative;max-width:520px;margin:0 auto}
         .fh-sapphire-machine{position:relative;width:100%;aspect-ratio:784/1168}
         /* Cabinet is foreground (z:2) — card reels show through transparent windows */
         .fh-sapphire-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
@@ -346,11 +346,11 @@ class FisHotel_Arcade {
         /* ═══ LED Dot-Matrix Lightboard (above reels) ═══ */
         .fh-sapphire-result{position:absolute;z-index:3;left:calc(110/784*100%);top:calc(280/1168*100%);width:calc(410/784*100%);height:calc(55/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
         /* ═══ SPIN Button (round, right side) ═══ */
-        .fh-sapphire-spin{position:absolute;z-index:3;left:calc(590/784*100%);top:calc(310/1168*100%);width:calc(120/784*100%);height:calc(120/1168*100%);background:linear-gradient(180deg,rgba(200,30,30,.85),rgba(140,15,15,.85));color:#fff;border:3px solid rgba(200,30,30,.6);border-radius:50%;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(10px,2vw,14px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4),inset 0 2px 4px rgba(255,255,255,.15)}
+        .fh-sapphire-spin{position:absolute;z-index:3;left:calc(590/784*100%);top:calc(310/1168*100%);width:calc(120/784*100%);height:calc(120/1168*100%);background:linear-gradient(180deg,rgba(200,30,30,.85),rgba(140,15,15,.85));color:#fff;border:3px solid rgba(200,30,30,.6);border-radius:50%;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(11px,2vw,16px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4),inset 0 2px 4px rgba(255,255,255,.15)}
         .fh-sapphire-spin:hover{background:linear-gradient(180deg,rgba(220,40,40,.95),rgba(160,20,20,.95));border-color:rgba(220,40,40,.8);box-shadow:0 0 16px rgba(220,40,40,.5),inset 0 2px 4px rgba(255,255,255,.15)}
         .fh-sapphire-spin:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
         /* ═══ Bet Buttons (below reels) ═══ */
-        .fh-sapphire-bet{position:absolute;z-index:3;top:calc(780/1168*100%);height:calc(40/1168*100%);background:rgba(0,0,0,.6);color:#f5f0e8;border:1px solid rgba(150,136,95,.4);padding:0;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.5vw,11px);font-weight:600;transition:all .2s;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+        .fh-sapphire-bet{position:absolute;z-index:3;top:calc(780/1168*100%);height:calc(40/1168*100%);background:rgba(0,0,0,.6);color:#f5f0e8;border:1px solid rgba(150,136,95,.4);padding:0;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.5vw,13px);font-weight:600;transition:all .2s;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
         .fh-sapphire-bet:hover{background:rgba(0,0,0,.8);border-color:rgba(255,215,0,.5)}
         .fh-sapphire-bet.active{background:rgba(255,215,0,.2);border-color:#ffd700;color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,.5),inset 0 0 8px rgba(255,215,0,.15)}
         #fh-spbet-10{left:calc(110/784*100%);width:calc(100/784*100%)}
@@ -358,18 +358,18 @@ class FisHotel_Arcade {
         #fh-spbet-100{left:calc(316/784*100%);width:calc(100/784*100%)}
         #fh-spbet-250{left:calc(419/784*100%);width:calc(100/784*100%)}
         /* ═══ Chip Balance (right panel) ═══ */
-        .fh-sapphire-chips{position:absolute;z-index:3;left:calc(600/784*100%);top:calc(620/1168*100%);width:calc(140/784*100%);height:calc(60/1168*100%);background:rgba(0,0,0,.75);border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(8px,1.6vw,12px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px}
+        .fh-sapphire-chips{position:absolute;z-index:3;left:calc(600/784*100%);top:calc(620/1168*100%);width:calc(140/784*100%);height:calc(60/1168*100%);background:rgba(0,0,0,.75);border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.6vw,14px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px}
         /* ═══ Pay Table Button (right panel) ═══ */
-        .fh-sapphire-payouts-btn{position:absolute;z-index:3;left:calc(610/784*100%);top:calc(780/1168*100%);width:calc(120/784*100%);height:calc(50/1168*100%);background:linear-gradient(180deg,rgba(80,75,60,.4),rgba(40,38,30,.6));border:1px solid rgba(150,136,95,.35);color:rgba(150,136,95,.7);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(6px,1.1vw,9px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
+        .fh-sapphire-payouts-btn{position:absolute;z-index:3;left:calc(610/784*100%);top:calc(780/1168*100%);width:calc(120/784*100%);height:calc(50/1168*100%);background:linear-gradient(180deg,rgba(80,75,60,.4),rgba(40,38,30,.6));border:1px solid rgba(150,136,95,.35);color:rgba(150,136,95,.7);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(7px,1.1vw,11px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
         .fh-sapphire-payouts-btn:hover{background:rgba(255,215,0,.08);color:rgba(150,136,95,.9)}
         /* ═══ On-Cabinet Paytable (below bets) ═══ */
-        .fh-sapphire-face-pay{position:absolute;z-index:3;left:calc(100/784*100%);top:calc(830/1168*100%);width:calc(430/784*100%);height:calc(130/1168*100%);display:grid;grid-template-columns:1fr 1fr;gap:1px 6px;align-content:center;font-family:'Oswald',sans-serif;font-size:clamp(5px,.9vw,8px);color:rgba(150,136,95,.5);padding:2px 6px;box-sizing:border-box;overflow:hidden}
+        .fh-sapphire-face-pay{position:absolute;z-index:3;left:calc(100/784*100%);top:calc(830/1168*100%);width:calc(430/784*100%);height:calc(130/1168*100%);display:grid;grid-template-columns:1fr 1fr;gap:1px 6px;align-content:center;font-family:'Oswald',sans-serif;font-size:clamp(6px,.9vw,10px);color:rgba(150,136,95,.5);padding:2px 6px;box-sizing:border-box;overflow:hidden}
         .fh-sapphire-face-pay span{display:flex;align-items:center;justify-content:space-between;padding:0 2px;white-space:nowrap}
         .fh-sapphire-face-pay .sp-mult{color:rgba(255,215,0,.45);font-weight:700}
         /* ═══ Paytable Modal ═══ */
         .fh-sapphire-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
         .fh-sapphire-pay-bd{position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer}
-        .fh-sapphire-pay-card{position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:380px;width:90%;box-shadow:0 16px 50px rgba(0,0,0,.6)}
+        .fh-sapphire-pay-card{position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:500px;width:90%;box-shadow:0 16px 50px rgba(0,0,0,.6)}
         .fh-sapphire-pay-close{position:absolute;top:8px;right:12px;background:none;border:none;color:#96885f;font-size:22px;cursor:pointer;line-height:1}
         .fh-sapphire-pay-close:hover{color:#ffd700}
         .fh-sapphire-pay-title{text-align:center;font-family:'Special Elite',monospace;font-size:clamp(14px,3.5vw,18px);color:#ffd700;margin:0 0 2px}
