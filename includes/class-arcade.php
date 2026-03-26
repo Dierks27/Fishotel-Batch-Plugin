@@ -319,6 +319,14 @@ class FisHotel_Arcade {
 
         /* ═══ SAPPHIRE POKER SLOTS ═══ */
         /* Slot selection menu */
+        /* ═══ Loading Spinner ═══ */
+        .fh-slot-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 0;gap:16px}
+        .fh-slot-spinner{width:48px;height:48px;border:4px solid rgba(150,136,95,.2);border-top:4px solid #ffd700;border-radius:50%;animation:fh-spin .8s linear infinite}
+        @keyframes fh-spin{to{transform:rotate(360deg)}}
+        .fh-slot-loading-text{font-family:'Oswald',sans-serif;font-size:clamp(12px,2vw,16px);color:rgba(150,136,95,.6);letter-spacing:2px}
+        .fh-slot-machine-hidden{opacity:0;position:absolute;pointer-events:none}
+        .fh-slot-machine-reveal{animation:fh-reveal .4s ease forwards}
+        @keyframes fh-reveal{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:scale(1)}}
         .fh-slot-select{display:flex;gap:16px;justify-content:center;padding:20px 0;flex-wrap:wrap}
         .fh-slot-select-card{background:rgba(0,0,0,.5);border:2px solid rgba(150,136,95,.4);border-radius:14px;padding:12px 16px;cursor:pointer;text-align:center;transition:all .25s;min-width:120px;max-width:200px}
         .fh-slot-select-card:hover{border-color:#ffd700;background:rgba(255,215,0,.08);box-shadow:0 0 18px rgba(255,215,0,.2);transform:translateY(-3px)}
@@ -616,12 +624,13 @@ class FisHotel_Arcade {
 
                 let bet = 50, spinning = false;
 
-                /* ── Build HTML ── */
+                /* ── Build HTML (hidden until cabinet loads) ── */
                 body.innerHTML =
-                    '<div class="fh-slots">' +
+                    '<div class="fh-slot-loading" id="fh-slots-loader"><div class="fh-slot-spinner"></div><div class="fh-slot-loading-text">LOADING</div></div>' +
+                    '<div class="fh-slots fh-slot-machine-hidden" id="fh-slots-wrap">' +
                         /* Cabinet image + reels + controls all inside aspect-ratio container */
                         '<div class="fh-slots-machine">' +
-                            '<img src="' + cabinetUrl + '" alt="Slot Machine">' +
+                            '<img src="' + cabinetUrl + '" alt="Slot Machine" id="fh-slots-cab-img">' +
                             /* Reel windows */
                             '<div class="fh-slots-rw" id="fh-sw-0"><div class="fh-slots-strip" id="fh-sr-0"><div class="fh-slots-sym"><img src="'+symBase+SYMS[2].file+'"></div></div></div>' +
                             '<div class="fh-slots-rw" id="fh-sw-1"><div class="fh-slots-strip" id="fh-sr-1"><div class="fh-slots-sym"><img src="'+symBase+SYMS[4].file+'"></div></div></div>' +
@@ -946,6 +955,17 @@ class FisHotel_Arcade {
                     spinning = false;
                     document.getElementById('fh-slots-spin').disabled = false;
                 });
+
+                /* ── Reveal machine once cabinet image loads ── */
+                const fsCabImg = document.getElementById('fh-slots-cab-img');
+                const fsWrap = document.getElementById('fh-slots-wrap');
+                const fsLoader = document.getElementById('fh-slots-loader');
+                function fsReveal() {
+                    fsLoader.remove();
+                    fsWrap.classList.remove('fh-slot-machine-hidden');
+                    fsWrap.classList.add('fh-slot-machine-reveal');
+                }
+                if (fsCabImg.complete) { fsReveal(); } else { fsCabImg.addEventListener('load', fsReveal); }
             }
 
             /* ═══════════════════════════════════════════════
@@ -1022,9 +1042,10 @@ class FisHotel_Arcade {
                     '<span>K+ PAIR <em class="sp-mult">1x</em></span>';
 
                 body.innerHTML =
-                    '<div class="fh-sapphire">' +
+                    '<div class="fh-slot-loading" id="fh-sapphire-loader"><div class="fh-slot-spinner"></div><div class="fh-slot-loading-text">LOADING</div></div>' +
+                    '<div class="fh-sapphire fh-slot-machine-hidden" id="fh-sapphire-wrap">' +
                         '<div class="fh-sapphire-machine">' +
-                            '<img src="' + cabinetUrl + '" alt="Sapphire Poker Slots">' +
+                            '<img src="' + cabinetUrl + '" alt="Sapphire Poker Slots" id="fh-sapphire-cab-img">' +
                             /* 4 reel windows */
                             '<div class="fh-sapphire-rw" id="fh-spw-0"><div class="fh-sapphire-strip" id="fh-spr-0"><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[2].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[0].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[4].file+'"></div></div></div>' +
                             '<div class="fh-sapphire-rw" id="fh-spw-1"><div class="fh-sapphire-strip" id="fh-spr-1"><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[1].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[3].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[5].file+'"></div></div></div>' +
@@ -1404,6 +1425,17 @@ class FisHotel_Arcade {
                     spinning = false;
                     document.getElementById('fh-sapphire-spin').disabled = false;
                 });
+
+                /* ── Reveal machine once cabinet image loads ── */
+                const spCabImg = document.getElementById('fh-sapphire-cab-img');
+                const spWrap = document.getElementById('fh-sapphire-wrap');
+                const spLoader = document.getElementById('fh-sapphire-loader');
+                function spReveal() {
+                    spLoader.remove();
+                    spWrap.classList.remove('fh-slot-machine-hidden');
+                    spWrap.classList.add('fh-slot-machine-reveal');
+                }
+                if (spCabImg.complete) { spReveal(); } else { spCabImg.addEventListener('load', spReveal); }
             }
 
             /* ─── Shared helpers (for future game rebuilds) ─── */
