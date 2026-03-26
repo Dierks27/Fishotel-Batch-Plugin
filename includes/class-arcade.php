@@ -333,10 +333,10 @@ class FisHotel_Arcade {
         .fh-sapphire-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
         /* Each reel is positioned with calc() from natural pixel coords (784×1168) */
         .fh-sapphire-rw{position:absolute;overflow:hidden;z-index:1;background:#f5f0e8;border-radius:2px}
-        #fh-spw-0{left:calc(108/784*100%);top:calc(385/1168*100%);width:calc(95/784*100%);height:calc(350/1168*100%)}
-        #fh-spw-1{left:calc(210/784*100%);top:calc(385/1168*100%);width:calc(95/784*100%);height:calc(350/1168*100%)}
-        #fh-spw-2{left:calc(312/784*100%);top:calc(385/1168*100%);width:calc(95/784*100%);height:calc(350/1168*100%)}
-        #fh-spw-3{left:calc(414/784*100%);top:calc(385/1168*100%);width:calc(95/784*100%);height:calc(350/1168*100%)}
+        #fh-spw-0{left:calc(148/784*100%);top:calc(516/1168*100%);width:calc(57/784*100%);height:calc(204/1168*100%)}
+        #fh-spw-1{left:calc(230/784*100%);top:calc(517/1168*100%);width:calc(53/784*100%);height:calc(201/1168*100%)}
+        #fh-spw-2{left:calc(308/784*100%);top:calc(517/1168*100%);width:calc(55/784*100%);height:calc(201/1168*100%)}
+        #fh-spw-3{left:calc(390/784*100%);top:calc(516/1168*100%);width:calc(55/784*100%);height:calc(202/1168*100%)}
         .fh-sapphire-rw.winning{box-shadow:0 0 18px rgba(255,215,0,.7);animation:fh-sapphire-glow .4s ease-in-out 3}
         @keyframes fh-sapphire-glow{0%,100%{box-shadow:0 0 18px rgba(255,215,0,.7)}50%{box-shadow:0 0 30px rgba(255,215,0,1)}}
         .fh-sapphire-strip{position:absolute;top:0;left:0;width:100%;will-change:transform}
@@ -344,26 +344,26 @@ class FisHotel_Arcade {
         .fh-sapphire-sym{display:flex;align-items:center;justify-content:center;padding:10%;box-sizing:border-box}
         .fh-sapphire-sym img{width:100%;height:100%;object-fit:contain}
         /* ═══ LED Dot-Matrix Lightboard (above reels) ═══ */
-        .fh-sapphire-result{position:absolute;z-index:3;left:calc(110/784*100%);top:calc(280/1168*100%);width:calc(410/784*100%);height:calc(55/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
+        .fh-sapphire-result{position:absolute;z-index:3;left:calc(133/784*100%);top:calc(364/1168*100%);width:calc(324/784*100%);height:calc(54/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
         /* ═══ SPIN Button (round, right side) ═══ */
-        .fh-sapphire-spin{position:absolute;z-index:3;left:calc(590/784*100%);top:calc(310/1168*100%);width:calc(120/784*100%);height:calc(120/1168*100%);background:linear-gradient(180deg,rgba(200,30,30,.85),rgba(140,15,15,.85));color:#fff;border:3px solid rgba(200,30,30,.6);border-radius:50%;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(11px,2vw,16px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4),inset 0 2px 4px rgba(255,255,255,.15)}
+        .fh-sapphire-spin{position:absolute;z-index:3;left:calc(572/784*100%);top:calc(414/1168*100%);width:calc(73/784*100%);height:calc(85/1168*100%);background:linear-gradient(180deg,rgba(200,30,30,.85),rgba(140,15,15,.85));color:#fff;border:3px solid rgba(200,30,30,.6);border-radius:50%;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(11px,2vw,16px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4),inset 0 2px 4px rgba(255,255,255,.15)}
         .fh-sapphire-spin:hover{background:linear-gradient(180deg,rgba(220,40,40,.95),rgba(160,20,20,.95));border-color:rgba(220,40,40,.8);box-shadow:0 0 16px rgba(220,40,40,.5),inset 0 2px 4px rgba(255,255,255,.15)}
         .fh-sapphire-spin:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
         /* ═══ Bet Buttons (below reels) ═══ */
-        .fh-sapphire-bet{position:absolute;z-index:3;top:calc(780/1168*100%);height:calc(40/1168*100%);background:rgba(0,0,0,.6);color:#f5f0e8;border:1px solid rgba(150,136,95,.4);padding:0;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.5vw,13px);font-weight:600;transition:all .2s;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+        .fh-sapphire-bet{position:absolute;z-index:3;top:calc(758/1168*100%);height:calc(29/1168*100%);background:rgba(0,0,0,.6);color:#f5f0e8;border:1px solid rgba(150,136,95,.4);padding:0;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.5vw,13px);font-weight:600;transition:all .2s;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
         .fh-sapphire-bet:hover{background:rgba(0,0,0,.8);border-color:rgba(255,215,0,.5)}
         .fh-sapphire-bet.active{background:rgba(255,215,0,.2);border-color:#ffd700;color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,.5),inset 0 0 8px rgba(255,215,0,.15)}
-        #fh-spbet-10{left:calc(110/784*100%);width:calc(100/784*100%)}
-        #fh-spbet-50{left:calc(213/784*100%);width:calc(100/784*100%)}
-        #fh-spbet-100{left:calc(316/784*100%);width:calc(100/784*100%)}
-        #fh-spbet-250{left:calc(419/784*100%);width:calc(100/784*100%)}
+        #fh-spbet-10{left:calc(150/784*100%);width:calc(57/784*100%)}
+        #fh-spbet-50{left:calc(228/784*100%);width:calc(56/784*100%)}
+        #fh-spbet-100{left:calc(310/784*100%);width:calc(56/784*100%)}
+        #fh-spbet-250{left:calc(391/784*100%);width:calc(60/784*100%)}
         /* ═══ Chip Balance (right panel) ═══ */
-        .fh-sapphire-chips{position:absolute;z-index:3;left:calc(600/784*100%);top:calc(620/1168*100%);width:calc(140/784*100%);height:calc(60/1168*100%);background:rgba(0,0,0,.75);border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.6vw,14px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px}
+        .fh-sapphire-chips{position:absolute;z-index:3;left:calc(567/784*100%);top:calc(792/1168*100%);width:calc(135/784*100%);height:calc(56/1168*100%);background:rgba(0,0,0,.75);border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.6vw,14px);color:#ffd700;display:flex;align-items:center;justify-content:center;gap:3px}
         /* ═══ Pay Table Button (right panel) ═══ */
-        .fh-sapphire-payouts-btn{position:absolute;z-index:3;left:calc(610/784*100%);top:calc(780/1168*100%);width:calc(120/784*100%);height:calc(50/1168*100%);background:linear-gradient(180deg,rgba(80,75,60,.4),rgba(40,38,30,.6));border:1px solid rgba(150,136,95,.35);color:rgba(150,136,95,.7);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(7px,1.1vw,11px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
+        .fh-sapphire-payouts-btn{position:absolute;z-index:3;left:calc(547/784*100%);top:calc(941/1168*100%);width:calc(169/784*100%);height:calc(59/1168*100%);background:linear-gradient(180deg,rgba(80,75,60,.4),rgba(40,38,30,.6));border:1px solid rgba(150,136,95,.35);color:rgba(150,136,95,.7);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(7px,1.1vw,11px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
         .fh-sapphire-payouts-btn:hover{background:rgba(255,215,0,.08);color:rgba(150,136,95,.9)}
         /* ═══ On-Cabinet Paytable (below bets) ═══ */
-        .fh-sapphire-face-pay{position:absolute;z-index:3;left:calc(100/784*100%);top:calc(830/1168*100%);width:calc(430/784*100%);height:calc(130/1168*100%);display:grid;grid-template-columns:1fr 1fr;gap:1px 6px;align-content:center;font-family:'Oswald',sans-serif;font-size:clamp(6px,.9vw,10px);color:rgba(150,136,95,.5);padding:2px 6px;box-sizing:border-box;overflow:hidden}
+        .fh-sapphire-face-pay{position:absolute;z-index:3;left:calc(104/784*100%);top:calc(801/1168*100%);width:calc(381/784*100%);height:calc(159/1168*100%);display:grid;grid-template-columns:1fr 1fr;gap:1px 6px;align-content:center;font-family:'Oswald',sans-serif;font-size:clamp(6px,.9vw,10px);color:rgba(150,136,95,.5);padding:2px 6px;box-sizing:border-box;overflow:hidden}
         .fh-sapphire-face-pay span{display:flex;align-items:center;justify-content:space-between;padding:0 2px;white-space:nowrap}
         .fh-sapphire-face-pay .sp-mult{color:rgba(255,215,0,.45);font-weight:700}
         /* ═══ Paytable Modal ═══ */
