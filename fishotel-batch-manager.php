@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.4.0 - Squished paytable, reel zoom mode on both machines.
- * Version:           9.4.0
+ * Description:       v9.4.1 - Removed zoom, Fish Slots back to 1 symbol, K+ pair only.
+ * Version:           9.4.1
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.4.0' );
+define( 'FISHOTEL_VERSION', '9.4.1' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

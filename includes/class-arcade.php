@@ -264,11 +264,8 @@ class FisHotel_Arcade {
 
         /* ═══ SLOT MACHINE ═══ */
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
-        .fh-slots{position:relative;max-width:700px;margin:0 auto;overflow:hidden}
-        .fh-slots-machine{position:relative;width:100%;aspect-ratio:784/1168;transition:transform .4s ease,transform-origin .4s ease}
-        .fh-slots-machine.fh-zoomed{transform:scale(2.2);transform-origin:38% 55%}
-        .fh-slots .fh-zoom-hint{position:absolute;z-index:4;left:calc(148/784*100%);top:calc(490/1168*100%);width:calc(297/784*100%);height:calc(18/1168*100%);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:clamp(6px,.8vw,9px);color:rgba(255,255,255,.35);letter-spacing:1px;cursor:pointer;transition:opacity .3s}
-        .fh-slots-machine.fh-zoomed .fh-zoom-hint{display:none}
+        .fh-slots{position:relative;max-width:700px;margin:0 auto}
+        .fh-slots-machine{position:relative;width:100%;aspect-ratio:784/1168}
         /* Cabinet is foreground (z:2) — fish reels show through transparent windows */
         .fh-slots-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
         /* Each reel is positioned with calc() from natural pixel coords (784×1168) */
@@ -330,12 +327,8 @@ class FisHotel_Arcade {
         .fh-slot-select-sub{font-size:.75em;color:#96885f;margin-top:4px;font-family:'Special Elite',cursive}
 
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
-        .fh-sapphire{position:relative;max-width:700px;margin:0 auto;overflow:hidden}
-        .fh-sapphire-machine{position:relative;width:100%;aspect-ratio:784/1168;transition:transform .4s ease,transform-origin .4s ease}
-        /* ═══ Reel Zoom Mode ═══ */
-        .fh-sapphire-machine.fh-zoomed{transform:scale(2.2);transform-origin:38% 55%}
-        .fh-sapphire .fh-zoom-hint{position:absolute;z-index:4;left:calc(148/784*100%);top:calc(490/1168*100%);width:calc(297/784*100%);height:calc(18/1168*100%);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:clamp(6px,.8vw,9px);color:rgba(255,255,255,.35);letter-spacing:1px;cursor:pointer;transition:opacity .3s}
-        .fh-sapphire-machine.fh-zoomed .fh-zoom-hint{display:none}
+        .fh-sapphire{position:relative;max-width:700px;margin:0 auto}
+        .fh-sapphire-machine{position:relative;width:100%;aspect-ratio:784/1168}
         /* Cabinet is foreground (z:2) — card reels show through transparent windows */
         .fh-sapphire-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
         /* Each reel is positioned with calc() from natural pixel coords (784×1168) */
@@ -630,11 +623,9 @@ class FisHotel_Arcade {
                         '<div class="fh-slots-machine">' +
                             '<img src="' + cabinetUrl + '" alt="Slot Machine">' +
                             /* Reel windows */
-                            '<div class="fh-slots-rw" id="fh-sw-0"><div class="fh-slots-strip" id="fh-sr-0"><div class="fh-slots-sym"><img src="'+symBase+SYMS[2].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[0].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[5].file+'"></div></div></div>' +
-                            '<div class="fh-slots-rw" id="fh-sw-1"><div class="fh-slots-strip" id="fh-sr-1"><div class="fh-slots-sym"><img src="'+symBase+SYMS[4].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[1].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[6].file+'"></div></div></div>' +
-                            '<div class="fh-slots-rw" id="fh-sw-2"><div class="fh-slots-strip" id="fh-sr-2"><div class="fh-slots-sym"><img src="'+symBase+SYMS[3].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[7].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[1].file+'"></div></div></div>' +
-                            /* Zoom hint */
-                            '<div class="fh-zoom-hint" id="fh-slots-zoom">\uD83D\uDD0D TAP REELS TO ZOOM</div>' +
+                            '<div class="fh-slots-rw" id="fh-sw-0"><div class="fh-slots-strip" id="fh-sr-0"><div class="fh-slots-sym"><img src="'+symBase+SYMS[2].file+'"></div></div></div>' +
+                            '<div class="fh-slots-rw" id="fh-sw-1"><div class="fh-slots-strip" id="fh-sr-1"><div class="fh-slots-sym"><img src="'+symBase+SYMS[4].file+'"></div></div></div>' +
+                            '<div class="fh-slots-rw" id="fh-sw-2"><div class="fh-slots-strip" id="fh-sr-2"><div class="fh-slots-sym"><img src="'+symBase+SYMS[3].file+'"></div></div></div>' +
                             /* LED Lightboard — dot-matrix display */
                             '<div class="fh-slots-result" id="fh-slots-res"><canvas id="fh-led-canvas"></canvas></div>' +
                             /* Chip balance — positioned on cabinet */
@@ -668,10 +659,10 @@ class FisHotel_Arcade {
                         '</div>' +
                     '</div>';
 
-                /* ── Size initial symbols: 3 fish visible per window ── */
+                /* ── Size initial symbol to fill reel window ── */
                 document.querySelectorAll('.fh-slots-rw').forEach(function(win) {
-                    var symH = Math.floor(win.offsetHeight / 3);
-                    win.querySelectorAll('.fh-slots-sym').forEach(function(s) { s.style.height = symH + 'px'; });
+                    var symH = win.offsetHeight;
+                    win.querySelector('.fh-slots-sym').style.height = symH + 'px';
                 });
 
                 /* ── Bet buttons ── */
@@ -683,19 +674,6 @@ class FisHotel_Arcade {
                         bet = parseInt(b.dataset.bet);
                     });
                 });
-
-                /* ── Reel zoom toggle ── */
-                const fsMachine = body.querySelector('.fh-slots-machine');
-                const fsZoomHint = document.getElementById('fh-slots-zoom');
-                function fsToggleZoom() {
-                    if (spinning) return;
-                    fsMachine.classList.toggle('fh-zoomed');
-                }
-                document.querySelectorAll('.fh-slots-rw').forEach(w => {
-                    w.style.cursor = 'pointer';
-                    w.addEventListener('click', fsToggleZoom);
-                });
-                fsZoomHint.addEventListener('click', fsToggleZoom);
 
                 /* ═══ LED DOT-MATRIX LIGHTBOARD ENGINE ═══ */
                 const ledCanvas = document.getElementById('fh-led-canvas');
@@ -884,7 +862,7 @@ class FisHotel_Arcade {
                 document.getElementById('fh-slots-pay-x').addEventListener('click', closePay);
                 document.getElementById('fh-slots-pay-bd').addEventListener('click', closePay);
 
-                /* ── Build reel strip: N random symbols + final result + 2 trailing ── */
+                /* ── Build reel strip: N random symbols + final result ── */
                 function buildStrip(finalId, count) {
                     let html = '';
                     for (let i = 0; i < count; i++) {
@@ -894,20 +872,15 @@ class FisHotel_Arcade {
                     /* The winning symbol */
                     const f = symMap[finalId] || SYMS[7];
                     html += '<div class="fh-slots-sym"><img src="' + symBase + f.file + '"></div>';
-                    /* 2 trailing symbols so the window looks full after stopping */
-                    for (let i = 0; i < 2; i++) {
-                        const s = pool[Math.floor(Math.random() * pool.length)];
-                        html += '<div class="fh-slots-sym"><img src="' + symBase + s.file + '"></div>';
-                    }
                     return html;
                 }
 
-                /* ── Spin one reel — 3 symbols visible per window ── */
+                /* ── Spin one reel — 1 symbol visible per window ── */
                 function spinReel(idx, finalId, duration) {
                     return new Promise(resolve => {
                         const strip = document.getElementById('fh-sr-' + idx);
                         const win   = document.getElementById('fh-sw-' + idx);
-                        const symH  = Math.floor(win.offsetHeight / 3);
+                        const symH  = win.offsetHeight;
                         const count = 22 + idx * 6;
                         strip.innerHTML = buildStrip(finalId, count);
                         strip.querySelectorAll('.fh-slots-sym').forEach(s => { s.style.height = symH + 'px'; });
@@ -915,7 +888,7 @@ class FisHotel_Arcade {
                         strip.style.transform = 'translateY(0)';
                         strip.offsetHeight;
                         strip.style.transition = 'transform ' + duration + 'ms cubic-bezier(.15,.85,.25,1)';
-                        strip.style.transform = 'translateY(-' + ((count - 1) * symH) + 'px)';
+                        strip.style.transform = 'translateY(-' + (count * symH) + 'px)';
                         setTimeout(resolve, duration + 60);
                     });
                 }
@@ -1042,7 +1015,7 @@ class FisHotel_Arcade {
                     '<span>10-10-10-10 <em class="sp-mult">8x</em></span>' +
                     '<span>10-10-10 <em class="sp-mult">2x</em></span>' +
                     '<span>TWO PAIR <em class="sp-mult">2x</em></span>' +
-                    '<span>PAIR <em class="sp-mult">1x</em></span>';
+                    '<span>K+ PAIR <em class="sp-mult">1x</em></span>';
 
                 body.innerHTML =
                     '<div class="fh-sapphire">' +
@@ -1053,8 +1026,6 @@ class FisHotel_Arcade {
                             '<div class="fh-sapphire-rw" id="fh-spw-1"><div class="fh-sapphire-strip" id="fh-spr-1"><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[1].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[3].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[5].file+'"></div></div></div>' +
                             '<div class="fh-sapphire-rw" id="fh-spw-2"><div class="fh-sapphire-strip" id="fh-spr-2"><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[4].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[2].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[0].file+'"></div></div></div>' +
                             '<div class="fh-sapphire-rw" id="fh-spw-3"><div class="fh-sapphire-strip" id="fh-spr-3"><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[3].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[1].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[5].file+'"></div></div></div>' +
-                            /* Zoom hint */
-                            '<div class="fh-zoom-hint" id="fh-sapphire-zoom">\uD83D\uDD0D TAP REELS TO ZOOM</div>' +
                             /* LED Lightboard */
                             '<canvas class="fh-sapphire-result" id="fh-sapphire-led" width="400" height="50"></canvas>' +
                             /* SPIN button (round) */
@@ -1093,7 +1064,7 @@ class FisHotel_Arcade {
                                     '<div class="fh-sapphire-pay-mult">'+c.pay3+'x</div>' +
                                 '</div>'
                             ).join('') +
-                            '<div class="fh-sapphire-pay-section">Two Pair: <span style="color:#ffd700;font-weight:700;">2x</span> &nbsp;&bull;&nbsp; Any Pair: <span style="color:#ffd700;font-weight:700;">1x</span></div>' +
+                            '<div class="fh-sapphire-pay-section">Two Pair: <span style="color:#ffd700;font-weight:700;">2x</span> &nbsp;&bull;&nbsp; K+ Pair: <span style="color:#ffd700;font-weight:700;">1x</span></div>' +
                             '</div>' +
                         '</div>' +
                     '</div>';
@@ -1113,19 +1084,6 @@ class FisHotel_Arcade {
                         bet = parseInt(b.dataset.bet);
                     });
                 });
-
-                /* ── Reel zoom toggle ── */
-                const spMachine = body.querySelector('.fh-sapphire-machine');
-                const spZoomHint = document.getElementById('fh-sapphire-zoom');
-                function spToggleZoom() {
-                    if (spinning) return;
-                    spMachine.classList.toggle('fh-zoomed');
-                }
-                document.querySelectorAll('.fh-sapphire-rw').forEach(w => {
-                    w.style.cursor = 'pointer';
-                    w.addEventListener('click', spToggleZoom);
-                });
-                spZoomHint.addEventListener('click', spToggleZoom);
 
                 /* ═══ LED DOT-MATRIX LIGHTBOARD ENGINE (Sapphire) ═══ */
                 const spLedCanvas = document.getElementById('fh-sapphire-led');

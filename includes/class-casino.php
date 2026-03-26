@@ -802,8 +802,8 @@ class FisHotel_Casino {
             /* Two pair */
             $multiplier = 2;
             $match_type = 'twopair';
-        } elseif ( $values[0] === 2 ) {
-            /* Any pair */
+        } elseif ( $values[0] === 2 && in_array( $keys[0], [ '7', 'A', 'K' ], true ) ) {
+            /* Pair of Kings or better (K, A, 7) */
             $multiplier = 1;
             $match_type = 'pair';
         }
