@@ -264,8 +264,11 @@ class FisHotel_Arcade {
 
         /* ═══ SLOT MACHINE ═══ */
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
-        .fh-slots{position:relative;max-width:700px;margin:0 auto}
-        .fh-slots-machine{position:relative;width:100%;aspect-ratio:784/1168}
+        .fh-slots{position:relative;max-width:700px;margin:0 auto;overflow:hidden}
+        .fh-slots-machine{position:relative;width:100%;aspect-ratio:784/1168;transition:transform .4s ease,transform-origin .4s ease}
+        .fh-slots-machine.fh-zoomed{transform:scale(2.2);transform-origin:38% 55%}
+        .fh-slots .fh-zoom-hint{position:absolute;z-index:4;left:calc(148/784*100%);top:calc(490/1168*100%);width:calc(297/784*100%);height:calc(18/1168*100%);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:clamp(6px,.8vw,9px);color:rgba(255,255,255,.35);letter-spacing:1px;cursor:pointer;transition:opacity .3s}
+        .fh-slots-machine.fh-zoomed .fh-zoom-hint{display:none}
         /* Cabinet is foreground (z:2) — fish reels show through transparent windows */
         .fh-slots-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
         /* Each reel is positioned with calc() from natural pixel coords (784×1168) */
@@ -327,8 +330,12 @@ class FisHotel_Arcade {
         .fh-slot-select-sub{font-size:.75em;color:#96885f;margin-top:4px;font-family:'Special Elite',cursive}
 
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
-        .fh-sapphire{position:relative;max-width:700px;margin:0 auto}
-        .fh-sapphire-machine{position:relative;width:100%;aspect-ratio:784/1168}
+        .fh-sapphire{position:relative;max-width:700px;margin:0 auto;overflow:hidden}
+        .fh-sapphire-machine{position:relative;width:100%;aspect-ratio:784/1168;transition:transform .4s ease,transform-origin .4s ease}
+        /* ═══ Reel Zoom Mode ═══ */
+        .fh-sapphire-machine.fh-zoomed{transform:scale(2.2);transform-origin:38% 55%}
+        .fh-sapphire .fh-zoom-hint{position:absolute;z-index:4;left:calc(148/784*100%);top:calc(490/1168*100%);width:calc(297/784*100%);height:calc(18/1168*100%);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:clamp(6px,.8vw,9px);color:rgba(255,255,255,.35);letter-spacing:1px;cursor:pointer;transition:opacity .3s}
+        .fh-sapphire-machine.fh-zoomed .fh-zoom-hint{display:none}
         /* Cabinet is foreground (z:2) — card reels show through transparent windows */
         .fh-sapphire-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
         /* Each reel is positioned with calc() from natural pixel coords (784×1168) */
@@ -363,7 +370,7 @@ class FisHotel_Arcade {
         .fh-sapphire-payouts-btn{position:absolute;z-index:3;left:calc(547/784*100%);top:calc(941/1168*100%);width:calc(169/784*100%);height:calc(59/1168*100%);background:linear-gradient(180deg,rgba(80,75,60,.4),rgba(40,38,30,.6));border:1px solid rgba(150,136,95,.35);color:rgba(150,136,95,.7);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(7px,1.1vw,11px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
         .fh-sapphire-payouts-btn:hover{background:rgba(255,215,0,.08);color:rgba(150,136,95,.9)}
         /* ═══ On-Cabinet Paytable (below bets) ═══ */
-        .fh-sapphire-face-pay{position:absolute;z-index:3;left:calc(104/784*100%);top:calc(801/1168*100%);width:calc(381/784*100%);height:calc(159/1168*100%);display:grid;grid-template-columns:1fr 1fr;gap:1px 6px;align-content:center;font-family:'Oswald',sans-serif;font-size:clamp(6px,.9vw,10px);color:rgba(150,136,95,.5);padding:2px 6px;box-sizing:border-box;overflow:hidden}
+        .fh-sapphire-face-pay{position:absolute;z-index:3;left:calc(104/784*100%);top:calc(801/1168*100%);width:calc(381/784*100%);height:calc(159/1168*100%);display:grid;grid-template-columns:1fr 1fr;gap:0px 4px;font-family:'Oswald',sans-serif;font-size:clamp(5px,.8vw,8px);color:rgba(150,136,95,.5);padding:1px 4px;box-sizing:border-box;overflow:hidden}
         .fh-sapphire-face-pay span{display:flex;align-items:center;justify-content:space-between;padding:0 2px;white-space:nowrap}
         .fh-sapphire-face-pay .sp-mult{color:rgba(255,215,0,.45);font-weight:700}
         /* ═══ Paytable Modal ═══ */
@@ -626,6 +633,8 @@ class FisHotel_Arcade {
                             '<div class="fh-slots-rw" id="fh-sw-0"><div class="fh-slots-strip" id="fh-sr-0"><div class="fh-slots-sym"><img src="'+symBase+SYMS[2].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[0].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[5].file+'"></div></div></div>' +
                             '<div class="fh-slots-rw" id="fh-sw-1"><div class="fh-slots-strip" id="fh-sr-1"><div class="fh-slots-sym"><img src="'+symBase+SYMS[4].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[1].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[6].file+'"></div></div></div>' +
                             '<div class="fh-slots-rw" id="fh-sw-2"><div class="fh-slots-strip" id="fh-sr-2"><div class="fh-slots-sym"><img src="'+symBase+SYMS[3].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[7].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[1].file+'"></div></div></div>' +
+                            /* Zoom hint */
+                            '<div class="fh-zoom-hint" id="fh-slots-zoom">\uD83D\uDD0D TAP REELS TO ZOOM</div>' +
                             /* LED Lightboard — dot-matrix display */
                             '<div class="fh-slots-result" id="fh-slots-res"><canvas id="fh-led-canvas"></canvas></div>' +
                             /* Chip balance — positioned on cabinet */
@@ -674,6 +683,19 @@ class FisHotel_Arcade {
                         bet = parseInt(b.dataset.bet);
                     });
                 });
+
+                /* ── Reel zoom toggle ── */
+                const fsMachine = body.querySelector('.fh-slots-machine');
+                const fsZoomHint = document.getElementById('fh-slots-zoom');
+                function fsToggleZoom() {
+                    if (spinning) return;
+                    fsMachine.classList.toggle('fh-zoomed');
+                }
+                document.querySelectorAll('.fh-slots-rw').forEach(w => {
+                    w.style.cursor = 'pointer';
+                    w.addEventListener('click', fsToggleZoom);
+                });
+                fsZoomHint.addEventListener('click', fsToggleZoom);
 
                 /* ═══ LED DOT-MATRIX LIGHTBOARD ENGINE ═══ */
                 const ledCanvas = document.getElementById('fh-led-canvas');
@@ -1008,13 +1030,17 @@ class FisHotel_Arcade {
                 /* ── Build HTML ── */
                 const facePay =
                     '<span>7-7-7-7 <em class="sp-mult">100x</em></span>' +
-                    '<span>A-A-A-A <em class="sp-mult">50x</em></span>' +
-                    '<span>K-K-K-K <em class="sp-mult">25x</em></span>' +
                     '<span>7-7-7 <em class="sp-mult">25x</em></span>' +
-                    '<span>Q-Q-Q-Q <em class="sp-mult">15x</em></span>' +
+                    '<span>A-A-A-A <em class="sp-mult">50x</em></span>' +
                     '<span>A-A-A <em class="sp-mult">15x</em></span>' +
-                    '<span>J-J-J-J <em class="sp-mult">10x</em></span>' +
+                    '<span>K-K-K-K <em class="sp-mult">25x</em></span>' +
                     '<span>K-K-K <em class="sp-mult">6x</em></span>' +
+                    '<span>Q-Q-Q-Q <em class="sp-mult">15x</em></span>' +
+                    '<span>Q-Q-Q <em class="sp-mult">4x</em></span>' +
+                    '<span>J-J-J-J <em class="sp-mult">10x</em></span>' +
+                    '<span>J-J-J <em class="sp-mult">3x</em></span>' +
+                    '<span>10-10-10-10 <em class="sp-mult">8x</em></span>' +
+                    '<span>10-10-10 <em class="sp-mult">2x</em></span>' +
                     '<span>TWO PAIR <em class="sp-mult">2x</em></span>' +
                     '<span>PAIR <em class="sp-mult">1x</em></span>';
 
@@ -1027,6 +1053,8 @@ class FisHotel_Arcade {
                             '<div class="fh-sapphire-rw" id="fh-spw-1"><div class="fh-sapphire-strip" id="fh-spr-1"><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[1].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[3].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[5].file+'"></div></div></div>' +
                             '<div class="fh-sapphire-rw" id="fh-spw-2"><div class="fh-sapphire-strip" id="fh-spr-2"><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[4].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[2].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[0].file+'"></div></div></div>' +
                             '<div class="fh-sapphire-rw" id="fh-spw-3"><div class="fh-sapphire-strip" id="fh-spr-3"><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[3].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[1].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[5].file+'"></div></div></div>' +
+                            /* Zoom hint */
+                            '<div class="fh-zoom-hint" id="fh-sapphire-zoom">\uD83D\uDD0D TAP REELS TO ZOOM</div>' +
                             /* LED Lightboard */
                             '<canvas class="fh-sapphire-result" id="fh-sapphire-led" width="400" height="50"></canvas>' +
                             /* SPIN button (round) */
@@ -1085,6 +1113,19 @@ class FisHotel_Arcade {
                         bet = parseInt(b.dataset.bet);
                     });
                 });
+
+                /* ── Reel zoom toggle ── */
+                const spMachine = body.querySelector('.fh-sapphire-machine');
+                const spZoomHint = document.getElementById('fh-sapphire-zoom');
+                function spToggleZoom() {
+                    if (spinning) return;
+                    spMachine.classList.toggle('fh-zoomed');
+                }
+                document.querySelectorAll('.fh-sapphire-rw').forEach(w => {
+                    w.style.cursor = 'pointer';
+                    w.addEventListener('click', spToggleZoom);
+                });
+                spZoomHint.addEventListener('click', spToggleZoom);
 
                 /* ═══ LED DOT-MATRIX LIGHTBOARD ENGINE (Sapphire) ═══ */
                 const spLedCanvas = document.getElementById('fh-sapphire-led');
