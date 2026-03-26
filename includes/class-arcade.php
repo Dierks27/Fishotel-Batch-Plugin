@@ -200,7 +200,7 @@ class FisHotel_Arcade {
         .fh-arc-zoom-backdrop{position:fixed;top:0;left:0;width:100%;height:100%;background:transparent;z-index:99;opacity:0;transition:opacity .3s ease,background .3s ease;cursor:pointer}
         .fh-arc-zoom-backdrop--visible{opacity:1}
         .fh-arc-zoom-backdrop--dimmed{background:rgba(0,0,0,.6)}
-        .fh-arc-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(620px,95vw);max-height:92vh;overflow-y:auto;background:#111;border:1px solid rgba(150,136,95,.35);border-radius:12px;padding:12px 16px;box-sizing:border-box;z-index:10001;opacity:0;transition:opacity 200ms ease;font-family:'Oswald',sans-serif;color:#f5f0e8;text-align:center}
+        .fh-arc-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(620px,95vw);max-height:92vh;overflow-y:hidden;background:#111;border:1px solid rgba(150,136,95,.35);border-radius:12px;padding:12px 16px;box-sizing:border-box;z-index:10001;opacity:0;transition:opacity 200ms ease;font-family:'Oswald',sans-serif;color:#f5f0e8;text-align:center}
         .fh-arc-popup-close{position:absolute;top:10px;right:14px;background:none;border:none;color:#888;font-size:24px;cursor:pointer;line-height:1;z-index:2}
         .fh-arc-popup-close:hover{color:#f5f0e8}
         .fh-arc-popup-body{min-height:60px}
@@ -969,6 +969,7 @@ class FisHotel_Arcade {
                         var symH = win.offsetHeight;
                         win.querySelector('.fh-slots-sym').style.height = symH + 'px';
                     });
+                    fhSlotAutoFit(fsWrap);
                 }
                 if (fsCabImg.complete) { fsReveal(); } else { fsCabImg.addEventListener('load', fsReveal); }
             }
@@ -1437,8 +1438,32 @@ class FisHotel_Arcade {
                     spLoader.remove();
                     spWrap.classList.remove('fh-slot-machine-hidden');
                     spWrap.classList.add('fh-slot-machine-reveal');
+                    fhSlotAutoFit(spWrap);
                 }
                 if (spCabImg.complete) { spReveal(); } else { spCabImg.addEventListener('load', spReveal); }
+            }
+
+            /* ─── Auto-fit: scale machine down if popup would scroll ─── */
+            function fhSlotAutoFit(wrap) {
+                var popup = wrap.closest('.fh-arc-popup');
+                if (!popup) return;
+                /* Reset any previous scale */
+                wrap.style.transform = '';
+                wrap.style.transformOrigin = 'top center';
+                requestAnimationFrame(function() {
+                    var avail = popup.clientHeight - 24; /* subtract padding */
+                    var need  = wrap.scrollHeight;
+                    if (need > avail && need > 0) {
+                        var s = avail / need;
+                        wrap.style.transform = 'scale(' + s + ')';
+                        wrap.style.height = (need * s) + 'px'; /* collapse parent space */
+                    }
+                });
+                /* Re-fit on window resize */
+                if (!wrap._fhFitBound) {
+                    wrap._fhFitBound = true;
+                    window.addEventListener('resize', function() { fhSlotAutoFit(wrap); });
+                }
             }
 
             /* ─── Shared helpers (for future game rebuilds) ─── */
