@@ -1336,16 +1336,14 @@ class FisHotel_Arcade {
                 /* ── Win message builder ── */
                 function spWinMessage(d) {
                     const mt = d.match_type || '';
-                    const cardLabel = cardMap[d.match_card] ? cardMap[d.match_card].label : '';
                     if (mt === 'four') {
-                        if (d.match_card === '7') return '7777 SUPERPOT!';
-                        return 'FOUR ' + cardLabel.toUpperCase() + 'S! ' + d.multiplier + 'x';
+                        return 'FOUR OF A KIND! ' + d.multiplier + 'x';
                     }
                     if (mt === 'three') {
-                        return 'THREE ' + cardLabel.toUpperCase() + 'S! ' + d.multiplier + 'x WIN';
+                        return 'THREE OF A KIND! ' + d.multiplier + 'x';
                     }
                     if (mt === 'twopair') {
-                        return 'TWO PAIR! ' + d.multiplier + 'x WIN';
+                        return 'TWO PAIR! ' + d.multiplier + 'x';
                     }
                     if (mt === 'pair') {
                         return 'PAIR! ' + d.multiplier + 'x';
