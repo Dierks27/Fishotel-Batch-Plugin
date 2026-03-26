@@ -341,7 +341,7 @@ class FisHotel_Arcade {
         @keyframes fh-sapphire-glow{0%,100%{box-shadow:0 0 18px rgba(255,215,0,.7)}50%{box-shadow:0 0 30px rgba(255,215,0,1)}}
         .fh-sapphire-strip{position:absolute;top:0;left:0;width:100%;will-change:transform}
         /* Each symbol is exactly window height so one card fills one window */
-        .fh-sapphire-sym{display:flex;align-items:center;justify-content:center;padding:10%;box-sizing:border-box}
+        .fh-sapphire-sym{display:flex;align-items:center;justify-content:center;padding:2%;box-sizing:border-box}
         .fh-sapphire-sym img{width:100%;height:100%;object-fit:contain}
         /* ═══ LED Dot-Matrix Lightboard (above reels) ═══ */
         .fh-sapphire-result{position:absolute;z-index:3;left:calc(133/784*100%);top:calc(364/1168*100%);width:calc(324/784*100%);height:calc(54/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}

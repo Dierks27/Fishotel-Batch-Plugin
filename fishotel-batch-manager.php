@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.3.3 - Fixed Sapphire Poker slot element placement to match cabinet artwork.
- * Version:           9.3.3
+ * Description:       v9.3.4 - Enlarged card symbols in Sapphire reel windows.
+ * Version:           9.3.4
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.3.3' );
+define( 'FISHOTEL_VERSION', '9.3.4' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
