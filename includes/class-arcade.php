@@ -280,7 +280,7 @@ class FisHotel_Arcade {
         .fh-slots-sym{display:flex;align-items:center;justify-content:center;padding:10%;box-sizing:border-box}
         .fh-slots-sym img{width:100%;height:100%;object-fit:contain}
         /* ═══ BLUE BAR — LED Dot-Matrix Lightboard ═══ */
-        .fh-slots-result{position:absolute;z-index:3;left:calc(170/784*100%);top:calc(455/1168*100%);width:calc(450/784*100%);height:calc(70/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
+        .fh-slots-result{position:absolute;z-index:3;left:calc(140/784*100%);top:calc(420/1168*100%);width:calc(510/784*100%);height:calc(120/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
         .fh-slots-result canvas{width:100%;height:100%;display:block}
         /* ═══ GREEN — Payout Table (transparent overlay) ═══ */
         .fh-slots-payouts-btn{position:absolute;z-index:3;left:calc(335/784*100%);top:calc(807/1168*100%);width:calc(115/784*100%);height:calc(60/1168*100%);background:transparent;border:none;color:rgba(100,90,60,.5);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(7px,1.1vw,11px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
@@ -352,7 +352,7 @@ class FisHotel_Arcade {
         .fh-sapphire-sym{display:flex;align-items:center;justify-content:center;padding:2%;box-sizing:border-box}
         .fh-sapphire-sym img{width:100%;height:100%;object-fit:contain}
         /* ═══ LED Dot-Matrix Lightboard (above reels) ═══ */
-        .fh-sapphire-result{position:absolute;z-index:3;left:calc(133/784*100%);top:calc(364/1168*100%);width:calc(324/784*100%);height:calc(54/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
+        .fh-sapphire-result{position:absolute;z-index:3;left:calc(115/784*100%);top:calc(340/1168*100%);width:calc(400/784*100%);height:calc(120/1168*100%);background:#080808;border-radius:2px;overflow:hidden;border:1px solid rgba(40,40,40,.6);box-shadow:inset 0 2px 6px rgba(0,0,0,.9)}
         /* ═══ SPIN Button (round, right side) ═══ */
         .fh-sapphire-spin{position:absolute;z-index:3;left:calc(572/784*100%);top:calc(414/1168*100%);width:calc(73/784*100%);height:calc(85/1168*100%);background:linear-gradient(180deg,rgba(200,30,30,.85),rgba(140,15,15,.85));color:#fff;border:3px solid rgba(200,30,30,.6);border-radius:50%;padding:0;font-family:'Oswald',sans-serif;font-size:clamp(11px,2vw,16px);font-weight:700;cursor:pointer;transition:all .15s;text-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.4),inset 0 2px 4px rgba(255,255,255,.15)}
         .fh-sapphire-spin:hover{background:linear-gradient(180deg,rgba(220,40,40,.95),rgba(160,20,20,.95));border-color:rgba(220,40,40,.8);box-shadow:0 0 16px rgba(220,40,40,.5),inset 0 2px 4px rgba(255,255,255,.15)}
@@ -371,8 +371,8 @@ class FisHotel_Arcade {
         .fh-sapphire-payouts-btn{position:absolute;z-index:3;left:calc(547/784*100%);top:calc(941/1168*100%);width:calc(169/784*100%);height:calc(59/1168*100%);background:linear-gradient(180deg,rgba(80,75,60,.4),rgba(40,38,30,.6));border:1px solid rgba(150,136,95,.35);color:rgba(150,136,95,.7);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(7px,1.1vw,11px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
         .fh-sapphire-payouts-btn:hover{background:rgba(255,215,0,.08);color:rgba(150,136,95,.9)}
         /* ═══ On-Cabinet Paytable (below bets) ═══ */
-        .fh-sapphire-face-pay{position:absolute;z-index:3;left:calc(104/784*100%);top:calc(801/1168*100%);width:calc(381/784*100%);height:calc(159/1168*100%);display:grid;grid-template-columns:1fr 1fr;gap:0 4px;align-content:start;font-family:'Oswald',sans-serif;font-size:clamp(5px,.8vw,8px);line-height:1.1;color:rgba(150,136,95,.5);padding:1px 4px;box-sizing:border-box;overflow:hidden}
-        .fh-sapphire-face-pay span{display:flex;align-items:center;justify-content:space-between;padding:0 2px;white-space:nowrap;line-height:1.1}
+        .fh-sapphire-face-pay{position:absolute;z-index:3;left:calc(104/784*100%);top:calc(801/1168*100%);width:calc(381/784*100%);height:calc(159/1168*100%);display:grid;grid-template-columns:1fr 1fr;gap:1px 4px;align-content:start;font-family:'Oswald',sans-serif;font-size:clamp(6px,1.1vw,11px);line-height:1.25;color:rgba(150,136,95,.5);padding:2px 4px;box-sizing:border-box;overflow:hidden}
+        .fh-sapphire-face-pay span{display:flex;align-items:center;justify-content:space-between;padding:0 2px;white-space:nowrap;line-height:1.25}
         .fh-sapphire-face-pay .sp-mult{color:rgba(255,215,0,.45);font-weight:700}
         /* ═══ Paytable Modal ═══ */
         .fh-sapphire-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
@@ -483,7 +483,13 @@ class FisHotel_Arcade {
                 document.body.appendChild(card);
                 requestAnimationFrame(() => card.style.opacity = '1');
                 card.querySelector('.fh-arc-popup-close').addEventListener('click', () => {
-                    /* Close popup and unzoom back to casino floor */
+                    const popupBody = document.getElementById('fh-arc-popup-body');
+                    /* If we're inside a game (not the selection screen), go back to selection */
+                    if (popupBody && !popupBody.querySelector('.fh-slot-select')) {
+                        loadRoomContent(game, popupBody);
+                        return;
+                    }
+                    /* Otherwise close popup and unzoom back to casino floor */
                     card.style.opacity = '0';
                     card.addEventListener('transitionend', () => card.remove(), { once: true });
                     arcadeZoomClose();
@@ -667,12 +673,6 @@ class FisHotel_Arcade {
                             '</div>' +
                         '</div>' +
                     '</div>';
-
-                /* ── Size initial symbol to fill reel window ── */
-                document.querySelectorAll('.fh-slots-rw').forEach(function(win) {
-                    var symH = win.offsetHeight;
-                    win.querySelector('.fh-slots-sym').style.height = symH + 'px';
-                });
 
                 /* ── Bet buttons ── */
                 body.querySelectorAll('.fh-slots-bet').forEach(b => {
@@ -964,6 +964,11 @@ class FisHotel_Arcade {
                     fsLoader.remove();
                     fsWrap.classList.remove('fh-slot-machine-hidden');
                     fsWrap.classList.add('fh-slot-machine-reveal');
+                    /* Size initial symbols to fill reel windows (must run after reveal so offsetHeight is accurate) */
+                    document.querySelectorAll('.fh-slots-rw').forEach(function(win) {
+                        var symH = win.offsetHeight;
+                        win.querySelector('.fh-slots-sym').style.height = symH + 'px';
+                    });
                 }
                 if (fsCabImg.complete) { fsReveal(); } else { fsCabImg.addEventListener('load', fsReveal); }
             }
