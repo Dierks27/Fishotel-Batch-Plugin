@@ -623,9 +623,9 @@ class FisHotel_Arcade {
                         '<div class="fh-slots-machine">' +
                             '<img src="' + cabinetUrl + '" alt="Slot Machine">' +
                             /* Reel windows */
-                            '<div class="fh-slots-rw" id="fh-sw-0"><div class="fh-slots-strip" id="fh-sr-0"><div class="fh-slots-sym"><img src="'+symBase+'Seahorse.png"></div></div></div>' +
-                            '<div class="fh-slots-rw" id="fh-sw-1"><div class="fh-slots-strip" id="fh-sr-1"><div class="fh-slots-sym"><img src="'+symBase+'Dolphin.png"></div></div></div>' +
-                            '<div class="fh-slots-rw" id="fh-sw-2"><div class="fh-slots-strip" id="fh-sr-2"><div class="fh-slots-sym"><img src="'+symBase+'Shark.png"></div></div></div>' +
+                            '<div class="fh-slots-rw" id="fh-sw-0"><div class="fh-slots-strip" id="fh-sr-0"><div class="fh-slots-sym"><img src="'+symBase+SYMS[2].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[0].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[5].file+'"></div></div></div>' +
+                            '<div class="fh-slots-rw" id="fh-sw-1"><div class="fh-slots-strip" id="fh-sr-1"><div class="fh-slots-sym"><img src="'+symBase+SYMS[4].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[1].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[6].file+'"></div></div></div>' +
+                            '<div class="fh-slots-rw" id="fh-sw-2"><div class="fh-slots-strip" id="fh-sr-2"><div class="fh-slots-sym"><img src="'+symBase+SYMS[3].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[7].file+'"></div><div class="fh-slots-sym"><img src="'+symBase+SYMS[1].file+'"></div></div></div>' +
                             /* LED Lightboard — dot-matrix display */
                             '<div class="fh-slots-result" id="fh-slots-res"><canvas id="fh-led-canvas"></canvas></div>' +
                             /* Chip balance — positioned on cabinet */
@@ -659,10 +659,10 @@ class FisHotel_Arcade {
                         '</div>' +
                     '</div>';
 
-                /* ── Center initial symbols in reel windows ── */
+                /* ── Size all initial symbols to fill reel windows ── */
                 document.querySelectorAll('.fh-slots-rw').forEach(function(win) {
                     var symH = win.offsetHeight;
-                    win.querySelector('.fh-slots-sym').style.height = symH + 'px';
+                    win.querySelectorAll('.fh-slots-sym').forEach(function(s) { s.style.height = symH + 'px'; });
                 });
 
                 /* ── Bet buttons ── */
@@ -915,10 +915,12 @@ class FisHotel_Arcade {
                     }
                     const d = res.data;
 
-                    /* Stagger reel stops */
-                    await spinReel(0, d.reels[0], 1400);
-                    await spinReel(1, d.reels[1], 1900);
-                    await spinReel(2, d.reels[2], 2400);
+                    /* All reels start at once, stop left-to-right */
+                    await Promise.all([
+                        spinReel(0, d.reels[0], 1400),
+                        spinReel(1, d.reels[1], 1900),
+                        spinReel(2, d.reels[2], 2400)
+                    ]);
 
                     updateChips(d.chips);
 
@@ -1017,10 +1019,10 @@ class FisHotel_Arcade {
                         '<div class="fh-sapphire-machine">' +
                             '<img src="' + cabinetUrl + '" alt="Sapphire Poker Slots">' +
                             /* 4 reel windows */
-                            '<div class="fh-sapphire-rw" id="fh-spw-0"><div class="fh-sapphire-strip" id="fh-spr-0"><div class="fh-sapphire-sym"><img src="'+cardBase+'K-Card.png"></div></div></div>' +
-                            '<div class="fh-sapphire-rw" id="fh-spw-1"><div class="fh-sapphire-strip" id="fh-spr-1"><div class="fh-sapphire-sym"><img src="'+cardBase+'A-Card.png"></div></div></div>' +
-                            '<div class="fh-sapphire-rw" id="fh-spw-2"><div class="fh-sapphire-strip" id="fh-spr-2"><div class="fh-sapphire-sym"><img src="'+cardBase+'Q-Card.png"></div></div></div>' +
-                            '<div class="fh-sapphire-rw" id="fh-spw-3"><div class="fh-sapphire-strip" id="fh-spr-3"><div class="fh-sapphire-sym"><img src="'+cardBase+'J-Card.png"></div></div></div>' +
+                            '<div class="fh-sapphire-rw" id="fh-spw-0"><div class="fh-sapphire-strip" id="fh-spr-0"><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[2].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[0].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[4].file+'"></div></div></div>' +
+                            '<div class="fh-sapphire-rw" id="fh-spw-1"><div class="fh-sapphire-strip" id="fh-spr-1"><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[1].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[3].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[5].file+'"></div></div></div>' +
+                            '<div class="fh-sapphire-rw" id="fh-spw-2"><div class="fh-sapphire-strip" id="fh-spr-2"><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[4].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[2].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[0].file+'"></div></div></div>' +
+                            '<div class="fh-sapphire-rw" id="fh-spw-3"><div class="fh-sapphire-strip" id="fh-spr-3"><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[3].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[1].file+'"></div><div class="fh-sapphire-sym"><img src="'+cardBase+CARDS[5].file+'"></div></div></div>' +
                             /* LED Lightboard */
                             '<canvas class="fh-sapphire-result" id="fh-sapphire-led" width="400" height="50"></canvas>' +
                             /* SPIN button (round) */
@@ -1064,10 +1066,10 @@ class FisHotel_Arcade {
                         '</div>' +
                     '</div>';
 
-                /* ── Center initial symbols in reel windows ── */
+                /* ── Size all initial symbols to fill reel windows ── */
                 document.querySelectorAll('.fh-sapphire-rw').forEach(function(win) {
                     var symH = win.offsetHeight;
-                    win.querySelector('.fh-sapphire-sym').style.height = symH + 'px';
+                    win.querySelectorAll('.fh-sapphire-sym').forEach(function(s) { s.style.height = symH + 'px'; });
                 });
 
                 /* ── Bet buttons ── */
@@ -1336,11 +1338,13 @@ class FisHotel_Arcade {
                     }
                     const d = res.data;
 
-                    /* Stagger reel stops: 1400, 1800, 2200, 2600ms */
-                    await spSpinReel(0, d.reels[0], 1400);
-                    await spSpinReel(1, d.reels[1], 1800);
-                    await spSpinReel(2, d.reels[2], 2200);
-                    await spSpinReel(3, d.reels[3], 2600);
+                    /* All reels start at once, stop left-to-right */
+                    await Promise.all([
+                        spSpinReel(0, d.reels[0], 1400),
+                        spSpinReel(1, d.reels[1], 1800),
+                        spSpinReel(2, d.reels[2], 2200),
+                        spSpinReel(3, d.reels[3], 2600)
+                    ]);
 
                     updateChips(d.chips);
 

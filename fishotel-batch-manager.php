@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.3.5 - New card artwork for Sapphire Poker slot.
- * Version:           9.3.5
+ * Description:       v9.3.6 - Filled reel strips, all reels spin simultaneously.
+ * Version:           9.3.6
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.3.5' );
+define( 'FISHOTEL_VERSION', '9.3.6' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
