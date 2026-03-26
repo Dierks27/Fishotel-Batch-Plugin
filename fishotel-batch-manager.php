@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.4.4 - Fixed win message text (THREE OF A KIND, etc).
- * Version:           9.4.4
+ * Description:       v9.4.5 - Compressed face paytable to show all payouts.
+ * Version:           9.4.5
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.4.4' );
+define( 'FISHOTEL_VERSION', '9.4.5' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

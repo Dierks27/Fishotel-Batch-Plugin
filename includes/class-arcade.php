@@ -371,8 +371,8 @@ class FisHotel_Arcade {
         .fh-sapphire-payouts-btn{position:absolute;z-index:3;left:calc(547/784*100%);top:calc(941/1168*100%);width:calc(169/784*100%);height:calc(59/1168*100%);background:linear-gradient(180deg,rgba(80,75,60,.4),rgba(40,38,30,.6));border:1px solid rgba(150,136,95,.35);color:rgba(150,136,95,.7);cursor:pointer;border-radius:3px;font-family:'Oswald',sans-serif;font-size:clamp(7px,1.1vw,11px);letter-spacing:1px;transition:all .2s;display:flex;align-items:center;justify-content:center}
         .fh-sapphire-payouts-btn:hover{background:rgba(255,215,0,.08);color:rgba(150,136,95,.9)}
         /* ═══ On-Cabinet Paytable (below bets) ═══ */
-        .fh-sapphire-face-pay{position:absolute;z-index:3;left:calc(104/784*100%);top:calc(801/1168*100%);width:calc(381/784*100%);height:calc(159/1168*100%);display:grid;grid-template-columns:1fr 1fr;gap:0px 4px;font-family:'Oswald',sans-serif;font-size:clamp(5px,.8vw,8px);color:rgba(150,136,95,.5);padding:1px 4px;box-sizing:border-box;overflow:hidden}
-        .fh-sapphire-face-pay span{display:flex;align-items:center;justify-content:space-between;padding:0 2px;white-space:nowrap}
+        .fh-sapphire-face-pay{position:absolute;z-index:3;left:calc(104/784*100%);top:calc(801/1168*100%);width:calc(381/784*100%);height:calc(159/1168*100%);display:grid;grid-template-columns:1fr 1fr;gap:0 4px;align-content:start;font-family:'Oswald',sans-serif;font-size:clamp(5px,.8vw,8px);line-height:1.1;color:rgba(150,136,95,.5);padding:1px 4px;box-sizing:border-box;overflow:hidden}
+        .fh-sapphire-face-pay span{display:flex;align-items:center;justify-content:space-between;padding:0 2px;white-space:nowrap;line-height:1.1}
         .fh-sapphire-face-pay .sp-mult{color:rgba(255,215,0,.45);font-weight:700}
         /* ═══ Paytable Modal ═══ */
         .fh-sapphire-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
