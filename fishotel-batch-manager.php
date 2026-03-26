@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.4.7 - Wider popup for larger slot machines.
- * Version:           9.4.7
+ * Description:       v9.4.8 - Popup sized to 740px, fits cabinet nicely.
+ * Version:           9.4.8
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.4.7' );
+define( 'FISHOTEL_VERSION', '9.4.8' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
