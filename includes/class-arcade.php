@@ -264,7 +264,7 @@ class FisHotel_Arcade {
 
         /* ═══ SLOT MACHINE ═══ */
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
-        .fh-slots{position:relative;max-width:520px;margin:0 auto}
+        .fh-slots{position:relative;max-width:700px;margin:0 auto}
         .fh-slots-machine{position:relative;width:100%;aspect-ratio:784/1168}
         /* Cabinet is foreground (z:2) — fish reels show through transparent windows */
         .fh-slots-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
@@ -303,7 +303,7 @@ class FisHotel_Arcade {
         /* Paytable modal */
         .fh-slots-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
         .fh-slots-pay-bd{position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer}
-        .fh-slots-pay-card{position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:480px;width:90%;box-shadow:0 16px 50px rgba(0,0,0,.6)}
+        .fh-slots-pay-card{position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:600px;width:90%;box-shadow:0 16px 50px rgba(0,0,0,.6)}
         .fh-slots-pay-close{position:absolute;top:8px;right:12px;background:none;border:none;color:#96885f;font-size:22px;cursor:pointer;line-height:1}
         .fh-slots-pay-close:hover{color:#ffd700}
         .fh-slots-pay-title{text-align:center;font-family:'Special Elite',monospace;font-size:clamp(14px,3.5vw,18px);color:#ffd700;margin:0 0 2px}
@@ -327,7 +327,7 @@ class FisHotel_Arcade {
         .fh-slot-select-sub{font-size:.75em;color:#96885f;margin-top:4px;font-family:'Special Elite',cursive}
 
         /* Container locks to cabinet's natural 784×1168 aspect ratio */
-        .fh-sapphire{position:relative;max-width:520px;margin:0 auto}
+        .fh-sapphire{position:relative;max-width:700px;margin:0 auto}
         .fh-sapphire-machine{position:relative;width:100%;aspect-ratio:784/1168}
         /* Cabinet is foreground (z:2) — card reels show through transparent windows */
         .fh-sapphire-machine>img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
@@ -369,7 +369,7 @@ class FisHotel_Arcade {
         /* ═══ Paytable Modal ═══ */
         .fh-sapphire-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
         .fh-sapphire-pay-bd{position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer}
-        .fh-sapphire-pay-card{position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:500px;width:90%;box-shadow:0 16px 50px rgba(0,0,0,.6)}
+        .fh-sapphire-pay-card{position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:620px;width:90%;box-shadow:0 16px 50px rgba(0,0,0,.6)}
         .fh-sapphire-pay-close{position:absolute;top:8px;right:12px;background:none;border:none;color:#96885f;font-size:22px;cursor:pointer;line-height:1}
         .fh-sapphire-pay-close:hover{color:#ffd700}
         .fh-sapphire-pay-title{text-align:center;font-family:'Special Elite',monospace;font-size:clamp(14px,3.5vw,18px);color:#ffd700;margin:0 0 2px}
