@@ -659,9 +659,9 @@ class FisHotel_Arcade {
                         '</div>' +
                     '</div>';
 
-                /* ── Size all initial symbols to fill reel windows ── */
+                /* ── Size initial symbols: 3 fish visible per window ── */
                 document.querySelectorAll('.fh-slots-rw').forEach(function(win) {
-                    var symH = win.offsetHeight;
+                    var symH = Math.floor(win.offsetHeight / 3);
                     win.querySelectorAll('.fh-slots-sym').forEach(function(s) { s.style.height = symH + 'px'; });
                 });
 
@@ -862,7 +862,7 @@ class FisHotel_Arcade {
                 document.getElementById('fh-slots-pay-x').addEventListener('click', closePay);
                 document.getElementById('fh-slots-pay-bd').addEventListener('click', closePay);
 
-                /* ── Build reel strip: N random symbols + final result ── */
+                /* ── Build reel strip: N random symbols + final result + 2 trailing ── */
                 function buildStrip(finalId, count) {
                     let html = '';
                     for (let i = 0; i < count; i++) {
@@ -872,18 +872,22 @@ class FisHotel_Arcade {
                     /* The winning symbol */
                     const f = symMap[finalId] || SYMS[7];
                     html += '<div class="fh-slots-sym"><img src="' + symBase + f.file + '"></div>';
+                    /* 2 trailing symbols so the window looks full after stopping */
+                    for (let i = 0; i < 2; i++) {
+                        const s = pool[Math.floor(Math.random() * pool.length)];
+                        html += '<div class="fh-slots-sym"><img src="' + symBase + s.file + '"></div>';
+                    }
                     return html;
                 }
 
-                /* ── Spin one reel and stop perfectly on the final symbol ── */
+                /* ── Spin one reel — 3 symbols visible per window ── */
                 function spinReel(idx, finalId, duration) {
                     return new Promise(resolve => {
                         const strip = document.getElementById('fh-sr-' + idx);
                         const win   = document.getElementById('fh-sw-' + idx);
-                        const symH  = win.offsetHeight;
+                        const symH  = Math.floor(win.offsetHeight / 3);
                         const count = 22 + idx * 6;
                         strip.innerHTML = buildStrip(finalId, count);
-                        /* Force each symbol to exact window height */
                         strip.querySelectorAll('.fh-slots-sym').forEach(s => { s.style.height = symH + 'px'; });
                         strip.style.transition = 'none';
                         strip.style.transform = 'translateY(0)';
@@ -1066,9 +1070,9 @@ class FisHotel_Arcade {
                         '</div>' +
                     '</div>';
 
-                /* ── Size all initial symbols to fill reel windows ── */
+                /* ── Size initial symbols: 3 cards visible per window ── */
                 document.querySelectorAll('.fh-sapphire-rw').forEach(function(win) {
-                    var symH = win.offsetHeight;
+                    var symH = Math.floor(win.offsetHeight / 3);
                     win.querySelectorAll('.fh-sapphire-sym').forEach(function(s) { s.style.height = symH + 'px'; });
                 });
 
@@ -1267,7 +1271,7 @@ class FisHotel_Arcade {
                 document.getElementById('fh-sapphire-pay-x').addEventListener('click', spClosePay);
                 document.getElementById('fh-sapphire-pay-bd').addEventListener('click', spClosePay);
 
-                /* ── Build reel strip: N random cards + final result ── */
+                /* ── Build reel strip: N random cards + final result + 2 trailing ── */
                 function spBuildStrip(finalId, count) {
                     let html = '';
                     for (let i = 0; i < count; i++) {
@@ -1276,15 +1280,20 @@ class FisHotel_Arcade {
                     }
                     const f = cardMap[finalId] || CARDS[5];
                     html += '<div class="fh-sapphire-sym"><img src="' + cardBase + f.file + '"></div>';
+                    /* 2 trailing cards so the window looks full after stopping */
+                    for (let i = 0; i < 2; i++) {
+                        const c = pool[Math.floor(Math.random() * pool.length)];
+                        html += '<div class="fh-sapphire-sym"><img src="' + cardBase + c.file + '"></div>';
+                    }
                     return html;
                 }
 
-                /* ── Spin one reel and stop perfectly on the final card ── */
+                /* ── Spin one reel — 3 cards visible per window ── */
                 function spSpinReel(idx, finalId, duration) {
                     return new Promise(resolve => {
                         const strip = document.getElementById('fh-spr-' + idx);
                         const win   = document.getElementById('fh-spw-' + idx);
-                        const symH  = win.offsetHeight;
+                        const symH  = Math.floor(win.offsetHeight / 3);
                         const count = 22 + idx * 6;
                         strip.innerHTML = spBuildStrip(finalId, count);
                         strip.querySelectorAll('.fh-sapphire-sym').forEach(s => { s.style.height = symH + 'px'; });
