@@ -893,7 +893,7 @@ class FisHotel_Arcade {
                         strip.style.transform = 'translateY(0)';
                         strip.offsetHeight;
                         strip.style.transition = 'transform ' + duration + 'ms cubic-bezier(.15,.85,.25,1)';
-                        strip.style.transform = 'translateY(-' + (count * symH) + 'px)';
+                        strip.style.transform = 'translateY(-' + ((count - 1) * symH) + 'px)';
                         setTimeout(resolve, duration + 60);
                     });
                 }
@@ -1288,7 +1288,7 @@ class FisHotel_Arcade {
                     return html;
                 }
 
-                /* ── Spin one reel — 3 cards visible per window ── */
+                /* ── Spin one reel — 3 cards visible, winner lands in MIDDLE row ── */
                 function spSpinReel(idx, finalId, duration) {
                     return new Promise(resolve => {
                         const strip = document.getElementById('fh-spr-' + idx);
@@ -1301,7 +1301,7 @@ class FisHotel_Arcade {
                         strip.style.transform = 'translateY(0)';
                         strip.offsetHeight;
                         strip.style.transition = 'transform ' + duration + 'ms cubic-bezier(.15,.85,.25,1)';
-                        strip.style.transform = 'translateY(-' + (count * symH) + 'px)';
+                        strip.style.transform = 'translateY(-' + ((count - 1) * symH) + 'px)';
                         setTimeout(resolve, duration + 60);
                     });
                 }
