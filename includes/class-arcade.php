@@ -320,9 +320,9 @@ class FisHotel_Arcade {
         /* ═══ SAPPHIRE POKER SLOTS ═══ */
         /* Slot selection menu */
         .fh-slot-select{display:flex;gap:16px;justify-content:center;padding:20px 0;flex-wrap:wrap}
-        .fh-slot-select-card{background:rgba(0,0,0,.5);border:2px solid rgba(150,136,95,.4);border-radius:14px;padding:24px 28px;cursor:pointer;text-align:center;transition:all .25s;min-width:120px}
+        .fh-slot-select-card{background:rgba(0,0,0,.5);border:2px solid rgba(150,136,95,.4);border-radius:14px;padding:12px 16px;cursor:pointer;text-align:center;transition:all .25s;min-width:120px;max-width:200px}
         .fh-slot-select-card:hover{border-color:#ffd700;background:rgba(255,215,0,.08);box-shadow:0 0 18px rgba(255,215,0,.2);transform:translateY(-3px)}
-        .fh-slot-select-icon{font-size:2.8em;margin-bottom:8px;display:block}
+        .fh-slot-select-img{width:100%;max-height:180px;object-fit:contain;margin-bottom:8px;border-radius:6px}
         .fh-slot-select-name{font-family:'Oswald',sans-serif;font-size:1em;font-weight:600;color:#f5f0e8;letter-spacing:1px;text-transform:uppercase}
         .fh-slot-select-sub{font-size:.75em;color:#96885f;margin-top:4px;font-family:'Special Elite',cursive}
 
@@ -862,16 +862,14 @@ class FisHotel_Arcade {
                 document.getElementById('fh-slots-pay-x').addEventListener('click', closePay);
                 document.getElementById('fh-slots-pay-bd').addEventListener('click', closePay);
 
-                /* ── Build reel strip: N random symbols + final result ── */
+                /* ── Build reel strip: final result first, then N random (scrolls top-to-bottom) ── */
                 function buildStrip(finalId, count) {
-                    let html = '';
+                    const f = symMap[finalId] || SYMS[7];
+                    let html = '<div class="fh-slots-sym"><img src="' + symBase + f.file + '"></div>';
                     for (let i = 0; i < count; i++) {
                         const s = pool[Math.floor(Math.random() * pool.length)];
                         html += '<div class="fh-slots-sym"><img src="' + symBase + s.file + '"></div>';
                     }
-                    /* The winning symbol */
-                    const f = symMap[finalId] || SYMS[7];
-                    html += '<div class="fh-slots-sym"><img src="' + symBase + f.file + '"></div>';
                     return html;
                 }
 
@@ -885,10 +883,10 @@ class FisHotel_Arcade {
                         strip.innerHTML = buildStrip(finalId, count);
                         strip.querySelectorAll('.fh-slots-sym').forEach(s => { s.style.height = symH + 'px'; });
                         strip.style.transition = 'none';
-                        strip.style.transform = 'translateY(0)';
+                        strip.style.transform = 'translateY(-' + (count * symH) + 'px)';
                         strip.offsetHeight;
                         strip.style.transition = 'transform ' + duration + 'ms cubic-bezier(.15,.85,.25,1)';
-                        strip.style.transform = 'translateY(-' + (count * symH) + 'px)';
+                        strip.style.transform = 'translateY(0)';
                         setTimeout(resolve, duration + 60);
                     });
                 }
@@ -955,15 +953,17 @@ class FisHotel_Arcade {
              * ═══════════════════════════════════════════════ */
 
             function renderSlotSelection(body) {
+                const cab1 = '<?php echo esc_url( plugins_url( "assists/casino/slots/FisHotel-Slot-Cabnet-Body-01.png", FISHOTEL_PLUGIN_FILE ) ); ?>';
+                const cab2 = '<?php echo esc_url( plugins_url( "assists/casino/slots/FisHotel-Slot-Cabnet-Body-02.png", FISHOTEL_PLUGIN_FILE ) ); ?>';
                 body.innerHTML =
                     '<div class="fh-slot-select">' +
                         '<div class="fh-slot-select-card" id="fh-sel-fish">' +
-                            '<span class="fh-slot-select-icon">\uD83D\uDC20</span>' +
+                            '<img class="fh-slot-select-img" src="' + cab1 + '" alt="Fish Slots">' +
                             '<div class="fh-slot-select-name">Fish Slots</div>' +
                             '<div class="fh-slot-select-sub">3-Reel Classic</div>' +
                         '</div>' +
                         '<div class="fh-slot-select-card" id="fh-sel-sapphire">' +
-                            '<span class="fh-slot-select-icon">\u2660</span>' +
+                            '<img class="fh-slot-select-img" src="' + cab2 + '" alt="Sapphire Poker">' +
                             '<div class="fh-slot-select-name">Sapphire Poker</div>' +
                             '<div class="fh-slot-select-sub">4-Reel Cards</div>' +
                         '</div>' +
@@ -1002,6 +1002,10 @@ class FisHotel_Arcade {
 
                 /* ── Build HTML ── */
                 const facePay =
+                    /* Left column: 4-of-a-Kind */
+                    '<span style="grid-column:1;color:rgba(150,136,95,.7);font-weight:700">4-OF-A-KIND</span>' +
+                    /* Right column: 3-of-a-Kind */
+                    '<span style="grid-column:2;color:rgba(150,136,95,.7);font-weight:700">3-OF-A-KIND</span>' +
                     '<span>7-7-7-7 <em class="sp-mult">100x</em></span>' +
                     '<span>7-7-7 <em class="sp-mult">25x</em></span>' +
                     '<span>A-A-A-A <em class="sp-mult">50x</em></span>' +
@@ -1270,24 +1274,27 @@ class FisHotel_Arcade {
                 document.getElementById('fh-sapphire-pay-x').addEventListener('click', spClosePay);
                 document.getElementById('fh-sapphire-pay-bd').addEventListener('click', spClosePay);
 
-                /* ── Build reel strip: N random cards + final result + 2 trailing ── */
+                /* ── Build reel strip: 1 trailing + winner + N random + 1 trailing (scrolls top-to-bottom) ── */
                 function spBuildStrip(finalId, count) {
                     let html = '';
-                    for (let i = 0; i < count; i++) {
-                        const c = pool[Math.floor(Math.random() * pool.length)];
-                        html += '<div class="fh-sapphire-sym"><img src="' + cardBase + c.file + '"></div>';
-                    }
+                    /* 1 trailing card above winner */
+                    const t1 = pool[Math.floor(Math.random() * pool.length)];
+                    html += '<div class="fh-sapphire-sym"><img src="' + cardBase + t1.file + '"></div>';
+                    /* Winner in second position */
                     const f = cardMap[finalId] || CARDS[5];
                     html += '<div class="fh-sapphire-sym"><img src="' + cardBase + f.file + '"></div>';
-                    /* 2 trailing cards so the window looks full after stopping */
-                    for (let i = 0; i < 2; i++) {
+                    /* 1 trailing card below winner */
+                    const t2 = pool[Math.floor(Math.random() * pool.length)];
+                    html += '<div class="fh-sapphire-sym"><img src="' + cardBase + t2.file + '"></div>';
+                    /* Random cards for the spin animation */
+                    for (let i = 0; i < count; i++) {
                         const c = pool[Math.floor(Math.random() * pool.length)];
                         html += '<div class="fh-sapphire-sym"><img src="' + cardBase + c.file + '"></div>';
                     }
                     return html;
                 }
 
-                /* ── Spin one reel — 3 cards visible, winner lands in MIDDLE row ── */
+                /* ── Spin one reel — 3 cards visible, winner in middle, scrolls top-to-bottom ── */
                 function spSpinReel(idx, finalId, duration) {
                     return new Promise(resolve => {
                         const strip = document.getElementById('fh-spr-' + idx);
@@ -1297,10 +1304,10 @@ class FisHotel_Arcade {
                         strip.innerHTML = spBuildStrip(finalId, count);
                         strip.querySelectorAll('.fh-sapphire-sym').forEach(s => { s.style.height = symH + 'px'; });
                         strip.style.transition = 'none';
-                        strip.style.transform = 'translateY(0)';
+                        strip.style.transform = 'translateY(-' + ((count + 2) * symH) + 'px)';
                         strip.offsetHeight;
                         strip.style.transition = 'transform ' + duration + 'ms cubic-bezier(.15,.85,.25,1)';
-                        strip.style.transform = 'translateY(-' + ((count - 1) * symH) + 'px)';
+                        strip.style.transform = 'translateY(0)';
                         setTimeout(resolve, duration + 60);
                     });
                 }
