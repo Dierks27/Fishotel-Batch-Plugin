@@ -984,11 +984,11 @@ class FisHotel_Arcade {
                 const cardBase   = '<?php echo esc_url( plugins_url( "assists/casino/slots/", FISHOTEL_PLUGIN_FILE ) ); ?>';
 
                 const CARDS = [
-                    { id:'7',  file:'7-Card.png',  pay4:100, pay3:25, label:'Lucky 7' },
-                    { id:'A',  file:'A-Card.png',  pay4:50,  pay3:15, label:'Ace' },
-                    { id:'K',  file:'K-Card.png',  pay4:25,  pay3:6,  label:'King' },
-                    { id:'Q',  file:'Q-Card.png',  pay4:15,  pay3:4,  label:'Queen' },
-                    { id:'J',  file:'J-Card.png',  pay4:10,  pay3:3,  label:'Jack' },
+                    { id:'7',  file:'7-Card-2.png',  pay4:100, pay3:25, label:'Lucky 7' },
+                    { id:'A',  file:'A-Card-2.png',  pay4:50,  pay3:15, label:'Ace' },
+                    { id:'K',  file:'K-Card-2.png',  pay4:25,  pay3:6,  label:'King' },
+                    { id:'Q',  file:'Q-Card-2.png',  pay4:15,  pay3:4,  label:'Queen' },
+                    { id:'J',  file:'J-Card-2.png',  pay4:10,  pay3:3,  label:'Jack' },
                     { id:'10', file:'10-Card.png', pay4:8,   pay3:2,  label:'Ten' },
                 ];
                 const cardMap = {}; CARDS.forEach(c => cardMap[c.id] = c);
