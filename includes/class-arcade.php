@@ -1299,6 +1299,9 @@ class FisHotel_Arcade {
                     }
                     updateChips(res.data.chips);
 
+                    /* Clear any leftover hyper mode interval */
+                    if (callerInterval) { clearInterval(callerInterval); callerInterval = null; }
+
                     playing = true;
                     cashedOut = false;
                     calledNumbers = [];
@@ -1314,6 +1317,8 @@ class FisHotel_Arcade {
                     renderGrid();
 
                     cashBtn.style.display = 'inline-block';
+                    cashBtn.disabled = false;
+                    cashBtn.textContent = 'CASH OUT';
                     this.style.display = 'none';
 
                     caller.textContent = 'GET READY...';
