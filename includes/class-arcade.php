@@ -1263,6 +1263,7 @@ class FisHotel_Arcade {
                         });
                     });
                 }
+                card = generateCard();
                 renderGrid();
 
                 /* ── Bet buttons ── */
