@@ -1096,13 +1096,13 @@ class FisHotel_Arcade {
 
                 function buildPaytableEntries() {
                     var patterns = [
-                        { name: 'Any Line', mult: '2x', cells: [[0,2],[1,2],[2,2],[3,2],[4,2]] },
-                        { name: 'Diagonal', mult: '3x', cells: [[0,0],[1,1],[2,2],[3,3],[4,4]] },
-                        { name: 'Postage Stamp', mult: '4x', cells: [[0,0],[1,0],[0,1],[1,1]] },
-                        { name: '4 Corners', mult: '5x', cells: [[0,0],[4,0],[0,4],[4,4]] },
-                        { name: 'Wine Glass', mult: '8x', cells: [[0,0],[1,0],[2,0],[3,0],[4,0],[1,1],[3,1],[2,2],[2,3],[1,4],[2,4],[3,4]] },
-                        { name: 'Lucky 7', mult: '10x', cells: [[0,0],[1,0],[2,0],[3,0],[4,0],[3,1],[2,2],[1,3],[0,4]] },
-                        { name: 'X Pattern', mult: '20x', jack: true, cells: [[0,0],[1,1],[2,2],[3,3],[4,4],[4,0],[3,1],[1,3],[0,4]] }
+                        { name: 'Any Line', mult: '0.75x', cells: [[0,2],[1,2],[2,2],[3,2],[4,2]] },
+                        { name: 'Diagonal', mult: '1.5x', cells: [[0,0],[1,1],[2,2],[3,3],[4,4]] },
+                        { name: 'Postage Stamp', mult: '1.5x', cells: [[0,0],[1,0],[0,1],[1,1]] },
+                        { name: '4 Corners', mult: '2.5x', cells: [[0,0],[4,0],[0,4],[4,4]] },
+                        { name: 'Wine Glass', mult: '5x', cells: [[0,0],[1,0],[2,0],[3,0],[4,0],[1,1],[3,1],[2,2],[2,3],[1,4],[2,4],[3,4]] },
+                        { name: 'Lucky 7', mult: '8x', cells: [[0,0],[1,0],[2,0],[3,0],[4,0],[3,1],[2,2],[1,3],[0,4]] },
+                        { name: 'X Pattern', mult: '15x', jack: true, cells: [[0,0],[1,1],[2,2],[3,3],[4,4],[4,0],[3,1],[1,3],[0,4]] }
                     ];
                     var html = '';
                     for (var i = 0; i < patterns.length; i++) {
@@ -1116,7 +1116,7 @@ class FisHotel_Arcade {
                     }
                     return html;
                 }
-                let bet = 50, playing = false, autoDaub = true;
+                let bet = 50, playing = false, autoDaub = true, cashedOut = false;
                 let card = [], daubed = [], calledNumbers = [], callerInterval = null;
                 let patternsWon = {}, totalWinnings = 0;
                 let audioCtx = null, muted = false;
@@ -1300,6 +1300,7 @@ class FisHotel_Arcade {
                     updateChips(res.data.chips);
 
                     playing = true;
+                    cashedOut = false;
                     calledNumbers = [];
                     patternsWon = {};
                     totalWinnings = 0;
@@ -1374,7 +1375,7 @@ class FisHotel_Arcade {
                         for (let r = 0; r < 5; r++) {
                             if (daubed[0][r] && daubed[1][r] && daubed[2][r] && daubed[3][r] && daubed[4][r]) {
                                 patternsWon.row = true;
-                                newWins.push({ name: 'LINE!', mult: 2 });
+                                newWins.push({ name: 'LINE!', mult: 0.75 });
                                 break;
                             }
                         }
@@ -1385,7 +1386,7 @@ class FisHotel_Arcade {
                         for (let c = 0; c < 5; c++) {
                             if (daubed[c][0] && daubed[c][1] && daubed[c][2] && daubed[c][3] && daubed[c][4]) {
                                 patternsWon.col = true;
-                                newWins.push({ name: 'COLUMN!', mult: 2 });
+                                newWins.push({ name: 'COLUMN!', mult: 0.75 });
                                 break;
                             }
                         }
@@ -1397,7 +1398,7 @@ class FisHotel_Arcade {
                         const d2 = daubed[0][4] && daubed[1][3] && daubed[2][2] && daubed[3][1] && daubed[4][0];
                         if (d1 || d2) {
                             patternsWon.diag = true;
-                            newWins.push({ name: 'DIAGONAL!', mult: 3 });
+                            newWins.push({ name: 'DIAGONAL!', mult: 1.5 });
                         }
                     }
 
@@ -1412,7 +1413,7 @@ class FisHotel_Arcade {
                         for (const sq of stamps) {
                             if (sq.every(([c,r]) => daubed[c][r])) {
                                 patternsWon.stamp = true;
-                                newWins.push({ name: 'POSTAGE STAMP!', mult: 4 });
+                                newWins.push({ name: 'POSTAGE STAMP!', mult: 1.5 });
                                 break;
                             }
                         }
@@ -1422,7 +1423,7 @@ class FisHotel_Arcade {
                     if (!patternsWon.corners) {
                         if (daubed[0][0] && daubed[4][0] && daubed[0][4] && daubed[4][4]) {
                             patternsWon.corners = true;
-                            newWins.push({ name: '4 CORNERS!', mult: 5 });
+                            newWins.push({ name: '4 CORNERS!', mult: 2.5 });
                         }
                     }
 
@@ -1431,7 +1432,7 @@ class FisHotel_Arcade {
                         const wc = [[0,0],[1,0],[2,0],[3,0],[4,0],[1,1],[3,1],[2,2],[2,3],[1,4],[2,4],[3,4]];
                         if (wc.every(([c,r]) => daubed[c][r])) {
                             patternsWon.wine = true;
-                            newWins.push({ name: 'WINE GLASS!', mult: 8 });
+                            newWins.push({ name: 'WINE GLASS!', mult: 5 });
                         }
                     }
 
@@ -1440,7 +1441,7 @@ class FisHotel_Arcade {
                         const lc = [[0,0],[1,0],[2,0],[3,0],[4,0],[3,1],[2,2],[1,3],[0,4]];
                         if (lc.every(([c,r]) => daubed[c][r])) {
                             patternsWon.lucky7 = true;
-                            newWins.push({ name: 'LUCKY 7!', mult: 10 });
+                            newWins.push({ name: 'LUCKY 7!', mult: 8 });
                         }
                     }
 
@@ -1450,13 +1451,13 @@ class FisHotel_Arcade {
                         const d2 = daubed[0][4] && daubed[1][3] && daubed[2][2] && daubed[3][1] && daubed[4][0];
                         if (d1 && d2) {
                             patternsWon.xpattern = true;
-                            newWins.push({ name: 'X PATTERN JACKPOT!', mult: 20 });
+                            newWins.push({ name: 'X PATTERN JACKPOT!', mult: 15 });
                         }
                     }
 
                     /* Award wins */
                     newWins.forEach(w => {
-                        const payout = bet * w.mult;
+                        const payout = Math.floor(bet * w.mult);
                         totalWinnings += payout;
                         winDisp.textContent = Number(totalWinnings).toLocaleString();
                         showWinBanner(w.name + ' ' + w.mult + 'x');
@@ -1476,6 +1477,8 @@ class FisHotel_Arcade {
 
                 /* ── End game / Cash out ── */
                 async function endGame() {
+                    if (cashedOut) return;
+                    cashedOut = true;
                     if (callerInterval) { clearInterval(callerInterval); callerInterval = null; }
                     playing = false;
 
