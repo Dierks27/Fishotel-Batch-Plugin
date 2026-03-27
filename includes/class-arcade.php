@@ -68,12 +68,15 @@ class FisHotel_Arcade {
 
         /* Rooms — coordinates on 1280×720 image */
         $rooms = [
-            'bar'       => [ 'label' => 'The Bar',          'x1' => 215, 'y1' => 195, 'x2' => 540, 'y2' => 345, 'game' => 'daily_bonus' ],
-            'sports'    => [ 'label' => 'Sports Lounge',     'x1' => 645, 'y1' => 195, 'x2' => 1065, 'y2' => 345, 'game' => 'coming_soon' ],
-            'roulette'  => [ 'label' => 'Roulette Room',     'x1' => 215, 'y1' => 370, 'x2' => 540, 'y2' => 520, 'game' => 'roulette' ],
-            'blackjack' => [ 'label' => 'Blackjack Table',   'x1' => 645, 'y1' => 370, 'x2' => 1065, 'y2' => 520, 'game' => 'blackjack' ],
-            'slots'     => [ 'label' => 'Slot Machines',     'x1' => 215, 'y1' => 540, 'x2' => 540, 'y2' => 680, 'game' => 'slots' ],
-            'poker'     => [ 'label' => 'Poker Lounge',      'x1' => 645, 'y1' => 540, 'x2' => 1065, 'y2' => 680, 'game' => 'poker' ],
+            'bar'       => [ 'label' => 'The Bar',          'x1' => 215, 'y1' => 192, 'x2' => 640, 'y2' => 347, 'game' => 'daily_bonus' ],
+            'bingo'     => [ 'label' => 'Bingo Hall',        'x1' => 646, 'y1' => 193, 'x2' => 774, 'y2' => 348, 'game' => 'bingo' ],
+            'sports'    => [ 'label' => 'Sports Lounge',     'x1' => 780, 'y1' => 195, 'x2' => 1072, 'y2' => 349, 'game' => 'coming_soon' ],
+            'roulette'  => [ 'label' => 'Roulette Table',    'x1' => 215, 'y1' => 360, 'x2' => 534, 'y2' => 510, 'game' => 'roulette' ],
+            'craps'     => [ 'label' => 'Craps Table',       'x1' => 535, 'y1' => 358, 'x2' => 739, 'y2' => 512, 'game' => 'coming_soon' ],
+            'blackjack' => [ 'label' => 'Blackjack Table',   'x1' => 741, 'y1' => 356, 'x2' => 1071, 'y2' => 512, 'game' => 'blackjack' ],
+            'slots'     => [ 'label' => 'Slot Machines',     'x1' => 216, 'y1' => 525, 'x2' => 542, 'y2' => 671, 'game' => 'slots' ],
+            'prizes'    => [ 'label' => 'Prize Room',        'x1' => 545, 'y1' => 525, 'x2' => 737, 'y2' => 671, 'game' => 'coming_soon' ],
+            'poker'     => [ 'label' => 'Poker Table',       'x1' => 740, 'y1' => 527, 'x2' => 1068, 'y2' => 669, 'game' => 'poker' ],
         ];
 
         ob_start();
@@ -472,11 +475,14 @@ class FisHotel_Arcade {
             /* Room theme configs */
             const roomThemes = {
                 bar:       { title: 'THE BAR', icon: '🍸', subtitle: 'Daily Chip Bonus' },
+                bingo:     { title: 'BINGO HALL', icon: '🎱', subtitle: 'Classic 75-Ball' },
                 sports:    { title: 'SPORTS LOUNGE', icon: '🏈', subtitle: 'Coming Soon' },
-                roulette:  { title: 'ROULETTE ROOM', icon: '🎰', subtitle: 'Spin the Wheel' },
+                roulette:  { title: 'ROULETTE TABLE', icon: '🎰', subtitle: 'Spin the Wheel' },
+                craps:     { title: 'CRAPS TABLE', icon: '🎲', subtitle: 'Coming Soon' },
                 blackjack: { title: 'BLACKJACK TABLE', icon: '🃏', subtitle: 'Beat the Dealer' },
                 slots:     { title: 'SLOT MACHINES', icon: '🐠', subtitle: 'Fish Slots' },
-                poker:     { title: 'POKER LOUNGE', icon: '♠', subtitle: 'Video Poker' },
+                prizes:    { title: 'PRIZE ROOM', icon: '🏆', subtitle: 'Coming Soon' },
+                poker:     { title: 'POKER TABLE', icon: '♠', subtitle: 'Video Poker' },
             };
 
 
@@ -612,6 +618,7 @@ class FisHotel_Arcade {
                     case 'daily_bonus': renderDailyBonus(body); break;
                     case 'coming_soon': renderComingSoon(body); break;
                     case 'slots':       renderSlotSelection(body); break;
+                    case 'bingo':       renderBingoHall(body); break;
                     default:
                         body.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;font-family:Special Elite,cursive;">Game being rebuilt — coming soon!</p>';
                         break;

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.8.1 - Bingo: fix hyper mode persisting into next game.
- * Version:           9.8.1
+ * Description:       v9.8.2 - Remapped all casino rooms, added Bingo Hall/Craps/Prize Room clickable areas.
+ * Version:           9.8.2
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.8.1' );
+define( 'FISHOTEL_VERSION', '9.8.2' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
