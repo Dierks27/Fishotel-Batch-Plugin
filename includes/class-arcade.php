@@ -421,13 +421,12 @@ class FisHotel_Arcade {
         .fh-bingo-win-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#ffd700,#daa520);color:#2e2418;padding:10px 24px;border-radius:8px;font-size:clamp(14px,3.5vw,20px);font-weight:700;text-align:center;z-index:10;box-shadow:0 4px 20px rgba(255,215,0,.5);animation:fh-bingo-banner .5s ease forwards;pointer-events:none}
         @keyframes fh-bingo-banner{0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
         /* ═══ Bingo Paytable Visual Cards ═══ */
-        .fh-bingo-pay-scroll{max-height:65vh;overflow-y:auto;padding:0 2px}
-        .fh-bingo-pay-entry{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(0,0,0,.25);border:1px solid rgba(150,136,95,.15);border-radius:4px;margin-bottom:5px}
+        .fh-bingo-pay-entry{display:flex;align-items:center;gap:8px;padding:4px 8px;background:rgba(0,0,0,.25);border:1px solid rgba(150,136,95,.15);border-radius:3px;margin-bottom:3px}
         .fh-bingo-pay-entry.jackpot{background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.3)}
-        .fh-bingo-pay-name{flex:1;font-family:Oswald,sans-serif;font-size:13px;color:#f5f0e8}
+        .fh-bingo-pay-name{flex:1;font-family:Oswald,sans-serif;font-size:11px;color:#f5f0e8}
         .fh-bingo-pay-entry.jackpot .fh-bingo-pay-name{color:#ffd700}
-        .fh-bingo-pay-mult{font-family:Oswald,sans-serif;font-size:16px;font-weight:700;color:#ffd700;white-space:nowrap}
-        .fh-bingo-pay-entry.jackpot .fh-bingo-pay-mult{font-size:18px;text-shadow:0 0 8px rgba(255,215,0,.5)}
+        .fh-bingo-pay-mult{font-family:Oswald,sans-serif;font-size:14px;font-weight:700;color:#ffd700;white-space:nowrap}
+        .fh-bingo-pay-entry.jackpot .fh-bingo-pay-mult{font-size:15px;text-shadow:0 0 8px rgba(255,215,0,.5)}
         </style>
 
         <script>
@@ -1073,7 +1072,7 @@ class FisHotel_Arcade {
                 function bingoPatSVG(hitCells) {
                     const S = 9, G = 1, W = S * 5 + G * 4;
                     const hitSet = new Set(hitCells.map(function(c){ return c[0]+','+c[1]; }));
-                    let svg = '<svg viewBox="0 0 ' + W + ' ' + W + '" width="50" height="50" style="flex-shrink:0;border-radius:3px;border:1px solid #96885f">';
+                    let svg = '<svg viewBox="0 0 ' + W + ' ' + W + '" width="38" height="38" style="flex-shrink:0;border-radius:3px;border:1px solid #96885f">';
                     for (let r = 0; r < 5; r++) {
                         for (let c = 0; c < 5; c++) {
                             const x = c * (S + G), y = r * (S + G);
@@ -1117,10 +1116,11 @@ class FisHotel_Arcade {
                 let bet = 50, playing = false, autoDaub = true;
                 let card = [], daubed = [], calledNumbers = [], callerInterval = null;
                 let patternsWon = {}, totalWinnings = 0;
-                let audioCtx = null;
+                let audioCtx = null, muted = false;
 
                 /* ── Sound effects ── */
                 function playSound(freq, dur) {
+                    if (muted) return;
                     try {
                         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                         const osc = audioCtx.createOscillator();
@@ -1190,6 +1190,7 @@ class FisHotel_Arcade {
                             '<button class="fh-bingo-btn fh-bingo-btn-buy" id="fh-bingo-buy">BUY CARD</button>' +
                             '<button class="fh-bingo-btn fh-bingo-btn-cashout" id="fh-bingo-cashout">CASH OUT</button>' +
                             '<label class="fh-bingo-autodaub"><input type="checkbox" id="fh-bingo-auto" checked> AUTO-DAUB</label>' +
+                            '<label class="fh-bingo-autodaub"><input type="checkbox" id="fh-bingo-mute"> MUTE</label>' +
                             '<button class="fh-bingo-btn" id="fh-bingo-pay-btn" style="background:rgba(0,0,0,.5);color:#96885f;font-size:11px;padding:6px 12px;border:1px solid rgba(150,136,95,.4)">PAY TABLE</button>' +
                         '</div>' +
                         '<div class="fh-bingo-stats">' +
@@ -1205,9 +1206,7 @@ class FisHotel_Arcade {
                             '<button style="position:absolute;top:8px;right:12px;background:none;border:none;color:#96885f;font-size:22px;cursor:pointer;line-height:1" id="fh-bingo-pay-x">&times;</button>' +
                             '<div style="text-align:center;font-family:Special Elite,monospace;font-size:18px;color:#ffd700;margin:0 0 4px">BINGO HALL PAYOUTS</div>' +
                             '<div style="text-align:center;font-family:Oswald,sans-serif;font-size:11px;color:#96885f;margin:0 0 10px">35 Balls Called Per Game</div>' +
-                            '<div class="fh-bingo-pay-scroll">' +
-                                buildPaytableEntries() +
-                            '</div>' +
+                            buildPaytableEntries() +
                             '<div style="text-align:center;font-size:10px;color:#96885f;margin-top:10px;font-family:Oswald,sans-serif">Patterns stack — win multiple bonuses per game!<br>Cash out anytime to collect winnings.</div>' +
                         '</div>' +
                     '</div>';
@@ -1271,6 +1270,10 @@ class FisHotel_Arcade {
                 document.getElementById('fh-bingo-auto').addEventListener('change', function() {
                     autoDaub = this.checked;
                     restartInterval();
+                });
+
+                document.getElementById('fh-bingo-mute').addEventListener('change', function() {
+                    muted = this.checked;
                 });
 
                 /* ── BUY CARD ── */
@@ -1476,11 +1479,24 @@ class FisHotel_Arcade {
                     }
 
                     cashBtn.style.display = 'none';
+                    cashBtn.disabled = false;
+                    cashBtn.textContent = 'CASH OUT';
                     buyBtn.style.display = 'inline-block';
                     buyBtn.disabled = false;
                 }
 
-                cashBtn.addEventListener('click', endGame);
+                cashBtn.addEventListener('click', function() {
+                    if (!playing) return;
+                    /* Enter hyper mode — 1 ball/sec, auto-daub forced on */
+                    if (callerInterval) clearInterval(callerInterval);
+                    autoDaub = true;
+                    const autoChk = document.getElementById('fh-bingo-auto');
+                    if (autoChk) autoChk.checked = true;
+                    cashBtn.disabled = true;
+                    cashBtn.textContent = 'HYPER MODE!';
+                    caller.textContent = '⚡ HYPER MODE ⚡';
+                    callerInterval = setInterval(callNumber, 800);
+                });
             }
 
             /* ═══════════════════════════════════════════════
