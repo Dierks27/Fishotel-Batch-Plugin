@@ -393,7 +393,7 @@ class FisHotel_Arcade {
         /* ═══ BINGO HALL ═══ */
         .fh-bingo{max-width:500px;margin:0 auto;font-family:'Oswald',sans-serif;color:#f5f0e8}
         .fh-bingo-caller{text-align:center;font-size:clamp(16px,4vw,24px);font-weight:700;color:#ffd700;padding:8px 0;min-height:36px;text-shadow:0 0 8px rgba(255,215,0,.4)}
-        .fh-bingo-history{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;padding:4px 0 8px;min-height:28px}
+        .fh-bingo-history{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;padding:4px 0 8px;min-height:28px;max-width:320px;margin:0 auto}
         .fh-bingo-history-ball{min-width:32px;height:24px;border-radius:12px;background:#2e2418;border:2px solid #96885f;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#f5f0e8;flex-shrink:0;padding:0 4px}
         .fh-bingo-history-ball.latest{background:#96885f;color:#1a1410;border-color:#ffd700;box-shadow:0 0 8px rgba(255,215,0,.5)}
         .fh-bingo-card-wrap{background:#f5f0e8;border:4px double #2e2418;border-radius:8px;padding:2px;margin:0 auto;max-width:320px}

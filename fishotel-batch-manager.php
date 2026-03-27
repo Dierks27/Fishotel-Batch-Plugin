@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.6.3 - Bingo: compact paytable, hyper cash out, mute toggle.
- * Version:           9.6.3
+ * Description:       v9.6.4 - Bingo: called numbers 2-row grid, layout adjustments.
+ * Version:           9.6.4
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.6.3' );
+define( 'FISHOTEL_VERSION', '9.6.4' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
