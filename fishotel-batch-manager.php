@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.5.4 - Reverted auto-fit scale.
- * Version:           9.5.4
+ * Description:       v9.6.0 - Bingo Hall game added to casino arcade.
+ * Version:           9.6.0
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.5.4' );
+define( 'FISHOTEL_VERSION', '9.6.0' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

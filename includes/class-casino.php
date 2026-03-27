@@ -31,6 +31,8 @@ class FisHotel_Casino {
             'fishotel_casino_slots_spin',
             'fishotel_casino_poker_slots_spin',
             'fishotel_casino_poker_action',
+            'fishotel_casino_bingo_buy',
+            'fishotel_casino_bingo_cashout',
         ];
         foreach ( $actions as $a ) {
             add_action( "wp_ajax_{$a}", [ $this, $a ] );
@@ -124,6 +126,7 @@ class FisHotel_Casino {
             'blackjack' => 'blackjack_hands',
             'slots'     => 'slots_spins',
             'poker'     => 'poker_hands',
+            'bingo'     => 'bingo_games',
         ];
         if ( isset( $counter_map[ $game ] ) ) {
             $this->track_stat( $user_id, $counter_map[ $game ], 1 );
@@ -1006,6 +1009,45 @@ class FisHotel_Casino {
             'leaders'       => $leaders,
             'your_rank'     => $your_rank,
             'your_winnings' => $your_winnings,
+        ] );
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     *  BINGO HALL
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    public function fishotel_casino_bingo_buy() {
+        check_ajax_referer( 'fishotel_casino_nonce', 'nonce' );
+        $uid = get_current_user_id();
+        if ( ! $uid ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
+
+        $bet = max( 1, (int) sanitize_text_field( $_POST['bet'] ?? 0 ) );
+        if ( $bet > $this->get_chips( $uid ) ) {
+            wp_send_json_error( [ 'message' => 'Not enough chips.' ] );
+        }
+
+        $this->deduct_chips( $uid, $bet );
+
+        wp_send_json_success( [
+            'chips' => $this->get_chips( $uid ),
+        ] );
+    }
+
+    public function fishotel_casino_bingo_cashout() {
+        check_ajax_referer( 'fishotel_casino_nonce', 'nonce' );
+        $uid = get_current_user_id();
+        if ( ! $uid ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
+
+        $bet      = max( 0, (int) sanitize_text_field( $_POST['bet'] ?? 0 ) );
+        $winnings = max( 0, (int) sanitize_text_field( $_POST['winnings'] ?? 0 ) );
+
+        if ( $winnings > 0 ) {
+            $this->add_chips( $uid, $winnings );
+        }
+        $this->record_game( $uid, 'bingo', $bet, $winnings );
+
+        wp_send_json_success( [
+            'chips' => $this->get_chips( $uid ),
         ] );
     }
 

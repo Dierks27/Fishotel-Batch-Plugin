@@ -389,6 +389,37 @@ class FisHotel_Arcade {
         .fh-sapphire-pay-mult{font-family:'Oswald',sans-serif;font-size:clamp(13px,3vw,16px);font-weight:700;color:#ffd700;text-shadow:0 0 6px rgba(255,215,0,.3)}
         .fh-sapphire-pay-label{font-family:'Oswald',sans-serif;font-size:11px;color:#f5f0e8}
         .fh-sapphire-pay-section{grid-column:1/-1;text-align:center;padding:4px 8px;background:rgba(0,0,0,.2);border:1px solid rgba(150,136,95,.15);border-radius:4px;font-family:'Oswald',sans-serif;font-size:12px;color:#96885f;margin-top:2px}
+
+        /* ═══ BINGO HALL ═══ */
+        .fh-bingo{max-width:500px;margin:0 auto;font-family:'Oswald',sans-serif;color:#f5f0e8}
+        .fh-bingo-caller{text-align:center;font-size:clamp(16px,4vw,24px);font-weight:700;color:#ffd700;padding:8px 0;min-height:36px;text-shadow:0 0 8px rgba(255,215,0,.4)}
+        .fh-bingo-history{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;padding:4px 0 8px;min-height:28px}
+        .fh-bingo-history-ball{width:28px;height:28px;border-radius:50%;background:#2e2418;border:2px solid #96885f;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#f5f0e8;flex-shrink:0}
+        .fh-bingo-history-ball.latest{background:#96885f;color:#1a1410;border-color:#ffd700;box-shadow:0 0 8px rgba(255,215,0,.5)}
+        .fh-bingo-card-wrap{background:#f5f0e8;border:4px double #2e2418;border-radius:8px;padding:2px;margin:0 auto;max-width:320px}
+        .fh-bingo-headers{display:grid;grid-template-columns:repeat(5,1fr);text-align:center;font-size:clamp(14px,3.5vw,20px);font-weight:700;color:#2e2418;padding:4px 0;letter-spacing:2px}
+        .fh-bingo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
+        .fh-bingo-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #ccc;font-family:'Special Elite',cursive;font-size:clamp(12px,3vw,18px);color:#2e2418;cursor:pointer;position:relative;border-radius:3px;font-weight:700;transition:background .15s}
+        .fh-bingo-cell:hover{background:#f0ead8}
+        .fh-bingo-cell.free{background:#d4c9a8;font-size:clamp(8px,2vw,12px);color:#96885f;cursor:default}
+        .fh-bingo-cell.daubed::after{content:'';position:absolute;inset:10%;border-radius:50%;background:rgba(139,0,0,.7);pointer-events:none}
+        .fh-bingo-cell.called{background:#fff8dc}
+        .fh-bingo-controls{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;padding:10px 0 4px}
+        .fh-bingo-bet{background:rgba(0,0,0,.6);color:#f5f0e8;border:1px solid rgba(150,136,95,.4);padding:6px 14px;border-radius:4px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;transition:all .2s}
+        .fh-bingo-bet:hover{background:rgba(0,0,0,.8);border-color:rgba(255,215,0,.5)}
+        .fh-bingo-bet.active{background:rgba(255,215,0,.2);border-color:#ffd700;color:#ffd700;box-shadow:0 0 10px rgba(255,215,0,.4)}
+        .fh-bingo-btn{font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;padding:8px 20px;border-radius:6px;border:none;cursor:pointer;transition:all .2s}
+        .fh-bingo-btn-buy{background:linear-gradient(180deg,#FF7F00,#CC6600);color:#fff;box-shadow:0 3px 8px rgba(0,0,0,.3)}
+        .fh-bingo-btn-buy:hover{transform:translateY(-1px);box-shadow:0 5px 12px rgba(0,0,0,.4)}
+        .fh-bingo-btn-buy:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .fh-bingo-btn-cashout{background:linear-gradient(180deg,#2ecc71,#27ae60);color:#fff;box-shadow:0 3px 8px rgba(0,0,0,.3);display:none}
+        .fh-bingo-btn-cashout:hover{transform:translateY(-1px)}
+        .fh-bingo-autodaub{display:flex;align-items:center;gap:4px;font-size:11px;color:#96885f;cursor:pointer}
+        .fh-bingo-autodaub input{accent-color:#ffd700}
+        .fh-bingo-stats{display:flex;justify-content:center;gap:16px;padding:6px 0;font-size:13px;color:#96885f}
+        .fh-bingo-stats .bingo-winnings{color:#ffd700;font-weight:700}
+        .fh-bingo-win-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#ffd700,#daa520);color:#2e2418;padding:10px 24px;border-radius:8px;font-size:clamp(14px,3.5vw,20px);font-weight:700;text-align:center;z-index:10;box-shadow:0 4px 20px rgba(255,215,0,.5);animation:fh-bingo-banner .5s ease forwards;pointer-events:none}
+        @keyframes fh-bingo-banner{0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
         </style>
 
         <script>
@@ -992,6 +1023,22 @@ class FisHotel_Arcade {
                             '<div class="fh-slot-select-name">Sapphire Poker</div>' +
                             '<div class="fh-slot-select-sub">4-Reel Cards</div>' +
                         '</div>' +
+                        '<div class="fh-slot-select-card" id="fh-sel-bingo">' +
+                            '<svg class="fh-slot-select-img" viewBox="0 0 120 140" style="max-height:180px;width:auto;">' +
+                                '<rect x="10" y="20" width="100" height="110" rx="6" fill="#f5f0e8" stroke="#2e2418" stroke-width="3"/>' +
+                                '<text x="60" y="40" text-anchor="middle" font-family="Oswald" font-size="14" font-weight="700" fill="#2e2418">B I N G O</text>' +
+                                '<g fill="#2e2418" font-family="Special Elite" font-size="10" text-anchor="middle">' +
+                                    '<text x="24" y="60">3</text><text x="42" y="60">22</text><text x="60" y="60">41</text><text x="78" y="60">50</text><text x="96" y="60">68</text>' +
+                                    '<text x="24" y="78">7</text><text x="42" y="78">19</text><text x="60" y="78">33</text><text x="78" y="78">55</text><text x="96" y="78">72</text>' +
+                                    '<text x="24" y="96">11</text><text x="42" y="96">28</text><text x="78" y="96">48</text><text x="96" y="96">61</text>' +
+                                    '<text x="24" y="114">1</text><text x="42" y="114">16</text><text x="60" y="114">39</text><text x="78" y="114">59</text><text x="96" y="114">75</text>' +
+                                '</g>' +
+                                '<circle cx="60" cy="92" r="8" fill="rgba(139,0,0,.7)"/>' +
+                                '<text x="60" y="95" text-anchor="middle" font-family="Oswald" font-size="6" fill="#f5f0e8">FREE</text>' +
+                            '</svg>' +
+                            '<div class="fh-slot-select-name">Bingo Hall</div>' +
+                            '<div class="fh-slot-select-sub">Classic 75-Ball</div>' +
+                        '</div>' +
                     '</div>';
                 document.getElementById('fh-sel-fish').addEventListener('click', () => {
                     renderSlotMachine(body);
@@ -999,6 +1046,288 @@ class FisHotel_Arcade {
                 document.getElementById('fh-sel-sapphire').addEventListener('click', () => {
                     renderSapphirePokerSlots(body);
                 });
+                document.getElementById('fh-sel-bingo').addEventListener('click', () => {
+                    renderBingoHall(body);
+                });
+            }
+
+            /* ═══════════════════════════════════════════════
+             *  BINGO HALL (classic 75-ball)
+             * ═══════════════════════════════════════════════ */
+
+            function renderBingoHall(body) {
+                const COLS = ['B','I','N','G','O'];
+                const RANGES = [[1,15],[16,30],[31,45],[46,60],[61,75]];
+                let bet = 50, playing = false, autoDaub = true;
+                let card = [], daubed = [], calledNumbers = [], callerInterval = null;
+                let patternsWon = {}, totalWinnings = 0;
+
+                /* ── Generate random 5x5 card (stored column-major: card[col][row]) ── */
+                function generateCard() {
+                    const c = [];
+                    for (let col = 0; col < 5; col++) {
+                        const [min, max] = RANGES[col];
+                        const nums = [];
+                        while (nums.length < 5) {
+                            const n = min + Math.floor(Math.random() * (max - min + 1));
+                            if (!nums.includes(n)) nums.push(n);
+                        }
+                        c.push(nums);
+                    }
+                    c[2][2] = 0; /* FREE */
+                    return c;
+                }
+
+                /* ── Build HTML ── */
+                body.innerHTML =
+                    '<div class="fh-bingo" style="position:relative">' +
+                        '<div class="fh-bingo-caller" id="fh-bingo-caller">SELECT BET &amp; BUY A CARD</div>' +
+                        '<div class="fh-bingo-history" id="fh-bingo-history"></div>' +
+                        '<div class="fh-bingo-card-wrap">' +
+                            '<div class="fh-bingo-headers">' + COLS.map(c => '<span>' + c + '</span>').join('') + '</div>' +
+                            '<div class="fh-bingo-grid" id="fh-bingo-grid"></div>' +
+                        '</div>' +
+                        '<div class="fh-bingo-controls">' +
+                            '<button class="fh-bingo-bet active" data-bet="10">10</button>' +
+                            '<button class="fh-bingo-bet" data-bet="50">50</button>' +
+                            '<button class="fh-bingo-bet" data-bet="100">100</button>' +
+                            '<button class="fh-bingo-bet" data-bet="250">250</button>' +
+                            '<button class="fh-bingo-btn fh-bingo-btn-buy" id="fh-bingo-buy">BUY CARD</button>' +
+                            '<button class="fh-bingo-btn fh-bingo-btn-cashout" id="fh-bingo-cashout">CASH OUT</button>' +
+                            '<label class="fh-bingo-autodaub"><input type="checkbox" id="fh-bingo-auto" checked> AUTO-DAUB</label>' +
+                        '</div>' +
+                        '<div class="fh-bingo-stats">' +
+                            '<span><img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" style="width:14px;height:14px;vertical-align:middle"> <span class="fh-arc-chip-mirror">' + Number(chips).toLocaleString() + '</span></span>' +
+                            '<span>Winnings: <span class="bingo-winnings" id="fh-bingo-winnings">0</span></span>' +
+                        '</div>' +
+                    '</div>';
+
+                bet = 10;
+                const grid = document.getElementById('fh-bingo-grid');
+                const caller = document.getElementById('fh-bingo-caller');
+                const history = document.getElementById('fh-bingo-history');
+                const buyBtn = document.getElementById('fh-bingo-buy');
+                const cashBtn = document.getElementById('fh-bingo-cashout');
+                const winDisp = document.getElementById('fh-bingo-winnings');
+
+                /* ── Render empty grid ── */
+                function renderGrid() {
+                    let html = '';
+                    for (let row = 0; row < 5; row++) {
+                        for (let col = 0; col < 5; col++) {
+                            const val = card.length ? card[col][row] : '';
+                            const isFree = col === 2 && row === 2;
+                            const cls = isFree ? 'fh-bingo-cell free daubed' : 'fh-bingo-cell';
+                            const txt = isFree ? 'FREE' : (val || '');
+                            html += '<div class="' + cls + '" data-col="' + col + '" data-row="' + row + '">' + txt + '</div>';
+                        }
+                    }
+                    grid.innerHTML = html;
+                    /* Add click handlers */
+                    grid.querySelectorAll('.fh-bingo-cell:not(.free)').forEach(cell => {
+                        cell.addEventListener('click', function() {
+                            if (!playing) return;
+                            const c = parseInt(this.dataset.col);
+                            const r = parseInt(this.dataset.row);
+                            const num = card[c][r];
+                            if (calledNumbers.includes(num) && !daubed[c][r]) {
+                                daubed[c][r] = true;
+                                this.classList.add('daubed');
+                                checkPatterns();
+                            }
+                        });
+                    });
+                }
+                renderGrid();
+
+                /* ── Bet buttons ── */
+                body.querySelectorAll('.fh-bingo-bet').forEach(b => {
+                    b.addEventListener('click', function() {
+                        if (playing) return;
+                        body.querySelectorAll('.fh-bingo-bet').forEach(x => x.classList.remove('active'));
+                        this.classList.add('active');
+                        bet = parseInt(this.dataset.bet);
+                    });
+                });
+
+                /* ── Auto-daub toggle ── */
+                document.getElementById('fh-bingo-auto').addEventListener('change', function() {
+                    autoDaub = this.checked;
+                });
+
+                /* ── BUY CARD ── */
+                buyBtn.addEventListener('click', async function() {
+                    if (playing) return;
+                    if (bet > chips) { caller.textContent = 'NOT ENOUGH CHIPS!'; return; }
+                    this.disabled = true;
+                    const res = await casinoPost('fishotel_casino_bingo_buy', { bet: bet });
+                    if (!res.success) {
+                        caller.textContent = res.data?.message || 'Error!';
+                        this.disabled = false;
+                        return;
+                    }
+                    updateChips(res.data.chips);
+
+                    /* Start game */
+                    playing = true;
+                    calledNumbers = [];
+                    patternsWon = {};
+                    totalWinnings = 0;
+                    winDisp.textContent = '0';
+                    history.innerHTML = '';
+
+                    card = generateCard();
+                    daubed = Array.from({length:5}, () => Array(5).fill(false));
+                    daubed[2][2] = true; /* FREE */
+                    renderGrid();
+
+                    cashBtn.style.display = 'inline-block';
+                    this.style.display = 'none';
+
+                    caller.textContent = 'GET READY...';
+                    setTimeout(() => {
+                        callerInterval = setInterval(callNumber, 2500);
+                    }, 1500);
+                });
+
+                /* ── Call a number ── */
+                function callNumber() {
+                    if (calledNumbers.length >= 75) {
+                        endGame();
+                        return;
+                    }
+                    let n;
+                    do { n = 1 + Math.floor(Math.random() * 75); } while (calledNumbers.includes(n));
+                    calledNumbers.push(n);
+
+                    /* Determine column letter */
+                    let letter = 'B';
+                    if (n > 60) letter = 'O';
+                    else if (n > 45) letter = 'G';
+                    else if (n > 30) letter = 'N';
+                    else if (n > 15) letter = 'I';
+
+                    caller.textContent = letter + '-' + n;
+
+                    /* Update history (last 12) */
+                    const ball = document.createElement('div');
+                    ball.className = 'fh-bingo-history-ball latest';
+                    ball.textContent = n;
+                    history.querySelectorAll('.latest').forEach(b => b.classList.remove('latest'));
+                    history.appendChild(ball);
+                    if (history.children.length > 12) history.removeChild(history.firstChild);
+
+                    /* Highlight matching cell on card */
+                    for (let col = 0; col < 5; col++) {
+                        for (let row = 0; row < 5; row++) {
+                            if (card[col][row] === n) {
+                                const cell = grid.querySelector('[data-col="'+col+'"][data-row="'+row+'"]');
+                                if (cell) cell.classList.add('called');
+                                if (autoDaub) {
+                                    daubed[col][row] = true;
+                                    if (cell) cell.classList.add('daubed');
+                                    checkPatterns();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                /* ── Pattern detection ── */
+                function checkPatterns() {
+                    let newWins = [];
+
+                    /* Rows */
+                    if (!patternsWon.row) {
+                        for (let r = 0; r < 5; r++) {
+                            if (daubed[0][r] && daubed[1][r] && daubed[2][r] && daubed[3][r] && daubed[4][r]) {
+                                patternsWon.row = true;
+                                newWins.push({ name: 'LINE!', mult: 2 });
+                                break;
+                            }
+                        }
+                    }
+
+                    /* Columns */
+                    if (!patternsWon.col) {
+                        for (let c = 0; c < 5; c++) {
+                            if (daubed[c][0] && daubed[c][1] && daubed[c][2] && daubed[c][3] && daubed[c][4]) {
+                                patternsWon.col = true;
+                                newWins.push({ name: 'COLUMN!', mult: 2 });
+                                break;
+                            }
+                        }
+                    }
+
+                    /* Diagonals */
+                    if (!patternsWon.diag) {
+                        if ((daubed[0][0] && daubed[1][1] && daubed[2][2] && daubed[3][3] && daubed[4][4]) ||
+                            (daubed[0][4] && daubed[1][3] && daubed[2][2] && daubed[3][1] && daubed[4][0])) {
+                            patternsWon.diag = true;
+                            newWins.push({ name: 'DIAGONAL!', mult: 3 });
+                        }
+                    }
+
+                    /* 4 Corners */
+                    if (!patternsWon.corners) {
+                        if (daubed[0][0] && daubed[4][0] && daubed[0][4] && daubed[4][4]) {
+                            patternsWon.corners = true;
+                            newWins.push({ name: '4 CORNERS!', mult: 5 });
+                        }
+                    }
+
+                    /* Blackout */
+                    if (!patternsWon.blackout) {
+                        let all = true;
+                        for (let c = 0; c < 5; c++) for (let r = 0; r < 5; r++) if (!daubed[c][r]) all = false;
+                        if (all) {
+                            patternsWon.blackout = true;
+                            newWins.push({ name: 'BLACKOUT!', mult: 10 });
+                        }
+                    }
+
+                    /* Award wins */
+                    newWins.forEach(w => {
+                        const payout = bet * w.mult;
+                        totalWinnings += payout;
+                        winDisp.textContent = Number(totalWinnings).toLocaleString();
+                        showWinBanner(w.name + ' ' + w.mult + 'x');
+                        fhChipFloat(payout, true);
+                    });
+
+                    if (patternsWon.blackout) {
+                        endGame();
+                    }
+                }
+
+                /* ── Win banner ── */
+                function showWinBanner(text) {
+                    const banner = document.createElement('div');
+                    banner.className = 'fh-bingo-win-banner';
+                    banner.textContent = text;
+                    body.querySelector('.fh-bingo').appendChild(banner);
+                    setTimeout(() => banner.remove(), 2500);
+                }
+
+                /* ── End game / Cash out ── */
+                async function endGame() {
+                    if (callerInterval) { clearInterval(callerInterval); callerInterval = null; }
+                    playing = false;
+
+                    if (totalWinnings > 0) {
+                        const res = await casinoPost('fishotel_casino_bingo_cashout', { bet: bet, winnings: totalWinnings });
+                        if (res.success) updateChips(res.data.chips);
+                        caller.textContent = 'WON ' + Number(totalWinnings).toLocaleString() + ' CHIPS!';
+                    } else {
+                        caller.textContent = 'GAME OVER — NO WINS';
+                    }
+
+                    cashBtn.style.display = 'none';
+                    buyBtn.style.display = 'inline-block';
+                    buyBtn.disabled = false;
+                }
+
+                cashBtn.addEventListener('click', endGame);
             }
 
             /* ═══════════════════════════════════════════════
