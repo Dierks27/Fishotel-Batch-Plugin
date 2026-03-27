@@ -420,6 +420,14 @@ class FisHotel_Arcade {
         .fh-bingo-stats .bingo-winnings{color:#ffd700;font-weight:700}
         .fh-bingo-win-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#ffd700,#daa520);color:#2e2418;padding:10px 24px;border-radius:8px;font-size:clamp(14px,3.5vw,20px);font-weight:700;text-align:center;z-index:10;box-shadow:0 4px 20px rgba(255,215,0,.5);animation:fh-bingo-banner .5s ease forwards;pointer-events:none}
         @keyframes fh-bingo-banner{0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+        /* ═══ Bingo Paytable Visual Cards ═══ */
+        .fh-bingo-pay-scroll{max-height:65vh;overflow-y:auto;padding:0 2px}
+        .fh-bingo-pay-entry{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(0,0,0,.25);border:1px solid rgba(150,136,95,.15);border-radius:4px;margin-bottom:5px}
+        .fh-bingo-pay-entry.jackpot{background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.3)}
+        .fh-bingo-pay-name{flex:1;font-family:Oswald,sans-serif;font-size:13px;color:#f5f0e8}
+        .fh-bingo-pay-entry.jackpot .fh-bingo-pay-name{color:#ffd700}
+        .fh-bingo-pay-mult{font-family:Oswald,sans-serif;font-size:16px;font-weight:700;color:#ffd700;white-space:nowrap}
+        .fh-bingo-pay-entry.jackpot .fh-bingo-pay-mult{font-size:18px;text-shadow:0 0 8px rgba(255,215,0,.5)}
         </style>
 
         <script>
@@ -1060,6 +1068,52 @@ class FisHotel_Arcade {
                 const COLS = ['B','I','N','G','O'];
                 const RANGES = [[1,15],[16,30],[31,45],[46,60],[61,75]];
                 const MAX_BALLS = 35;
+
+                /* ── Mini bingo card SVG for paytable ── */
+                function bingoPatSVG(hitCells) {
+                    const S = 9, G = 1, W = S * 5 + G * 4;
+                    const hitSet = new Set(hitCells.map(function(c){ return c[0]+','+c[1]; }));
+                    let svg = '<svg viewBox="0 0 ' + W + ' ' + W + '" width="50" height="50" style="flex-shrink:0;border-radius:3px;border:1px solid #96885f">';
+                    for (let r = 0; r < 5; r++) {
+                        for (let c = 0; c < 5; c++) {
+                            const x = c * (S + G), y = r * (S + G);
+                            const isHit = hitSet.has(c + ',' + r);
+                            const isFree = (c === 2 && r === 2);
+                            let fill = '#f5f0e8';
+                            if (isHit) fill = '#4a90d9';
+                            else if (isFree) fill = '#d4c9a8';
+                            svg += '<rect x="' + x + '" y="' + y + '" width="' + S + '" height="' + S + '" rx="1" fill="' + fill + '"/>';
+                            if (isFree && !isHit) {
+                                svg += '<text x="' + (x + S/2) + '" y="' + (y + S/2 + 2) + '" text-anchor="middle" font-size="4" fill="#96885f" font-weight="700">★</text>';
+                            }
+                        }
+                    }
+                    svg += '</svg>';
+                    return svg;
+                }
+
+                function buildPaytableEntries() {
+                    var patterns = [
+                        { name: 'Any Line', mult: '2x', cells: [[0,2],[1,2],[2,2],[3,2],[4,2]] },
+                        { name: 'Diagonal', mult: '3x', cells: [[0,0],[1,1],[2,2],[3,3],[4,4]] },
+                        { name: 'Postage Stamp', mult: '4x', cells: [[0,0],[1,0],[0,1],[1,1]] },
+                        { name: '4 Corners', mult: '5x', cells: [[0,0],[4,0],[0,4],[4,4]] },
+                        { name: 'Wine Glass', mult: '8x', cells: [[0,0],[1,0],[2,0],[3,0],[4,0],[1,1],[3,1],[2,2],[2,3],[1,4],[2,4],[3,4]] },
+                        { name: 'Lucky 7', mult: '10x', cells: [[0,0],[1,0],[2,0],[3,0],[4,0],[3,1],[2,2],[1,3],[0,4]] },
+                        { name: 'X Pattern', mult: '20x', jack: true, cells: [[0,0],[1,1],[2,2],[3,3],[4,4],[4,0],[3,1],[1,3],[0,4]] }
+                    ];
+                    var html = '';
+                    for (var i = 0; i < patterns.length; i++) {
+                        var p = patterns[i];
+                        var cls = p.jack ? ' jackpot' : '';
+                        html += '<div class="fh-bingo-pay-entry' + cls + '">' +
+                            bingoPatSVG(p.cells) +
+                            '<span class="fh-bingo-pay-name">' + p.name + '</span>' +
+                            '<span class="fh-bingo-pay-mult">' + p.mult + '</span>' +
+                        '</div>';
+                    }
+                    return html;
+                }
                 let bet = 50, playing = false, autoDaub = true;
                 let card = [], daubed = [], calledNumbers = [], callerInterval = null;
                 let patternsWon = {}, totalWinnings = 0;
@@ -1145,18 +1199,14 @@ class FisHotel_Arcade {
                         '</div>' +
                     '</div>' +
                     /* Paytable modal */
-                    '<div id="fh-bingo-paytable" style="display:none;position:fixed;inset:0;z-index:999999;display:none;align-items:center;justify-content:center">' +
+                    '<div id="fh-bingo-paytable" style="display:none;position:fixed;inset:0;z-index:999999;align-items:center;justify-content:center">' +
                         '<div style="position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer" id="fh-bingo-pay-bd"></div>' +
-                        '<div style="position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:400px;width:90%;box-shadow:0 16px 50px rgba(0,0,0,.6)">' +
+                        '<div style="position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:440px;width:92%;box-shadow:0 16px 50px rgba(0,0,0,.6)">' +
                             '<button style="position:absolute;top:8px;right:12px;background:none;border:none;color:#96885f;font-size:22px;cursor:pointer;line-height:1" id="fh-bingo-pay-x">&times;</button>' +
                             '<div style="text-align:center;font-family:Special Elite,monospace;font-size:18px;color:#ffd700;margin:0 0 4px">BINGO HALL PAYOUTS</div>' +
-                            '<div style="text-align:center;font-family:Oswald,sans-serif;font-size:11px;color:#96885f;margin:0 0 12px">35 Balls Called Per Game</div>' +
-                            '<div style="display:grid;gap:6px;font-family:Oswald,sans-serif">' +
-                                '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(0,0,0,.25);border:1px solid rgba(150,136,95,.15);border-radius:4px;color:#f5f0e8"><span>Any Line (Row or Column)</span><span style="color:#ffd700;font-weight:700;font-size:16px">2x</span></div>' +
-                                '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(0,0,0,.25);border:1px solid rgba(150,136,95,.15);border-radius:4px;color:#f5f0e8"><span>Diagonal</span><span style="color:#ffd700;font-weight:700;font-size:16px">3x</span></div>' +
-                                '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(0,0,0,.25);border:1px solid rgba(150,136,95,.15);border-radius:4px;color:#f5f0e8"><span>4 Corners</span><span style="color:#ffd700;font-weight:700;font-size:16px">5x</span></div>' +
-                                '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.3);border-radius:4px;color:#ffd700"><span>X Pattern (Both Diagonals)</span><span style="font-weight:700;font-size:18px;text-shadow:0 0 8px rgba(255,215,0,.5)">20x</span></div>' +
-                                '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(0,0,0,.25);border:1px solid rgba(150,136,95,.15);border-radius:4px;color:#f5f0e8"><span>Blackout (All 25)</span><span style="color:#ffd700;font-weight:700;font-size:16px">10x</span></div>' +
+                            '<div style="text-align:center;font-family:Oswald,sans-serif;font-size:11px;color:#96885f;margin:0 0 10px">35 Balls Called Per Game</div>' +
+                            '<div class="fh-bingo-pay-scroll">' +
+                                buildPaytableEntries() +
                             '</div>' +
                             '<div style="text-align:center;font-size:10px;color:#96885f;margin-top:10px;font-family:Oswald,sans-serif">Patterns stack — win multiple bonuses per game!<br>Cash out anytime to collect winnings.</div>' +
                         '</div>' +
@@ -1338,6 +1388,23 @@ class FisHotel_Arcade {
                         }
                     }
 
+                    /* Postage Stamp — any 2x2 block in a corner */
+                    if (!patternsWon.stamp) {
+                        const stamps = [
+                            [[0,0],[1,0],[0,1],[1,1]],
+                            [[3,0],[4,0],[3,1],[4,1]],
+                            [[0,3],[1,3],[0,4],[1,4]],
+                            [[3,3],[4,3],[3,4],[4,4]]
+                        ];
+                        for (const sq of stamps) {
+                            if (sq.every(([c,r]) => daubed[c][r])) {
+                                patternsWon.stamp = true;
+                                newWins.push({ name: 'POSTAGE STAMP!', mult: 4 });
+                                break;
+                            }
+                        }
+                    }
+
                     /* 4 Corners */
                     if (!patternsWon.corners) {
                         if (daubed[0][0] && daubed[4][0] && daubed[0][4] && daubed[4][4]) {
@@ -1346,23 +1413,31 @@ class FisHotel_Arcade {
                         }
                     }
 
-                    /* X Pattern — both diagonals complete */
+                    /* Wine Glass — rim + V-sides + stem + base */
+                    if (!patternsWon.wine) {
+                        const wc = [[0,0],[1,0],[2,0],[3,0],[4,0],[1,1],[3,1],[2,2],[2,3],[1,4],[2,4],[3,4]];
+                        if (wc.every(([c,r]) => daubed[c][r])) {
+                            patternsWon.wine = true;
+                            newWins.push({ name: 'WINE GLASS!', mult: 8 });
+                        }
+                    }
+
+                    /* Lucky 7 — top row + diagonal down-left */
+                    if (!patternsWon.lucky7) {
+                        const lc = [[0,0],[1,0],[2,0],[3,0],[4,0],[3,1],[2,2],[1,3],[0,4]];
+                        if (lc.every(([c,r]) => daubed[c][r])) {
+                            patternsWon.lucky7 = true;
+                            newWins.push({ name: 'LUCKY 7!', mult: 10 });
+                        }
+                    }
+
+                    /* X Pattern — both diagonals complete (JACKPOT) */
                     if (!patternsWon.xpattern) {
                         const d1 = daubed[0][0] && daubed[1][1] && daubed[2][2] && daubed[3][3] && daubed[4][4];
                         const d2 = daubed[0][4] && daubed[1][3] && daubed[2][2] && daubed[3][1] && daubed[4][0];
                         if (d1 && d2) {
                             patternsWon.xpattern = true;
                             newWins.push({ name: 'X PATTERN JACKPOT!', mult: 20 });
-                        }
-                    }
-
-                    /* Blackout */
-                    if (!patternsWon.blackout) {
-                        let all = true;
-                        for (let c = 0; c < 5; c++) for (let r = 0; r < 5; r++) if (!daubed[c][r]) all = false;
-                        if (all) {
-                            patternsWon.blackout = true;
-                            newWins.push({ name: 'BLACKOUT!', mult: 10 });
                         }
                     }
 
@@ -1375,10 +1450,6 @@ class FisHotel_Arcade {
                         sfxWin();
                         fhChipFloat(payout, true);
                     });
-
-                    if (patternsWon.blackout) {
-                        endGame();
-                    }
                 }
 
                 /* ── Win banner ── */
