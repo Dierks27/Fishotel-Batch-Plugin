@@ -4887,4 +4887,63 @@ trait FisHotel_Shortcodes {
         return ob_get_clean();
     }
 
+    /* ─────────────────────────────────────────────
+     *  [fishotel_draft_broadcast] — Draft Night broadcast player
+     * ───────────────────────────────────────────── */
+
+    public function draft_broadcast_shortcode( $atts ) {
+        $atts       = shortcode_atts( [ 'batch' => '' ], $atts );
+        $batch_name = $atts['batch'] ?: get_option( 'fishotel_current_batch', '' );
+
+        if ( ! $batch_name ) {
+            return '<p>No active batch.</p>';
+        }
+
+        $slug   = sanitize_title( $batch_name );
+        $script = get_option( 'fishotel_draft_broadcast_' . $slug );
+
+        if ( ! $script ) {
+            require_once plugin_dir_path( __FILE__ ) . 'class-draft-broadcast.php';
+            $script = fh_generate_broadcast_script( $batch_name );
+            if ( ! $script ) {
+                return '<p>Draft results not found for <strong>' . esc_html( $batch_name ) . '</strong>.</p>';
+            }
+        }
+
+        wp_enqueue_script(
+            'fishotel-draft-player',
+            plugins_url( '../assists/draft/draft-player.js', __FILE__ ),
+            [ 'jquery' ],
+            FISHOTEL_VERSION,
+            true
+        );
+        wp_enqueue_style(
+            'fishotel-draft-player',
+            plugins_url( '../assists/draft/draft-player.css', __FILE__ ),
+            [],
+            FISHOTEL_VERSION
+        );
+        wp_localize_script( 'fishotel-draft-player', 'fhDraftScript', $script );
+
+        ob_start();
+        ?>
+        <div class="fh-draft-broadcast">
+            <div class="fh-draft-player">
+                <div class="fh-draft-stage" id="fhDraftStage"></div>
+                <div class="fh-draft-controls">
+                    <button id="fhPlayPause" class="fh-btn-primary">&#9654; PLAY DRAFT</button>
+                    <button id="fhSkipResults" class="fh-btn-secondary">SKIP TO RESULTS</button>
+                    <div class="fh-speed-controls">
+                        <label>Speed:</label>
+                        <button data-speed="0.5">Slow</button>
+                        <button data-speed="1" class="active">Normal</button>
+                        <button data-speed="1.5">Fast</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
 }

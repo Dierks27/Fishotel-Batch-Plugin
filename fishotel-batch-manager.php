@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.8.4 - Fix X close button for all rooms, remove bingo from slot selection.
- * Version:           9.8.4
+ * Description:       v9.9 - Draft Night broadcast system: ESPN-style reveal, dynamic assets, Sports Lounge replay.
+ * Version:           9.9
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.8.4' );
+define( 'FISHOTEL_VERSION', '9.9' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -25,6 +25,7 @@ require_once FISHOTEL_PLUGIN_DIR . 'includes/class-hotel-program.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-updater.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-casino.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-arcade.php';
+require_once FISHOTEL_PLUGIN_DIR . 'includes/class-draft-broadcast.php';
 
 // Stage-aware title helpers — shared by all title/heading filters
 function fishotel_stage_label_map() {
@@ -229,6 +230,7 @@ class FisHotel_Batch_Manager {
         add_shortcode( 'fishotel_batch', [$this, 'batch_shortcode'] );
         add_shortcode( 'fishotel_wallet', [$this, 'wallet_shortcode'] );
         add_shortcode( 'fishotel_notifications', [$this, 'notifications_shortcode'] );
+        add_shortcode( 'fishotel_draft_broadcast', [$this, 'draft_broadcast_shortcode'] );
 
         // Secure AJAX with nonces
         add_action( 'wp_ajax_fishotel_submit_requests', [$this, 'ajax_submit_requests'] );

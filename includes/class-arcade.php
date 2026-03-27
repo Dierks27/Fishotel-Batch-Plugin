@@ -70,7 +70,7 @@ class FisHotel_Arcade {
         $rooms = [
             'bar'       => [ 'label' => 'The Bar',          'x1' => 215, 'y1' => 192, 'x2' => 640, 'y2' => 347, 'game' => 'daily_bonus' ],
             'bingo'     => [ 'label' => 'Bingo Hall',        'x1' => 646, 'y1' => 193, 'x2' => 774, 'y2' => 348, 'game' => 'bingo' ],
-            'sports'    => [ 'label' => 'Sports Lounge',     'x1' => 780, 'y1' => 195, 'x2' => 1072, 'y2' => 349, 'game' => 'coming_soon' ],
+            'sports'    => [ 'label' => 'Sports Lounge',     'x1' => 780, 'y1' => 195, 'x2' => 1072, 'y2' => 349, 'game' => 'draft_night' ],
             'roulette'  => [ 'label' => 'Roulette Table',    'x1' => 215, 'y1' => 360, 'x2' => 534, 'y2' => 510, 'game' => 'roulette' ],
             'craps'     => [ 'label' => 'Craps Table',       'x1' => 535, 'y1' => 358, 'x2' => 739, 'y2' => 512, 'game' => 'coming_soon' ],
             'blackjack' => [ 'label' => 'Blackjack Table',   'x1' => 741, 'y1' => 356, 'x2' => 1071, 'y2' => 512, 'game' => 'blackjack' ],
@@ -476,7 +476,7 @@ class FisHotel_Arcade {
             const roomThemes = {
                 bar:       { title: 'THE BAR', icon: '🍸', subtitle: 'Daily Chip Bonus' },
                 bingo:     { title: 'BINGO HALL', icon: '🎱', subtitle: 'Classic 75-Ball' },
-                sports:    { title: 'SPORTS LOUNGE', icon: '🏈', subtitle: 'Coming Soon' },
+                sports:    { title: 'SPORTS LOUNGE', icon: '🏈', subtitle: 'Draft Night Replay' },
                 roulette:  { title: 'ROULETTE TABLE', icon: '🎰', subtitle: 'Spin the Wheel' },
                 craps:     { title: 'CRAPS TABLE', icon: '🎲', subtitle: 'Coming Soon' },
                 blackjack: { title: 'BLACKJACK TABLE', icon: '🃏', subtitle: 'Beat the Dealer' },
@@ -617,6 +617,10 @@ class FisHotel_Arcade {
                 switch(game) {
                     case 'daily_bonus': renderDailyBonus(body); break;
                     case 'coming_soon': renderComingSoon(body); break;
+                    case 'draft_night':
+                        window.open('/draft-night/', '_blank', 'width=1280,height=800');
+                        arcadeZoomClose();
+                        break;
                     case 'slots':       renderSlotSelection(body); break;
                     case 'bingo':       renderBingoHall(body); break;
                     default:
