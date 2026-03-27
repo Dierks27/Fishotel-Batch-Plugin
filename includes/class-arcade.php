@@ -404,7 +404,10 @@ class FisHotel_Arcade {
         .fh-bingo-cell.free{background:#d4c9a8;font-size:clamp(8px,2vw,12px);color:#96885f;cursor:default}
         .fh-bingo-cell.daubed::after{content:'';position:absolute;inset:10%;border-radius:50%;background:rgba(139,0,0,.7);pointer-events:none}
         .fh-bingo-cell.called{background:#fff8dc}
-        .fh-bingo-controls{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;padding:10px 0 4px}
+        .fh-bingo-controls{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0 4px;max-width:320px;margin:0 auto}
+        .fh-bingo-controls-row{display:flex;gap:5px;justify-content:center;align-items:center;width:100%}
+        .fh-bingo-controls-bets{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;width:100%}
+        .fh-bingo-controls-utils{display:flex;gap:10px;justify-content:center;align-items:center}
         .fh-bingo-bet{background:rgba(0,0,0,.6);color:#f5f0e8;border:1px solid rgba(150,136,95,.4);padding:6px 14px;border-radius:4px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;transition:all .2s}
         .fh-bingo-bet:hover{background:rgba(0,0,0,.8);border-color:rgba(255,215,0,.5)}
         .fh-bingo-bet.active{background:rgba(255,215,0,.2);border-color:#ffd700;color:#ffd700;box-shadow:0 0 10px rgba(255,215,0,.4)}
@@ -1183,15 +1186,21 @@ class FisHotel_Arcade {
                             '<div class="fh-bingo-grid" id="fh-bingo-grid"></div>' +
                         '</div>' +
                         '<div class="fh-bingo-controls">' +
-                            '<button class="fh-bingo-bet active" data-bet="10">10</button>' +
-                            '<button class="fh-bingo-bet" data-bet="50">50</button>' +
-                            '<button class="fh-bingo-bet" data-bet="100">100</button>' +
-                            '<button class="fh-bingo-bet" data-bet="250">250</button>' +
-                            '<button class="fh-bingo-btn fh-bingo-btn-buy" id="fh-bingo-buy">BUY CARD</button>' +
-                            '<button class="fh-bingo-btn fh-bingo-btn-cashout" id="fh-bingo-cashout">CASH OUT</button>' +
-                            '<label class="fh-bingo-autodaub"><input type="checkbox" id="fh-bingo-auto" checked> AUTO-DAUB</label>' +
-                            '<label class="fh-bingo-autodaub"><input type="checkbox" id="fh-bingo-mute"> MUTE</label>' +
-                            '<button class="fh-bingo-btn" id="fh-bingo-pay-btn" style="background:rgba(0,0,0,.5);color:#96885f;font-size:11px;padding:6px 12px;border:1px solid rgba(150,136,95,.4)">PAY TABLE</button>' +
+                            '<div class="fh-bingo-controls-bets">' +
+                                '<button class="fh-bingo-bet active" data-bet="10">10</button>' +
+                                '<button class="fh-bingo-bet" data-bet="50">50</button>' +
+                                '<button class="fh-bingo-bet" data-bet="100">100</button>' +
+                                '<button class="fh-bingo-bet" data-bet="250">250</button>' +
+                            '</div>' +
+                            '<div class="fh-bingo-controls-row">' +
+                                '<button class="fh-bingo-btn fh-bingo-btn-buy" id="fh-bingo-buy" style="flex:1">BUY CARD</button>' +
+                                '<button class="fh-bingo-btn fh-bingo-btn-cashout" id="fh-bingo-cashout" style="flex:1">CASH OUT</button>' +
+                            '</div>' +
+                            '<div class="fh-bingo-controls-utils">' +
+                                '<label class="fh-bingo-autodaub"><input type="checkbox" id="fh-bingo-auto" checked> AUTO-DAUB</label>' +
+                                '<label class="fh-bingo-autodaub"><input type="checkbox" id="fh-bingo-mute"> MUTE</label>' +
+                                '<button class="fh-bingo-btn" id="fh-bingo-pay-btn" style="background:rgba(0,0,0,.5);color:#96885f;font-size:10px;padding:4px 10px;border:1px solid rgba(150,136,95,.4)">PAY TABLE</button>' +
+                            '</div>' +
                         '</div>' +
                         '<div class="fh-bingo-stats">' +
                             '<span><img src="<?php echo esc_url( $chip_url ); ?>" alt="chips" style="width:14px;height:14px;vertical-align:middle"> <span class="fh-arc-chip-mirror">' + Number(chips).toLocaleString() + '</span></span>' +
