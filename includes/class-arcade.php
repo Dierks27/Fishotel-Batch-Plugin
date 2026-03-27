@@ -531,8 +531,8 @@ class FisHotel_Arcade {
                 requestAnimationFrame(() => card.style.opacity = '1');
                 card.querySelector('.fh-arc-popup-close').addEventListener('click', () => {
                     const popupBody = document.getElementById('fh-arc-popup-body');
-                    /* If we're inside a game (not the selection screen), go back to selection */
-                    if (popupBody && !popupBody.querySelector('.fh-slot-select')) {
+                    /* Slot room: if inside a game, go back to slot selection first */
+                    if (game === 'slots' && popupBody && !popupBody.querySelector('.fh-slot-select')) {
                         loadRoomContent(game, popupBody);
                         return;
                     }
@@ -1040,32 +1040,12 @@ class FisHotel_Arcade {
                             '<div class="fh-slot-select-name">Sapphire Poker</div>' +
                             '<div class="fh-slot-select-sub">4-Reel Cards</div>' +
                         '</div>' +
-                        '<div class="fh-slot-select-card" id="fh-sel-bingo">' +
-                            '<svg class="fh-slot-select-img" viewBox="0 0 120 140" style="max-height:180px;width:auto;">' +
-                                '<rect x="10" y="20" width="100" height="110" rx="6" fill="#f5f0e8" stroke="#2e2418" stroke-width="3"/>' +
-                                '<text x="60" y="40" text-anchor="middle" font-family="Oswald" font-size="14" font-weight="700" fill="#2e2418">B I N G O</text>' +
-                                '<g fill="#2e2418" font-family="Special Elite" font-size="10" text-anchor="middle">' +
-                                    '<text x="24" y="60">3</text><text x="42" y="60">22</text><text x="60" y="60">41</text><text x="78" y="60">50</text><text x="96" y="60">68</text>' +
-                                    '<text x="24" y="78">7</text><text x="42" y="78">19</text><text x="60" y="78">33</text><text x="78" y="78">55</text><text x="96" y="78">72</text>' +
-                                    '<text x="24" y="96">11</text><text x="42" y="96">28</text><text x="78" y="96">48</text><text x="96" y="96">61</text>' +
-                                    '<text x="24" y="114">1</text><text x="42" y="114">16</text><text x="60" y="114">39</text><text x="78" y="114">59</text><text x="96" y="114">75</text>' +
-                                    '<text x="24" y="128">5</text><text x="42" y="128">24</text><text x="60" y="128">37</text><text x="78" y="128">52</text><text x="96" y="128">64</text>' +
-                                '</g>' +
-                                '<circle cx="60" cy="92" r="8" fill="rgba(139,0,0,.7)"/>' +
-                                '<text x="60" y="95" text-anchor="middle" font-family="Oswald" font-size="6" fill="#f5f0e8">FREE</text>' +
-                            '</svg>' +
-                            '<div class="fh-slot-select-name">Bingo Hall</div>' +
-                            '<div class="fh-slot-select-sub">Classic 75-Ball</div>' +
-                        '</div>' +
                     '</div>';
                 document.getElementById('fh-sel-fish').addEventListener('click', () => {
                     renderSlotMachine(body);
                 });
                 document.getElementById('fh-sel-sapphire').addEventListener('click', () => {
                     renderSapphirePokerSlots(body);
-                });
-                document.getElementById('fh-sel-bingo').addEventListener('click', () => {
-                    renderBingoHall(body);
                 });
             }
 

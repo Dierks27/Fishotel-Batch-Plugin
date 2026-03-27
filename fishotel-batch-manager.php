@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.8.3 - Fix close button z-index being covered by game content.
- * Version:           9.8.3
+ * Description:       v9.8.4 - Fix X close button for all rooms, remove bingo from slot selection.
+ * Version:           9.8.4
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.8.3' );
+define( 'FISHOTEL_VERSION', '9.8.4' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
