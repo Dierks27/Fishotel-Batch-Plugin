@@ -204,7 +204,7 @@ class FisHotel_Arcade {
         .fh-arc-zoom-backdrop--visible{opacity:1}
         .fh-arc-zoom-backdrop--dimmed{background:rgba(0,0,0,.6)}
         .fh-arc-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(620px,95vw);max-height:92vh;overflow-y:auto;background:#111;border:1px solid rgba(150,136,95,.35);border-radius:12px;padding:12px 16px;box-sizing:border-box;z-index:10001;opacity:0;transition:opacity 200ms ease;font-family:'Oswald',sans-serif;color:#f5f0e8;text-align:center}
-        .fh-arc-popup-close{position:absolute;top:10px;right:14px;width:32px;height:32px;background:rgba(255,255,255,.1);border:2px solid rgba(150,136,95,.5);border-radius:50%;color:#aaa;font-size:18px;cursor:pointer;line-height:1;z-index:2;display:flex;align-items:center;justify-content:center;transition:all .2s}
+        .fh-arc-popup-close{position:absolute;top:10px;right:14px;width:36px;height:36px;background:rgba(0,0,0,.6);border:2px solid rgba(150,136,95,.5);border-radius:50%;color:#ddd;font-size:20px;cursor:pointer;line-height:1;z-index:99;display:flex;align-items:center;justify-content:center;transition:all .2s}
         .fh-arc-popup-close:hover{color:#f5f0e8;background:rgba(255,255,255,.2);border-color:#ffd700}
         .fh-arc-popup-body{min-height:60px}
 
