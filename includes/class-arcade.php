@@ -201,8 +201,8 @@ class FisHotel_Arcade {
         .fh-arc-zoom-backdrop--visible{opacity:1}
         .fh-arc-zoom-backdrop--dimmed{background:rgba(0,0,0,.6)}
         .fh-arc-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(620px,95vw);max-height:92vh;overflow-y:auto;background:#111;border:1px solid rgba(150,136,95,.35);border-radius:12px;padding:12px 16px;box-sizing:border-box;z-index:10001;opacity:0;transition:opacity 200ms ease;font-family:'Oswald',sans-serif;color:#f5f0e8;text-align:center}
-        .fh-arc-popup-close{position:absolute;top:10px;right:14px;background:none;border:none;color:#888;font-size:24px;cursor:pointer;line-height:1;z-index:2}
-        .fh-arc-popup-close:hover{color:#f5f0e8}
+        .fh-arc-popup-close{position:absolute;top:10px;right:14px;width:32px;height:32px;background:rgba(255,255,255,.1);border:2px solid rgba(150,136,95,.5);border-radius:50%;color:#aaa;font-size:18px;cursor:pointer;line-height:1;z-index:2;display:flex;align-items:center;justify-content:center;transition:all .2s}
+        .fh-arc-popup-close:hover{color:#f5f0e8;background:rgba(255,255,255,.2);border-color:#ffd700}
         .fh-arc-popup-body{min-height:60px}
 
         /* ─── Jackpot Modal ─── */
@@ -304,8 +304,8 @@ class FisHotel_Arcade {
         .fh-slots-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
         .fh-slots-pay-bd{position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer}
         .fh-slots-pay-card{position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:600px;width:90%;box-shadow:0 16px 50px rgba(0,0,0,.6)}
-        .fh-slots-pay-close{position:absolute;top:8px;right:12px;background:none;border:none;color:#96885f;font-size:22px;cursor:pointer;line-height:1}
-        .fh-slots-pay-close:hover{color:#ffd700}
+        .fh-slots-pay-close{position:absolute;top:8px;right:12px;width:28px;height:28px;background:rgba(255,255,255,.08);border:2px solid rgba(150,136,95,.4);border-radius:50%;color:#96885f;font-size:16px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;transition:all .2s}
+        .fh-slots-pay-close:hover{color:#ffd700;background:rgba(255,255,255,.15);border-color:#ffd700}
         .fh-slots-pay-title{text-align:center;font-family:'Special Elite',monospace;font-size:clamp(14px,3.5vw,18px);color:#ffd700;margin:0 0 2px}
         .fh-slots-pay-sub{text-align:center;font-family:'Oswald',sans-serif;font-size:11px;color:#96885f;margin:0 0 10px}
         .fh-slots-pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
@@ -378,8 +378,8 @@ class FisHotel_Arcade {
         .fh-sapphire-pay-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center}
         .fh-sapphire-pay-bd{position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer}
         .fh-sapphire-pay-card{position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:620px;width:90%;box-shadow:0 16px 50px rgba(0,0,0,.6)}
-        .fh-sapphire-pay-close{position:absolute;top:8px;right:12px;background:none;border:none;color:#96885f;font-size:22px;cursor:pointer;line-height:1}
-        .fh-sapphire-pay-close:hover{color:#ffd700}
+        .fh-sapphire-pay-close{position:absolute;top:8px;right:12px;width:28px;height:28px;background:rgba(255,255,255,.08);border:2px solid rgba(150,136,95,.4);border-radius:50%;color:#96885f;font-size:16px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;transition:all .2s}
+        .fh-sapphire-pay-close:hover{color:#ffd700;background:rgba(255,255,255,.15);border-color:#ffd700}
         .fh-sapphire-pay-title{text-align:center;font-family:'Special Elite',monospace;font-size:clamp(14px,3.5vw,18px);color:#ffd700;margin:0 0 2px}
         .fh-sapphire-pay-sub{text-align:center;font-family:'Oswald',sans-serif;font-size:11px;color:#96885f;margin:0 0 10px}
         .fh-sapphire-pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
@@ -1212,7 +1212,7 @@ class FisHotel_Arcade {
                     '<div id="fh-bingo-paytable" style="display:none;position:fixed;inset:0;z-index:999999;align-items:center;justify-content:center">' +
                         '<div style="position:absolute;inset:0;background:rgba(0,0,0,.8);cursor:pointer" id="fh-bingo-pay-bd"></div>' +
                         '<div style="position:relative;background:linear-gradient(135deg,#2e2418,#1a1410);border:3px solid #96885f;border-radius:14px;padding:20px 16px;max-width:440px;width:92%;box-shadow:0 16px 50px rgba(0,0,0,.6)">' +
-                            '<button style="position:absolute;top:8px;right:12px;background:none;border:none;color:#96885f;font-size:22px;cursor:pointer;line-height:1" id="fh-bingo-pay-x">&times;</button>' +
+                            '<button style="position:absolute;top:8px;right:12px;width:28px;height:28px;background:rgba(255,255,255,.08);border:2px solid rgba(150,136,95,.4);border-radius:50%;color:#96885f;font-size:16px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center" id="fh-bingo-pay-x">&times;</button>' +
                             '<div style="text-align:center;font-family:Special Elite,monospace;font-size:18px;color:#ffd700;margin:0 0 4px">BINGO HALL PAYOUTS</div>' +
                             '<div style="text-align:center;font-family:Oswald,sans-serif;font-size:11px;color:#96885f;margin:0 0 10px">35 Balls Called Per Game</div>' +
                             buildPaytableEntries() +

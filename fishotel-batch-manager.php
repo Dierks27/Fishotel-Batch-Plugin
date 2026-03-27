@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.6.7 - Bingo: reserve 2-row height for called numbers grid.
- * Version:           9.6.7
+ * Description:       v9.6.8 - Larger close buttons with circle border across all arcade modals.
+ * Version:           9.6.8
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.6.7' );
+define( 'FISHOTEL_VERSION', '9.6.8' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
