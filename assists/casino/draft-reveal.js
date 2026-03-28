@@ -14,7 +14,8 @@
     var batch   = D.batchName;
     var myUid   = parseInt(D.myUid, 10) || 0;
     var autoPlay = !!D.startLive;
-    var cardBack = D.cardBack || '';
+    var cardBack  = D.cardBack  || '';   // face-down: seeded cardback image
+    var cardFace  = D.cardFace  || '';   // face-up: FisHotel-Face-Card.png
     var soundsUrl = D.soundsUrl || '';
 
     /* ── State ── */
@@ -197,14 +198,15 @@
         var inner = document.createElement('div');
         inner.className = 'fhlc-card-inner';
 
-        // Back (face-down)
+        // Back (face-down) — shows seeded cardback image
         var back = document.createElement('div');
         back.className = 'fhlc-card-back';
         back.style.backgroundImage = 'url(' + cardBack + ')';
 
-        // Front (face-up)
+        // Front (face-up) — Art Deco face card + fish details overlaid
         var front = document.createElement('div');
         front.className = 'fhlc-card-front';
+        if (cardFace) front.style.backgroundImage = 'url(' + cardFace + ')';
         front.innerHTML =
             '<span class="fhlc-cf-suit" style="color:' + suitColor + ';">' + suit + '</span>' +
             '<span class="fhlc-cf-suit-br" style="color:' + suitColor + ';">' + suit + '</span>' +

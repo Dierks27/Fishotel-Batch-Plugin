@@ -4263,6 +4263,11 @@ trait FisHotel_Shortcodes {
                 $start_live  = ! $seen_reveal;
                 $sounds_url  = plugins_url( 'assists/casino/sounds/', FISHOTEL_PLUGIN_FILE );
 
+                // Seeded card back selection (consistent per batch)
+                $cardback_files = [ 'White-Seahorse-Cardback.jpg', 'Royal-Cardback-Fish.jpg', 'Royal-Cardback-Seahorse.jpg' ];
+                $cardback_idx   = abs( crc32( $batch_name . 'cardback' ) ) % 3;
+                $card_back_url  = plugins_url( 'assists/casino/' . $cardback_files[ $cardback_idx ], FISHOTEL_PLUGIN_FILE );
+
                 wp_enqueue_script(
                     'fhlc-draft-reveal',
                     plugins_url( 'assists/casino/draft-reveal.js', FISHOTEL_PLUGIN_FILE ),
@@ -4276,7 +4281,8 @@ trait FisHotel_Shortcodes {
                     'batchName'  => $batch_name,
                     'myUid'      => $uid,
                     'startLive'  => $start_live,
-                    'cardBack'   => $card_url,
+                    'cardBack'   => $card_back_url,
+                    'cardFace'   => $card_url,
                     'soundsUrl'  => $sounds_url,
                 ] );
                 ?>
@@ -4296,12 +4302,12 @@ trait FisHotel_Shortcodes {
                 .fhlc-deal-card{width:100%;aspect-ratio:675/1044;position:relative;transform-style:preserve-3d;cursor:default;}
                 .fhlc-deal-card.fhlc-entering{animation:fhlcDealIn 0.35s ease-out forwards;}
                 .fhlc-deal-card.fhlc-flipping .fhlc-card-inner{transform:rotateY(180deg);}
-                .fhlc-deal-card.fhlc-mine{outline:3px solid #fff;outline-offset:-1px;box-shadow:0 0 14px rgba(255,255,255,0.3);border-radius:8px;}
+                .fhlc-deal-card.fhlc-mine{box-shadow:0 0 0 3px #fff,0 0 20px rgba(255,255,255,0.45);border-radius:8px;}
                 .fhlc-deal-card.fhlc-dimmed{opacity:0.3;transition:opacity 0.4s;}
                 .fhlc-card-inner{position:relative;width:100%;height:100%;transition:transform 0.6s ease-in-out;transform-style:preserve-3d;}
                 .fhlc-card-front,.fhlc-card-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:8px;overflow:hidden;}
                 .fhlc-card-back{background-size:cover;background-position:center;box-shadow:0 6px 24px rgba(0,0,0,0.5);}
-                .fhlc-card-front{transform:rotateY(180deg);background:#faf8f2;box-shadow:0 6px 24px rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10% 8%;text-align:center;}
+                .fhlc-card-front{transform:rotateY(180deg);background-color:#faf8f2;background-size:100% 100%;background-repeat:no-repeat;box-shadow:0 6px 24px rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10% 8%;text-align:center;}
                 .fhlc-card-front .fhlc-cf-round{font-family:'Courier New',monospace;font-size:clamp(8px,1.2vw,11px);color:#888;text-transform:uppercase;letter-spacing:0.1em;}
                 .fhlc-card-front .fhlc-cf-fish{font-family:'Oswald',sans-serif;font-size:clamp(10px,1.6vw,16px);font-weight:700;color:#1a1a1a;margin:6% 0;line-height:1.2;}
                 .fhlc-card-front .fhlc-cf-customer{font-family:'Special Elite',cursive;font-size:clamp(9px,1.3vw,13px);color:#96885f;}
@@ -4320,6 +4326,7 @@ trait FisHotel_Shortcodes {
                 @keyframes fhlcRowPulse{0%{background:rgba(201,168,76,0.2);}100%{background:transparent;}}
 
                 /* ── Post-reveal controls ── */
+                #fhlc-reveal-wrap{padding-bottom:70px;}
                 .fhlc-post-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
                 .fhlc-post-controls button{background:#222;border:1px solid #444;color:#888;font-size:0.72rem;padding:6px 14px;border-radius:4px;cursor:pointer;font-family:'Courier New',monospace;transition:border-color 0.2s,color 0.2s;}
                 .fhlc-post-controls button:hover{color:#c9a84c;border-color:#c9a84c;}
