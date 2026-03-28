@@ -4304,7 +4304,7 @@ trait FisHotel_Shortcodes {
                 .fhlc-deal-card.fhlc-entering{animation:fhlcDealIn 0.35s ease-out forwards;}
                 .fhlc-deal-card.fhlc-flipping .fhlc-card-inner{transform:rotateY(180deg);}
                 .fhlc-deal-card.fhlc-mine{border-radius:8px;}
-                .fhlc-deal-card.fhlc-mine .fhlc-card-front::after{content:'★';position:absolute;top:-2px;right:-18px;background:linear-gradient(135deg,#1a3a6b,#0f2448);color:rgba(255,255,255,0.9);font-family:'Oswald',sans-serif;font-size:clamp(5px,0.7vw,7px);font-weight:700;letter-spacing:0.1em;padding:1px 20px;transform:rotate(45deg);z-index:5;box-shadow:0 1px 4px rgba(0,0,0,0.4);}
+                .fhlc-deal-card.fhlc-mine .fhlc-card-front::after{content:'★ YOURS';position:absolute;top:-1px;right:-24px;background:linear-gradient(135deg,#1a3a6b,#0f2448);color:rgba(255,255,255,0.9);font-family:'Oswald',sans-serif;font-size:clamp(5px,0.7vw,7px);font-weight:700;letter-spacing:0.1em;padding:1px 26px;transform:rotate(45deg);z-index:5;box-shadow:0 1px 4px rgba(0,0,0,0.4);}
                 .fhlc-deal-card.fhlc-dimmed{opacity:0.3;transition:opacity 0.4s;}
                 .fhlc-card-inner{position:relative;width:100%;height:100%;transition:transform 0.6s ease-in-out;transform-style:preserve-3d;}
                 .fhlc-card-front,.fhlc-card-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:8px;overflow:hidden;}
