@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.10.12 - Round label nudge, casino-themed mobile table and full results table.
- * Version:           9.10.12
+ * Description:       v9.10.13 - Fredericka the Great fish font, round text nudged down further.
+ * Version:           9.10.13
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.10.12' );
+define( 'FISHOTEL_VERSION', '9.10.13' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
