@@ -4222,15 +4222,11 @@ trait FisHotel_Shortcodes {
                 <?php endif; ?>
             </div>
 
-            <!-- Pool Section (visible to ALL) -->
+            <!-- Pool Section (hidden when draft results exist) -->
+            <?php if ( ! $has_results ) : ?>
             <?php
             $drafted_fish_ids = [];
-            if ( $has_results && ! empty( $results['picks'] ) ) {
-                $drafted_fish_ids = array_unique( array_column( $results['picks'], 'fish_id' ) );
-            }
-            $visible_pool = array_filter( $pool, function( $item ) use ( $drafted_fish_ids ) {
-                return ! in_array( intval( $item['fish_id'] ), array_map( 'intval', $drafted_fish_ids ), true );
-            });
+            $visible_pool = $pool;
             ?>
             <?php if ( ! empty( $visible_pool ) ) : ?>
             <h3 class="fhlc-pool-title">The Pool</h3>
@@ -4258,309 +4254,136 @@ trait FisHotel_Shortcodes {
             <?php else : ?>
             <p class="fhlc-closed-msg">No fish available in the pool.</p>
             <?php endif; ?>
+            <?php endif; ?>
 
             <?php if ( $has_results ) : ?>
-                <!-- State 3: Draft Reveal -->
+                <!-- State 3: Draft Card Reveal -->
                 <?php
                 $seen_reveal = $is_logged_in ? get_user_meta( $uid, 'fishotel_lastcall_seen_reveal_' . $slug, true ) : true;
                 $start_live  = ! $seen_reveal;
+                $sounds_url  = plugins_url( 'assists/casino/sounds/', FISHOTEL_PLUGIN_FILE );
+
+                wp_enqueue_script(
+                    'fhlc-draft-reveal',
+                    plugins_url( 'assists/casino/draft-reveal.js', FISHOTEL_PLUGIN_FILE ),
+                    [],
+                    FISHOTEL_VERSION,
+                    true
+                );
+                wp_localize_script( 'fhlc-draft-reveal', 'fhlcDraftData', [
+                    'ajaxUrl'    => $ajax_url,
+                    'nonce'      => $nonce,
+                    'batchName'  => $batch_name,
+                    'myUid'      => $uid,
+                    'startLive'  => $start_live,
+                    'cardBack'   => $card_url,
+                    'soundsUrl'  => $sounds_url,
+                ] );
                 ?>
                 <style>
-                /* ── Roulette reveal ── */
-                .fhlc-roulette-container{position:relative;padding:20px 0;text-align:center;}
-                .fhlc-roulette-status{font-family:'Oswald',sans-serif;font-size:1.2rem;color:#FFD700;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;}
-                .fhlc-roulette-wheel-wrap{position:relative;width:min(400px,90vw);height:min(400px,90vw);margin:0 auto;}
-                .fhlc-wheel-img{width:100%;height:100%;transform-origin:center;transition:transform 0s;}
-                .fhlc-wheel-overlay{position:absolute;top:0;left:0;width:100%;height:100%;transform-origin:center;transition:transform 0s;}
-                .fhlc-segment-text{position:absolute;top:50%;left:50%;margin-top:-7px;transform-origin:0 50%;font-family:Georgia,serif;font-size:12px;font-weight:600;white-space:nowrap;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,0.5);}
-                .fhlc-segment-text.fhlc-winning{animation:fhlcPulseGold 1s ease-in-out 3;}
-                @keyframes fhlcPulseGold{0%,100%{text-shadow:0 1px 2px rgba(0,0,0,0.3);}50%{text-shadow:0 0 20px #FFD700,0 0 30px #FFD700;}}
-                .fhlc-ball{position:absolute;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ffffff,#e0e0e0);box-shadow:0 2px 8px rgba(0,0,0,0.4),inset 0 1px 3px rgba(255,255,255,0.5);top:50%;left:50%;margin-top:-7px;margin-left:-7px;transform-origin:7px 7px;opacity:0;z-index:10;}
-                .fhlc-pointer{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:18px solid #FFD700;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));z-index:20;}
-
-                /* ── Controls ── */
-                .fhlc-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+                /* ── Card reveal controls ── */
+                .fhlc-reveal-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
                 .fhlc-speed{display:flex;gap:4px;}
-                .fhlc-speed button{background:#222;border:1px solid #444;color:#888;font-size:0.7rem;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:'Courier New',monospace;}
+                .fhlc-speed button{background:#222;border:1px solid #444;color:#888;font-size:0.7rem;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:'Courier New',monospace;transition:border-color 0.2s,color 0.2s;}
                 .fhlc-speed button.fhlc-speed-active{border-color:#c9a84c;color:#c9a84c;}
                 .fhlc-skip{background:none;border:1px solid #444;color:#888;font-size:0.72rem;padding:4px 14px;border-radius:4px;cursor:pointer;font-family:'Courier New',monospace;}
                 .fhlc-skip:hover{color:#c9a84c;border-color:#c9a84c;}
-                .fhlc-replay{background:none;border:none;color:#888;font-size:0.75rem;cursor:pointer;font-family:'Courier New',monospace;text-decoration:underline;}
-                .fhlc-replay:hover{color:#c9a84c;}
 
-                /* ── Running log ── */
-                .fhlc-log{margin-top:24px;border-top:1px solid #333;padding-top:16px;}
-                .fhlc-log-title{font-family:'Courier New',monospace;font-size:0.7rem;color:#666;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 8px;}
-                .fhlc-log-list{list-style:none;margin:0;padding:0;max-height:300px;overflow-y:auto;}
-                .fhlc-log-item{font-size:0.78rem;padding:4px 0;border-bottom:1px solid #222;color:#888;font-family:'Courier New',monospace;}
-                .fhlc-log-item .fhlc-log-user{color:#e0ddd5;}
-                .fhlc-log-item .fhlc-log-fish{color:#c9a84c;}
+                /* ── Desktop card stage ── */
+                .fhlc-card-stage{perspective:1200px;min-height:280px;margin-bottom:16px;}
+                .fhlc-round-label{font-family:'Oswald',sans-serif;font-size:0.85rem;color:#c9a84c;text-transform:uppercase;letter-spacing:0.15em;margin:20px 0 12px;padding-bottom:6px;border-bottom:1px solid rgba(201,168,76,0.25);}
+                .fhlc-card-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
+                .fhlc-deal-card{width:100%;aspect-ratio:675/1044;position:relative;transform-style:preserve-3d;cursor:default;}
+                .fhlc-deal-card.fhlc-entering{animation:fhlcDealIn 0.35s ease-out forwards;}
+                .fhlc-deal-card.fhlc-flipping .fhlc-card-inner{transform:rotateY(180deg);}
+                .fhlc-deal-card.fhlc-mine{outline:3px solid #fff;outline-offset:-1px;box-shadow:0 0 14px rgba(255,255,255,0.3);border-radius:8px;}
+                .fhlc-deal-card.fhlc-dimmed{opacity:0.3;transition:opacity 0.4s;}
+                .fhlc-card-inner{position:relative;width:100%;height:100%;transition:transform 0.6s ease-in-out;transform-style:preserve-3d;}
+                .fhlc-card-front,.fhlc-card-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:8px;overflow:hidden;}
+                .fhlc-card-back{background-size:cover;background-position:center;box-shadow:0 6px 24px rgba(0,0,0,0.5);}
+                .fhlc-card-front{transform:rotateY(180deg);background:#faf8f2;box-shadow:0 6px 24px rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10% 8%;text-align:center;}
+                .fhlc-card-front .fhlc-cf-round{font-family:'Courier New',monospace;font-size:clamp(8px,1.2vw,11px);color:#888;text-transform:uppercase;letter-spacing:0.1em;}
+                .fhlc-card-front .fhlc-cf-fish{font-family:'Oswald',sans-serif;font-size:clamp(10px,1.6vw,16px);font-weight:700;color:#1a1a1a;margin:6% 0;line-height:1.2;}
+                .fhlc-card-front .fhlc-cf-customer{font-family:'Special Elite',cursive;font-size:clamp(9px,1.3vw,13px);color:#96885f;}
+                .fhlc-card-front .fhlc-cf-qty{font-family:'Courier New',monospace;font-size:clamp(8px,1.1vw,10px);color:#666;margin-top:4%;}
+                .fhlc-card-front .fhlc-cf-suit{position:absolute;top:6%;left:8%;font-size:clamp(10px,1.4vw,16px);}
+                .fhlc-card-front .fhlc-cf-suit-br{position:absolute;bottom:6%;right:8%;font-size:clamp(10px,1.4vw,16px);transform:rotate(180deg);}
+                @keyframes fhlcDealIn{from{opacity:0;transform:translateY(-40px) scale(0.85);}to{opacity:1;transform:translateY(0) scale(1);}}
 
-                /* ── Summary table ── */
-                .fhlc-summary{margin-top:16px;}
-                .fhlc-summary table{width:100%;border-collapse:collapse;}
-                .fhlc-summary th{font-family:'Courier New',monospace;font-size:0.72rem;color:#888;text-transform:uppercase;letter-spacing:0.08em;padding:8px;text-align:left;border-bottom:2px solid #333;}
-                .fhlc-summary td{padding:8px;font-size:0.85rem;border-bottom:1px solid #222;color:#aaa;}
-                .fhlc-summary .fhlc-row-mine td{color:#c9a84c;font-weight:600;}
-                .fhlc-summary .fhlc-round-divider td{padding:12px 8px 4px;color:#555;font-family:'Courier New',monospace;font-size:0.7rem;letter-spacing:0.12em;border-bottom:1px solid #333;font-weight:700;}
+                /* ── Mobile table (hidden on desktop) ── */
+                .fhlc-mobile-table{display:none;}
+                .fhlc-mobile-table table{width:100%;border-collapse:collapse;}
+                .fhlc-mobile-table th{font-family:'Courier New',monospace;font-size:0.7rem;color:#888;text-transform:uppercase;letter-spacing:0.08em;padding:6px 8px;text-align:left;border-bottom:2px solid #333;}
+                .fhlc-mobile-table td{padding:6px 8px;font-size:0.82rem;border-bottom:1px solid #222;color:#aaa;}
+                .fhlc-mobile-table .fhlc-row-mine td{color:#c9a84c;font-weight:600;}
+                .fhlc-mobile-table .fhlc-row-entering td{animation:fhlcRowPulse 0.5s ease-out;}
+                @keyframes fhlcRowPulse{0%{background:rgba(201,168,76,0.2);}100%{background:transparent;}}
+
+                /* ── Post-reveal controls ── */
+                .fhlc-post-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+                .fhlc-post-controls button{background:#222;border:1px solid #444;color:#888;font-size:0.72rem;padding:6px 14px;border-radius:4px;cursor:pointer;font-family:'Courier New',monospace;transition:border-color 0.2s,color 0.2s;}
+                .fhlc-post-controls button:hover{color:#c9a84c;border-color:#c9a84c;}
+                .fhlc-post-controls button.fhlc-filter-active{border-color:#c9a84c;color:#c9a84c;}
+
+                /* ── Full results dropdown ── */
+                .fhlc-full-results{margin-top:16px;border-top:1px solid #333;padding-top:16px;}
+                .fhlc-full-results table{width:100%;border-collapse:collapse;}
+                .fhlc-full-results th{font-family:'Courier New',monospace;font-size:0.7rem;color:#888;text-transform:uppercase;letter-spacing:0.08em;padding:6px 8px;text-align:left;border-bottom:2px solid #333;}
+                .fhlc-full-results td{padding:6px 8px;font-size:0.82rem;border-bottom:1px solid #222;color:#aaa;}
+                .fhlc-full-results .fhlc-row-mine td{color:#c9a84c;font-weight:600;}
+                .fhlc-full-results .fhlc-round-hdr td{padding:10px 8px 4px;color:#555;font-family:'Courier New',monospace;font-size:0.7rem;letter-spacing:0.12em;border-bottom:1px solid #333;font-weight:700;}
+
+                /* ── Responsive ── */
+                @media(max-width:768px){
+                    .fhlc-card-stage{display:none!important;}
+                    .fhlc-mobile-table{display:block!important;}
+                }
+                @media(min-width:769px){
+                    .fhlc-mobile-table{display:none!important;}
+                    .fhlc-card-stage{display:block!important;}
+                }
+                @media(max-width:600px){
+                    .fhlc-card-grid{grid-template-columns:repeat(3,1fr);gap:10px;}
+                }
+                @media(prefers-reduced-motion:reduce){
+                    .fhlc-deal-card.fhlc-entering{animation:none!important;opacity:1;transform:none;}
+                    .fhlc-card-inner{transition:none!important;}
+                    .fhlc-mobile-table .fhlc-row-entering td{animation:none!important;}
+                }
                 </style>
 
-                <?php $wheel_url = plugins_url( 'assists/casino/Roulette-Wheel.png', FISHOTEL_PLUGIN_FILE ); ?>
-
-                <div id="fhlc-stage" style="display:<?php echo $start_live ? 'block' : 'none'; ?>;">
-                    <div class="fhlc-controls" id="fhlc-controls">
+                <!-- Card reveal container -->
+                <div id="fhlc-reveal-wrap">
+                    <div class="fhlc-reveal-controls" id="fhlc-reveal-controls">
                         <div class="fhlc-speed">
-                            <button data-speed="4" class="fhlc-speed-btn">Slow</button>
-                            <button data-speed="2.5" class="fhlc-speed-btn fhlc-speed-active">Normal</button>
-                            <button data-speed="1.2" class="fhlc-speed-btn">Fast</button>
+                            <button data-speed="3.5" class="fhlc-speed-btn">Slow</button>
+                            <button data-speed="2" class="fhlc-speed-btn fhlc-speed-active">Normal</button>
+                            <button data-speed="0.8" class="fhlc-speed-btn">Fast</button>
                         </div>
                         <button class="fhlc-skip" id="fhlc-skip">Skip to results &raquo;</button>
                     </div>
-                    <div class="fhlc-roulette-container">
-                        <div class="fhlc-roulette-status" id="fhlc-roulette-status"></div>
-                        <div class="fhlc-roulette-wheel-wrap">
-                            <div class="fhlc-pointer"></div>
-                            <img src="<?php echo esc_url( $wheel_url ); ?>" class="fhlc-wheel-img" id="fhlc-wheel-img" alt="Roulette Wheel">
-                            <div class="fhlc-wheel-overlay" id="fhlc-wheel-overlay"></div>
-                            <div class="fhlc-ball" id="fhlc-ball"></div>
-                        </div>
+
+                    <!-- Desktop: card grid -->
+                    <div class="fhlc-card-stage" id="fhlc-card-stage"></div>
+
+                    <!-- Mobile: synced table -->
+                    <div class="fhlc-mobile-table" id="fhlc-mobile-table">
+                        <table>
+                            <thead><tr><th>Rd</th><th>Customer</th><th>Fish</th><th>Qty</th></tr></thead>
+                            <tbody id="fhlc-mobile-tbody"></tbody>
+                        </table>
                     </div>
-                    <div class="fhlc-log" id="fhlc-log" style="display:none;">
-                        <p class="fhlc-log-title">Draft Log</p>
-                        <ul class="fhlc-log-list" id="fhlc-log-list"></ul>
+
+                    <!-- Post-reveal controls -->
+                    <div class="fhlc-post-controls" id="fhlc-post-controls" style="display:none;">
+                        <button class="fhlc-filter-btn" id="fhlc-filter-mine">Your Fish</button>
+                        <button id="fhlc-view-all">View Full Results</button>
+                        <button id="fhlc-replay-btn">Replay</button>
                     </div>
+
+                    <!-- Full results table -->
+                    <div class="fhlc-full-results" id="fhlc-full-results" style="display:none;"></div>
                 </div>
-
-                <div id="fhlc-summary" style="display:<?php echo $start_live ? 'none' : 'block'; ?>;">
-                    <?php if ( $is_logged_in && ! $seen_reveal ) : ?>
-                    <?php elseif ( $is_logged_in ) : ?>
-                        <div style="text-align:right;margin-bottom:8px;">
-                            <button class="fhlc-replay" id="fhlc-replay">&#9654; Replay Draft</button>
-                        </div>
-                    <?php endif; ?>
-                    <h3 class="fhlc-wl-title">Draft Results</h3>
-                    <div class="fhlc-summary" id="fhlc-summary-table"></div>
-                </div>
-
-                <script>
-                (function(){
-                    var ajaxUrl = '<?php echo esc_url( $ajax_url ); ?>';
-                    var nonce   = '<?php echo esc_js( $nonce ); ?>';
-                    var batchName = '<?php echo esc_js( $batch_name ); ?>';
-                    var myUid   = <?php echo $uid ?: 0; ?>;
-                    var startLive = <?php echo $start_live ? 'true' : 'false'; ?>;
-                    var stageEl    = document.getElementById('fhlc-stage');
-                    var summaryEl  = document.getElementById('fhlc-summary');
-                    var logEl      = document.getElementById('fhlc-log');
-                    var logList    = document.getElementById('fhlc-log-list');
-                    var skipBtn    = document.getElementById('fhlc-skip');
-                    var replayBtn  = document.getElementById('fhlc-replay');
-                    var summaryTableEl = document.getElementById('fhlc-summary-table');
-                    var wheelImg   = document.getElementById('fhlc-wheel-img');
-                    var wheelOvl   = document.getElementById('fhlc-wheel-overlay');
-                    var ballEl     = document.getElementById('fhlc-ball');
-                    var rouletteStatus = document.getElementById('fhlc-roulette-status');
-
-                    var spinSpeed = 2.5;
-                    var picks = [];
-                    var skipped = false;
-                    var cumulativeRotation = 0;
-
-                    /* Speed controls */
-                    document.querySelectorAll('.fhlc-speed-btn').forEach(function(btn){
-                        btn.addEventListener('click', function(){
-                            document.querySelectorAll('.fhlc-speed-btn').forEach(function(b){ b.classList.remove('fhlc-speed-active'); });
-                            btn.classList.add('fhlc-speed-active');
-                            spinSpeed = parseFloat(btn.dataset.speed);
-                        });
-                    });
-
-                    /* Fetch results */
-                    var fd = new FormData();
-                    fd.append('action', 'fishotel_get_lastcall_results');
-                    fd.append('nonce', nonce);
-                    fd.append('batch_name', batchName);
-                    fetch(ajaxUrl, { method:'POST', body:fd, credentials:'same-origin' })
-                        .then(function(r){ return r.json(); })
-                        .then(function(d){
-                            if(!d.success || !d.data.picks) return;
-                            picks = d.data.picks;
-                            buildSummaryTable(picks);
-                            if(startLive) runReveal();
-                        });
-
-                    /* Skip */
-                    if(skipBtn) skipBtn.addEventListener('click', function(){
-                        skipped = true;
-                        showSummary();
-                        markSeen();
-                    });
-
-                    /* Replay */
-                    if(replayBtn) replayBtn.addEventListener('click', function(){
-                        skipped = false;
-                        cumulativeRotation = 0;
-                        logList.innerHTML = '';
-                        logEl.style.display = 'none';
-                        stageEl.style.display = 'block';
-                        summaryEl.style.display = 'none';
-                        runReveal();
-                    });
-
-                    function showSummary(){
-                        document.getElementById('fhlc-controls').style.display = 'none';
-                        summaryEl.style.display = 'block';
-                        if(!replayBtn){
-                            var rb = document.createElement('button');
-                            rb.className = 'fhlc-replay';
-                            rb.id = 'fhlc-replay';
-                            rb.innerHTML = '&#9654; Replay Draft';
-                            rb.addEventListener('click', function(){
-                                skipped = false;
-                                cumulativeRotation = 0;
-                                logList.innerHTML = '';
-                                logEl.style.display = 'none';
-                                stageEl.style.display = 'block';
-                                summaryEl.style.display = 'none';
-                                runReveal();
-                            });
-                            var wrap = document.createElement('div');
-                            wrap.style.cssText = 'text-align:right;margin-bottom:8px;';
-                            wrap.appendChild(rb);
-                            summaryEl.insertBefore(wrap, summaryEl.firstChild);
-                            replayBtn = rb;
-                        }
-                    }
-
-                    function markSeen(){
-                        if(!myUid) return;
-                        var fd2 = new FormData();
-                        fd2.append('action', 'fishotel_mark_lastcall_seen');
-                        fd2.append('nonce', nonce);
-                        fd2.append('batch_name', batchName);
-                        fetch(ajaxUrl, { method:'POST', body:fd2, credentials:'same-origin' });
-                    }
-
-                    function escH(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-
-                    function buildWheelOverlay(fishNames){
-                        wheelOvl.innerHTML = '';
-                        var segAngle = 360 / 24;
-                        for(var i = 0; i < 24; i++){
-                            var div = document.createElement('div');
-                            div.className = 'fhlc-segment-text fhlc-segment-' + (i+1);
-                            var rot = i * segAngle + segAngle / 2 - 90;
-                            div.style.transform = 'rotate(' + rot + 'deg) translateX(50px)';
-                            div.style.color = (i % 2 === 0) ? '#f5f5f5' : '#2e2418';
-                            div.textContent = fishNames[i] || '';
-                            wheelOvl.appendChild(div);
-                        }
-                    }
-
-                    /* ── Roulette reveal ── */
-                    function runReveal(){
-                        cumulativeRotation = 0;
-                        var idx = 0;
-                        function showNext(){
-                            if(skipped) return;
-                            if(idx >= picks.length){
-                                rouletteStatus.textContent = 'DRAFT COMPLETE';
-                                markSeen();
-                                setTimeout(function(){ if(!skipped) showSummary(); }, 3000);
-                                return;
-                            }
-                            var p = picks[idx];
-                            idx++;
-
-                            // Fetch wheel data for this pick
-                            var pfd = new FormData();
-                            pfd.append('action', 'fishotel_get_lastcall_pick');
-                            pfd.append('nonce', nonce);
-                            pfd.append('batch_name', batchName);
-                            pfd.append('pick_index', idx - 1);
-                            fetch(ajaxUrl, { method:'POST', body:pfd, credentials:'same-origin' })
-                                .then(function(r){ return r.json(); })
-                                .then(function(d){
-                                    if(!d.success || skipped) return;
-                                    var pick = d.data;
-                                    rouletteStatus.textContent = 'Round ' + pick.round + ', Pick ' + pick.pick_number + ' \u2014 ' + escH(pick.customer_name) + ' is up';
-                                    buildWheelOverlay(pick.wheel_fish);
-
-                                    // Reset wheel
-                                    wheelImg.style.transition = 'none'; wheelOvl.style.transition = 'none';
-                                    wheelImg.style.transform = 'rotate(' + cumulativeRotation + 'deg)';
-                                    wheelOvl.style.transform = 'rotate(' + cumulativeRotation + 'deg)';
-                                    ballEl.style.opacity = '0'; ballEl.style.transition = 'none';
-
-                                    var segAngle = 360 / 24;
-                                    var winAngle = (pick.wheel_segment - 1) * segAngle + segAngle / 2;
-                                    var spins = 3 + Math.random();
-                                    var target = cumulativeRotation + (spins * 360) + (360 - winAngle);
-                                    cumulativeRotation = target;
-
-                                    setTimeout(function(){
-                                        if(skipped) return;
-                                        wheelImg.style.transition = 'transform ' + spinSpeed + 's cubic-bezier(0.25,0.46,0.45,0.94)';
-                                        wheelOvl.style.transition = 'transform ' + spinSpeed + 's cubic-bezier(0.25,0.46,0.45,0.94)';
-                                        wheelImg.style.transform = 'rotate(' + target + 'deg)';
-                                        wheelOvl.style.transform = 'rotate(' + target + 'deg)';
-                                        ballEl.style.transition = 'transform ' + spinSpeed + 's cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.3s';
-                                        ballEl.style.opacity = '1';
-                                        ballEl.style.transform = 'rotate(' + (360 - winAngle + spins * 360) + 'deg) translateY(-170px)';
-
-                                        setTimeout(function(){
-                                            if(skipped) return;
-                                            // Ball drop into segment
-                                            var cBallAngle = 360 - winAngle + spins * 360;
-                                            ballEl.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-                                            ballEl.style.transform = 'rotate(' + cBallAngle + 'deg) translateY(-120px)';
-                                            var winEl = wheelOvl.querySelector('.fhlc-segment-' + pick.wheel_segment);
-                                            if(winEl) winEl.classList.add('fhlc-winning');
-
-                                            logEl.style.display = 'block';
-                                            var li = document.createElement('li');
-                                            li.className = 'fhlc-log-item';
-                                            li.innerHTML = 'Rd ' + pick.round + ' &mdash; <span class="fhlc-log-user">' + escH(pick.customer_name) + '</span> &rarr; <span class="fhlc-log-fish">' + escH(pick.fish_name) + '</span>';
-                                            logList.appendChild(li);
-                                            logList.scrollTop = logList.scrollHeight;
-
-                                            setTimeout(function(){
-                                                if(idx < picks.length) ballEl.style.opacity = '0';
-                                                showNext();
-                                            }, 1200);
-                                        }, spinSpeed * 1000 + 200);
-                                    }, 300);
-                                });
-                        }
-                        setTimeout(showNext, 800);
-                    }
-
-                    /* ── Summary table builder ── */
-                    function buildSummaryTable(picks){
-                        if(!picks.length){
-                            summaryTableEl.innerHTML = '<p style="color:#888;font-family:\'Special Elite\',monospace;">No picks were made in this draft.</p>';
-                            return;
-                        }
-                        var html = '<table><thead><tr><th>Round</th><th>Customer</th><th>Fish</th><th>Qty</th></tr></thead><tbody>';
-                        var lastRound = 0;
-                        picks.forEach(function(p){
-                            if(p.round !== lastRound){
-                                if(lastRound > 0) html += '<tr class="fhlc-round-divider"><td colspan="4">Round ' + p.round + '</td></tr>';
-                                lastRound = p.round;
-                            }
-                            var isMine = myUid && parseInt(p.user_id,10) === myUid;
-                            html += '<tr class="' + (isMine ? 'fhlc-row-mine' : '') + '">';
-                            html += '<td style="text-align:center;">' + p.round + '</td>';
-                            html += '<td>' + escH(p.hf_username) + '</td>';
-                            html += '<td>' + escH(p.fish_name) + '</td>';
-                            html += '<td style="text-align:center;">' + p.qty + '</td>';
-                            html += '</tr>';
-                        });
-                        html += '</tbody></table>';
-                        summaryTableEl.innerHTML = html;
-                    }
-                })();
-                </script>
 
             <?php elseif ( $window_closed_no_results ) : ?>
                 <!-- State 2: Window closed, no results yet -->
@@ -4883,65 +4706,6 @@ trait FisHotel_Shortcodes {
         })();
         </script>
 
-        <?php
-        return ob_get_clean();
-    }
-
-    /* ─────────────────────────────────────────────
-     *  [fishotel_draft_broadcast] — Draft Night broadcast player
-     * ───────────────────────────────────────────── */
-
-    public function draft_broadcast_shortcode( $atts ) {
-        $atts       = shortcode_atts( [ 'batch' => '' ], $atts );
-        $batch_name = $atts['batch'] ?: get_option( 'fishotel_current_batch', '' );
-
-        if ( ! $batch_name ) {
-            return '<p>No active batch.</p>';
-        }
-
-        $slug   = sanitize_title( $batch_name );
-        $script = get_option( 'fishotel_draft_broadcast_' . $slug );
-
-        if ( ! $script ) {
-            require_once plugin_dir_path( __FILE__ ) . 'class-draft-broadcast.php';
-            $script = fh_generate_broadcast_script( $batch_name );
-            if ( ! $script ) {
-                return '<p>Draft results not found for <strong>' . esc_html( $batch_name ) . '</strong>.</p>';
-            }
-        }
-
-        wp_enqueue_script(
-            'fishotel-draft-player',
-            plugins_url( '../assists/draft/draft-player.js', __FILE__ ),
-            [ 'jquery' ],
-            FISHOTEL_VERSION,
-            true
-        );
-        wp_enqueue_style(
-            'fishotel-draft-player',
-            plugins_url( '../assists/draft/draft-player.css', __FILE__ ),
-            [],
-            FISHOTEL_VERSION
-        );
-        wp_localize_script( 'fishotel-draft-player', 'fhDraftScript', $script );
-
-        ob_start();
-        ?>
-        <div class="fh-draft-broadcast">
-            <div class="fh-draft-player">
-                <div class="fh-draft-stage" id="fhDraftStage"></div>
-                <div class="fh-draft-controls">
-                    <button id="fhPlayPause" class="fh-btn-primary">&#9654; PLAY DRAFT</button>
-                    <button id="fhSkipResults" class="fh-btn-secondary">SKIP TO RESULTS</button>
-                    <div class="fh-speed-controls">
-                        <label>Speed:</label>
-                        <button data-speed="0.5">Slow</button>
-                        <button data-speed="1" class="active">Normal</button>
-                        <button data-speed="1.5">Fast</button>
-                    </div>
-                </div>
-            </div>
-        </div>
         <?php
         return ob_get_clean();
     }
