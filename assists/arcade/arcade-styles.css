@@ -1,0 +1,320 @@
+/* ===== FisHotel Arcade — Strength Tester Styles ===== */
+
+/* ─── Page layout ──────────────────────────────────── */
+.fh-arcade-page {
+    max-width: 700px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.fh-arcade-page h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 42px;
+    color: #b5a165;
+    text-align: center;
+    margin-bottom: 6px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.fh-arcade-subtitle {
+    text-align: center;
+    font-family: 'Special Elite', cursive;
+    font-size: 16px;
+    color: #999;
+    margin: 0 0 24px;
+}
+
+/* ─── Chip balance bar ─────────────────────────────── */
+.fh-arcade-chip-bar {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.fh-arcade-chip-display {
+    display: inline-block;
+    font-family: 'Oswald', sans-serif;
+    font-size: 28px;
+    color: #b5a165;
+    background: #1a1a1a;
+    border: 2px solid #b5a165;
+    border-radius: 8px;
+    padding: 8px 28px;
+    letter-spacing: 1px;
+}
+
+.fh-arcade-chip-display .fh-chip-icon {
+    margin-right: 8px;
+    font-size: 24px;
+}
+
+/* ─── Game card ────────────────────────────────────── */
+.fh-arcade-game {
+    background: #1e1e1e;
+    border: 2px solid #333;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 30px;
+}
+
+.fh-arcade-game h2 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 28px;
+    color: #b5a165;
+    text-align: center;
+    margin: 0 0 20px;
+    letter-spacing: 1px;
+}
+
+/* ─── Machine container ────────────────────────────── */
+.fh-st-machine {
+    position: relative;
+    max-width: 400px;
+    margin: 0 auto 20px;
+    user-select: none;
+}
+
+.fh-st-base {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 6px;
+}
+
+/* ─── Power meter track ────────────────────────────── */
+.fh-st-track {
+    position: absolute;
+    right: 8%;
+    top: 8%;
+    bottom: 18%;
+    width: 36px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid #4a3f2f;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.fh-st-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0%;
+    background: linear-gradient(to top, #cc3333, #e6a800, #33cc33);
+    border-radius: 0 0 16px 16px;
+    transition: none;
+}
+
+/* ─── Puck ─────────────────────────────────────────── */
+.fh-st-puck {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 2%;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+    z-index: 5;
+    transition: none;
+}
+
+.fh-st-puck.fh-st-puck-animate {
+    transition: bottom 1.5s ease-out;
+}
+
+/* ─── Zone labels ──────────────────────────────────── */
+.fh-st-zones {
+    position: absolute;
+    left: 6%;
+    top: 8%;
+    bottom: 18%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    pointer-events: none;
+}
+
+.fh-st-zones span {
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.fh-st-zones .zone-bell  { color: #ffd700; text-shadow: 0 0 8px rgba(255, 215, 0, 0.5); }
+.fh-st-zones .zone-super { color: #66ff66; }
+.fh-st-zones .zone-strong { color: #66ccff; }
+.fh-st-zones .zone-good  { color: #ffaa44; }
+.fh-st-zones .zone-miss  { color: #999; }
+
+/* ─── Bell glow ────────────────────────────────────── */
+.fh-st-bell-glow {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 10;
+}
+
+.fh-st-bell-glow.active {
+    animation: fh-bell-pulse 0.4s ease-in-out 4;
+}
+
+@keyframes fh-bell-pulse {
+    0%   { opacity: 0; box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0.3); }
+    50%  { opacity: 1; box-shadow: 0 0 40px 20px rgba(255, 215, 0, 0.7); }
+    100% { opacity: 0; box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0.3); }
+}
+
+/* ─── Controls ─────────────────────────────────────── */
+.fh-st-controls {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.fh-st-bet-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+    color: #ccc;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.fh-st-bet-selector {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.fh-st-bet {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    color: #ccc;
+    background: #2a2a2a;
+    border: 2px solid #555;
+    border-radius: 8px;
+    padding: 8px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 70px;
+}
+
+.fh-st-bet:hover {
+    border-color: #b5a165;
+    color: #fff;
+}
+
+.fh-st-bet.active {
+    background: #b5a165;
+    border-color: #b5a165;
+    color: #1a1a1a;
+    font-weight: 700;
+}
+
+/* SWING / HIT button */
+.fh-st-action {
+    font-family: 'Oswald', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #fff;
+    background: #c0392b;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 48px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-block;
+}
+
+.fh-st-action:hover:not(:disabled) {
+    background: #e74c3c;
+    transform: scale(1.03);
+}
+
+.fh-st-action:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.fh-st-action.swinging {
+    background: #e67e22;
+    animation: fh-hit-pulse 0.6s ease-in-out infinite;
+}
+
+@keyframes fh-hit-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.4); }
+    50%      { box-shadow: 0 0 20px 6px rgba(230, 126, 34, 0.6); }
+}
+
+/* ─── Result display ───────────────────────────────── */
+.fh-st-result {
+    text-align: center;
+    margin-top: 18px;
+    min-height: 60px;
+}
+
+.fh-st-result-zone {
+    font-family: 'Oswald', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.4s ease-out;
+}
+
+.fh-st-result-zone.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.fh-st-result-zone.zone-bell  { color: #ffd700; text-shadow: 0 0 12px rgba(255, 215, 0, 0.6); }
+.fh-st-result-zone.zone-super { color: #66ff66; }
+.fh-st-result-zone.zone-strong { color: #66ccff; }
+.fh-st-result-zone.zone-good  { color: #ffaa44; }
+.fh-st-result-zone.zone-miss  { color: #888; }
+
+.fh-st-result-payout {
+    font-family: 'Special Elite', cursive;
+    font-size: 18px;
+    color: #ccc;
+    opacity: 0;
+    transition: opacity 0.4s 0.2s;
+}
+
+.fh-st-result-payout.show {
+    opacity: 1;
+}
+
+.fh-st-result-payout.win {
+    color: #66ff66;
+}
+
+.fh-st-result-payout.lose {
+    color: #cc4444;
+}
+
+/* ─── Insufficient funds message ───────────────────── */
+.fh-st-error {
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+    color: #cc4444;
+    text-align: center;
+    margin-top: 10px;
+    min-height: 20px;
+}
+
+/* ─── Google Fonts import ──────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Special+Elite&display=swap');

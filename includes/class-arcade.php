@@ -38,6 +38,11 @@ class FisHotel_Arcade {
         add_action( 'wp_ajax_fishotel_arcade_check_stickers', [ $this, 'ajax_check_stickers' ] );
         add_action( 'wp_ajax_fishotel_arcade_shop_purchase',  [ $this, 'ajax_shop_purchase' ] );
         add_action( 'wp_ajax_fishotel_arcade_shop_items',     [ $this, 'ajax_shop_items' ] );
+
+        /* Arcade admin page & Strength Tester */
+        add_action( 'admin_menu',            [ $this, 'register_arcade_admin_menu' ] );
+        add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_arcade_admin_assets' ] );
+        add_action( 'wp_ajax_fishotel_strength_tester_play', [ $this, 'ajax_strength_tester_play' ] );
     }
 
     /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -3551,6 +3556,165 @@ class FisHotel_Arcade {
             </div>
         </div>
         <?php
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     *  ARCADE ADMIN PAGE — Strength Tester
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    public function register_arcade_admin_menu() {
+        add_submenu_page(
+            'fishotel-batch-hq',
+            'Arcade',
+            'Arcade',
+            'read',
+            'fishotel-arcade',
+            [ $this, 'render_arcade_admin_page' ]
+        );
+    }
+
+    public function enqueue_arcade_admin_assets( $hook ) {
+        if ( strpos( $hook, 'fishotel-arcade' ) === false ) return;
+
+        wp_enqueue_style(
+            'fishotel-arcade-styles',
+            plugins_url( 'assists/arcade/arcade-styles.css', FISHOTEL_PLUGIN_FILE ),
+            [],
+            FISHOTEL_VERSION
+        );
+        wp_enqueue_script(
+            'fishotel-arcade-scripts',
+            plugins_url( 'assists/arcade/arcade-scripts.js', FISHOTEL_PLUGIN_FILE ),
+            [ 'jquery' ],
+            FISHOTEL_VERSION,
+            true
+        );
+        wp_localize_script( 'fishotel-arcade-scripts', 'fishotelArcade', [
+            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+            'nonce'   => wp_create_nonce( 'fishotel_arcade_nonce' ),
+        ] );
+    }
+
+    public function render_arcade_admin_page() {
+        if ( ! is_user_logged_in() ) {
+            echo '<div class="wrap"><p>Please log in to play arcade games.</p></div>';
+            return;
+        }
+
+        $uid   = get_current_user_id();
+        $chips = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
+        $base  = plugins_url( 'assists/arcade/strength-tester-base.png', FISHOTEL_PLUGIN_FILE );
+        $puck  = plugins_url( 'assists/arcade/strength-tester-puck.png', FISHOTEL_PLUGIN_FILE );
+        ?>
+        <div class="wrap fishotel-admin">
+            <div class="fh-arcade-page">
+                <h1>FisHotel Arcade</h1>
+                <p class="fh-arcade-subtitle">Classic Boardwalk Games</p>
+
+                <div class="fh-arcade-chip-bar">
+                    <div class="fh-arcade-chip-display">
+                        <span class="fh-chip-icon">&#127922;</span>
+                        Chips: <span id="fh-arcade-chips"><?php echo $chips; ?></span>
+                    </div>
+                </div>
+
+                <div class="fh-arcade-game" id="fh-strength-tester">
+                    <h2>Strength Tester</h2>
+
+                    <div class="fh-st-machine">
+                        <img src="<?php echo esc_url( $base ); ?>" class="fh-st-base" alt="Strength Tester">
+                        <div class="fh-st-bell-glow" id="fh-st-bell-glow"></div>
+                        <div class="fh-st-puck-track">
+                            <img src="<?php echo esc_url( $puck ); ?>" class="fh-st-puck" id="fh-st-puck" alt="Puck">
+                        </div>
+                        <div class="fh-st-track">
+                            <div class="fh-st-fill" id="fh-st-fill"></div>
+                        </div>
+                        <div class="fh-st-zones">
+                            <span class="zone-bell">RING THE BELL</span>
+                            <span class="zone-super">SUPER STRONG</span>
+                            <span class="zone-strong">STRONG</span>
+                            <span class="zone-good">GOOD TRY</span>
+                            <span class="zone-miss">MISS</span>
+                        </div>
+                    </div>
+
+                    <div class="fh-st-controls">
+                        <div class="fh-st-bet-label">Bet Amount</div>
+                        <div class="fh-st-bet-selector">
+                            <button type="button" class="fh-st-bet active" data-bet="5">5</button>
+                            <button type="button" class="fh-st-bet" data-bet="10">10</button>
+                            <button type="button" class="fh-st-bet" data-bet="25">25</button>
+                        </div>
+                        <button type="button" id="fh-st-action" class="fh-st-action">SWING!</button>
+                        <div class="fh-st-error" id="fh-st-error"></div>
+                    </div>
+
+                    <div class="fh-st-result">
+                        <div class="fh-st-result-zone" id="fh-st-result-zone"></div>
+                        <div class="fh-st-result-payout" id="fh-st-result-payout"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    public function ajax_strength_tester_play() {
+        check_ajax_referer( 'fishotel_arcade_nonce', 'nonce' );
+        $uid = get_current_user_id();
+        if ( ! $uid ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
+
+        $bet   = (int) ( $_POST['bet'] ?? 0 );
+        $power = (int) ( $_POST['power'] ?? -1 );
+
+        if ( ! in_array( $bet, [ 5, 10, 25 ], true ) ) {
+            wp_send_json_error( [ 'message' => 'Invalid bet amount.' ] );
+        }
+        if ( $power < 0 || $power > 100 ) {
+            wp_send_json_error( [ 'message' => 'Invalid power value.' ] );
+        }
+
+        $chips = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
+        if ( $chips < $bet ) {
+            wp_send_json_error( [ 'message' => 'Not enough chips.' ] );
+        }
+
+        if ( $power >= 95 ) {
+            $zone       = 'bell';
+            $multiplier = 3;
+            $label      = 'RING THE BELL!';
+        } elseif ( $power >= 85 ) {
+            $zone       = 'super';
+            $multiplier = 2;
+            $label      = 'SUPER STRONG!';
+        } elseif ( $power >= 70 ) {
+            $zone       = 'strong';
+            $multiplier = 1;
+            $label      = 'STRONG';
+        } elseif ( $power >= 50 ) {
+            $zone       = 'good';
+            $multiplier = 0.5;
+            $label      = 'GOOD TRY';
+        } else {
+            $zone       = 'miss';
+            $multiplier = 0;
+            $label      = 'MISS';
+        }
+
+        $payout      = (int) floor( $bet * $multiplier );
+        $new_balance = max( 0, $chips - $bet + $payout );
+        update_user_meta( $uid, '_fishotel_casino_chips', $new_balance );
+
+        wp_send_json_success( [
+            'zone'       => $zone,
+            'label'      => $label,
+            'power'      => $power,
+            'bet'        => $bet,
+            'multiplier' => $multiplier,
+            'payout'     => $payout,
+            'chips'      => $new_balance,
+        ] );
     }
 
 } /* end class FisHotel_Arcade */

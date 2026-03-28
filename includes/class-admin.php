@@ -1589,6 +1589,7 @@ trait FisHotel_Admin {
             'fishotel-sync',
             'fishotel-northstar',
             'fishotel-arrival-entry',
+            'fishotel-arcade',
         ];
         $page = $_GET['page'] ?? '';
         $is_fishotel = in_array( $page, $fishotel_pages, true )
