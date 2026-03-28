@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.10.16 - Smaller Pompiere, fix clipping with overflow visible and taller line-height.
- * Version:           9.10.16
+ * Description:       v9.10.17 - Draft Table in casino arcade with card reveal popup.
+ * Version:           9.10.17
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.10.16' );
+define( 'FISHOTEL_VERSION', '9.10.17' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

@@ -66,13 +66,27 @@ class FisHotel_Arcade {
         $last_bonus = get_user_meta( $uid, self::META_DAILY_BONUS, true );
         $can_claim  = empty( $last_bonus ) || ( time() - (int) $last_bonus ) >= 86400;
 
+        /* Draft reveal data */
+        $draft_batch    = get_option( 'fishotel_current_batch', '' );
+        $draft_slug     = sanitize_title( $draft_batch );
+        $draft_results  = get_option( 'fishotel_lastcall_results_' . $draft_slug, [] );
+        $has_draft      = ! empty( $draft_results );
+        $cardback_files = [ 'White-Seahorse-Cardback.jpg', 'Royal-Cardback-Fish.jpg', 'Royal-Cardback-Seahorse.jpg' ];
+        $cardback_idx   = $draft_batch ? abs( crc32( $draft_batch . 'cardback' ) ) % 3 : 0;
+        $draft_cardback = plugins_url( 'assists/casino/' . $cardback_files[ $cardback_idx ], FISHOTEL_PLUGIN_FILE );
+        $draft_cardface = plugins_url( 'assists/casino/FisHotel-Face-Card.png', FISHOTEL_PLUGIN_FILE );
+        $draft_sounds   = plugins_url( 'assists/casino/sounds/', FISHOTEL_PLUGIN_FILE );
+        $draft_script   = plugins_url( 'assists/casino/draft-reveal.js', FISHOTEL_PLUGIN_FILE ) . '?v=' . FISHOTEL_VERSION;
+        $draft_seen     = get_user_meta( $uid, 'fishotel_lastcall_seen_reveal_' . $draft_slug, true );
+        $draft_nonce    = wp_create_nonce( 'fishotel_lastcall_nonce' );
+
         /* Rooms — coordinates on 1280×720 image */
         $rooms = [
             'bar'       => [ 'label' => 'The Bar',          'x1' => 215, 'y1' => 192, 'x2' => 640, 'y2' => 347, 'game' => 'daily_bonus' ],
             'bingo'     => [ 'label' => 'Bingo Hall',        'x1' => 646, 'y1' => 193, 'x2' => 774, 'y2' => 348, 'game' => 'bingo' ],
             'sports'    => [ 'label' => 'Sports Lounge',     'x1' => 780, 'y1' => 195, 'x2' => 1072, 'y2' => 349, 'game' => 'coming_soon' ],
             'roulette'  => [ 'label' => 'Roulette Table',    'x1' => 215, 'y1' => 360, 'x2' => 534, 'y2' => 510, 'game' => 'roulette' ],
-            'craps'     => [ 'label' => 'Craps Table',       'x1' => 535, 'y1' => 358, 'x2' => 739, 'y2' => 512, 'game' => 'coming_soon' ],
+            'craps'     => [ 'label' => 'Draft Table',       'x1' => 535, 'y1' => 358, 'x2' => 739, 'y2' => 512, 'game' => 'draft' ],
             'blackjack' => [ 'label' => 'Blackjack Table',   'x1' => 741, 'y1' => 356, 'x2' => 1071, 'y2' => 512, 'game' => 'blackjack' ],
             'slots'     => [ 'label' => 'Slot Machines',     'x1' => 216, 'y1' => 525, 'x2' => 542, 'y2' => 671, 'game' => 'slots' ],
             'prizes'    => [ 'label' => 'Prize Room',        'x1' => 545, 'y1' => 525, 'x2' => 737, 'y2' => 671, 'game' => 'coming_soon' ],
@@ -444,6 +458,22 @@ class FisHotel_Arcade {
             let canClaim       = app.dataset.canClaim === '1';
             let chips          = <?php echo (int) $chips; ?>;
 
+            /* Draft reveal config */
+            const draftData = {
+                hasResults: <?php echo $has_draft ? 'true' : 'false'; ?>,
+                config: {
+                    ajaxUrl:   ajax,
+                    nonce:     '<?php echo esc_js( $draft_nonce ); ?>',
+                    batchName: '<?php echo esc_js( $draft_batch ); ?>',
+                    myUid:     <?php echo (int) $uid; ?>,
+                    startLive: <?php echo ( $has_draft && ! $draft_seen ) ? 'true' : 'false'; ?>,
+                    cardBack:  '<?php echo esc_js( $draft_cardback ); ?>',
+                    cardFace:  '<?php echo esc_js( $draft_cardface ); ?>',
+                    soundsUrl: '<?php echo esc_js( $draft_sounds ); ?>'
+                },
+                scriptUrl: '<?php echo esc_js( $draft_script ); ?>'
+            };
+
             function updateChips(n) {
                 chips = n;
                 const f = Number(n).toLocaleString();
@@ -478,7 +508,7 @@ class FisHotel_Arcade {
                 bingo:     { title: 'BINGO HALL', icon: '🎱', subtitle: 'Classic 75-Ball' },
                 sports:    { title: 'SPORTS LOUNGE', icon: '🏈', subtitle: 'Coming Soon' },
                 roulette:  { title: 'ROULETTE TABLE', icon: '🎰', subtitle: 'Spin the Wheel' },
-                craps:     { title: 'CRAPS TABLE', icon: '🎲', subtitle: 'Coming Soon' },
+                craps:     { title: 'DRAFT TABLE', icon: '🃏', subtitle: 'Card Reveal' },
                 blackjack: { title: 'BLACKJACK TABLE', icon: '🃏', subtitle: 'Beat the Dealer' },
                 slots:     { title: 'SLOT MACHINES', icon: '🐠', subtitle: 'Fish Slots' },
                 prizes:    { title: 'PRIZE ROOM', icon: '🏆', subtitle: 'Coming Soon' },
@@ -617,6 +647,7 @@ class FisHotel_Arcade {
                 switch(game) {
                     case 'daily_bonus': renderDailyBonus(body); break;
                     case 'coming_soon': renderComingSoon(body); break;
+                    case 'draft':       renderDraft(body); break;
                     case 'slots':       renderSlotSelection(body); break;
                     case 'bingo':       renderBingoHall(body); break;
                     default:
@@ -653,6 +684,99 @@ class FisHotel_Arcade {
             function renderComingSoon(body) {
                 body.innerHTML = '<p style="color:#aaa;padding:20px 0;">Draft Results &amp; more coming soon…</p>' +
                     '<p style="font-family:Special Elite,cursive;color:#96885f;">Stay tuned!</p>';
+            }
+
+            /* ─── Draft Card Reveal ─── */
+            function renderDraft(body) {
+                if (!draftData.hasResults) {
+                    body.innerHTML = '<p style="color:#96885f;font-family:Special Elite,cursive;padding:20px 0;text-align:center;">No draft results yet.<br>Check back after the draft runs!</p>';
+                    return;
+                }
+
+                body.innerHTML =
+                    '<style>' +
+                    '.fhlc-reveal-controls{display:flex;justify-content:flex-end;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}' +
+                    '.fhlc-speed{display:flex;gap:4px;}' +
+                    '.fhlc-speed button{background:#222;border:1px solid #444;color:#888;font-size:0.7rem;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:Courier New,monospace;transition:border-color 0.2s,color 0.2s;}' +
+                    '.fhlc-speed button.fhlc-speed-active{border-color:#c9a84c;color:#c9a84c;}' +
+                    '.fhlc-skip{background:none;border:1px solid #444;color:#888;font-size:0.72rem;padding:4px 14px;border-radius:4px;cursor:pointer;font-family:Courier New,monospace;}' +
+                    '.fhlc-skip:hover{color:#c9a84c;border-color:#c9a84c;}' +
+                    '.fhlc-card-stage{perspective:1200px;min-height:280px;margin-bottom:16px;}' +
+                    '.fhlc-round-label{font-family:Oswald,sans-serif;font-size:0.8rem;color:#c9a84c;text-transform:uppercase;letter-spacing:0.2em;text-align:right;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(201,168,76,0.3);}' +
+                    '.fhlc-reveal-divider{border:none;border-top:1px solid rgba(201,168,76,0.25);margin:24px 0 8px;}' +
+                    '.fhlc-card-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}' +
+                    '.fhlc-deal-card{width:100%;aspect-ratio:675/1044;position:relative;transform-style:preserve-3d;cursor:default;}' +
+                    '.fhlc-deal-card.fhlc-entering{animation:fhlcDealIn 0.35s ease-out forwards;}' +
+                    '.fhlc-deal-card.fhlc-flipping .fhlc-card-inner{transform:rotateY(180deg);}' +
+                    '.fhlc-deal-card.fhlc-mine{border-radius:8px;}' +
+                    '.fhlc-deal-card.fhlc-mine .fhlc-card-front::after{content:"\\2605 YOURS";position:absolute;top:-1px;right:-24px;background:linear-gradient(135deg,#1a3a6b,#0f2448);color:rgba(255,255,255,0.9);font-family:Oswald,sans-serif;font-size:clamp(5px,0.7vw,7px);font-weight:700;letter-spacing:0.1em;padding:1px 26px;transform:rotate(45deg);z-index:5;box-shadow:0 1px 4px rgba(0,0,0,0.4);}' +
+                    '.fhlc-deal-card.fhlc-dimmed{opacity:0.3;transition:opacity 0.4s;}' +
+                    '.fhlc-card-inner{position:relative;width:100%;height:100%;transition:transform 0.6s ease-in-out;transform-style:preserve-3d;}' +
+                    '.fhlc-card-front,.fhlc-card-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:8px;overflow:hidden;}' +
+                    '.fhlc-card-back{background-size:cover;background-position:center;box-shadow:0 6px 24px rgba(0,0,0,0.5);}' +
+                    '.fhlc-card-front{transform:rotateY(180deg);background-color:#faf8f2;background-size:100% 100%;background-repeat:no-repeat;box-shadow:0 6px 24px rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10% 16%;text-align:center;}' +
+                    '.fhlc-card-front .fhlc-cf-round{font-family:Courier New,monospace;font-size:clamp(8px,1.2vw,11px);color:#888;text-transform:uppercase;letter-spacing:0.1em;margin-top:12%;text-align:center;}' +
+                    '.fhlc-card-front .fhlc-cf-fish{font-family:Pompiere,Tulpen One,cursive;font-size:clamp(10px,1.4vw,16px);font-weight:400;color:#1a1a1a;margin:3% 0;line-height:1.3;width:100%;overflow:visible;word-break:break-word;text-transform:none;}' +
+                    '.fhlc-card-front .fhlc-cf-customer{font-family:Special Elite,cursive;font-size:clamp(8px,1.2vw,12px);color:#96885f;width:100%;overflow:hidden;word-break:break-word;margin-bottom:2%;}' +
+                    '.fhlc-card-front .fhlc-cf-qty{font-family:Courier New,monospace;font-size:clamp(8px,1.1vw,10px);color:#666;margin-top:0;}' +
+                    '.fhlc-card-front .fhlc-cf-suit{position:absolute;top:4%;left:5%;font-size:clamp(10px,1.4vw,16px);}' +
+                    '.fhlc-card-front .fhlc-cf-suit-br{position:absolute;bottom:4%;right:5%;font-size:clamp(10px,1.4vw,16px);transform:rotate(180deg);}' +
+                    '@keyframes fhlcDealIn{from{opacity:0;transform:translateY(-40px) scale(0.85);}to{opacity:1;transform:translateY(0) scale(1);}}' +
+                    '.fhlc-mobile-table{display:none;}' +
+                    '.fhlc-mobile-table table{width:100%;border-collapse:collapse;background:transparent!important;border:none!important;}' +
+                    '.fhlc-mobile-table th{font-family:Oswald,sans-serif;font-size:0.7rem;color:rgba(201,168,76,0.6);text-transform:uppercase;letter-spacing:0.15em;padding:8px 10px;text-align:left;border-bottom:1px solid rgba(201,168,76,0.25);background:transparent!important;}' +
+                    '.fhlc-mobile-table td{padding:8px 10px;font-family:Special Elite,cursive;font-size:0.8rem;border-bottom:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.55);background:transparent!important;}' +
+                    '.fhlc-mobile-table tr{background:transparent!important;}' +
+                    '.fhlc-mobile-table .fhlc-row-mine td{color:#c9a84c;font-weight:600;}' +
+                    '.fhlc-mobile-table .fhlc-row-entering td{animation:fhlcRowPulse 0.5s ease-out;}' +
+                    '@keyframes fhlcRowPulse{0%{background:rgba(201,168,76,0.15)!important;}100%{background:transparent!important;}}' +
+                    '#fhlc-reveal-wrap{padding-bottom:20px;}' +
+                    '.fhlc-post-controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;justify-content:center;}' +
+                    '.fhlc-post-controls button{background:transparent;border:1px solid rgba(201,168,76,0.5);color:#c9a84c;font-family:Oswald,sans-serif;font-size:0.75rem;font-weight:400;letter-spacing:0.2em;text-transform:uppercase;padding:8px 22px;border-radius:2px;cursor:pointer;transition:background 0.2s,border-color 0.2s,color 0.2s;}' +
+                    '.fhlc-post-controls button:hover{background:rgba(201,168,76,0.1);border-color:#c9a84c;color:#e8c96a;}' +
+                    '.fhlc-post-controls button.fhlc-filter-active{background:rgba(201,168,76,0.15);border-color:#c9a84c;color:#e8c96a;}' +
+                    '.fhlc-full-results{margin-top:16px;border-top:1px solid rgba(201,168,76,0.25);padding-top:16px;}' +
+                    '.fhlc-full-results table{width:100%;border-collapse:collapse;background:transparent!important;border:none!important;}' +
+                    '.fhlc-full-results th{font-family:Oswald,sans-serif;font-size:0.7rem;color:rgba(201,168,76,0.6);text-transform:uppercase;letter-spacing:0.15em;padding:8px 10px;text-align:left;border-bottom:1px solid rgba(201,168,76,0.25);background:transparent!important;}' +
+                    '.fhlc-full-results td{padding:8px 10px;font-family:Special Elite,cursive;font-size:0.8rem;border-bottom:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.55);background:transparent!important;}' +
+                    '.fhlc-full-results tr{background:transparent!important;}' +
+                    '.fhlc-full-results .fhlc-row-mine td{color:#c9a84c;font-weight:600;}' +
+                    '.fhlc-full-results .fhlc-round-hdr td{padding:10px 8px 4px;color:rgba(201,168,76,0.5);font-family:Oswald,sans-serif;font-size:0.7rem;letter-spacing:0.15em;border-bottom:1px solid rgba(201,168,76,0.2);font-weight:600;background:transparent!important;}' +
+                    '@media(max-width:768px){.fhlc-card-stage{display:none!important;}.fhlc-mobile-table{display:block!important;}}' +
+                    '@media(min-width:769px){.fhlc-mobile-table{display:none!important;}.fhlc-card-stage{display:block!important;}}' +
+                    '@media(max-width:600px){.fhlc-card-grid{grid-template-columns:repeat(3,1fr);gap:10px;}}' +
+                    '@media(prefers-reduced-motion:reduce){.fhlc-deal-card.fhlc-entering{animation:none!important;opacity:1;transform:none;}.fhlc-card-inner{transition:none!important;}.fhlc-mobile-table .fhlc-row-entering td{animation:none!important;}}' +
+                    '</style>' +
+                    '<div id="fhlc-reveal-wrap">' +
+                        '<div class="fhlc-reveal-controls" id="fhlc-reveal-controls">' +
+                            '<div class="fhlc-speed">' +
+                                '<button data-speed="3.5" class="fhlc-speed-btn">Slow</button>' +
+                                '<button data-speed="2" class="fhlc-speed-btn fhlc-speed-active">Normal</button>' +
+                                '<button data-speed="0.8" class="fhlc-speed-btn">Fast</button>' +
+                            '</div>' +
+                            '<button class="fhlc-skip" id="fhlc-skip">Skip to results &raquo;</button>' +
+                        '</div>' +
+                        '<div class="fhlc-card-stage" id="fhlc-card-stage"></div>' +
+                        '<div class="fhlc-mobile-table" id="fhlc-mobile-table">' +
+                            '<table><thead><tr><th>Rd</th><th>Customer</th><th>Fish</th><th>Qty</th></tr></thead>' +
+                            '<tbody id="fhlc-mobile-tbody"></tbody></table>' +
+                        '</div>' +
+                        '<div class="fhlc-post-controls" id="fhlc-post-controls" style="display:none;">' +
+                            '<button class="fhlc-filter-btn" id="fhlc-filter-mine">Your Fish</button>' +
+                            '<button id="fhlc-view-all">View Full Results</button>' +
+                            '<button id="fhlc-replay-btn">Replay</button>' +
+                        '</div>' +
+                        '<div class="fhlc-full-results" id="fhlc-full-results" style="display:none;"></div>' +
+                    '</div>';
+
+                /* Set global data and dynamically load draft-reveal.js */
+                window.fhlcDraftData = draftData.config;
+                var oldScript = document.querySelector('script[data-fhlc-draft]');
+                if (oldScript) oldScript.remove();
+                var s = document.createElement('script');
+                s.src = draftData.scriptUrl;
+                s.setAttribute('data-fhlc-draft', '1');
+                document.body.appendChild(s);
             }
 
             /* ═══════════════════════════════════════════════
