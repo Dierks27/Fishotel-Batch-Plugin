@@ -30,8 +30,8 @@ function fh_generate_chip_scatter( $batch_name, $user_id ) {
         $y       = $center_y + ( ( $seed >> 8 ) % 17 ) - 8;
         // Rotation: -30 to +30
         $rot     = ( $seed % 61 ) - 30;
-        // Size: 60-80px
-        $size    = 60 + ( ( $seed >> 12 ) % 21 );
+        // Size: fixed 64px
+        $size    = 64;
         // Opacity: 0.85-0.95
         $opacity = 0.85 + ( ( ( $seed >> 16 ) % 11 ) / 100 );
 
@@ -4229,7 +4229,7 @@ trait FisHotel_Shortcodes {
             $visible_pool = $pool;
             ?>
             <?php if ( ! empty( $visible_pool ) ) : ?>
-            <h3 class="fhlc-pool-title">The Pool</h3>
+            <h3 class="fhlc-pool-title" style="padding-left:250px;">The Pool</h3>
             <div class="fhlc-pool">
                 <?php foreach ( $visible_pool as $ci => $item ) : ?>
                 <div class="fhlc-card" data-fish-id="<?php echo esc_attr( $item['fish_id'] ); ?>">
@@ -4297,19 +4297,20 @@ trait FisHotel_Shortcodes {
 
                 /* ── Desktop card stage ── */
                 .fhlc-card-stage{perspective:1200px;min-height:280px;margin-bottom:16px;}
-                .fhlc-round-label{font-family:'Oswald',sans-serif;font-size:0.85rem;color:#c9a84c;text-transform:uppercase;letter-spacing:0.15em;margin:20px 0 12px;padding-bottom:6px;border-bottom:1px solid rgba(201,168,76,0.25);}
+                .fhlc-round-label{font-family:'Oswald',sans-serif;font-size:0.8rem;color:#c9a84c;text-transform:uppercase;letter-spacing:0.2em;text-align:right;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(201,168,76,0.3);}
+                .fhlc-reveal-divider{border:none;border-top:1px solid rgba(201,168,76,0.25);margin:24px 0 8px;}
                 .fhlc-card-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
                 .fhlc-deal-card{width:100%;aspect-ratio:675/1044;position:relative;transform-style:preserve-3d;cursor:default;}
                 .fhlc-deal-card.fhlc-entering{animation:fhlcDealIn 0.35s ease-out forwards;}
                 .fhlc-deal-card.fhlc-flipping .fhlc-card-inner{transform:rotateY(180deg);}
-                .fhlc-deal-card.fhlc-mine{box-shadow:0 0 0 3px #fff,0 0 20px rgba(255,255,255,0.45);border-radius:8px;}
+                .fhlc-deal-card.fhlc-mine{filter:drop-shadow(0 0 6px rgba(255,255,255,0.6)) drop-shadow(0 0 14px rgba(255,255,255,0.35)) drop-shadow(0 0 26px rgba(255,255,255,0.18));border-radius:8px;}
                 .fhlc-deal-card.fhlc-dimmed{opacity:0.3;transition:opacity 0.4s;}
                 .fhlc-card-inner{position:relative;width:100%;height:100%;transition:transform 0.6s ease-in-out;transform-style:preserve-3d;}
                 .fhlc-card-front,.fhlc-card-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:8px;overflow:hidden;}
                 .fhlc-card-back{background-size:cover;background-position:center;box-shadow:0 6px 24px rgba(0,0,0,0.5);}
                 .fhlc-card-front{transform:rotateY(180deg);background-color:#faf8f2;background-size:100% 100%;background-repeat:no-repeat;box-shadow:0 6px 24px rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10% 8%;text-align:center;}
                 .fhlc-card-front .fhlc-cf-round{font-family:'Courier New',monospace;font-size:clamp(8px,1.2vw,11px);color:#888;text-transform:uppercase;letter-spacing:0.1em;}
-                .fhlc-card-front .fhlc-cf-fish{font-family:'Oswald',sans-serif;font-size:clamp(10px,1.6vw,16px);font-weight:700;color:#1a1a1a;margin:6% 0;line-height:1.2;}
+                .fhlc-card-front .fhlc-cf-fish{font-family:'Oswald',sans-serif;font-size:clamp(10px,1.6vw,16px);font-weight:700;color:#1a1a1a;margin:6% 0;line-height:1.2;width:100%;overflow:hidden;word-break:break-word;}
                 .fhlc-card-front .fhlc-cf-customer{font-family:'Special Elite',cursive;font-size:clamp(9px,1.3vw,13px);color:#96885f;}
                 .fhlc-card-front .fhlc-cf-qty{font-family:'Courier New',monospace;font-size:clamp(8px,1.1vw,10px);color:#666;margin-top:4%;}
                 .fhlc-card-front .fhlc-cf-suit{position:absolute;top:6%;left:8%;font-size:clamp(10px,1.4vw,16px);}
@@ -4327,10 +4328,10 @@ trait FisHotel_Shortcodes {
 
                 /* ── Post-reveal controls ── */
                 #fhlc-reveal-wrap{padding-bottom:70px;}
-                .fhlc-post-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
-                .fhlc-post-controls button{background:#222;border:1px solid #444;color:#888;font-size:0.72rem;padding:6px 14px;border-radius:4px;cursor:pointer;font-family:'Courier New',monospace;transition:border-color 0.2s,color 0.2s;}
-                .fhlc-post-controls button:hover{color:#c9a84c;border-color:#c9a84c;}
-                .fhlc-post-controls button.fhlc-filter-active{border-color:#c9a84c;color:#c9a84c;}
+                .fhlc-post-controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;justify-content:center;}
+                .fhlc-post-controls button{background:transparent;border:1px solid rgba(201,168,76,0.5);color:#c9a84c;font-family:'Oswald',sans-serif;font-size:0.75rem;font-weight:400;letter-spacing:0.2em;text-transform:uppercase;padding:8px 22px;border-radius:2px;cursor:pointer;transition:background 0.2s,border-color 0.2s,color 0.2s;}
+                .fhlc-post-controls button:hover{background:rgba(201,168,76,0.1);border-color:#c9a84c;color:#e8c96a;}
+                .fhlc-post-controls button.fhlc-filter-active{background:rgba(201,168,76,0.15);border-color:#c9a84c;color:#e8c96a;}
 
                 /* ── Full results dropdown ── */
                 .fhlc-full-results{margin-top:16px;border-top:1px solid #333;padding-top:16px;}

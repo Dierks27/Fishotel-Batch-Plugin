@@ -184,6 +184,19 @@
         fullResults.innerHTML = html;
     }
 
+    /* ── Shrink fish name text to fit card width ── */
+    function fitFishNames() {
+        stageEl.querySelectorAll('.fhlc-cf-fish[data-autofit]').forEach(function (el) {
+            var fs = parseFloat(window.getComputedStyle(el).fontSize);
+            var safety = 0;
+            while (el.scrollWidth > el.offsetWidth + 2 && fs > 8 && safety < 30) {
+                fs -= 0.5;
+                el.style.fontSize = fs + 'px';
+                safety++;
+            }
+        });
+    }
+
     /* ── Create a card DOM element (face-down) ── */
     function createCard(pick, idx) {
         var isMine = myUid && parseInt(pick.user_id, 10) === myUid;
@@ -211,7 +224,7 @@
             '<span class="fhlc-cf-suit" style="color:' + suitColor + ';">' + suit + '</span>' +
             '<span class="fhlc-cf-suit-br" style="color:' + suitColor + ';">' + suit + '</span>' +
             '<span class="fhlc-cf-round">Round ' + pick.round + '</span>' +
-            '<span class="fhlc-cf-fish">' + esc(pick.fish_name) + '</span>' +
+            '<span class="fhlc-cf-fish" data-autofit="1">' + esc(pick.fish_name) + '</span>' +
             '<span class="fhlc-cf-customer">' + esc(name) + '</span>' +
             '<span class="fhlc-cf-qty">&times;' + pick.qty + '</span>';
 
@@ -360,6 +373,7 @@
             setTimeout(function () {
                 if (isMine) card.classList.add('fhlc-mine');
                 addMobileRow(pick);
+                fitFishNames();
 
                 setTimeout(function () {
                     flipCards(cardEls, rPicks, idx + 1, done);
@@ -383,7 +397,7 @@
         var grouped = groupByRound(picks);
         var roundNums = Object.keys(grouped).map(Number).sort(function (a, b) { return a - b; });
 
-        roundNums.forEach(function (rNum) {
+        roundNums.forEach(function (rNum, rIdx) {
             var rPicks = grouped[rNum];
 
             var section = document.createElement('div');
@@ -410,9 +424,18 @@
 
             section.appendChild(grid);
             stageEl.appendChild(section);
+
+            // Divider after the last round
+            if (rIdx === roundNums.length - 1) {
+                var divider = document.createElement('hr');
+                divider.className = 'fhlc-reveal-divider';
+                stageEl.appendChild(divider);
+            }
         });
 
         applyFilter();
+        // Shrink long fish names after cards are in DOM
+        setTimeout(fitFishNames, 50);
     }
 
 })();

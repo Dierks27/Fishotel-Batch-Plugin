@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.10.3 - Shuffle sound plays on empty table, 1.5s pause before dealing.
- * Version:           9.10.3
+ * Description:       v9.10.4 - Card reveal polish: felt glow, round labels, chip size, luxury buttons, divider, fish name shrink.
+ * Version:           9.10.4
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.10.3' );
+define( 'FISHOTEL_VERSION', '9.10.4' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
