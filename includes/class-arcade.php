@@ -66,11 +66,21 @@ class FisHotel_Arcade {
         $last_bonus = get_user_meta( $uid, self::META_DAILY_BONUS, true );
         $can_claim  = empty( $last_bonus ) || ( time() - (int) $last_bonus ) >= 86400;
 
-        /* Draft reveal data */
-        $draft_batch    = get_option( 'fishotel_current_batch', '' );
-        $draft_slug     = sanitize_title( $draft_batch );
-        $draft_results  = get_option( 'fishotel_lastcall_results_' . $draft_slug, [] );
-        $has_draft      = ! empty( $draft_results );
+        /* Draft reveal data — find most recent batch with Last Call results */
+        $draft_batch   = '';
+        $draft_slug    = '';
+        $has_draft     = false;
+        $all_statuses  = get_option( 'fishotel_batch_statuses', [] );
+        foreach ( $all_statuses as $b_name => $b_status ) {
+            $b_slug = sanitize_title( $b_name );
+            $b_results = get_option( 'fishotel_lastcall_results_' . $b_slug, [] );
+            if ( ! empty( $b_results ) ) {
+                $draft_batch  = $b_name;
+                $draft_slug   = $b_slug;
+                $has_draft    = true;
+                break; // use the first batch found with results
+            }
+        }
         $cardback_files = [ 'White-Seahorse-Cardback.jpg', 'Royal-Cardback-Fish.jpg', 'Royal-Cardback-Seahorse.jpg' ];
         $cardback_idx   = $draft_batch ? abs( crc32( $draft_batch . 'cardback' ) ) % 3 : 0;
         $draft_cardback = plugins_url( 'assists/casino/' . $cardback_files[ $cardback_idx ], FISHOTEL_PLUGIN_FILE );
@@ -86,7 +96,7 @@ class FisHotel_Arcade {
             'bingo'     => [ 'label' => 'Bingo Hall',        'x1' => 646, 'y1' => 193, 'x2' => 774, 'y2' => 348, 'game' => 'bingo' ],
             'sports'    => [ 'label' => 'Sports Lounge',     'x1' => 780, 'y1' => 195, 'x2' => 1072, 'y2' => 349, 'game' => 'coming_soon' ],
             'roulette'  => [ 'label' => 'Roulette Table',    'x1' => 215, 'y1' => 360, 'x2' => 534, 'y2' => 510, 'game' => 'roulette' ],
-            'craps'     => [ 'label' => 'Draft Table',       'x1' => 535, 'y1' => 358, 'x2' => 739, 'y2' => 512, 'game' => 'draft' ],
+            'craps'     => [ 'label' => 'Draft Room',        'x1' => 535, 'y1' => 358, 'x2' => 739, 'y2' => 512, 'game' => 'draft' ],
             'blackjack' => [ 'label' => 'Blackjack Table',   'x1' => 741, 'y1' => 356, 'x2' => 1071, 'y2' => 512, 'game' => 'blackjack' ],
             'slots'     => [ 'label' => 'Slot Machines',     'x1' => 216, 'y1' => 525, 'x2' => 542, 'y2' => 671, 'game' => 'slots' ],
             'prizes'    => [ 'label' => 'Prize Room',        'x1' => 545, 'y1' => 525, 'x2' => 737, 'y2' => 671, 'game' => 'coming_soon' ],
@@ -508,7 +518,7 @@ class FisHotel_Arcade {
                 bingo:     { title: 'BINGO HALL', icon: '🎱', subtitle: 'Classic 75-Ball' },
                 sports:    { title: 'SPORTS LOUNGE', icon: '🏈', subtitle: 'Coming Soon' },
                 roulette:  { title: 'ROULETTE TABLE', icon: '🎰', subtitle: 'Spin the Wheel' },
-                craps:     { title: 'DRAFT TABLE', icon: '🃏', subtitle: 'Card Reveal' },
+                craps:     { title: 'DRAFT ROOM', icon: '🃏', subtitle: 'Card Reveal' },
                 blackjack: { title: 'BLACKJACK TABLE', icon: '🃏', subtitle: 'Beat the Dealer' },
                 slots:     { title: 'SLOT MACHINES', icon: '🐠', subtitle: 'Fish Slots' },
                 prizes:    { title: 'PRIZE ROOM', icon: '🏆', subtitle: 'Coming Soon' },
