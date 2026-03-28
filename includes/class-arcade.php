@@ -66,32 +66,19 @@ class FisHotel_Arcade {
         $last_bonus = get_user_meta( $uid, self::META_DAILY_BONUS, true );
         $can_claim  = empty( $last_bonus ) || ( time() - (int) $last_bonus ) >= 86400;
 
-        /* Draft reveal data — collect ALL batches with Last Call results
-         * Merge both sources of batch names: page assignments (canonical)
-         * and batch statuses, so we never miss one. */
-        $draft_batches  = [];
-        $assignments    = get_option( 'fishotel_batch_page_assignments', [] );
-        $all_statuses   = get_option( 'fishotel_batch_statuses', [] );
-        $all_batch_names = array_unique( array_merge( array_keys( $assignments ), array_keys( $all_statuses ) ) );
-        $cardback_files = [ 'White-Seahorse-Cardback.jpg', 'Royal-Cardback-Fish.jpg', 'Royal-Cardback-Seahorse.jpg' ];
-        $draft_cardface = plugins_url( 'assists/casino/FisHotel-Face-Card.png', FISHOTEL_PLUGIN_FILE );
-        $draft_sounds   = plugins_url( 'assists/casino/sounds/', FISHOTEL_PLUGIN_FILE );
-        $draft_script   = plugins_url( 'assists/casino/draft-reveal.js', FISHOTEL_PLUGIN_FILE ) . '?v=' . FISHOTEL_VERSION;
-        $draft_nonce    = wp_create_nonce( 'fishotel_lastcall_nonce' );
-
-        foreach ( $all_batch_names as $b_name ) {
-            $b_slug    = sanitize_title( $b_name );
-            $b_results = get_option( 'fishotel_lastcall_results_' . $b_slug, [] );
-            if ( ! empty( $b_results ) ) {
-                $cb_idx = abs( crc32( $b_name . 'cardback' ) ) % 3;
-                $draft_batches[] = [
-                    'name'     => $b_name,
-                    'slug'     => $b_slug,
-                    'cardBack' => plugins_url( 'assists/casino/' . $cardback_files[ $cb_idx ], FISHOTEL_PLUGIN_FILE ),
-                    'seen'     => (bool) get_user_meta( $uid, 'fishotel_lastcall_seen_reveal_' . $b_slug, true ),
-                ];
-            }
-        }
+        /* Draft Room — use the batch name passed from the shortcode chain */
+        $draft_batch     = isset( $atts['batch_name'] ) ? $atts['batch_name'] : '';
+        $draft_slug      = sanitize_title( $draft_batch );
+        $draft_results   = $draft_batch ? get_option( 'fishotel_lastcall_results_' . $draft_slug, [] ) : [];
+        $has_draft       = ! empty( $draft_results );
+        $cardback_files  = [ 'White-Seahorse-Cardback.jpg', 'Royal-Cardback-Fish.jpg', 'Royal-Cardback-Seahorse.jpg' ];
+        $cardback_idx    = $draft_batch ? abs( crc32( $draft_batch . 'cardback' ) ) % 3 : 0;
+        $draft_cardback  = plugins_url( 'assists/casino/' . $cardback_files[ $cardback_idx ], FISHOTEL_PLUGIN_FILE );
+        $draft_cardface  = plugins_url( 'assists/casino/FisHotel-Face-Card.png', FISHOTEL_PLUGIN_FILE );
+        $draft_sounds    = plugins_url( 'assists/casino/sounds/', FISHOTEL_PLUGIN_FILE );
+        $draft_script    = plugins_url( 'assists/casino/draft-reveal.js', FISHOTEL_PLUGIN_FILE ) . '?v=' . FISHOTEL_VERSION;
+        $draft_nonce     = wp_create_nonce( 'fishotel_lastcall_nonce' );
+        $draft_seen      = get_user_meta( $uid, 'fishotel_lastcall_seen_reveal_' . $draft_slug, true );
 
         /* Rooms — coordinates on 1280×720 image */
         $rooms = [
@@ -471,23 +458,19 @@ class FisHotel_Arcade {
             let canClaim       = app.dataset.canClaim === '1';
             let chips          = <?php echo (int) $chips; ?>;
 
-            /* Draft reveal config */
+            /* Draft reveal config — single batch from the shortcode chain */
             const draftData = {
-                batches: <?php echo json_encode( array_map( function( $b ) use ( $uid, $ajax_url, $draft_nonce, $draft_cardface, $draft_sounds ) {
-                    return [
-                        'name'     => $b['name'],
-                        'config'   => [
-                            'ajaxUrl'   => $ajax_url,
-                            'nonce'     => $draft_nonce,
-                            'batchName' => $b['name'],
-                            'myUid'     => (int) $uid,
-                            'startLive' => ! $b['seen'],
-                            'cardBack'  => $b['cardBack'],
-                            'cardFace'  => $draft_cardface,
-                            'soundsUrl' => $draft_sounds,
-                        ],
-                    ];
-                }, $draft_batches ) ); ?>,
+                hasResults: <?php echo $has_draft ? 'true' : 'false'; ?>,
+                config: {
+                    ajaxUrl:   ajax,
+                    nonce:     '<?php echo esc_js( $draft_nonce ); ?>',
+                    batchName: '<?php echo esc_js( $draft_batch ); ?>',
+                    myUid:     <?php echo (int) $uid; ?>,
+                    startLive: <?php echo ( $has_draft && ! $draft_seen ) ? 'true' : 'false'; ?>,
+                    cardBack:  '<?php echo esc_js( $draft_cardback ); ?>',
+                    cardFace:  '<?php echo esc_js( $draft_cardface ); ?>',
+                    soundsUrl: '<?php echo esc_js( $draft_sounds ); ?>'
+                },
                 scriptUrl: '<?php echo esc_js( $draft_script ); ?>'
             };
 
@@ -705,36 +688,10 @@ class FisHotel_Arcade {
 
             /* ─── Draft Card Reveal ─── */
             function renderDraft(body) {
-                if (!draftData.batches.length) {
+                if (!draftData.hasResults) {
                     body.innerHTML = '<p style="color:#96885f;font-family:Special Elite,cursive;padding:20px 0;text-align:center;">No draft results yet.<br>Check back after the draft runs!</p>';
                     return;
                 }
-
-                /* If multiple batches have results, show a picker first */
-                if (draftData.batches.length > 1) {
-                    var html = '<p style="color:rgba(255,255,255,0.6);font-family:Oswald,sans-serif;font-size:0.85rem;letter-spacing:0.15em;text-transform:uppercase;text-align:center;margin-bottom:16px;">Select a Draft</p>';
-                    html += '<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">';
-                    draftData.batches.forEach(function(b, i) {
-                        html += '<button class="fhlc-draft-pick" data-idx="' + i + '" style="background:transparent;border:1px solid rgba(201,168,76,0.5);color:#c9a84c;font-family:Oswald,sans-serif;font-size:0.85rem;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;padding:10px 24px;border-radius:2px;cursor:pointer;transition:background 0.2s,border-color 0.2s,color 0.2s;">' + b.name + '</button>';
-                    });
-                    html += '</div>';
-                    body.innerHTML = html;
-                    body.querySelectorAll('.fhlc-draft-pick').forEach(function(btn) {
-                        btn.addEventListener('click', function() {
-                            var idx = parseInt(btn.dataset.idx, 10);
-                            loadDraftReveal(body, draftData.batches[idx].config);
-                        });
-                        btn.addEventListener('mouseenter', function() { btn.style.background = 'rgba(201,168,76,0.1)'; btn.style.borderColor = '#c9a84c'; btn.style.color = '#e8c96a'; });
-                        btn.addEventListener('mouseleave', function() { btn.style.background = 'transparent'; btn.style.borderColor = 'rgba(201,168,76,0.5)'; btn.style.color = '#c9a84c'; });
-                    });
-                    return;
-                }
-
-                /* Single batch — go straight to reveal */
-                loadDraftReveal(body, draftData.batches[0].config);
-            }
-
-            function loadDraftReveal(body, config) {
                 body.innerHTML =
                     '<style>' +
                     '.fhlc-reveal-controls{display:flex;justify-content:flex-end;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}' +
@@ -812,7 +769,7 @@ class FisHotel_Arcade {
                     '</div>';
 
                 /* Set global data and dynamically load draft-reveal.js */
-                window.fhlcDraftData = config;
+                window.fhlcDraftData = draftData.config;
                 var oldScript = document.querySelector('script[data-fhlc-draft]');
                 if (oldScript) oldScript.remove();
                 var s = document.createElement('script');

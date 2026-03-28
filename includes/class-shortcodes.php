@@ -2617,7 +2617,7 @@ trait FisHotel_Shortcodes {
         if ( $status === 'casino' ) {
             ob_end_clean();
             $arcade = new FisHotel_Arcade();
-            return $arcade->arcade_shortcode( [] );
+            return $arcade->arcade_shortcode( [ 'batch_name' => $batch_name ] );
         }
 
         // ─── Stage 7: Invoicing ──
