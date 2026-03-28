@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.10.21 - Draft Room felt background, wider popup for 6-col grid.
- * Version:           9.10.21
+ * Description:       v9.10.22 - Draft Room smaller cards in standard popup, felt background.
+ * Version:           9.10.22
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.10.21' );
+define( 'FISHOTEL_VERSION', '9.10.22' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

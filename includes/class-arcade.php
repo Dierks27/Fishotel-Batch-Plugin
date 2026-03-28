@@ -692,10 +692,9 @@ class FisHotel_Arcade {
                     body.innerHTML = '<p style="color:#96885f;font-family:Special Elite,cursive;padding:20px 0;text-align:center;">No draft results yet.<br>Check back after the draft runs!</p>';
                     return;
                 }
-                /* Widen popup and add felt background */
+                /* Add felt background */
                 var popup = document.querySelector('.fh-arc-popup');
                 if (popup) {
-                    popup.style.width = 'min(820px,95vw)';
                     popup.style.background = "url('<?php echo esc_js( $felt_url ); ?>') center/cover #0a3d1f";
                 }
                 body.innerHTML =
@@ -709,7 +708,7 @@ class FisHotel_Arcade {
                     '.fhlc-card-stage{perspective:1200px;min-height:280px;margin-bottom:16px;}' +
                     '.fhlc-round-label{font-family:Oswald,sans-serif;font-size:0.8rem;color:#c9a84c;text-transform:uppercase;letter-spacing:0.2em;text-align:right;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(201,168,76,0.3);}' +
                     '.fhlc-reveal-divider{border:none;border-top:1px solid rgba(201,168,76,0.25);margin:24px 0 8px;}' +
-                    '.fhlc-card-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}' +
+                    '.fhlc-card-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}' +
                     '.fhlc-deal-card{width:100%;aspect-ratio:675/1044;position:relative;transform-style:preserve-3d;cursor:default;}' +
                     '.fhlc-deal-card.fhlc-entering{animation:fhlcDealIn 0.35s ease-out forwards;}' +
                     '.fhlc-deal-card.fhlc-flipping .fhlc-card-inner{transform:rotateY(180deg);}' +
@@ -720,12 +719,12 @@ class FisHotel_Arcade {
                     '.fhlc-card-front,.fhlc-card-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:8px;overflow:hidden;}' +
                     '.fhlc-card-back{background-size:cover;background-position:center;box-shadow:0 6px 24px rgba(0,0,0,0.5);}' +
                     '.fhlc-card-front{transform:rotateY(180deg);background-color:#faf8f2;background-size:100% 100%;background-repeat:no-repeat;box-shadow:0 6px 24px rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10% 16%;text-align:center;}' +
-                    '.fhlc-card-front .fhlc-cf-round{font-family:Courier New,monospace;font-size:clamp(8px,1.2vw,11px);color:#888;text-transform:uppercase;letter-spacing:0.1em;margin-top:12%;text-align:center;}' +
-                    '.fhlc-card-front .fhlc-cf-fish{font-family:Pompiere,Tulpen One,cursive;font-size:clamp(10px,1.4vw,16px);font-weight:400;color:#1a1a1a;margin:3% 0;line-height:1.3;width:100%;overflow:visible;word-break:break-word;text-transform:none;}' +
-                    '.fhlc-card-front .fhlc-cf-customer{font-family:Special Elite,cursive;font-size:clamp(8px,1.2vw,12px);color:#96885f;width:100%;overflow:hidden;word-break:break-word;margin-bottom:2%;}' +
-                    '.fhlc-card-front .fhlc-cf-qty{font-family:Courier New,monospace;font-size:clamp(8px,1.1vw,10px);color:#666;margin-top:0;}' +
-                    '.fhlc-card-front .fhlc-cf-suit{position:absolute;top:4%;left:5%;font-size:clamp(10px,1.4vw,16px);}' +
-                    '.fhlc-card-front .fhlc-cf-suit-br{position:absolute;bottom:4%;right:5%;font-size:clamp(10px,1.4vw,16px);transform:rotate(180deg);}' +
+                    '.fhlc-card-front .fhlc-cf-round{font-family:Courier New,monospace;font-size:clamp(6px,0.8vw,9px);color:#888;text-transform:uppercase;letter-spacing:0.1em;margin-top:12%;text-align:center;}' +
+                    '.fhlc-card-front .fhlc-cf-fish{font-family:Pompiere,Tulpen One,cursive;font-size:clamp(8px,1vw,12px);font-weight:400;color:#1a1a1a;margin:3% 0;line-height:1.3;width:100%;overflow:visible;word-break:break-word;text-transform:none;}' +
+                    '.fhlc-card-front .fhlc-cf-customer{font-family:Special Elite,cursive;font-size:clamp(6px,0.9vw,10px);color:#96885f;width:100%;overflow:hidden;word-break:break-word;margin-bottom:2%;}' +
+                    '.fhlc-card-front .fhlc-cf-qty{font-family:Courier New,monospace;font-size:clamp(6px,0.8vw,9px);color:#666;margin-top:0;}' +
+                    '.fhlc-card-front .fhlc-cf-suit{position:absolute;top:4%;left:5%;font-size:clamp(8px,1vw,12px);}' +
+                    '.fhlc-card-front .fhlc-cf-suit-br{position:absolute;bottom:4%;right:5%;font-size:clamp(8px,1vw,12px);transform:rotate(180deg);}' +
                     '@keyframes fhlcDealIn{from{opacity:0;transform:translateY(-40px) scale(0.85);}to{opacity:1;transform:translateY(0) scale(1);}}' +
                     '.fhlc-mobile-table{display:none;}' +
                     '.fhlc-mobile-table table{width:100%;border-collapse:collapse;background:transparent!important;border:none!important;}' +
