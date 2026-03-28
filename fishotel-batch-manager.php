@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.10.18 - Draft Room rename, fix batch lookup to scan all batches for results.
- * Version:           9.10.18
+ * Description:       v9.10.19 - Draft Room multi-batch picker, scan page assignments + statuses for results.
+ * Version:           9.10.19
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.10.18' );
+define( 'FISHOTEL_VERSION', '9.10.19' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
