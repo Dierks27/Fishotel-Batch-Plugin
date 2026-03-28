@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.10.6 - Tulpen One fish font, gold ribbon, random suits, customer name scaling, round label center.
- * Version:           9.10.6
+ * Description:       v9.10.7 - Ribbon corner fix, bold fish name, tighter card padding, suits to edges.
+ * Version:           9.10.7
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.10.6' );
+define( 'FISHOTEL_VERSION', '9.10.7' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
