@@ -706,7 +706,7 @@ class FisHotel_Arcade {
                     '.fhlc-skip{background:none;border:1px solid #444;color:#888;font-size:0.72rem;padding:4px 14px;border-radius:4px;cursor:pointer;font-family:Courier New,monospace;}' +
                     '.fhlc-skip:hover{color:#c9a84c;border-color:#c9a84c;}' +
                     '.fhlc-card-stage{perspective:1200px;min-height:280px;margin-bottom:16px;}' +
-                    '.fhlc-round-label{font-family:Oswald,sans-serif;font-size:0.8rem;color:#c9a84c;text-transform:uppercase;letter-spacing:0.2em;text-align:right;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(201,168,76,0.3);}' +
+                    '.fhlc-round-label{font-family:Oswald,sans-serif;font-size:0.75rem;color:#c9a84c;text-transform:uppercase;letter-spacing:0.2em;text-align:right;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid rgba(201,168,76,0.3);}' +
                     '.fhlc-reveal-divider{border:none;border-top:1px solid rgba(201,168,76,0.25);margin:24px 0 8px;}' +
                     '.fhlc-card-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}' +
                     '.fhlc-deal-card{width:100%;aspect-ratio:675/1044;position:relative;transform-style:preserve-3d;cursor:default;}' +
@@ -719,7 +719,7 @@ class FisHotel_Arcade {
                     '.fhlc-card-front,.fhlc-card-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:8px;overflow:hidden;}' +
                     '.fhlc-card-back{background-size:cover;background-position:center;box-shadow:0 6px 24px rgba(0,0,0,0.5);}' +
                     '.fhlc-card-front{transform:rotateY(180deg);background-color:#faf8f2;background-size:100% 100%;background-repeat:no-repeat;box-shadow:0 6px 24px rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10% 16%;text-align:center;}' +
-                    '.fhlc-card-front .fhlc-cf-round{font-family:Courier New,monospace;font-size:clamp(6px,0.8vw,9px);color:#888;text-transform:uppercase;letter-spacing:0.1em;margin-top:12%;text-align:center;}' +
+                    '.fhlc-card-front .fhlc-cf-round{display:none;}' +
                     '.fhlc-card-front .fhlc-cf-fish{font-family:Pompiere,Tulpen One,cursive;font-size:clamp(8px,1vw,12px);font-weight:400;color:#1a1a1a;margin:3% 0;line-height:1.3;width:100%;overflow:visible;word-break:break-word;text-transform:none;}' +
                     '.fhlc-card-front .fhlc-cf-customer{font-family:Special Elite,cursive;font-size:clamp(6px,0.9vw,10px);color:#96885f;width:100%;overflow:hidden;word-break:break-word;margin-bottom:2%;}' +
                     '.fhlc-card-front .fhlc-cf-qty{font-family:Courier New,monospace;font-size:clamp(6px,0.8vw,9px);color:#666;margin-top:0;}' +
