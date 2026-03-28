@@ -184,12 +184,13 @@
         fullResults.innerHTML = html;
     }
 
-    /* ── Shrink fish name text to fit card width ── */
-    function fitFishNames() {
-        stageEl.querySelectorAll('.fhlc-cf-fish[data-autofit]').forEach(function (el) {
+    /* ── Shrink text to fit card width ── */
+    function fitTextElements() {
+        stageEl.querySelectorAll('[data-autofit]').forEach(function (el) {
+            var minSize = parseFloat(el.dataset.autofit) || 8;
             var fs = parseFloat(window.getComputedStyle(el).fontSize);
             var safety = 0;
-            while (el.scrollWidth > el.offsetWidth + 2 && fs > 8 && safety < 30) {
+            while (el.scrollWidth > el.offsetWidth + 2 && fs > minSize && safety < 30) {
                 fs -= 0.5;
                 el.style.fontSize = fs + 'px';
                 safety++;
@@ -197,11 +198,20 @@
         });
     }
 
+    /* ── Random suit selection ── */
+    var suits = [
+        { ch: '\u2660', color: '#111' },  // spade
+        { ch: '\u2665', color: '#b00' },  // heart
+        { ch: '\u2666', color: '#b00' },  // diamond
+        { ch: '\u2663', color: '#111' }   // club
+    ];
+
     /* ── Create a card DOM element (face-down) ── */
     function createCard(pick, idx) {
         var isMine = myUid && parseInt(pick.user_id, 10) === myUid;
-        var suit   = (idx % 2 === 0) ? '\u2660' : '\u2665';
-        var suitColor = (idx % 2 === 0) ? '#111' : '#b00';
+        var suitIdx = Math.floor(Math.random() * suits.length);
+        var suit      = suits[suitIdx].ch;
+        var suitColor = suits[suitIdx].color;
         var name   = pick.hf_username || pick.display_name || 'User #' + pick.user_id;
 
         var card = document.createElement('div');
@@ -224,8 +234,8 @@
             '<span class="fhlc-cf-suit" style="color:' + suitColor + ';">' + suit + '</span>' +
             '<span class="fhlc-cf-suit-br" style="color:' + suitColor + ';">' + suit + '</span>' +
             '<span class="fhlc-cf-round">Round ' + pick.round + '</span>' +
-            '<span class="fhlc-cf-fish" data-autofit="1">' + esc(pick.fish_name) + '</span>' +
-            '<span class="fhlc-cf-customer">' + esc(name) + '</span>' +
+            '<span class="fhlc-cf-fish" data-autofit="10">' + esc(pick.fish_name) + '</span>' +
+            '<span class="fhlc-cf-customer" data-autofit="7">' + esc(name) + '</span>' +
             '<span class="fhlc-cf-qty">&times;' + pick.qty + '</span>';
 
         inner.appendChild(back);
@@ -373,7 +383,7 @@
             setTimeout(function () {
                 if (isMine) card.classList.add('fhlc-mine');
                 addMobileRow(pick);
-                fitFishNames();
+                fitTextElements();
 
                 setTimeout(function () {
                     flipCards(cardEls, rPicks, idx + 1, done);
@@ -435,7 +445,7 @@
 
         applyFilter();
         // Shrink long fish names after cards are in DOM
-        setTimeout(fitFishNames, 50);
+        setTimeout(fitTextElements, 50);
     }
 
 })();

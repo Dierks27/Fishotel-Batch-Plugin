@@ -4052,7 +4052,7 @@ trait FisHotel_Shortcodes {
         }
         $has_folio = ! empty( $folio_items );
 
-        $fonts_url = 'https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Special+Elite&family=Klee+One&family=Righteous&family=Dancing+Script:wght@600&display=swap';
+        $fonts_url = 'https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Special+Elite&family=Klee+One&family=Righteous&family=Dancing+Script:wght@600&family=Tulpen+One&display=swap';
         $ajax_url  = admin_url( 'admin-ajax.php' );
         $nonce     = wp_create_nonce( 'fishotel_lastcall_nonce' );
         $felt_url  = plugins_url( 'assists/casino/Felt-Table.jpg', FISHOTEL_PLUGIN_FILE );
@@ -4303,16 +4303,17 @@ trait FisHotel_Shortcodes {
                 .fhlc-deal-card{width:100%;aspect-ratio:675/1044;position:relative;transform-style:preserve-3d;cursor:default;}
                 .fhlc-deal-card.fhlc-entering{animation:fhlcDealIn 0.35s ease-out forwards;}
                 .fhlc-deal-card.fhlc-flipping .fhlc-card-inner{transform:rotateY(180deg);}
-                .fhlc-deal-card.fhlc-mine{outline:3px solid rgba(255,255,255,0.85);outline-offset:4px;border-radius:8px;}
+                .fhlc-deal-card.fhlc-mine{border-radius:8px;}
+                .fhlc-deal-card.fhlc-mine .fhlc-card-front::after{content:'★ YOURS';position:absolute;top:12px;right:-28px;background:linear-gradient(135deg,#c9a84c,#a07830);color:#fff;font-family:'Oswald',sans-serif;font-size:clamp(6px,0.9vw,9px);font-weight:600;letter-spacing:0.1em;padding:2px 30px;transform:rotate(45deg);z-index:5;box-shadow:0 2px 6px rgba(0,0,0,0.4);}
                 .fhlc-deal-card.fhlc-dimmed{opacity:0.3;transition:opacity 0.4s;}
                 .fhlc-card-inner{position:relative;width:100%;height:100%;transition:transform 0.6s ease-in-out;transform-style:preserve-3d;}
                 .fhlc-card-front,.fhlc-card-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:8px;overflow:hidden;}
                 .fhlc-card-back{background-size:cover;background-position:center;box-shadow:0 6px 24px rgba(0,0,0,0.5);}
                 .fhlc-card-front{transform:rotateY(180deg);background-color:#faf8f2;background-size:100% 100%;background-repeat:no-repeat;box-shadow:0 6px 24px rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10% 12%;text-align:center;}
-                .fhlc-card-front .fhlc-cf-round{font-family:'Courier New',monospace;font-size:clamp(8px,1.2vw,11px);color:#888;text-transform:uppercase;letter-spacing:0.1em;}
-                .fhlc-card-front .fhlc-cf-fish{font-family:'Oswald',sans-serif;font-size:clamp(8px,1.4vw,14px);font-weight:600;color:#1a1a1a;margin:5% 0;line-height:1.15;width:100%;overflow:hidden;word-break:break-word;}
-                .fhlc-card-front .fhlc-cf-customer{font-family:'Special Elite',cursive;font-size:clamp(9px,1.3vw,13px);color:#96885f;}
-                .fhlc-card-front .fhlc-cf-qty{font-family:'Courier New',monospace;font-size:clamp(8px,1.1vw,10px);color:#666;margin-top:4%;}
+                .fhlc-card-front .fhlc-cf-round{font-family:'Courier New',monospace;font-size:clamp(8px,1.2vw,11px);color:#888;text-transform:uppercase;letter-spacing:0.1em;margin-top:4%;text-align:center;}
+                .fhlc-card-front .fhlc-cf-fish{font-family:'Tulpen One','Oswald',sans-serif;font-size:clamp(12px,2vw,22px);font-weight:400;color:#1a1a1a;margin:4% 0;line-height:1.1;width:100%;overflow:hidden;word-break:break-word;text-transform:uppercase;}
+                .fhlc-card-front .fhlc-cf-customer{font-family:'Special Elite',cursive;font-size:clamp(8px,1.2vw,12px);color:#96885f;width:100%;overflow:hidden;word-break:break-word;margin-bottom:2%;}
+                .fhlc-card-front .fhlc-cf-qty{font-family:'Courier New',monospace;font-size:clamp(8px,1.1vw,10px);color:#666;margin-top:0;}
                 .fhlc-card-front .fhlc-cf-suit{position:absolute;top:6%;left:8%;font-size:clamp(10px,1.4vw,16px);}
                 .fhlc-card-front .fhlc-cf-suit-br{position:absolute;bottom:6%;right:8%;font-size:clamp(10px,1.4vw,16px);transform:rotate(180deg);}
                 @keyframes fhlcDealIn{from{opacity:0;transform:translateY(-40px) scale(0.85);}to{opacity:1;transform:translateY(0) scale(1);}}
