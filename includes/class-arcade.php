@@ -692,11 +692,18 @@ class FisHotel_Arcade {
                     body.innerHTML = '<p style="color:#96885f;font-family:Special Elite,cursive;padding:20px 0;text-align:center;">No draft results yet.<br>Check back after the draft runs!</p>';
                     return;
                 }
-                /* Add felt background */
+                /* Add rail + felt background to popup */
                 var popup = document.querySelector('.fh-arc-popup');
                 if (popup) {
-                    popup.style.background = "url('<?php echo esc_js( $felt_url ); ?>') center/cover #0a3d1f";
+                    popup.style.background = 'repeating-linear-gradient(0deg,rgba(0,0,0,0.06) 0px,transparent 1px,transparent 3px,rgba(0,0,0,0.04) 4px,transparent 5px,transparent 8px,rgba(0,0,0,0.07) 9px,transparent 10px,transparent 14px),repeating-linear-gradient(2deg,rgba(120,70,30,0.07) 0px,transparent 2px,transparent 6px,rgba(80,40,10,0.05) 7px,transparent 8px,transparent 13px),linear-gradient(160deg,#5c2e0e 0%,#3b1a08 40%,#2a1005 70%,#1a0a02 100%)';
+                    popup.style.border = '3px solid #1a0a02';
+                    popup.style.boxShadow = '0 20px 60px rgba(0,0,0,0.9),0 8px 24px rgba(0,0,0,0.7),inset 0 1px 0 rgba(160,110,60,0.3)';
+                    popup.style.padding = '14px';
                 }
+                body.style.background = "url('<?php echo esc_js( $felt_url ); ?>') center/cover #0a3d1f";
+                body.style.borderRadius = '8px';
+                body.style.padding = '16px';
+                body.style.boxShadow = 'inset 0 3px 12px rgba(0,0,0,0.7),inset 0 1px 4px rgba(0,0,0,0.5)';
                 body.innerHTML =
                     '<style>' +
                     '.fhlc-reveal-controls{display:flex;justify-content:flex-end;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}' +
@@ -706,7 +713,7 @@ class FisHotel_Arcade {
                     '.fhlc-skip{background:none;border:1px solid #444;color:#888;font-size:0.72rem;padding:4px 14px;border-radius:4px;cursor:pointer;font-family:Courier New,monospace;}' +
                     '.fhlc-skip:hover{color:#c9a84c;border-color:#c9a84c;}' +
                     '.fhlc-card-stage{perspective:1200px;min-height:280px;margin-bottom:16px;}' +
-                    '.fhlc-round-label{font-family:Oswald,sans-serif;font-size:0.75rem;color:#c9a84c;text-transform:uppercase;letter-spacing:0.2em;text-align:right;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid rgba(201,168,76,0.3);}' +
+                    '.fhlc-round-label{font-family:Oswald,sans-serif;font-size:0.75rem;color:#c9a84c;text-transform:uppercase;letter-spacing:0.2em;text-align:left;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid rgba(201,168,76,0.3);}' +
                     '.fhlc-reveal-divider{border:none;border-top:1px solid rgba(201,168,76,0.25);margin:24px 0 8px;}' +
                     '.fhlc-card-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}' +
                     '.fhlc-deal-card{width:100%;aspect-ratio:675/1044;position:relative;transform-style:preserve-3d;cursor:default;}' +

@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v9.10.24 - Keep round labels above grid, only hide round text on card face.
- * Version:           9.10.24
+ * Description:       v9.10.25 - Draft Room wood rail border, felt inset, round labels left-aligned.
+ * Version:           9.10.25
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '9.10.24' );
+define( 'FISHOTEL_VERSION', '9.10.25' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
