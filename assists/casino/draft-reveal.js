@@ -1,5 +1,5 @@
 /**
- * FisHotel Draft Card Reveal — v9.10
+ * FisHotel Draft Card Reveal — v9.10.26
  * Animated card-dealing + card-flipping reveal for Last Call draft results.
  * Desktop (>768px): card grid with 3D flip animation.
  * Mobile  (<=768px): synced table with row pulse animation.

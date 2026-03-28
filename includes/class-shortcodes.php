@@ -1330,7 +1330,7 @@ trait FisHotel_Shortcodes {
                         document.getElementById('fishotel-login-modal').style.display = 'flex';
                     }
 
-                    function showHFUsernameModal(batchId, price, fishName) {
+                    function showHFUsernameModal() {
                         document.getElementById('hf-username-modal').style.display = 'flex';
                         document.getElementById('hf-username-form').onsubmit = function(e) {
                             e.preventDefault();
@@ -3103,7 +3103,6 @@ trait FisHotel_Shortcodes {
                                     if ( $my_pos > 0 ) $position_c = $my_pos . ' of ' . $total_demand;
                                 }
                                 $fish_name = trim( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', get_the_title( $bid ) ) );
-                                error_log( '[FH Debug] customs fish_name: ' . $fish_name );
                             ?>
                             <tr>
                                 <td class="fh-customs-species"><?php echo esc_html( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $fish_name ) ); ?></td>

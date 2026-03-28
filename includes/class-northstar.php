@@ -264,14 +264,12 @@ trait FisHotel_NorthStar {
                 ) );
             }
             if ( $fuzzy_id ) {
-                error_log( '[FisHotel NorthStar] Fuzzy matched "' . $lookup . '" to master "' . get_the_title( $fuzzy_id ) . '" (ID: ' . $fuzzy_id . ')' );
                 return intval( $fuzzy_id );
             }
         }
 
         // 4. No match — create new fish_master using the stripped name (or original if no strip)
         $create_name = ( $stripped !== $name && ! empty( $stripped ) ) ? $stripped : $name;
-        error_log( '[FisHotel NorthStar] Created new fish_master: ' . $create_name . ( $create_name !== $name ? ' (from: ' . $name . ')' : '' ) );
 
         $mid = wp_insert_post( [
             'post_type'   => 'fish_master',
