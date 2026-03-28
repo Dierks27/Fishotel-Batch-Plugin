@@ -262,9 +262,8 @@
             var rPicks   = grouped[rNum];
             roundIdx++;
 
-            // Sweep previous round off
+            // Sweep previous round off, then shuffle + pause before dealing
             if (roundIdx > 1) {
-                playSound('shuffle');
                 var prev = stageEl.querySelectorAll('.fhlc-round-section');
                 prev.forEach(function (section) {
                     section.style.transition = 'opacity 0.5s, transform 0.5s';
@@ -273,10 +272,18 @@
                 });
                 setTimeout(function () {
                     prev.forEach(function (s) { s.remove(); });
-                    dealRound(rNum, rPicks);
+                    // Table is now empty — shuffle, wait 1.5s, then deal
+                    playSound('shuffle');
+                    setTimeout(function () {
+                        if (!skipped) dealRound(rNum, rPicks);
+                    }, reducedMotion ? 0 : 1500);
                 }, reducedMotion ? 0 : 550);
             } else {
-                dealRound(rNum, rPicks);
+                // First round — table already empty, shuffle then deal
+                playSound('shuffle');
+                setTimeout(function () {
+                    if (!skipped) dealRound(rNum, rPicks);
+                }, reducedMotion ? 0 : 1500);
             }
         }
 
@@ -296,8 +303,6 @@
             grid.className = 'fhlc-card-grid';
             section.appendChild(grid);
             stageEl.appendChild(section);
-
-            playSound('shuffle');
 
             // Deal cards face-down with stagger
             var dealDelay = reducedMotion ? 0 : 200; // ms between each deal
