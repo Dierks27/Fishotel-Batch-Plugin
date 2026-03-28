@@ -692,6 +692,12 @@ class FisHotel_Arcade {
                     body.innerHTML = '<p style="color:#96885f;font-family:Special Elite,cursive;padding:20px 0;text-align:center;">No draft results yet.<br>Check back after the draft runs!</p>';
                     return;
                 }
+                /* Widen popup and add felt background */
+                var popup = document.querySelector('.fh-arc-popup');
+                if (popup) {
+                    popup.style.width = 'min(820px,95vw)';
+                    popup.style.background = "url('<?php echo esc_js( $felt_url ); ?>') center/cover #0a3d1f";
+                }
                 body.innerHTML =
                     '<style>' +
                     '.fhlc-reveal-controls{display:flex;justify-content:flex-end;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}' +
