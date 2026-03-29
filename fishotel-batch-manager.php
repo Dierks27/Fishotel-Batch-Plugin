@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.1 - Resort Map navigation hub (Stage 6b) with clickable hotspots.
- * Version:           10.1
+ * Description:       v10.1.1 - Add Resort-Map.jpg asset.
+ * Version:           10.1.1
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.1' );
+define( 'FISHOTEL_VERSION', '10.1.1' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
