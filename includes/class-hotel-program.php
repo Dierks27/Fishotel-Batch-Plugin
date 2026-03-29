@@ -456,7 +456,7 @@ trait FisHotel_HotelProgram {
      *  SHORTCODE — [fishotel_hotel_postcard]
      * ───────────────────────────────────────────── */
 
-    public function hotel_postcard_shortcode( $batch_name = null ) {
+    public function hotel_postcard_shortcode( $batch_name = null, $force = false ) {
         if ( is_admin() ) return '';
 
         if ( ! $batch_name ) {
@@ -468,7 +468,7 @@ trait FisHotel_HotelProgram {
         if ( ! $batch_name ) return '';
         $statuses = get_option( 'fishotel_batch_statuses', [] );
         $status   = $statuses[ $batch_name ] ?? '';
-        if ( $status !== 'in_quarantine' ) return '';
+        if ( ! $force && $status !== 'in_quarantine' ) return '';
 
         $schedule = $this->hotel_get_schedule( $batch_name );
         if ( empty( $schedule ) ) return '';

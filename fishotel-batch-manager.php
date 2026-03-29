@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.1.2 - Calibrated resort map hotspots from visual editor.
- * Version:           10.1.2
+ * Description:       v10.2 - Fix Hotel hotspot - bypass status check when called from resort map.
+ * Version:           10.2
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.1.2' );
+define( 'FISHOTEL_VERSION', '10.2' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
