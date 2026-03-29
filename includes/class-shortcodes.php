@@ -4753,7 +4753,7 @@ trait FisHotel_Shortcodes {
             ? $arcade_obj->arcade_shortcode( [ 'batch_name' => $batch_name ] )
             : '<div class="fh-arc-coming-soon"><h2>&#127918; Casino</h2><p>This area is for batch participants only.</p></div>';
         $hotel_html  = $this->hotel_postcard_shortcode( $batch_name, true );
-        $arcade_html = $arcade_obj->render_arcade_public( $batch_name );
+        $arcade_html = $arcade_obj->render_arcade_building( $batch_name );
 
         $coming_soon = '<div class="fh-arc-coming-soon"><h2>Coming Soon</h2><p>Check back for updates!</p></div>';
 

@@ -3559,6 +3559,64 @@ class FisHotel_Arcade {
     }
 
     /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     *  ARCADE BUILDING — cross-section view for resort map
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    public function render_arcade_building( $batch_name = '' ) {
+        $building_url = plugins_url( 'assists/arcade/Arcade-Building.png', FISHOTEL_PLUGIN_FILE );
+        $chip_url     = plugins_url( 'assists/casino/Casino-Chip.png', FISHOTEL_PLUGIN_FILE );
+        $logged_in    = is_user_logged_in();
+        $chips        = $logged_in ? (int) get_user_meta( get_current_user_id(), '_fishotel_casino_chips', true ) : 0;
+        $login_url    = esc_url( wp_login_url( get_permalink() ) );
+
+        ob_start();
+        ?>
+        <!-- ═══════════ FisHotel Arcade Building ═══════════ -->
+        <div class="fh-arcbld">
+
+            <!-- Top Bar -->
+            <div class="fh-arc-topbar">
+                <span class="fh-arcbld-title">FisHotel Arcade</span>
+                <?php if ( $logged_in ) : ?>
+                <div class="fh-arc-chips fh-arc-chips-mini">
+                    <img src="<?php echo esc_url( $chip_url ); ?>" class="fh-arc-chip-icon" alt="">
+                    <span class="fh-arc-chip-mirror"><?php echo number_format( $chips ); ?></span>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Building cross-section -->
+            <div class="fh-arcbld-wrap">
+                <img src="<?php echo esc_url( $building_url ); ?>"
+                     class="fh-arcbld-img<?php echo $logged_in ? '' : ' fh-arcbld-img--locked'; ?>"
+                     alt="Arcade Building">
+
+                <?php if ( ! $logged_in ) : ?>
+                <div class="fh-arcbld-login-overlay">
+                    <p class="fh-arcbld-login-msg">Please log in to play arcade games.</p>
+                    <a href="<?php echo $login_url; ?>" class="fh-arc-btn-gold">Log In</a>
+                </div>
+                <?php else : ?>
+                <!-- Game hotspots will be added here in future versions -->
+                <?php endif; ?>
+            </div>
+
+        </div>
+
+        <style>
+        .fh-arcbld{font-family:'Segoe UI',system-ui,sans-serif;color:#fff;max-width:1000px;margin:0 auto}
+        .fh-arcbld-title{font-family:'Oswald',sans-serif;font-size:clamp(14px,2.5vw,22px);font-weight:700;letter-spacing:3px;color:#b5a165;text-transform:uppercase}
+        .fh-arcbld-wrap{position:relative;width:100%;aspect-ratio:1360/1020;background:#111;overflow:hidden;border-radius:0 0 12px 12px}
+        .fh-arcbld-img{width:100%;height:100%;object-fit:cover;display:block}
+        .fh-arcbld-img--locked{filter:blur(4px) brightness(0.4)}
+        .fh-arcbld-login-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+        .fh-arcbld-login-msg{font-family:'Oswald',sans-serif;font-size:clamp(16px,3vw,24px);color:#f5f0e8;text-align:center;letter-spacing:1px}
+        </style>
+        <?php
+        return ob_get_clean();
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
      *  PUBLIC ARCADE — Strength Tester (frontend, embeds in resort map)
      * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 

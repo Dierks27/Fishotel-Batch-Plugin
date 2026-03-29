@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.2 - Fix Hotel hotspot - bypass status check when called from resort map.
- * Version:           10.2
+ * Description:       v10.3 - Arcade building cross-section view in resort map.
+ * Version:           10.3
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.2' );
+define( 'FISHOTEL_VERSION', '10.3' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
