@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FisHotel Resort Map — Hotspot Editor</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1a1a1a;
+    color: #f0f0f0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Left: canvas panel ── */
+  #canvas-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  #toolbar {
+    background: #111;
+    border-bottom: 1px solid #333;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  #toolbar h1 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #b5a165;
+    letter-spacing: 1px;
+    margin-right: 8px;
+  }
+
+  .tool-btn {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    color: #ddd;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .tool-btn:hover { background: #3a3a3a; border-color: #666; }
+  .tool-btn.active { background: #b5a165; border-color: #b5a165; color: #111; font-weight: 600; }
+  .tool-btn.danger { border-color: #c0392b; color: #e74c3c; }
+  .tool-btn.danger:hover { background: #c0392b; color: #fff; }
+
+  label.load-btn {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    color: #ddd;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  label.load-btn:hover { background: #3a3a3a; }
+  #file-input { display: none; }
+
+  #hint {
+    font-size: 12px;
+    color: #666;
+    margin-left: auto;
+  }
+
+  #canvas-wrap {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    background: #0d0d0d;
+    cursor: crosshair;
+  }
+
+  #canvas-wrap.drag-over { outline: 3px dashed #b5a165; }
+
+  #main-canvas {
+    display: block;
+    max-width: 100%;
+  }
+
+  /* ── Right: sidebar ── */
+  #sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    background: #111;
+    border-left: 1px solid #2a2a2a;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #sidebar-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #2a2a2a;
+    font-size: 13px;
+    font-weight: 600;
+    color: #b5a165;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  #hotspot-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .hs-item {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: border-color 0.15s;
+  }
+  .hs-item:hover { border-color: #555; }
+  .hs-item.selected { border-color: #b5a165; background: #242010; }
+
+  .hs-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .hs-name-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #444;
+    color: #f0f0f0;
+    font-size: 13px;
+    padding: 2px 4px;
+    outline: none;
+    min-width: 0;
+  }
+  .hs-name-input:focus { border-color: #b5a165; }
+
+  .hs-coords {
+    font-size: 10px;
+    color: #666;
+    white-space: nowrap;
+  }
+
+  .hs-del {
+    background: none;
+    border: none;
+    color: #555;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 2px;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+  .hs-del:hover { color: #e74c3c; }
+
+  /* ── Output section ── */
+  #output-section {
+    border-top: 1px solid #2a2a2a;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #output-section label {
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  #php-output {
+    background: #0d0d0d;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 10px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 11px;
+    color: #a8d8a8;
+    height: 160px;
+    overflow-y: auto;
+    white-space: pre;
+    resize: none;
+    width: 100%;
+    user-select: all;
+  }
+
+  #copy-btn {
+    background: #b5a165;
+    border: none;
+    color: #111;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  #copy-btn:hover { background: #cdb87a; }
+  #copy-btn.copied { background: #27ae60; color: #fff; }
+
+  /* ── Drop zone overlay ── */
+  #drop-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: #555;
+    pointer-events: none;
+  }
+  #drop-overlay.hidden { display: none; }
+  #drop-overlay svg { width: 64px; height: 64px; opacity: 0.3; }
+  #drop-overlay p { font-size: 16px; }
+  #drop-overlay small { font-size: 12px; color: #444; }
+</style>
+</head>
+<body>
+
+<div id="canvas-panel">
+  <div id="toolbar">
+    <h1>&#127968; Hotspot Editor</h1>
+    <label class="load-btn">
+      &#128247; Load Image
+      <input type="file" id="file-input" accept="image/*">
+    </label>
+    <button class="tool-btn" id="btn-undo">&#8617; Undo</button>
+    <button class="tool-btn danger" id="btn-clear">&#128465; Clear All</button>
+    <span id="hint">Click &amp; drag on the map to draw a hotspot</span>
+  </div>
+
+  <div id="canvas-wrap">
+    <canvas id="main-canvas"></canvas>
+    <div id="drop-overlay">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M3 9h18M9 21V9"/>
+      </svg>
+      <p>Drop Resort-Map.jpg here</p>
+      <small>or use the Load Image button above</small>
+    </div>
+  </div>
+</div>
+
+<div id="sidebar">
+  <div id="sidebar-header">Hotspots (<span id="hs-count">0</span>)</div>
+  <div id="hotspot-list"></div>
+  <div id="output-section">
+    <label>PHP Output</label>
+    <textarea id="php-output" readonly></textarea>
+    <button id="copy-btn">&#128203; Copy PHP</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const canvas   = document.getElementById('main-canvas');
+  const ctx      = canvas.getContext('2d');
+  const wrap     = document.getElementById('canvas-wrap');
+  const fileInput = document.getElementById('file-input');
+  const dropOverlay = document.getElementById('drop-overlay');
+  const phpOutput = document.getElementById('php-output');
+  const copyBtn  = document.getElementById('copy-btn');
+  const hsList   = document.getElementById('hotspot-list');
+  const hsCount  = document.getElementById('hs-count');
+
+  let img = null;
+  let hotspots = [];
+  let drawing  = false;
+  let startX   = 0, startY = 0;
+  let currentRect = null;
+  let selectedIdx = -1;
+
+  /* ── Palette ── */
+  const COLORS = [
+    '#e74c3c','#e67e22','#f1c40f','#2ecc71',
+    '#1abc9c','#3498db','#9b59b6','#e91e63',
+    '#00bcd4','#ff5722','#8bc34a','#ff9800',
+  ];
+
+  /* ── Load image ── */
+  function loadImage(src) {
+    const image = new Image();
+    image.onload = () => {
+      img = image;
+      canvas.width  = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      dropOverlay.classList.add('hidden');
+      render();
+    };
+    image.src = src;
+  }
+
+  /* Try to auto-load Resort-Map.jpg from same folder */
+  loadImage('Resort-Map.jpg');
+
+  fileInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) loadImage(URL.createObjectURL(file));
+  });
+
+  /* Drag & drop */
+  wrap.addEventListener('dragover', e => { e.preventDefault(); wrap.classList.add('drag-over'); });
+  wrap.addEventListener('dragleave', () => wrap.classList.remove('drag-over'));
+  wrap.addEventListener('drop', e => {
+    e.preventDefault();
+    wrap.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) loadImage(URL.createObjectURL(file));
+  });
+
+  /* ── Canvas coords ── */
+  function canvasXY(e) {
+    const rect  = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left)  * scaleX,
+      y: (e.clientY - rect.top)   * scaleY,
+    };
+  }
+
+  /* ── Mouse handlers ── */
+  canvas.addEventListener('mousedown', e => {
+    if (!img) return;
+    const { x, y } = canvasXY(e);
+    drawing = true;
+    startX = x; startY = y;
+    currentRect = { x, y, w: 0, h: 0 };
+    selectedIdx = -1;
+    renderList();
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    if (!drawing || !currentRect) return;
+    const { x, y } = canvasXY(e);
+    currentRect = {
+      x: Math.min(startX, x),
+      y: Math.min(startY, y),
+      w: Math.abs(x - startX),
+      h: Math.abs(y - startY),
+    };
+    render();
+  });
+
+  canvas.addEventListener('mouseup', e => {
+    if (!drawing) return;
+    drawing = false;
+    if (currentRect && currentRect.w > 5 && currentRect.h > 5) {
+      const pct = toPct(currentRect);
+      const color = COLORS[hotspots.length % COLORS.length];
+      hotspots.push({ ...pct, label: 'Location ' + (hotspots.length + 1), color });
+      currentRect = null;
+      selectedIdx = hotspots.length - 1;
+      renderList();
+      updateOutput();
+    }
+    currentRect = null;
+    render();
+  });
+
+  /* ── Convert to percentages ── */
+  function toPct(r) {
+    return {
+      x: round(r.x / canvas.width  * 100),
+      y: round(r.y / canvas.height * 100),
+      w: round(r.w / canvas.width  * 100),
+      h: round(r.h / canvas.height * 100),
+    };
+  }
+
+  function round(v) { return Math.round(v * 10) / 10; }
+
+  /* ── Render canvas ── */
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (img) ctx.drawImage(img, 0, 0);
+
+    /* Existing hotspots */
+    hotspots.forEach((hs, i) => {
+      const rx = hs.x / 100 * canvas.width;
+      const ry = hs.y / 100 * canvas.height;
+      const rw = hs.w / 100 * canvas.width;
+      const rh = hs.h / 100 * canvas.height;
+      const isSelected = i === selectedIdx;
+
+      ctx.save();
+      ctx.strokeStyle = hs.color;
+      ctx.lineWidth   = isSelected ? 3 : 2;
+      ctx.setLineDash(isSelected ? [] : [6, 3]);
+      ctx.fillStyle   = hs.color + (isSelected ? '30' : '18');
+      ctx.fillRect(rx, ry, rw, rh);
+      ctx.strokeRect(rx, ry, rw, rh);
+
+      /* Label */
+      const fontSize = Math.max(12, Math.min(20, rw * 0.12));
+      ctx.font        = `bold ${fontSize}px Oswald, sans-serif`;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign    = 'center';
+      ctx.fillStyle    = '#fff';
+      ctx.shadowColor  = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur   = 6;
+      ctx.fillText(hs.label, rx + rw / 2, ry + rh / 2);
+      ctx.restore();
+    });
+
+    /* In-progress rectangle */
+    if (currentRect && currentRect.w > 2) {
+      ctx.save();
+      ctx.strokeStyle = '#b5a165';
+      ctx.lineWidth   = 2;
+      ctx.setLineDash([6, 3]);
+      ctx.fillStyle   = 'rgba(181,161,101,0.15)';
+      ctx.fillRect(currentRect.x, currentRect.y, currentRect.w, currentRect.h);
+      ctx.strokeRect(currentRect.x, currentRect.y, currentRect.w, currentRect.h);
+      ctx.restore();
+    }
+  }
+
+  /* ── Sidebar list ── */
+  function renderList() {
+    hsList.innerHTML = '';
+    hsCount.textContent = hotspots.length;
+
+    if (hotspots.length === 0) {
+      hsList.innerHTML = '<p style="color:#555;font-size:12px;padding:12px;text-align:center;">No hotspots yet.<br>Draw rectangles on the map.</p>';
+      return;
+    }
+
+    hotspots.forEach((hs, i) => {
+      const item = document.createElement('div');
+      item.className = 'hs-item' + (i === selectedIdx ? ' selected' : '');
+      item.dataset.idx = i;
+
+      item.innerHTML =
+        `<div class="hs-color" style="background:${hs.color}"></div>` +
+        `<input class="hs-name-input" value="${escAttr(hs.label)}" data-idx="${i}" title="Click to rename">` +
+        `<span class="hs-coords">${hs.x},${hs.y}<br>${hs.w}×${hs.h}</span>` +
+        `<button class="hs-del" data-idx="${i}" title="Delete">×</button>`;
+
+      item.addEventListener('click', e => {
+        if (e.target.classList.contains('hs-del') || e.target.classList.contains('hs-name-input')) return;
+        selectedIdx = i;
+        renderList();
+        render();
+      });
+
+      hsList.appendChild(item);
+    });
+
+    /* Name inputs */
+    hsList.querySelectorAll('.hs-name-input').forEach(input => {
+      input.addEventListener('input', e => {
+        const idx = parseInt(e.target.dataset.idx);
+        hotspots[idx].label = e.target.value;
+        render();
+        updateOutput();
+      });
+      input.addEventListener('focus', e => {
+        selectedIdx = parseInt(e.target.dataset.idx);
+        renderList();
+        render();
+      });
+    });
+
+    /* Delete buttons */
+    hsList.querySelectorAll('.hs-del').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const idx = parseInt(e.target.dataset.idx);
+        hotspots.splice(idx, 1);
+        if (selectedIdx >= hotspots.length) selectedIdx = hotspots.length - 1;
+        renderList();
+        render();
+        updateOutput();
+      });
+    });
+  }
+
+  /* ── PHP output ── */
+  function phpKey(label) {
+    return label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '').substring(0, 20) || 'location';
+  }
+
+  function updateOutput() {
+    if (hotspots.length === 0) {
+      phpOutput.value = '// No hotspots defined yet.';
+      return;
+    }
+    let lines = ['$hotspots = ['];
+    hotspots.forEach(hs => {
+      const key = phpKey(hs.label);
+      lines.push(`    '${key}' => [ 'label' => '${hs.label}', 'x' => ${hs.x}, 'y' => ${hs.y}, 'w' => ${hs.w}, 'h' => ${hs.h} ],`);
+    });
+    lines.push('];');
+    phpOutput.value = lines.join('\n');
+  }
+
+  /* ── Undo / Clear ── */
+  document.getElementById('btn-undo').addEventListener('click', () => {
+    if (hotspots.length === 0) return;
+    hotspots.pop();
+    if (selectedIdx >= hotspots.length) selectedIdx = hotspots.length - 1;
+    renderList();
+    render();
+    updateOutput();
+  });
+
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    if (hotspots.length === 0) return;
+    if (confirm('Delete all hotspots?')) {
+      hotspots = [];
+      selectedIdx = -1;
+      renderList();
+      render();
+      updateOutput();
+    }
+  });
+
+  /* ── Copy ── */
+  copyBtn.addEventListener('click', () => {
+    phpOutput.select();
+    navigator.clipboard.writeText(phpOutput.value).then(() => {
+      copyBtn.textContent = '✓ Copied!';
+      copyBtn.classList.add('copied');
+      setTimeout(() => {
+        copyBtn.textContent = '📋 Copy PHP';
+        copyBtn.classList.remove('copied');
+      }, 2000);
+    });
+  });
+
+  /* ── Keyboard: Delete selected, Escape deselect ── */
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIdx >= 0 &&
+        document.activeElement.tagName !== 'INPUT') {
+      hotspots.splice(selectedIdx, 1);
+      selectedIdx = Math.min(selectedIdx, hotspots.length - 1);
+      renderList(); render(); updateOutput();
+    }
+    if (e.key === 'Escape') { selectedIdx = -1; renderList(); render(); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      if (hotspots.length > 0) { hotspots.pop(); selectedIdx = hotspots.length - 1; }
+      renderList(); render(); updateOutput();
+    }
+  });
+
+  function escAttr(s) {
+    return s.replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  /* Init */
+  renderList();
+  updateOutput();
+})();
+</script>
+</body>
+</html>
