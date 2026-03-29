@@ -4759,12 +4759,11 @@ trait FisHotel_Shortcodes {
 
         /* Hotspot definitions — x/y/w/h as % of image, approximate positions for Resort-Map.jpg */
         $hotspots = [
-            'hotel'   => [ 'label' => 'Hotel',    'x' => 15, 'y' => 10, 'w' => 20, 'h' => 30 ],
-            'casino'  => [ 'label' => 'Casino',   'x' => 55, 'y' =>  8, 'w' => 20, 'h' => 27 ],
-            'arcade'  => [ 'label' => 'Arcade',   'x' => 60, 'y' => 45, 'w' => 20, 'h' => 20 ],
-            'pool'    => [ 'label' => 'Pool',     'x' => 10, 'y' => 50, 'w' => 20, 'h' => 20 ],
-            'beach'   => [ 'label' => 'Beach',    'x' => 30, 'y' => 65, 'w' => 40, 'h' => 20 ],
-            'tikibar' => [ 'label' => 'Tiki Bar', 'x' => 38, 'y' => 50, 'w' => 14, 'h' => 12 ],
+            'arcade'     => [ 'label' => 'Arcade',     'x' => 55.8, 'y' => 54.9, 'w' => 19.2, 'h' => 26.4 ],
+            'casino'     => [ 'label' => 'Casino',     'x' => 56.4, 'y' =>  9.8, 'w' => 23.7, 'h' => 44.5 ],
+            'hotel'      => [ 'label' => 'Hotel',      'x' => 22.9, 'y' =>  6.9, 'w' => 32.5, 'h' => 54.2 ],
+            'pool'       => [ 'label' => 'Pool',       'x' => 13.8, 'y' => 65.3, 'w' => 13.8, 'h' => 17.7 ],
+            'beach_area' => [ 'label' => 'Beach Area', 'x' => 28.9, 'y' => 63.2, 'w' => 26.0, 'h' => 31.2 ],
         ];
 
         ob_start();
@@ -4833,14 +4832,7 @@ trait FisHotel_Shortcodes {
                 <?php echo $coming_soon; ?>
             </div>
 
-            <div id="fh-rm-loc-beach" class="fh-rm-location" style="display:none;">
-                <div class="fh-rm-loc-bar">
-                    <button type="button" class="fh-rm-back-btn fh-arc-btn-back">&#8592; Resort Map</button>
-                </div>
-                <?php echo $coming_soon; ?>
-            </div>
-
-            <div id="fh-rm-loc-tikibar" class="fh-rm-location" style="display:none;">
+            <div id="fh-rm-loc-beach_area" class="fh-rm-location" style="display:none;">
                 <div class="fh-rm-loc-bar">
                     <button type="button" class="fh-rm-back-btn fh-arc-btn-back">&#8592; Resort Map</button>
                 </div>
