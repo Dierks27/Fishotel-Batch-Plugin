@@ -2613,11 +2613,10 @@ trait FisHotel_Shortcodes {
             return $this->render_last_call_page( $batch_name );
         }
 
-        // ─── Stage 6b: Casino intermission ──
+        // ─── Stage 6b: Resort Map navigation hub ──
         if ( $status === 'casino' ) {
             ob_end_clean();
-            $arcade = new FisHotel_Arcade();
-            return $arcade->arcade_shortcode( [ 'batch_name' => $batch_name ] );
+            return $this->render_resort_map( $batch_name );
         }
 
         // ─── Stage 7: Invoicing ──
@@ -4714,6 +4713,205 @@ trait FisHotel_Shortcodes {
             }
             window.addEventListener('resize', scaleNapkin);
             scaleNapkin();
+        })();
+        </script>
+
+        <?php
+        return ob_get_clean();
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     *  RESORT MAP — Stage 6b navigation hub
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    private function render_resort_map( $batch_name ) {
+        $uid     = get_current_user_id();
+        $chips   = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
+        $map_url = plugins_url( 'assists/resort/Resort-Map.jpg', FISHOTEL_PLUGIN_FILE );
+        $chip_url = plugins_url( 'assists/casino/Casino-Chip.png', FISHOTEL_PLUGIN_FILE );
+
+        /* Check batch participation (for Casino access) */
+        $is_participant = false;
+        if ( $uid ) {
+            if ( current_user_can( 'manage_options' ) ) {
+                $is_participant = true;
+            } else {
+                $reqs = get_posts( [
+                    'post_type'   => 'fish_request',
+                    'numberposts' => 1,
+                    'post_status' => 'any',
+                    'author'      => $uid,
+                    'meta_query'  => [ [ 'key' => '_batch_name', 'value' => $batch_name, 'compare' => '=' ] ],
+                ] );
+                $is_participant = ! empty( $reqs );
+            }
+        }
+
+        /* Pre-render location panels */
+        $arcade_obj  = new FisHotel_Arcade();
+        $casino_html = $is_participant
+            ? $arcade_obj->arcade_shortcode( [ 'batch_name' => $batch_name ] )
+            : '<div class="fh-arc-coming-soon"><h2>&#127918; Casino</h2><p>This area is for batch participants only.</p></div>';
+        $hotel_html  = $this->hotel_postcard_shortcode( $batch_name );
+        $arcade_html = $arcade_obj->render_arcade_public( $batch_name );
+
+        $coming_soon = '<div class="fh-arc-coming-soon"><h2>Coming Soon</h2><p>Check back for updates!</p></div>';
+
+        /* Hotspot definitions — x/y/w/h as % of image, approximate positions for Resort-Map.jpg */
+        $hotspots = [
+            'hotel'   => [ 'label' => 'Hotel',    'x' => 15, 'y' => 10, 'w' => 20, 'h' => 30 ],
+            'casino'  => [ 'label' => 'Casino',   'x' => 55, 'y' =>  8, 'w' => 20, 'h' => 27 ],
+            'arcade'  => [ 'label' => 'Arcade',   'x' => 60, 'y' => 45, 'w' => 20, 'h' => 20 ],
+            'pool'    => [ 'label' => 'Pool',     'x' => 10, 'y' => 50, 'w' => 20, 'h' => 20 ],
+            'beach'   => [ 'label' => 'Beach',    'x' => 30, 'y' => 65, 'w' => 40, 'h' => 20 ],
+            'tikibar' => [ 'label' => 'Tiki Bar', 'x' => 38, 'y' => 50, 'w' => 14, 'h' => 12 ],
+        ];
+
+        ob_start();
+        ?>
+        <!-- ═══════════ FisHotel Resort Map ═══════════ -->
+        <div id="fh-resort-map">
+
+            <!-- ─── Map View ─── -->
+            <div id="fh-rm-map-view">
+                <div class="fh-rm-header">
+                    <span class="fh-rm-title">THE FISHOTEL RESORT</span>
+                    <div class="fh-arc-chips fh-arc-chips-mini">
+                        <img src="<?php echo esc_url( $chip_url ); ?>" class="fh-arc-chip-icon" alt="">
+                        <span id="fh-rm-chip-count" class="fh-arc-chip-mirror"><?php echo number_format( $chips ); ?></span>
+                    </div>
+                </div>
+
+                <div class="fh-rm-map-container">
+                    <img src="<?php echo esc_url( $map_url ); ?>" class="fh-rm-map-img" alt="Resort Map">
+
+                    <?php foreach ( $hotspots as $key => $spot ) : ?>
+                    <div class="fh-rm-hotspot" data-location="<?php echo esc_attr( $key ); ?>"
+                         style="left:<?php echo $spot['x']; ?>%;top:<?php echo $spot['y']; ?>%;width:<?php echo $spot['w']; ?>%;height:<?php echo $spot['h']; ?>%;">
+                        <span class="fh-rm-hotspot-label"><?php echo esc_html( $spot['label'] ); ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <p class="fh-rm-hint">Click a location to explore</p>
+            </div>
+
+            <!-- ─── Location Panels (pre-rendered, hidden) ─── -->
+            <div id="fh-rm-loc-casino" class="fh-rm-location" style="display:none;">
+                <div class="fh-rm-loc-bar">
+                    <button type="button" class="fh-rm-back-btn fh-arc-btn-back">&#8592; Resort Map</button>
+                    <div class="fh-arc-chips fh-arc-chips-mini">
+                        <img src="<?php echo esc_url( $chip_url ); ?>" class="fh-arc-chip-icon" alt="">
+                        <span class="fh-arc-chip-mirror"><?php echo number_format( $chips ); ?></span>
+                    </div>
+                </div>
+                <?php echo $casino_html; ?>
+            </div>
+
+            <div id="fh-rm-loc-hotel" class="fh-rm-location" style="display:none;">
+                <div class="fh-rm-loc-bar">
+                    <button type="button" class="fh-rm-back-btn fh-arc-btn-back">&#8592; Resort Map</button>
+                </div>
+                <?php echo $hotel_html; ?>
+            </div>
+
+            <div id="fh-rm-loc-arcade" class="fh-rm-location" style="display:none;">
+                <div class="fh-rm-loc-bar">
+                    <button type="button" class="fh-rm-back-btn fh-arc-btn-back">&#8592; Resort Map</button>
+                    <div class="fh-arc-chips fh-arc-chips-mini">
+                        <img src="<?php echo esc_url( $chip_url ); ?>" class="fh-arc-chip-icon" alt="">
+                        <span class="fh-arc-chip-mirror"><?php echo number_format( $chips ); ?></span>
+                    </div>
+                </div>
+                <?php echo $arcade_html; ?>
+            </div>
+
+            <div id="fh-rm-loc-pool" class="fh-rm-location" style="display:none;">
+                <div class="fh-rm-loc-bar">
+                    <button type="button" class="fh-rm-back-btn fh-arc-btn-back">&#8592; Resort Map</button>
+                </div>
+                <?php echo $coming_soon; ?>
+            </div>
+
+            <div id="fh-rm-loc-beach" class="fh-rm-location" style="display:none;">
+                <div class="fh-rm-loc-bar">
+                    <button type="button" class="fh-rm-back-btn fh-arc-btn-back">&#8592; Resort Map</button>
+                </div>
+                <?php echo $coming_soon; ?>
+            </div>
+
+            <div id="fh-rm-loc-tikibar" class="fh-rm-location" style="display:none;">
+                <div class="fh-rm-loc-bar">
+                    <button type="button" class="fh-rm-back-btn fh-arc-btn-back">&#8592; Resort Map</button>
+                </div>
+                <?php echo $coming_soon; ?>
+            </div>
+
+        </div>
+
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap');
+        #fh-resort-map{color-scheme:dark;max-width:1000px;margin:0 auto;font-family:'Segoe UI',system-ui,sans-serif;color:#fff}
+
+        /* ─── Header ─── */
+        .fh-rm-header{background:linear-gradient(135deg,#1a3a5c 0%,#0f2a44 100%);padding:14px 24px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between}
+        .fh-rm-title{font-family:'Oswald',sans-serif;font-size:clamp(14px,2.5vw,22px);font-weight:700;letter-spacing:3px;color:#b5a165;text-transform:uppercase}
+
+        /* ─── Map Container ─── */
+        .fh-rm-map-container{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#1a1a1a;border-radius:0 0 12px 12px}
+        .fh-rm-map-img{width:100%;height:100%;object-fit:cover;display:block}
+
+        /* ─── Hotspots ─── */
+        .fh-rm-hotspot{position:absolute;cursor:pointer;border:2px solid transparent;border-radius:8px;transition:all .3s ease;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;box-sizing:border-box;min-width:44px;min-height:44px}
+        .fh-rm-hotspot:hover{border-color:rgba(181,161,101,.7);box-shadow:inset 0 0 30px rgba(181,161,101,.2),0 0 20px rgba(181,161,101,.3);background:rgba(181,161,101,.08)}
+        .fh-rm-hotspot:active{transform:scale(.98)}
+        .fh-rm-hotspot-label{font-family:'Oswald',sans-serif;font-size:clamp(10px,1.4vw,16px);font-weight:600;color:#f5f0e8;text-transform:uppercase;letter-spacing:1.5px;text-shadow:0 2px 6px rgba(0,0,0,.9),0 0 12px rgba(0,0,0,.6);opacity:0;transition:opacity .3s ease;pointer-events:none;white-space:nowrap}
+        .fh-rm-hotspot:hover .fh-rm-hotspot-label{opacity:1}
+
+        /* ─── Hint ─── */
+        .fh-rm-hint{text-align:center;font-family:'Oswald',sans-serif;font-size:13px;color:#555;letter-spacing:2px;margin:8px 0 0;text-transform:uppercase}
+
+        /* ─── Location bar (sticky back button) ─── */
+        .fh-rm-loc-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(0,0,0,.6);border-bottom:1px solid rgba(181,161,101,.2);position:sticky;top:0;z-index:100}
+
+        /* ─── Location panels ─── */
+        .fh-rm-location{animation:fh-rm-fadein .3s ease}
+        @keyframes fh-rm-fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+        /* ─── Mobile ─── */
+        @media(max-width:640px){
+            .fh-rm-header{padding:10px 14px;border-radius:8px 8px 0 0}
+            .fh-rm-map-container{border-radius:0 0 8px 8px}
+        }
+        </style>
+
+        <script>
+        (function(){
+            var map = document.getElementById('fh-resort-map');
+            if (!map) return;
+            var mapView = document.getElementById('fh-rm-map-view');
+
+            /* Hotspot click → show location panel */
+            map.querySelectorAll('.fh-rm-hotspot').forEach(function(spot) {
+                spot.addEventListener('click', function() {
+                    var loc   = this.dataset.location;
+                    var panel = document.getElementById('fh-rm-loc-' + loc);
+                    if (!panel) return;
+                    mapView.style.display = 'none';
+                    map.querySelectorAll('.fh-rm-location').forEach(function(l) { l.style.display = 'none'; });
+                    panel.style.display = '';
+                    map.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            });
+
+            /* Back button → return to map */
+            map.querySelectorAll('.fh-rm-back-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    map.querySelectorAll('.fh-rm-location').forEach(function(l) { l.style.display = 'none'; });
+                    mapView.style.display = '';
+                    map.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            });
         })();
         </script>
 

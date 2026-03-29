@@ -3559,6 +3559,93 @@ class FisHotel_Arcade {
     }
 
     /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     *  PUBLIC ARCADE — Strength Tester (frontend, embeds in resort map)
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    public function render_arcade_public( $batch_name = '' ) {
+        if ( ! is_user_logged_in() ) {
+            return '<p style="text-align:center;color:#96885f;font-family:Oswald,sans-serif;">Please <a href="' . esc_url( wp_login_url( get_permalink() ) ) . '">log in</a> to play arcade games.</p>';
+        }
+
+        $uid   = get_current_user_id();
+        $chips = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
+        $base  = plugins_url( 'assists/arcade/strength-tester-base.png', FISHOTEL_PLUGIN_FILE );
+        $puck  = plugins_url( 'assists/arcade/strength-tester-puck.png', FISHOTEL_PLUGIN_FILE );
+        $nonce = wp_create_nonce( 'fishotel_arcade_nonce' );
+        $ajax  = admin_url( 'admin-ajax.php' );
+
+        /* Enqueue assets via WP — safe to call from within shortcode content */
+        wp_enqueue_style(
+            'fishotel-arcade-styles',
+            plugins_url( 'assists/arcade/arcade-styles.css', FISHOTEL_PLUGIN_FILE ),
+            [],
+            FISHOTEL_VERSION
+        );
+        wp_enqueue_script(
+            'fishotel-arcade-scripts',
+            plugins_url( 'assists/arcade/arcade-scripts.js', FISHOTEL_PLUGIN_FILE ),
+            [ 'jquery' ],
+            FISHOTEL_VERSION,
+            true
+        );
+        wp_localize_script( 'fishotel-arcade-scripts', 'fishotelArcade', [
+            'ajaxUrl' => $ajax,
+            'nonce'   => $nonce,
+        ] );
+
+        ob_start();
+        ?>
+        <div class="fh-arcade-public">
+            <div class="fh-arcade-chip-bar">
+                <div class="fh-arcade-chip-display">
+                    <span class="fh-chip-icon">&#127922;</span>
+                    Chips: <span id="fh-arcade-chips"><?php echo (int) $chips; ?></span>
+                </div>
+            </div>
+
+            <div class="fh-arcade-game" id="fh-strength-tester">
+                <h2>Strength Tester</h2>
+
+                <div class="fh-st-machine">
+                    <img src="<?php echo esc_url( $base ); ?>" class="fh-st-base" alt="Strength Tester">
+                    <div class="fh-st-bell-glow" id="fh-st-bell-glow"></div>
+                    <div class="fh-st-puck-track">
+                        <img src="<?php echo esc_url( $puck ); ?>" class="fh-st-puck" id="fh-st-puck" alt="Puck">
+                    </div>
+                    <div class="fh-st-track">
+                        <div class="fh-st-fill" id="fh-st-fill"></div>
+                    </div>
+                    <div class="fh-st-zones">
+                        <span class="zone-bell">RING THE BELL</span>
+                        <span class="zone-super">SUPER STRONG</span>
+                        <span class="zone-strong">STRONG</span>
+                        <span class="zone-good">GOOD TRY</span>
+                        <span class="zone-miss">MISS</span>
+                    </div>
+                </div>
+
+                <div class="fh-st-controls">
+                    <div class="fh-st-bet-label">Bet Amount</div>
+                    <div class="fh-st-bet-selector">
+                        <button type="button" class="fh-st-bet active" data-bet="5">5</button>
+                        <button type="button" class="fh-st-bet" data-bet="10">10</button>
+                        <button type="button" class="fh-st-bet" data-bet="25">25</button>
+                    </div>
+                    <button type="button" id="fh-st-action" class="fh-st-action">SWING!</button>
+                    <div class="fh-st-error" id="fh-st-error"></div>
+                </div>
+
+                <div class="fh-st-result">
+                    <div class="fh-st-result-zone" id="fh-st-result-zone"></div>
+                    <div class="fh-st-result-payout" id="fh-st-result-payout"></div>
+                </div>
+            </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
      *  ARCADE ADMIN PAGE — Strength Tester
      * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
