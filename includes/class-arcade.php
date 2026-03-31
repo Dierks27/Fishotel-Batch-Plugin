@@ -3574,17 +3574,6 @@ class FisHotel_Arcade {
         <!-- ═══════════ FisHotel Arcade Building ═══════════ -->
         <div class="fh-arcbld">
 
-            <!-- Top Bar -->
-            <div class="fh-arc-topbar">
-                <span class="fh-arcbld-title">FisHotel Arcade</span>
-                <?php if ( $logged_in ) : ?>
-                <div class="fh-arc-chips fh-arc-chips-mini">
-                    <img src="<?php echo esc_url( $chip_url ); ?>" class="fh-arc-chip-icon" alt="">
-                    <span class="fh-arc-chip-mirror"><?php echo number_format( $chips ); ?></span>
-                </div>
-                <?php endif; ?>
-            </div>
-
             <!-- Building cross-section -->
             <div class="fh-arcbld-wrap">
                 <img src="<?php echo esc_url( $building_url ); ?>"

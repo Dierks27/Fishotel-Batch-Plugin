@@ -4726,9 +4726,13 @@ trait FisHotel_Shortcodes {
 
     private function render_resort_map( $batch_name ) {
         $uid     = get_current_user_id();
-        $chips   = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
-        $map_url = plugins_url( 'assists/resort/Resort-Map.jpg', FISHOTEL_PLUGIN_FILE );
-        $chip_url = plugins_url( 'assists/casino/Casino-Chip.png', FISHOTEL_PLUGIN_FILE );
+        $chips      = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
+        $wallet_bal = (int) get_user_meta( $uid, 'fishotel_wallet_balance', true );
+        $tickets    = (int) get_user_meta( $uid, 'fishotel_arcade_tickets', true );
+        $map_url    = plugins_url( 'assists/resort/Resort-Map.jpg', FISHOTEL_PLUGIN_FILE );
+        $chip_url   = plugins_url( 'assists/casino/Casino-Chip.png', FISHOTEL_PLUGIN_FILE );
+        $nickel_url = plugins_url( 'assists/arcade/arcade-nickel.png', FISHOTEL_PLUGIN_FILE );
+        $ticket_url = plugins_url( 'assists/arcade/arcade-ticket.png', FISHOTEL_PLUGIN_FILE );
 
         /* Check batch participation (for Casino access) */
         $is_participant = false;
@@ -4815,11 +4819,18 @@ trait FisHotel_Shortcodes {
             </div>
 
             <div id="fh-rm-loc-arcade" class="fh-rm-location" style="display:none;">
-                <div class="fh-rm-loc-bar">
+                <div class="fh-arcade-header">
                     <button type="button" class="fh-rm-back-btn fh-arc-btn-back">&#8592; Resort Map</button>
-                    <div class="fh-arc-chips fh-arc-chips-mini">
-                        <img src="<?php echo esc_url( $chip_url ); ?>" class="fh-arc-chip-icon" alt="">
-                        <span class="fh-arc-chip-mirror"><?php echo number_format( $chips ); ?></span>
+                    <h2 class="fh-arcade-title">FISHOTEL ARCADE</h2>
+                    <div class="fh-arcade-balances">
+                        <div class="fh-balance-item">
+                            <img src="<?php echo esc_url( $nickel_url ); ?>" alt="Nickels" class="fh-balance-icon">
+                            <span class="fh-balance-amount"><?php echo number_format( $wallet_bal ); ?></span>
+                        </div>
+                        <div class="fh-balance-item">
+                            <img src="<?php echo esc_url( $ticket_url ); ?>" alt="Tickets" class="fh-balance-icon">
+                            <span class="fh-balance-amount"><?php echo number_format( $tickets ); ?></span>
+                        </div>
                     </div>
                 </div>
                 <?php echo $arcade_html; ?>
@@ -4866,6 +4877,14 @@ trait FisHotel_Shortcodes {
         /* ─── Location bar (sticky back button) ─── */
         .fh-rm-loc-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(0,0,0,.6);border-bottom:1px solid rgba(181,161,101,.2);position:sticky;top:0;z-index:100}
 
+        /* ─── Arcade unified header ─── */
+        .fh-arcade-header{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:60px;background:linear-gradient(135deg,#1a3a5c 0%,#0f2a44 100%);border-radius:12px 12px 0 0;position:sticky;top:0;z-index:100}
+        .fh-arcade-title{font-family:'Oswald',sans-serif;font-size:clamp(14px,2.5vw,22px);font-weight:700;letter-spacing:3px;color:#b5a165;text-transform:uppercase;margin:0}
+        .fh-arcade-balances{display:flex;align-items:center;gap:20px}
+        .fh-balance-item{display:inline-flex;align-items:center;gap:8px}
+        .fh-balance-icon{width:32px;height:32px}
+        .fh-balance-amount{font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:#96885f}
+
         /* ─── Location panels ─── */
         .fh-rm-location{animation:fh-rm-fadein .3s ease}
         @keyframes fh-rm-fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -4874,6 +4893,11 @@ trait FisHotel_Shortcodes {
         @media(max-width:640px){
             .fh-rm-header{padding:10px 14px;border-radius:8px 8px 0 0}
             .fh-rm-map-container{border-radius:0 0 8px 8px}
+            .fh-arcade-header{padding:0 12px;height:50px}
+            .fh-arcade-title{font-size:14px;letter-spacing:1.5px}
+            .fh-arcade-balances{gap:12px}
+            .fh-balance-icon{width:24px;height:24px}
+            .fh-balance-amount{font-size:15px}
         }
         </style>
 
