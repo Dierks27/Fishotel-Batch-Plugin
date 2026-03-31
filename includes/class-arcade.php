@@ -3662,13 +3662,15 @@ class FisHotel_Arcade {
             return '<p style="text-align:center;color:#96885f;font-family:Oswald,sans-serif;">Please <a href="' . esc_url( wp_login_url( get_permalink() ) ) . '">log in</a> to play arcade games.</p>';
         }
 
-        $uid     = get_current_user_id();
-        $chips   = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
-        $tickets = (int) get_user_meta( $uid, 'fishotel_arcade_tickets', true );
-        $base    = plugins_url( 'assists/arcade/strength-tester-base.png', FISHOTEL_PLUGIN_FILE );
-        $puck    = plugins_url( 'assists/arcade/strength-tester-puck.png', FISHOTEL_PLUGIN_FILE );
-        $nonce   = wp_create_nonce( 'fishotel_arcade_nonce' );
-        $ajax    = admin_url( 'admin-ajax.php' );
+        $uid        = get_current_user_id();
+        $chips      = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
+        $tickets    = (int) get_user_meta( $uid, 'fishotel_arcade_tickets', true );
+        $base       = plugins_url( 'assists/arcade/strength-tester-base.png', FISHOTEL_PLUGIN_FILE );
+        $puck       = plugins_url( 'assists/arcade/strength-tester-puck.png', FISHOTEL_PLUGIN_FILE );
+        $nickel_img = plugins_url( 'assists/arcade/arcade-nickel.png', FISHOTEL_PLUGIN_FILE );
+        $ticket_img = plugins_url( 'assists/arcade/arcade-ticket.png', FISHOTEL_PLUGIN_FILE );
+        $nonce      = wp_create_nonce( 'fishotel_arcade_nonce' );
+        $ajax       = admin_url( 'admin-ajax.php' );
 
         /* Enqueue assets via WP — safe to call from within shortcode content */
         wp_enqueue_style(
@@ -3694,11 +3696,11 @@ class FisHotel_Arcade {
         <div class="fh-arcade-public">
             <div class="fh-arcade-chip-bar">
                 <div class="fh-arcade-chip-display">
-                    <span class="fh-chip-icon">&#127922;</span>
+                    <img src="<?php echo esc_url( $nickel_img ); ?>" alt="Nickels" class="fh-balance-icon">
                     Nickels: <span id="fh-arcade-chips"><?php echo (int) $chips; ?></span>
                 </div>
                 <div class="fh-arcade-ticket-display">
-                    <span class="fh-ticket-icon">&#127915;</span>
+                    <img src="<?php echo esc_url( $ticket_img ); ?>" alt="Tickets" class="fh-balance-icon">
                     Tickets: <span id="fh-arcade-tickets"><?php echo (int) $tickets; ?></span>
                 </div>
             </div>
@@ -3782,11 +3784,13 @@ class FisHotel_Arcade {
             return;
         }
 
-        $uid   = get_current_user_id();
-        $chips   = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
-        $tickets = (int) get_user_meta( $uid, 'fishotel_arcade_tickets', true );
-        $base    = plugins_url( 'assists/arcade/strength-tester-base.png', FISHOTEL_PLUGIN_FILE );
-        $puck    = plugins_url( 'assists/arcade/strength-tester-puck.png', FISHOTEL_PLUGIN_FILE );
+        $uid        = get_current_user_id();
+        $chips      = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
+        $tickets    = (int) get_user_meta( $uid, 'fishotel_arcade_tickets', true );
+        $base       = plugins_url( 'assists/arcade/strength-tester-base.png', FISHOTEL_PLUGIN_FILE );
+        $puck       = plugins_url( 'assists/arcade/strength-tester-puck.png', FISHOTEL_PLUGIN_FILE );
+        $nickel_img = plugins_url( 'assists/arcade/arcade-nickel.png', FISHOTEL_PLUGIN_FILE );
+        $ticket_img = plugins_url( 'assists/arcade/arcade-ticket.png', FISHOTEL_PLUGIN_FILE );
         ?>
         <div class="wrap fishotel-admin">
             <div class="fh-arcade-page">
@@ -3795,11 +3799,11 @@ class FisHotel_Arcade {
 
                 <div class="fh-arcade-chip-bar">
                     <div class="fh-arcade-chip-display">
-                        <span class="fh-chip-icon">&#127922;</span>
+                        <img src="<?php echo esc_url( $nickel_img ); ?>" alt="Nickels" class="fh-balance-icon">
                         Nickels: <span id="fh-arcade-chips"><?php echo $chips; ?></span>
                     </div>
                     <div class="fh-arcade-ticket-display">
-                        <span class="fh-ticket-icon">&#127915;</span>
+                        <img src="<?php echo esc_url( $ticket_img ); ?>" alt="Tickets" class="fh-balance-icon">
                         Tickets: <span id="fh-arcade-tickets"><?php echo $tickets; ?></span>
                     </div>
                 </div>

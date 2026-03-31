@@ -52,10 +52,13 @@
     border-color: #e6a800;
 }
 
-.fh-arcade-chip-display .fh-chip-icon,
-.fh-arcade-ticket-display .fh-ticket-icon {
+.fh-arcade-chip-display .fh-balance-icon,
+.fh-arcade-ticket-display .fh-balance-icon {
+    width: 20px;
+    height: 20px;
     margin-right: 6px;
-    font-size: 18px;
+    vertical-align: middle;
+    object-fit: contain;
 }
 
 /* ─── Game card ────────────────────────────────────── */
