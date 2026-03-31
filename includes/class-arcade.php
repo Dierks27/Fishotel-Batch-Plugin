@@ -3587,6 +3587,7 @@ class FisHotel_Arcade {
                     <a href="<?php echo $login_url; ?>" class="fh-arc-btn-gold">Log In</a>
                 </div>
                 <?php else : ?>
+                <!-- Strength Tester hotspot over left deck -->
                 <div class="fh-arcbld-hotspot" data-game="strength_tester"
                      style="left:15%;top:56%;width:8%;height:10%;">
                     <span class="fh-arcbld-hotspot-label">Strength Tester</span>
@@ -3616,7 +3617,7 @@ class FisHotel_Arcade {
         /* ─── Hotspots ─── */
         .fh-arcbld-hotspot{position:absolute;cursor:pointer;border:2px solid transparent;border-radius:8px;transition:all .3s ease}
         .fh-arcbld-hotspot:hover{border-color:rgba(150,136,95,.6);background:rgba(150,136,95,.1);box-shadow:0 0 16px rgba(150,136,95,.3)}
-        .fh-arcbld-hotspot-label{display:none;position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);background:rgba(26,58,92,.95);color:#96885f;padding:4px 12px;border-radius:4px;font-family:'Oswald',sans-serif;font-size:12px;white-space:nowrap;z-index:10;pointer-events:none}
+        .fh-arcbld-hotspot-label{display:none;position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);background:rgba(26,58,92,.95);color:#96885f;padding:4px 12px;border-radius:4px;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.2vw,12px);white-space:nowrap;z-index:10;pointer-events:none}
         .fh-arcbld-hotspot:hover .fh-arcbld-hotspot-label{display:block}
         /* ─── Game modal ─── */
         .fh-arcbld-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
