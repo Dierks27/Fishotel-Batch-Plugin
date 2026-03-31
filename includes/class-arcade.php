@@ -3564,10 +3564,11 @@ class FisHotel_Arcade {
 
     public function render_arcade_building( $batch_name = '' ) {
         $building_url = plugins_url( 'assists/arcade/Arcade-Building.png', FISHOTEL_PLUGIN_FILE );
-        $chip_url     = plugins_url( 'assists/casino/Casino-Chip.png', FISHOTEL_PLUGIN_FILE );
         $logged_in    = is_user_logged_in();
-        $chips        = $logged_in ? (int) get_user_meta( get_current_user_id(), '_fishotel_casino_chips', true ) : 0;
         $login_url    = esc_url( wp_login_url( get_permalink() ) );
+
+        // Get game HTML (also enqueues arcade assets via wp_enqueue)
+        $game_html = $logged_in ? $this->render_arcade_public( $batch_name ) : '';
 
         ob_start();
         ?>
@@ -3586,21 +3587,65 @@ class FisHotel_Arcade {
                     <a href="<?php echo $login_url; ?>" class="fh-arc-btn-gold">Log In</a>
                 </div>
                 <?php else : ?>
-                <!-- Game hotspots will be added here in future versions -->
+                <div class="fh-arcbld-hotspot" data-game="strength_tester"
+                     style="left:15%;top:56%;width:8%;height:10%;">
+                    <span class="fh-arcbld-hotspot-label">Strength Tester</span>
+                </div>
                 <?php endif; ?>
             </div>
+
+            <?php if ( $logged_in ) : ?>
+            <!-- Strength Tester game modal -->
+            <div class="fh-arcbld-modal" id="fh-arcbld-modal" style="display:none;">
+                <div class="fh-arcbld-modal-inner">
+                    <button class="fh-arcbld-modal-close" id="fh-arcbld-modal-close">&#10005; Close</button>
+                    <?php echo $game_html; ?>
+                </div>
+            </div>
+            <?php endif; ?>
 
         </div>
 
         <style>
         .fh-arcbld{font-family:'Segoe UI',system-ui,sans-serif;color:#fff;max-width:1000px;margin:0 auto}
-        .fh-arcbld-title{font-family:'Oswald',sans-serif;font-size:clamp(14px,2.5vw,22px);font-weight:700;letter-spacing:3px;color:#b5a165;text-transform:uppercase}
         .fh-arcbld-wrap{position:relative;width:100%;aspect-ratio:1360/1020;background:#111;overflow:hidden;border-radius:0 0 12px 12px}
         .fh-arcbld-img{width:100%;height:100%;object-fit:cover;display:block}
         .fh-arcbld-img--locked{filter:blur(4px) brightness(0.4)}
         .fh-arcbld-login-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
         .fh-arcbld-login-msg{font-family:'Oswald',sans-serif;font-size:clamp(16px,3vw,24px);color:#f5f0e8;text-align:center;letter-spacing:1px}
+        /* ─── Hotspots ─── */
+        .fh-arcbld-hotspot{position:absolute;cursor:pointer;border:2px solid transparent;border-radius:8px;transition:all .3s ease}
+        .fh-arcbld-hotspot:hover{border-color:rgba(150,136,95,.6);background:rgba(150,136,95,.1);box-shadow:0 0 16px rgba(150,136,95,.3)}
+        .fh-arcbld-hotspot-label{display:none;position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);background:rgba(26,58,92,.95);color:#96885f;padding:4px 12px;border-radius:4px;font-family:'Oswald',sans-serif;font-size:12px;white-space:nowrap;z-index:10;pointer-events:none}
+        .fh-arcbld-hotspot:hover .fh-arcbld-hotspot-label{display:block}
+        /* ─── Game modal ─── */
+        .fh-arcbld-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+        .fh-arcbld-modal-inner{position:relative;background:#1a1a1a;border:2px solid #96885f;border-radius:12px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;padding:20px}
+        .fh-arcbld-modal-close{display:block;margin:0 0 16px auto;font-family:'Oswald',sans-serif;font-size:14px;color:#96885f;background:transparent;border:1px solid #96885f;border-radius:6px;padding:6px 16px;cursor:pointer;letter-spacing:1px}
+        .fh-arcbld-modal-close:hover{background:rgba(150,136,95,.15)}
+        @media(max-width:640px){.fh-arcbld-modal{padding:10px}.fh-arcbld-modal-inner{padding:14px}}
         </style>
+
+        <script>
+        (function(){
+            var wrap = document.querySelector('.fh-arcbld-wrap');
+            if (!wrap) return;
+            wrap.querySelectorAll('.fh-arcbld-hotspot').forEach(function(hs){
+                hs.addEventListener('click', function(){
+                    var modal = document.getElementById('fh-arcbld-modal');
+                    if (modal) modal.style.display = 'flex';
+                });
+            });
+            var closeBtn = document.getElementById('fh-arcbld-modal-close');
+            if (closeBtn) closeBtn.addEventListener('click', function(){
+                document.getElementById('fh-arcbld-modal').style.display = 'none';
+            });
+            var modal = document.getElementById('fh-arcbld-modal');
+            if (modal) modal.addEventListener('click', function(e){
+                if (e.target === this) this.style.display = 'none';
+            });
+        })();
+        </script>
         <?php
         return ob_get_clean();
     }
