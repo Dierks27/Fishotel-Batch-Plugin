@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.7.1 - Use actual nickel/ticket PNG icons in arcade balance bar.
- * Version:           10.7.1
+ * Description:       v10.7.2 - Shrink close button, add spacing after Nickels/Tickets labels.
+ * Version:           10.7.2
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.7.1' );
+define( 'FISHOTEL_VERSION', '10.7.2' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
