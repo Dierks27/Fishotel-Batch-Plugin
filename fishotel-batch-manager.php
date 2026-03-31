@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.6.7 - Fine-tune zone track position to top:32% bottom:25%.
- * Version:           10.6.7
+ * Description:       v10.6.8 - Calibrated zone position and puck travel range from debug tool.
+ * Version:           10.6.8
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.6.7' );
+define( 'FISHOTEL_VERSION', '10.6.8' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

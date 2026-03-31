@@ -165,7 +165,7 @@
     }
 
     function mapPowerToPosition(pwr) {
-        return 2 + (pwr / 100) * 86;
+        return 12 + (pwr / 100) * 58;
     }
 
     function resetResult() {
