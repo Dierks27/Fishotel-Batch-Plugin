@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.3 - Arcade building cross-section view in resort map.
- * Version:           10.3
+ * Description:       v10.4 - Unified arcade header with Nickels + Tickets display.
+ * Version:           10.4
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
