@@ -3846,10 +3846,10 @@ class FisHotel_Arcade {
 
         <?php if ( current_user_can( 'manage_options' ) ) :
             $zones = get_option( 'fishotel_st_zones', [
-                'bell'   => 97,
-                'super'  => 90,
-                'strong' => 75,
-                'good'   => 50,
+                'bell'   => 85,
+                'super'  => 65,
+                'strong' => 40,
+                'good'   => 20,
             ] );
             $mults = get_option( 'fishotel_st_multipliers', [
                 'bell'   => 2.5,
@@ -3952,7 +3952,7 @@ class FisHotel_Arcade {
         }
 
         /* Read zone thresholds + multipliers from debug panel (or defaults) */
-        $z = get_option( 'fishotel_st_zones', [ 'bell' => 97, 'super' => 90, 'strong' => 75, 'good' => 50 ] );
+        $z = get_option( 'fishotel_st_zones', [ 'bell' => 85, 'super' => 65, 'strong' => 40, 'good' => 20 ] );
         $m = get_option( 'fishotel_st_multipliers', [ 'bell' => 2.5, 'super' => 1.5, 'strong' => 1, 'good' => 0 ] );
 
         if ( $power >= (int) $z['bell'] ) {
