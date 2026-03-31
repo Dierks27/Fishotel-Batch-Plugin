@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.6.3 - Overlay strength tester machine image on arcade building deck.
- * Version:           10.6.3
+ * Description:       v10.6.4 - Position strength tester on arcade building left deck.
+ * Version:           10.6.4
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.6.3' );
+define( 'FISHOTEL_VERSION', '10.6.4' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

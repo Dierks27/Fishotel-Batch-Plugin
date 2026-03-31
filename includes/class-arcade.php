@@ -3616,7 +3616,7 @@ class FisHotel_Arcade {
         .fh-arcbld-login-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
         .fh-arcbld-login-msg{font-family:'Oswald',sans-serif;font-size:clamp(16px,3vw,24px);color:#f5f0e8;text-align:center;letter-spacing:1px}
         /* ─── Game overlays on building ─── */
-        .fh-arcbld-game-overlay{position:absolute;left:8%;top:40%;width:12%;cursor:pointer;transition:all .3s ease;z-index:5}
+        .fh-arcbld-game-overlay{position:absolute;left:16.3%;top:55.5%;width:7.9%;cursor:pointer;transition:all .3s ease;z-index:5}
         .fh-arcbld-game-overlay:hover{transform:scale(1.05);filter:drop-shadow(0 0 12px rgba(150,136,95,.6))}
         .fh-arcbld-game-img{width:100%;height:auto;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
         .fh-arcbld-hotspot-label{display:none;position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);background:rgba(26,58,92,.95);color:#96885f;padding:4px 12px;border-radius:4px;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.2vw,12px);white-space:nowrap;z-index:10;pointer-events:none}
