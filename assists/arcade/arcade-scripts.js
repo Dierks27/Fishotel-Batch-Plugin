@@ -51,7 +51,7 @@
     function startSwing() {
         var chips = parseInt($chips.text(), 10) || 0;
         if (chips < selectedBet) {
-            $error.text('Not enough chips!');
+            $error.text('Not enough nickels!');
             return;
         }
         $error.text('');
@@ -147,7 +147,7 @@
             } else if (net === 0 && data.payout > 0) {
                 $payoutMsg.text('Break even — ' + data.payout + ' tickets back').removeClass('win lose').addClass('show');
             } else {
-                $payoutMsg.text('-' + data.bet + ' chips').removeClass('win').addClass('lose show');
+                $payoutMsg.text('-' + data.bet + ' nickels').removeClass('win').addClass('lose show');
             }
 
             // Update balances

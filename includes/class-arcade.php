@@ -3662,12 +3662,13 @@ class FisHotel_Arcade {
             return '<p style="text-align:center;color:#96885f;font-family:Oswald,sans-serif;">Please <a href="' . esc_url( wp_login_url( get_permalink() ) ) . '">log in</a> to play arcade games.</p>';
         }
 
-        $uid   = get_current_user_id();
-        $chips = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
-        $base  = plugins_url( 'assists/arcade/strength-tester-base.png', FISHOTEL_PLUGIN_FILE );
-        $puck  = plugins_url( 'assists/arcade/strength-tester-puck.png', FISHOTEL_PLUGIN_FILE );
-        $nonce = wp_create_nonce( 'fishotel_arcade_nonce' );
-        $ajax  = admin_url( 'admin-ajax.php' );
+        $uid     = get_current_user_id();
+        $chips   = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
+        $tickets = (int) get_user_meta( $uid, 'fishotel_arcade_tickets', true );
+        $base    = plugins_url( 'assists/arcade/strength-tester-base.png', FISHOTEL_PLUGIN_FILE );
+        $puck    = plugins_url( 'assists/arcade/strength-tester-puck.png', FISHOTEL_PLUGIN_FILE );
+        $nonce   = wp_create_nonce( 'fishotel_arcade_nonce' );
+        $ajax    = admin_url( 'admin-ajax.php' );
 
         /* Enqueue assets via WP — safe to call from within shortcode content */
         wp_enqueue_style(
@@ -3694,7 +3695,11 @@ class FisHotel_Arcade {
             <div class="fh-arcade-chip-bar">
                 <div class="fh-arcade-chip-display">
                     <span class="fh-chip-icon">&#127922;</span>
-                    Chips: <span id="fh-arcade-chips"><?php echo (int) $chips; ?></span>
+                    Nickels: <span id="fh-arcade-chips"><?php echo (int) $chips; ?></span>
+                </div>
+                <div class="fh-arcade-ticket-display">
+                    <span class="fh-ticket-icon">&#127915;</span>
+                    Tickets: <span id="fh-arcade-tickets"><?php echo (int) $tickets; ?></span>
                 </div>
             </div>
 
@@ -3709,13 +3714,6 @@ class FisHotel_Arcade {
                     </div>
                     <div class="fh-st-track">
                         <div class="fh-st-fill" id="fh-st-fill"></div>
-                    </div>
-                    <div class="fh-st-zones">
-                        <span class="zone-bell">RING THE BELL</span>
-                        <span class="zone-super">SUPER STRONG</span>
-                        <span class="zone-strong">STRONG</span>
-                        <span class="zone-good">GOOD TRY</span>
-                        <span class="zone-miss">MISS</span>
                     </div>
                 </div>
 
@@ -3785,9 +3783,10 @@ class FisHotel_Arcade {
         }
 
         $uid   = get_current_user_id();
-        $chips = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
-        $base  = plugins_url( 'assists/arcade/strength-tester-base.png', FISHOTEL_PLUGIN_FILE );
-        $puck  = plugins_url( 'assists/arcade/strength-tester-puck.png', FISHOTEL_PLUGIN_FILE );
+        $chips   = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
+        $tickets = (int) get_user_meta( $uid, 'fishotel_arcade_tickets', true );
+        $base    = plugins_url( 'assists/arcade/strength-tester-base.png', FISHOTEL_PLUGIN_FILE );
+        $puck    = plugins_url( 'assists/arcade/strength-tester-puck.png', FISHOTEL_PLUGIN_FILE );
         ?>
         <div class="wrap fishotel-admin">
             <div class="fh-arcade-page">
@@ -3797,7 +3796,11 @@ class FisHotel_Arcade {
                 <div class="fh-arcade-chip-bar">
                     <div class="fh-arcade-chip-display">
                         <span class="fh-chip-icon">&#127922;</span>
-                        Chips: <span id="fh-arcade-chips"><?php echo $chips; ?></span>
+                        Nickels: <span id="fh-arcade-chips"><?php echo $chips; ?></span>
+                    </div>
+                    <div class="fh-arcade-ticket-display">
+                        <span class="fh-ticket-icon">&#127915;</span>
+                        Tickets: <span id="fh-arcade-tickets"><?php echo $tickets; ?></span>
                     </div>
                 </div>
 
@@ -3813,13 +3816,7 @@ class FisHotel_Arcade {
                         <div class="fh-st-track">
                             <div class="fh-st-fill" id="fh-st-fill"></div>
                         </div>
-                        <div class="fh-st-zones">
-                            <span class="zone-bell">RING THE BELL</span>
-                            <span class="zone-super">SUPER STRONG</span>
-                            <span class="zone-strong">STRONG</span>
-                            <span class="zone-good">GOOD TRY</span>
-                            <span class="zone-miss">MISS</span>
-                        </div>
+                        <!-- zone labels removed — power bar only -->
                     </div>
 
                     <div class="fh-st-controls">
@@ -3860,7 +3857,7 @@ class FisHotel_Arcade {
 
         $chips = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
         if ( $chips < $bet ) {
-            wp_send_json_error( [ 'message' => 'Not enough chips.' ] );
+            wp_send_json_error( [ 'message' => 'Not enough nickels.' ] );
         }
 
         if ( $power >= 95 ) {
