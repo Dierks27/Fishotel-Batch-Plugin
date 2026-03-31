@@ -3687,9 +3687,11 @@ class FisHotel_Arcade {
             FISHOTEL_VERSION,
             true
         );
+        $st_zones = get_option( 'fishotel_st_zones', [ 'bell' => 85, 'super' => 65, 'strong' => 40, 'good' => 20 ] );
         wp_localize_script( 'fishotel-arcade-scripts', 'fishotelArcade', [
             'ajaxUrl' => $ajax,
             'nonce'   => $nonce,
+            'zones'   => $st_zones,
         ] );
 
         ob_start();
@@ -3774,9 +3776,11 @@ class FisHotel_Arcade {
             FISHOTEL_VERSION,
             true
         );
+        $st_zones = get_option( 'fishotel_st_zones', [ 'bell' => 85, 'super' => 65, 'strong' => 40, 'good' => 20 ] );
         wp_localize_script( 'fishotel-arcade-scripts', 'fishotelArcade', [
             'ajaxUrl' => admin_url( 'admin-ajax.php' ),
             'nonce'   => wp_create_nonce( 'fishotel_arcade_nonce' ),
+            'zones'   => $st_zones,
         ] );
     }
 

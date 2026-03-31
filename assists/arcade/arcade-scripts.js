@@ -176,8 +176,50 @@
         }, 1600);
     }
 
+    /**
+     * Map power to puck position so it lands in the correct visual zone
+     * on the machine artwork, regardless of where the admin sets thresholds.
+     *
+     * Visual zone bands on strength-tester-base.png (% from bottom):
+     *   Miss:         12% – 24%
+     *   Good Try:     24% – 37%
+     *   Strong:       37% – 50%
+     *   Super Strong: 50% – 62%
+     *   Ring the Bell:62% – 70%
+     */
+    var vizBands = [
+        { floor: 0,    top: 0,    posLo: 12, posHi: 24 }, // miss
+        { floor: 0,    top: 0,    posLo: 24, posHi: 37 }, // good
+        { floor: 0,    top: 0,    posLo: 37, posHi: 50 }, // strong
+        { floor: 0,    top: 0,    posLo: 50, posHi: 62 }, // super
+        { floor: 0,    top: 0,    posLo: 62, posHi: 70 }  // bell
+    ];
+
+    function rebuildBands() {
+        var z = fishotelArcade.zones || {};
+        var good   = parseInt(z.good, 10)   || 20;
+        var strong = parseInt(z.strong, 10) || 40;
+        var sup    = parseInt(z['super'], 10) || 65;
+        var bell   = parseInt(z.bell, 10)   || 85;
+
+        vizBands[0].floor = 0;      vizBands[0].top = good - 1;
+        vizBands[1].floor = good;    vizBands[1].top = strong - 1;
+        vizBands[2].floor = strong;  vizBands[2].top = sup - 1;
+        vizBands[3].floor = sup;     vizBands[3].top = bell - 1;
+        vizBands[4].floor = bell;    vizBands[4].top = 100;
+    }
+    rebuildBands();
+
     function mapPowerToPosition(pwr) {
-        return 12 + (pwr / 100) * 58;
+        for (var i = vizBands.length - 1; i >= 0; i--) {
+            var b = vizBands[i];
+            if (pwr >= b.floor) {
+                var range = b.top - b.floor;
+                var frac  = range > 0 ? (pwr - b.floor) / range : 0.5;
+                return b.posLo + frac * (b.posHi - b.posLo);
+            }
+        }
+        return 12;
     }
 
     function resetResult() {
