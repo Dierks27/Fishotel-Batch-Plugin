@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.7.6 - Puck position dynamically maps to visual zones from admin thresholds.
- * Version:           10.7.6
+ * Description:       v10.7.7 - Small corner X close button, remove inline close from balance bar.
+ * Version:           10.7.7
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.7.6' );
+define( 'FISHOTEL_VERSION', '10.7.7' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

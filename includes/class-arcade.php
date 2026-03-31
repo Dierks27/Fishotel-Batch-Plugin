@@ -3601,7 +3601,7 @@ class FisHotel_Arcade {
             <!-- Strength Tester game modal -->
             <div class="fh-arcbld-modal" id="fh-arcbld-modal" style="display:none;">
                 <div class="fh-arcbld-modal-inner">
-                    <button class="fh-arcbld-modal-close" id="fh-arcbld-modal-close">&#10005; Close</button>
+                    <button class="fh-arcbld-modal-close" id="fh-arcbld-modal-close">&#10005;</button>
                     <?php echo $game_html; ?>
                 </div>
             </div>
@@ -3625,8 +3625,8 @@ class FisHotel_Arcade {
         /* ─── Game modal ─── */
         .fh-arcbld-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
         .fh-arcbld-modal-inner{position:relative;background:#1a1a1a;border:2px solid #96885f;border-radius:12px;max-width:460px;width:100%;max-height:70vh;overflow-y:auto;padding:16px}
-        .fh-arcbld-modal-close{display:block;margin:0 0 16px auto;font-family:'Oswald',sans-serif;font-size:14px;color:#96885f;background:transparent;border:1px solid #96885f;border-radius:6px;padding:6px 16px;cursor:pointer;letter-spacing:1px}
-        .fh-arcbld-modal-close:hover{background:rgba(150,136,95,.15)}
+        .fh-arcbld-modal-close{position:absolute;top:8px;right:8px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:14px;color:#96885f;background:rgba(0,0,0,.4);border:1px solid rgba(150,136,95,.35);border-radius:4px;padding:0;cursor:pointer;z-index:10;line-height:1;transition:all .2s}
+        .fh-arcbld-modal-close:hover{color:#ffd700;background:rgba(255,255,255,.1);border-color:#ffd700}
         @media(max-width:640px){.fh-arcbld-modal{padding:10px}.fh-arcbld-modal-inner{padding:14px}}
         </style>
 
@@ -3706,7 +3706,6 @@ class FisHotel_Arcade {
                     <img src="<?php echo esc_url( $ticket_img ); ?>" alt="Tickets" class="fh-balance-icon">
                     Tickets:&nbsp;<span id="fh-arcade-tickets"><?php echo (int) $tickets; ?></span>
                 </div>
-                <button type="button" class="fh-arcade-close-btn" onclick="var c=this.closest('.fh-arc-popup');if(c){c.querySelector('.fh-arc-popup-close')?.click();}">&times;</button>
             </div>
 
             <div class="fh-arcade-game" id="fh-strength-tester">

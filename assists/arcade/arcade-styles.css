@@ -31,11 +31,6 @@
     margin: 0 0 12px;
 }
 
-/* ─── Hide popup's default close button when arcade is loaded ── */
-.fh-arc-popup:has(.fh-arcade-public) > .fh-arc-popup-close {
-    display: none !important;
-}
-
 /* ─── Balance bar ──────────────────────────────────── */
 .fh-arcade-chip-bar {
     display: flex;
