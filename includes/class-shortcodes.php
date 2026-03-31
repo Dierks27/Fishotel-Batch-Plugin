@@ -4726,9 +4726,8 @@ trait FisHotel_Shortcodes {
 
     private function render_resort_map( $batch_name ) {
         $uid     = get_current_user_id();
-        $chips      = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
-        $wallet_bal = (int) get_user_meta( $uid, 'fishotel_wallet_balance', true );
-        $tickets    = (int) get_user_meta( $uid, 'fishotel_arcade_tickets', true );
+        $chips   = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
+        $tickets = (int) get_user_meta( $uid, 'fishotel_arcade_tickets', true );
         $map_url    = plugins_url( 'assists/resort/Resort-Map.jpg', FISHOTEL_PLUGIN_FILE );
         $chip_url   = plugins_url( 'assists/casino/Casino-Chip.png', FISHOTEL_PLUGIN_FILE );
         $nickel_url = plugins_url( 'assists/arcade/arcade-nickel.png', FISHOTEL_PLUGIN_FILE );
@@ -4825,7 +4824,7 @@ trait FisHotel_Shortcodes {
                     <div class="fh-arcade-balances">
                         <div class="fh-balance-item">
                             <img src="<?php echo esc_url( $nickel_url ); ?>" alt="Nickels" class="fh-balance-icon">
-                            <span class="fh-balance-amount"><?php echo number_format( $wallet_bal ); ?></span>
+                            <span class="fh-balance-amount"><?php echo number_format( $chips ); ?></span>
                         </div>
                         <div class="fh-balance-item">
                             <img src="<?php echo esc_url( $ticket_url ); ?>" alt="Tickets" class="fh-balance-icon">
