@@ -80,6 +80,7 @@
                 '</div>' +
                 '<div class="fh-pf-controls">' +
                     '<button type="button" id="fh-pf-drop" class="fh-pf-drop-btn">DROP!</button>' +
+                    ' <button type="button" id="fh-pf-debug-toggle" style="font-size:11px;padding:4px 8px;background:#333;color:#aaa;border:1px solid #555;border-radius:4px;cursor:pointer;vertical-align:middle;">Debug</button>' +
                 '</div>' +
                 '<div class="fh-pf-messages">' +
                     '<div class="fh-pf-msg" id="fh-pf-msg"></div>' +
@@ -104,7 +105,102 @@
             var rect = $field[0].getBoundingClientRect();
             if (((e.clientY - rect.top) / rect.height) * 100 < 15) doDrop();
         });
+
+        /* Debug toggle */
+        debugOn = false;
+        $('#fh-pf-debug-toggle').on('click', function () {
+            debugOn = !debugOn;
+            $(this).css('color', debugOn ? '#0f0' : '#aaa');
+            if (debugOn) {
+                buildDebugOverlay();
+            } else {
+                $('#fh-pf-debug-overlay').remove();
+                $('#fh-pf-debug-wall').remove();
+                $('#fh-pf-debug-info').remove();
+            }
+        });
     };
+
+    /* ═══════════════════════════════════════════════════
+       DEBUG OVERLAY — shows all zones as colored boxes
+       ═══════════════════════════════════════════════════ */
+    var debugOn = false;
+
+    function buildDebugOverlay() {
+        /* Remove old debug elements */
+        $('#fh-pf-debug-overlay, #fh-pf-debug-wall, #fh-pf-debug-info').remove();
+
+        var css = 'position:absolute;pointer-events:none;z-index:50;font-family:monospace;font-size:9px;color:#fff;text-shadow:0 0 2px #000;';
+
+        /* Field bounds — green border */
+        $field.append(
+            '<div id="fh-pf-debug-overlay" style="' + css + 'left:' + FIELD.left + '%;right:' + (100 - FIELD.right) + '%;top:' + FIELD.top + '%;bottom:' + (100 - FIELD.bottom) + '%;border:2px solid lime;background:rgba(0,255,0,0.05);">' +
+                '<span style="position:absolute;top:2px;left:2px;color:lime;">FIELD BOUNDS</span>' +
+            '</div>'
+        );
+
+        /* Bottom edge — red line (win zone) */
+        $field.append(
+            '<div style="' + css + 'left:' + FIELD.left + '%;right:' + (100 - FIELD.right) + '%;top:' + FIELD.bottom + '%;height:2px;background:red;">' +
+                '<span style="position:absolute;top:-14px;right:2px;color:red;">WIN EDGE (' + FIELD.bottom + '%)</span>' +
+            '</div>'
+        );
+
+        /* Drop zone — yellow line */
+        $field.append(
+            '<div style="' + css + 'left:' + FIELD.left + '%;right:' + (100 - FIELD.right) + '%;top:' + FIELD.dropY + '%;height:2px;background:yellow;">' +
+                '<span style="position:absolute;top:2px;left:2px;color:yellow;">DROP Y (' + FIELD.dropY + '%)</span>' +
+            '</div>'
+        );
+
+        /* Pusher wall line — cyan, updates in tick */
+        $field.append(
+            '<div id="fh-pf-debug-wall" style="' + css + 'left:' + FIELD.left + '%;right:' + (100 - FIELD.right) + '%;top:0;height:2px;background:cyan;">' +
+                '<span style="position:absolute;top:2px;left:2px;color:cyan;">WALL (pusherY + IMG_H)</span>' +
+            '</div>'
+        );
+
+        /* Pusher home / max range — dashed lines */
+        $field.append(
+            '<div style="' + css + 'left:' + FIELD.left + '%;right:' + (100 - FIELD.right) + '%;top:' + FIELD.pusherHome + '%;height:1px;border-top:1px dashed #ff0;">' +
+                '<span style="position:absolute;top:2px;left:2px;color:#ff0;">PUSHER HOME (' + FIELD.pusherHome + '%)</span>' +
+            '</div>'
+        );
+        $field.append(
+            '<div style="' + css + 'left:' + FIELD.left + '%;right:' + (100 - FIELD.right) + '%;top:' + FIELD.pusherMax + '%;height:1px;border-top:1px dashed #f80;">' +
+                '<span style="position:absolute;top:2px;left:2px;color:#f80;">PUSHER MAX (' + FIELD.pusherMax + '%)</span>' +
+            '</div>'
+        );
+        $field.append(
+            '<div style="' + css + 'left:' + FIELD.left + '%;right:' + (100 - FIELD.right) + '%;top:' + (FIELD.pusherMax + PUSHER_IMG_H) + '%;height:1px;border-top:1px dashed #f00;">' +
+                '<span style="position:absolute;top:2px;left:2px;color:#f00;">WALL AT MAX (' + (FIELD.pusherMax + PUSHER_IMG_H) + '%)</span>' +
+            '</div>'
+        );
+
+        /* Info panel */
+        $field.append(
+            '<div id="fh-pf-debug-info" style="' + css + 'bottom:4px;left:4px;background:rgba(0,0,0,0.7);padding:4px 6px;border-radius:3px;line-height:1.4;z-index:60;">' +
+                'Loading...' +
+            '</div>'
+        );
+    }
+
+    function updateDebug() {
+        if (!debugOn) return;
+        var wallY = pusherY + PUSHER_IMG_H;
+        var $wall = $('#fh-pf-debug-wall');
+        if ($wall.length) $wall.css('top', wallY + '%');
+
+        var $info = $('#fh-pf-debug-info');
+        if ($info.length) {
+            $info.html(
+                'pusherY: ' + pusherY.toFixed(1) + '%<br>' +
+                'wallY: ' + wallY.toFixed(1) + '%<br>' +
+                'coins: ' + coins.length + '<br>' +
+                'moving: ' + coins.filter(function(c){return Math.abs(c.vx)+Math.abs(c.vy) > MIN_VEL;}).length
+            );
+        }
+    }
 
     /* ═══════════════════════════════════════════════════
        PRE-LOAD — packed grid below the pusher's max reach
@@ -269,6 +365,9 @@
 
         /* ── 8. DOM ── */
         updateDOM();
+
+        /* ── 9. Debug overlay ── */
+        updateDebug();
     }
 
     /* ═══════════════════════════════════════════════════
