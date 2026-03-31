@@ -11,6 +11,8 @@
     var isSwinging   = false;
     var isPlaying    = false;   // true while AJAX in flight / animation
     var power        = 0;
+    var direction    = 1;       // 1 = rising, -1 = falling (bounce mode)
+    var speed        = 3;       // current step size (varies randomly)
     var selectedBet  = 5;
     var animTimer    = null;
     var captures     = [];
@@ -64,17 +66,27 @@
         captureCount = 0;
         $captures.text('');
 
-        // Start power meter (fast loop ~1.25s per cycle)
-        power = 0;
+        // Start power meter — bouncing with random speed shifts
+        power     = 0;
+        direction = 1;
+        speed     = 3;
         $fill.css('height', '0%');
         isSwinging = true;
         $btn.text('HIT! (1 of 3)').addClass('swinging');
 
         animTimer = setInterval(function () {
-            power += 2;
-            if (power > 100) power = 0;
+            // Random speed jitter every tick (2–5 step size)
+            if (Math.random() < 0.15) {
+                speed = 2 + Math.floor(Math.random() * 4);
+            }
+            power += speed * direction;
+
+            // Bounce off top and bottom
+            if (power >= 100) { power = 100; direction = -1; }
+            if (power <= 0)   { power = 0;   direction = 1;  }
+
             $fill.css('height', power + '%');
-        }, 25);
+        }, 15);
     }
 
     function captureHit() {

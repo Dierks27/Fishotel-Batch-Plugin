@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.6.9 - Compact strength tester popup, nickels/tickets display.
- * Version:           10.6.9
+ * Description:       v10.7 - Harder strength tester, bouncing meter with speed jitter, tighter zones.
+ * Version:           10.7
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.6.9' );
+define( 'FISHOTEL_VERSION', '10.7' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

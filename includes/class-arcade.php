@@ -3860,21 +3860,21 @@ class FisHotel_Arcade {
             wp_send_json_error( [ 'message' => 'Not enough nickels.' ] );
         }
 
-        if ( $power >= 95 ) {
+        if ( $power >= 97 ) {
             $zone       = 'bell';
-            $multiplier = 3;
+            $multiplier = 2.5;
             $label      = 'RING THE BELL!';
-        } elseif ( $power >= 85 ) {
+        } elseif ( $power >= 90 ) {
             $zone       = 'super';
-            $multiplier = 2;
+            $multiplier = 1.5;
             $label      = 'SUPER STRONG!';
-        } elseif ( $power >= 70 ) {
+        } elseif ( $power >= 75 ) {
             $zone       = 'strong';
             $multiplier = 1;
             $label      = 'STRONG';
         } elseif ( $power >= 50 ) {
             $zone       = 'good';
-            $multiplier = 0.5;
+            $multiplier = 0;
             $label      = 'GOOD TRY';
         } else {
             $zone       = 'miss';

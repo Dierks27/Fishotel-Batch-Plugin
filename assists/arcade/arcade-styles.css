@@ -118,8 +118,8 @@
 /* ─── Puck ─────────────────────────────────────────── */
 .fh-st-puck {
     position: absolute;
-    width: 44px;
-    height: 44px;
+    width: 32px;
+    height: 32px;
     left: 50%;
     transform: translateX(-50%);
     bottom: 2%;
