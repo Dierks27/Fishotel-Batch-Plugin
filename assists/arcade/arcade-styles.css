@@ -31,6 +31,11 @@
     margin: 0 0 12px;
 }
 
+/* ─── Hide popup's default close button when arcade is loaded ── */
+.fh-arc-popup:has(.fh-arcade-public) > .fh-arc-popup-close {
+    display: none !important;
+}
+
 /* ─── Balance bar ──────────────────────────────────── */
 .fh-arcade-chip-bar {
     display: flex;
@@ -38,7 +43,32 @@
     align-items: center;
     gap: 10px;
     margin-bottom: 10px;
-    padding-right: 30px; /* room for the popup close button */
+}
+
+/* ─── Inline close button ─────────────────────────── */
+.fh-arcade-close-btn {
+    width: 24px;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(150, 136, 95, 0.4);
+    border-radius: 4px;
+    color: #96885f;
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin-left: auto;
+    transition: all 0.2s;
+    font-family: 'Oswald', sans-serif;
+}
+
+.fh-arcade-close-btn:hover {
+    color: #ffd700;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #ffd700;
 }
 
 .fh-arcade-chip-display,

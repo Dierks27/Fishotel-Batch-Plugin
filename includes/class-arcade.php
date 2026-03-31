@@ -43,6 +43,7 @@ class FisHotel_Arcade {
         add_action( 'admin_menu',            [ $this, 'register_arcade_admin_menu' ] );
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_arcade_admin_assets' ] );
         add_action( 'wp_ajax_fishotel_strength_tester_play', [ $this, 'ajax_strength_tester_play' ] );
+        add_action( 'wp_ajax_fishotel_st_save_zones',      [ $this, 'ajax_save_st_zones' ] );
     }
 
     /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -3703,6 +3704,7 @@ class FisHotel_Arcade {
                     <img src="<?php echo esc_url( $ticket_img ); ?>" alt="Tickets" class="fh-balance-icon">
                     Tickets:&nbsp;<span id="fh-arcade-tickets"><?php echo (int) $tickets; ?></span>
                 </div>
+                <button type="button" class="fh-arcade-close-btn" onclick="var c=this.closest('.fh-arc-popup');if(c){c.querySelector('.fh-arc-popup-close')?.click();}">&times;</button>
             </div>
 
             <div class="fh-arcade-game" id="fh-strength-tester">
@@ -3841,7 +3843,92 @@ class FisHotel_Arcade {
                 </div>
             </div>
         </div>
+
+        <?php if ( current_user_can( 'manage_options' ) ) :
+            $zones = get_option( 'fishotel_st_zones', [
+                'bell'   => 97,
+                'super'  => 90,
+                'strong' => 75,
+                'good'   => 50,
+            ] );
+            $mults = get_option( 'fishotel_st_multipliers', [
+                'bell'   => 2.5,
+                'super'  => 1.5,
+                'strong' => 1,
+                'good'   => 0,
+            ] );
+        ?>
+        <div style="max-width:500px;margin:30px auto 0;background:#1a1a1a;border:1px solid rgba(150,136,95,.35);border-radius:8px;padding:16px;">
+            <h3 style="font-family:'Oswald',sans-serif;color:#96885f;margin:0 0 12px;font-size:16px;letter-spacing:1px;text-transform:uppercase;">Zone Debug Panel</h3>
+            <p style="font-family:'Special Elite',cursive;color:#96885f;opacity:.6;font-size:12px;margin:0 0 12px;">Power thresholds (min power to reach zone) &amp; multipliers. Miss = everything below Good Try.</p>
+            <table style="width:100%;border-collapse:collapse;font-family:'Oswald',sans-serif;font-size:14px;color:#f5f0e8;">
+                <tr style="border-bottom:1px solid rgba(150,136,95,.2);">
+                    <th style="text-align:left;padding:6px 4px;color:#96885f;">Zone</th>
+                    <th style="text-align:center;padding:6px 4px;color:#96885f;">Min Power</th>
+                    <th style="text-align:center;padding:6px 4px;color:#96885f;">Multiplier</th>
+                </tr>
+                <tr><td style="padding:6px 4px;color:#ffd700;">Ring The Bell</td>
+                    <td style="text-align:center;"><input type="number" id="fh-dbg-zone-bell" value="<?php echo $zones['bell']; ?>" min="0" max="100" style="width:60px;background:#111;border:1px solid #555;border-radius:4px;color:#f5f0e8;padding:4px;text-align:center;font-family:'Oswald',sans-serif;"></td>
+                    <td style="text-align:center;"><input type="number" id="fh-dbg-mult-bell" value="<?php echo $mults['bell']; ?>" min="0" max="10" step="0.5" style="width:60px;background:#111;border:1px solid #555;border-radius:4px;color:#f5f0e8;padding:4px;text-align:center;font-family:'Oswald',sans-serif;"></td></tr>
+                <tr><td style="padding:6px 4px;color:#66ff66;">Super Strong</td>
+                    <td style="text-align:center;"><input type="number" id="fh-dbg-zone-super" value="<?php echo $zones['super']; ?>" min="0" max="100" style="width:60px;background:#111;border:1px solid #555;border-radius:4px;color:#f5f0e8;padding:4px;text-align:center;font-family:'Oswald',sans-serif;"></td>
+                    <td style="text-align:center;"><input type="number" id="fh-dbg-mult-super" value="<?php echo $mults['super']; ?>" min="0" max="10" step="0.5" style="width:60px;background:#111;border:1px solid #555;border-radius:4px;color:#f5f0e8;padding:4px;text-align:center;font-family:'Oswald',sans-serif;"></td></tr>
+                <tr><td style="padding:6px 4px;color:#66ccff;">Strong</td>
+                    <td style="text-align:center;"><input type="number" id="fh-dbg-zone-strong" value="<?php echo $zones['strong']; ?>" min="0" max="100" style="width:60px;background:#111;border:1px solid #555;border-radius:4px;color:#f5f0e8;padding:4px;text-align:center;font-family:'Oswald',sans-serif;"></td>
+                    <td style="text-align:center;"><input type="number" id="fh-dbg-mult-strong" value="<?php echo $mults['strong']; ?>" min="0" max="10" step="0.5" style="width:60px;background:#111;border:1px solid #555;border-radius:4px;color:#f5f0e8;padding:4px;text-align:center;font-family:'Oswald',sans-serif;"></td></tr>
+                <tr><td style="padding:6px 4px;color:#ffaa44;">Good Try</td>
+                    <td style="text-align:center;"><input type="number" id="fh-dbg-zone-good" value="<?php echo $zones['good']; ?>" min="0" max="100" style="width:60px;background:#111;border:1px solid #555;border-radius:4px;color:#f5f0e8;padding:4px;text-align:center;font-family:'Oswald',sans-serif;"></td>
+                    <td style="text-align:center;"><input type="number" id="fh-dbg-mult-good" value="<?php echo $mults['good']; ?>" min="0" max="10" step="0.5" style="width:60px;background:#111;border:1px solid #555;border-radius:4px;color:#f5f0e8;padding:4px;text-align:center;font-family:'Oswald',sans-serif;"></td></tr>
+                <tr><td style="padding:6px 4px;color:#888;">Miss</td>
+                    <td style="text-align:center;color:#666;">0 – <?php echo $zones['good'] - 1; ?></td>
+                    <td style="text-align:center;color:#666;">0x</td></tr>
+            </table>
+            <div style="text-align:center;margin-top:12px;">
+                <button type="button" id="fh-dbg-save-zones" style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;background:linear-gradient(135deg,#96885f,#c8a84b);color:#1a1a1a;border:none;border-radius:6px;padding:8px 24px;cursor:pointer;transition:all .2s;">Save Zones</button>
+                <span id="fh-dbg-save-msg" style="font-family:'Special Elite',cursive;font-size:13px;color:#66ff66;margin-left:10px;opacity:0;transition:opacity .3s;"></span>
+            </div>
+        </div>
+        <script>
+        (function($){
+            $('#fh-dbg-save-zones').on('click', function(){
+                var $msg = $('#fh-dbg-save-msg');
+                $.post(ajaxurl, {
+                    action: 'fishotel_st_save_zones',
+                    nonce: '<?php echo wp_create_nonce("fishotel_st_zones_nonce"); ?>',
+                    zones: JSON.stringify({
+                        bell:   parseInt($('#fh-dbg-zone-bell').val())   || 97,
+                        super:  parseInt($('#fh-dbg-zone-super').val())  || 90,
+                        strong: parseInt($('#fh-dbg-zone-strong').val()) || 75,
+                        good:   parseInt($('#fh-dbg-zone-good').val())   || 50
+                    }),
+                    mults: JSON.stringify({
+                        bell:   parseFloat($('#fh-dbg-mult-bell').val())   || 0,
+                        super:  parseFloat($('#fh-dbg-mult-super').val())  || 0,
+                        strong: parseFloat($('#fh-dbg-mult-strong').val()) || 0,
+                        good:   parseFloat($('#fh-dbg-mult-good').val())   || 0
+                    })
+                }, function(r){
+                    $msg.text(r.success ? 'Saved!' : 'Error').css('opacity',1);
+                    setTimeout(function(){ $msg.css('opacity',0); }, 2000);
+                });
+            });
+        })(jQuery);
+        </script>
+        <?php endif; ?>
         <?php
+    }
+
+    /* ─── AJAX: Save zone debug settings ──────────── */
+    public function ajax_save_st_zones() {
+        check_ajax_referer( 'fishotel_st_zones_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Not allowed.' ] );
+        }
+        $zones = json_decode( stripslashes( $_POST['zones'] ?? '{}' ), true );
+        $mults = json_decode( stripslashes( $_POST['mults'] ?? '{}' ), true );
+        if ( $zones ) update_option( 'fishotel_st_zones', $zones );
+        if ( $mults ) update_option( 'fishotel_st_multipliers', $mults );
+        wp_send_json_success();
     }
 
     public function ajax_strength_tester_play() {
@@ -3864,21 +3951,25 @@ class FisHotel_Arcade {
             wp_send_json_error( [ 'message' => 'Not enough nickels.' ] );
         }
 
-        if ( $power >= 97 ) {
+        /* Read zone thresholds + multipliers from debug panel (or defaults) */
+        $z = get_option( 'fishotel_st_zones', [ 'bell' => 97, 'super' => 90, 'strong' => 75, 'good' => 50 ] );
+        $m = get_option( 'fishotel_st_multipliers', [ 'bell' => 2.5, 'super' => 1.5, 'strong' => 1, 'good' => 0 ] );
+
+        if ( $power >= (int) $z['bell'] ) {
             $zone       = 'bell';
-            $multiplier = 2.5;
+            $multiplier = (float) $m['bell'];
             $label      = 'RING THE BELL!';
-        } elseif ( $power >= 90 ) {
+        } elseif ( $power >= (int) $z['super'] ) {
             $zone       = 'super';
-            $multiplier = 1.5;
+            $multiplier = (float) $m['super'];
             $label      = 'SUPER STRONG!';
-        } elseif ( $power >= 75 ) {
+        } elseif ( $power >= (int) $z['strong'] ) {
             $zone       = 'strong';
-            $multiplier = 1;
+            $multiplier = (float) $m['strong'];
             $label      = 'STRONG';
-        } elseif ( $power >= 50 ) {
+        } elseif ( $power >= (int) $z['good'] ) {
             $zone       = 'good';
-            $multiplier = 0;
+            $multiplier = (float) $m['good'];
             $label      = 'GOOD TRY';
         } else {
             $zone       = 'miss';
