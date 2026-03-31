@@ -3623,7 +3623,7 @@ class FisHotel_Arcade {
         .fh-arcbld-game-overlay:hover .fh-arcbld-hotspot-label{display:block}
         /* ─── Game modal ─── */
         .fh-arcbld-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
-        .fh-arcbld-modal-inner{position:relative;background:#1a1a1a;border:2px solid #96885f;border-radius:12px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;padding:20px}
+        .fh-arcbld-modal-inner{position:relative;background:#1a1a1a;border:2px solid #96885f;border-radius:12px;max-width:460px;width:100%;max-height:70vh;overflow-y:auto;padding:16px}
         .fh-arcbld-modal-close{display:block;margin:0 0 16px auto;font-family:'Oswald',sans-serif;font-size:14px;color:#96885f;background:transparent;border:1px solid #96885f;border-radius:6px;padding:6px 16px;cursor:pointer;letter-spacing:1px}
         .fh-arcbld-modal-close:hover{background:rgba(150,136,95,.15)}
         @media(max-width:640px){.fh-arcbld-modal{padding:10px}.fh-arcbld-modal-inner{padding:14px}}
