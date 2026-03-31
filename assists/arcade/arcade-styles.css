@@ -94,8 +94,7 @@
     position: relative;
     max-width: 220px;
     margin: 0 auto 6px;
-    padding-right: 18px;  /* room for thermometer + bulb */
-    padding-bottom: 8px;  /* room for bulb overhang */
+    overflow: visible;
     user-select: none;
 }
 
