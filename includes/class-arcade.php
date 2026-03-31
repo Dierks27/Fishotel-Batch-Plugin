@@ -223,8 +223,8 @@ class FisHotel_Arcade {
         .fh-arc-zoom-backdrop--visible{opacity:1}
         .fh-arc-zoom-backdrop--dimmed{background:rgba(0,0,0,.6)}
         .fh-arc-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(620px,95vw);max-height:92vh;overflow-y:auto;background:#111;border:1px solid rgba(150,136,95,.35);border-radius:12px;padding:12px 16px;box-sizing:border-box;z-index:10001;opacity:0;transition:opacity 200ms ease;font-family:'Oswald',sans-serif;color:#f5f0e8;text-align:center}
-        .fh-arc-popup-close{position:absolute;top:8px;right:10px;width:24px;height:24px;background:rgba(0,0,0,.6);border:2px solid rgba(150,136,95,.5);border-radius:50%;color:#ddd;font-size:14px;cursor:pointer;line-height:1;z-index:99;display:flex;align-items:center;justify-content:center;transition:all .2s;padding:0}
-        .fh-arc-popup-close:hover{color:#f5f0e8;background:rgba(255,255,255,.2);border-color:#ffd700}
+        .fh-arc-popup-close{position:absolute;top:10px;right:12px;width:22px;height:22px;background:rgba(0,0,0,.5);border:1px solid rgba(150,136,95,.5);border-radius:3px;color:#96885f;font-size:13px;cursor:pointer;line-height:1;z-index:99;display:flex;align-items:center;justify-content:center;transition:all .2s;padding:0;font-family:'Oswald',sans-serif}
+        .fh-arc-popup-close:hover{color:#ffd700;background:rgba(255,255,255,.12);border-color:#ffd700}
         .fh-arc-popup-body{min-height:60px}
 
         /* ─── Jackpot Modal ─── */
