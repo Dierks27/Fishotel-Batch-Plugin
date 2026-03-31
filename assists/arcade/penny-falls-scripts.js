@@ -1,8 +1,8 @@
 /**
  * FisHotel Arcade — Penny Falls Coin Pusher
  *
- * Physics v2: velocity-based with friction and momentum transfer.
- * Coins sit still until pushed. Pusher is the only force.
+ * Physics v3: Pusher is a solid wall. Coins cannot pass through it.
+ * The pusher sweeps forward and drags/pushes every coin in its path.
  *
  * Reads fishotelArcade from wp_localize_script:
  *   { ajaxUrl, nonce, pennyFalls: { playfield, coin, pusher } }
@@ -12,35 +12,35 @@
 
     /* ─── Tunables ──────────────────────────────────── */
     var FIELD = {
-        left:       10,     // % left bound of playable area
-        right:      90,     // % right bound
+        left:       8,      // % left bound of playable area
+        right:      92,     // % right bound
         top:        2,      // % top of field
-        pusherHome: 10,     // % pusher retracted position (top)
-        pusherMax:  48,     // % pusher fully extended
-        bottom:     93,     // % bottom edge — coins past here = win
-        dropY:      4       // % where new coins appear
+        pusherHome: 8,      // % pusher retracted position (top)
+        pusherMax:  45,     // % pusher fully extended
+        bottom:     94,     // % bottom edge — coins past here = win
+        dropY:      3       // % where new coins appear
     };
 
     var COIN_SIZE      = 8;     // % of field width (collision diameter)
-    var PUSHER_SPEED   = 0.018; // radians per tick (oscillation speed)
+    var PUSHER_SPEED   = 0.02;  // radians per tick (oscillation speed)
+    var PUSHER_IMG_H   = 6;     // approx % height the pusher image takes up
     var TICK_MS        = 30;    // ms per game tick
     var DROP_COST      = 1;     // nickels per coin drop
     var TICKET_PER     = 1;     // tickets per coin that falls off the front
     var MAX_COINS      = 55;    // max coins on field
     var START_COINS    = 22;    // pre-loaded coins
-    var PUSHER_DEPTH   = 4;     // % height of the pusher bar
-    var FRICTION       = 0.82;  // velocity damping per tick (lower = more friction)
-    var MIN_VEL        = 0.02;  // below this, coin stops completely
-    var PUSH_TRANSFER  = 0.55;  // fraction of velocity transferred in collision
-    var FALL_GRAVITY   = 0.8;   // gravity for coins falling from the drop zone
-    var JITTER         = 0.12;  // random lateral nudge when pushed
+    var FRICTION       = 0.78;  // velocity damping per tick
+    var MIN_VEL        = 0.03;  // below this, coin stops
+    var PUSH_TRANSFER  = 0.5;   // velocity transferred in collision
+    var FALL_SPEED     = 1.2;   // speed of coins falling from drop zone
+    var JITTER         = 0.15;  // random lateral nudge when pushed
 
     /* ─── State ─────────────────────────────────────── */
     var coins          = [];
     var nextId         = 0;
     var pusherPhase    = 0;
     var pusherY        = FIELD.pusherHome;
-    var lastPusherY    = FIELD.pusherHome;
+    var prevPusherY    = FIELD.pusherHome;
     var gameTimer      = null;
     var dropSliderX    = 50;
     var dropSliderDir  = 1;
@@ -55,7 +55,7 @@
     var $field, $pusher, $indicator, $chips, $tickets, $msg, $err, $dropBtn;
 
     /* ═══════════════════════════════════════════════════
-       RENDER — called when game modal opens
+       RENDER
        ═══════════════════════════════════════════════════ */
     window.renderPennyFalls = function (body) {
         cleanup();
@@ -97,53 +97,47 @@
         $dropBtn   = $('#fh-pf-drop');
 
         preload();
-
         gameTimer = setInterval(tick, TICK_MS);
         dropTimer = setInterval(moveIndicator, TICK_MS);
-
         $dropBtn.on('click', doDrop);
         $field.on('click', function (e) {
             var rect = $field[0].getBoundingClientRect();
-            var pctY = ((e.clientY - rect.top) / rect.height) * 100;
-            if (pctY < 15) doDrop();
+            if (((e.clientY - rect.top) / rect.height) * 100 < 15) doDrop();
         });
     };
 
     /* ═══════════════════════════════════════════════════
-       PRE-LOAD — dense pack of coins below the pusher
+       PRE-LOAD — packed grid below the pusher's max reach
        ═══════════════════════════════════════════════════ */
     function preload() {
-        /* Pack coins in a grid-ish pattern so they form a solid mass */
-        var cols = 6;
-        var rows = Math.ceil(START_COINS / cols);
-        var xStep = (FIELD.right - FIELD.left - COIN_SIZE) / (cols - 1);
-        var yStart = FIELD.pusherMax + PUSHER_DEPTH + COIN_SIZE * 0.6;
-        var yStep = COIN_SIZE * 0.85;
-        var count = 0;
+        var cols   = 6;
+        var rows   = Math.ceil(START_COINS / cols);
+        var xRange = FIELD.right - FIELD.left - COIN_SIZE;
+        var xStep  = xRange / (cols - 1);
+        var yStart = FIELD.pusherMax + PUSHER_IMG_H + COIN_SIZE * 0.6;
+        var yStep  = COIN_SIZE * 0.85;
+        var count  = 0;
 
         for (var r = 0; r < rows && count < START_COINS; r++) {
-            var offset = (r % 2 === 0) ? 0 : xStep * 0.5; // stagger rows
+            var off = (r % 2 === 0) ? 0 : xStep * 0.5;
             for (var c = 0; c < cols && count < START_COINS; c++) {
-                var x = FIELD.left + COIN_SIZE / 2 + c * xStep + offset;
+                var x = FIELD.left + COIN_SIZE / 2 + c * xStep + off;
                 var y = yStart + r * yStep;
-                /* Add slight randomness so it doesn't look robotic */
-                x += (Math.random() - 0.5) * 2;
-                y += (Math.random() - 0.5) * 1.5;
-                /* Clamp x */
-                x = Math.max(FIELD.left + COIN_SIZE / 2, Math.min(FIELD.right - COIN_SIZE / 2, x));
-                if (y < FIELD.bottom - 2) {
+                x += (Math.random() - 0.5) * 1.5;
+                y += (Math.random() - 0.5) * 1;
+                x = clampX(x);
+                if (y < FIELD.bottom - 4) {
                     spawn(x, y, true);
                     count++;
                 }
             }
         }
-        /* Settle overlaps without velocity */
         for (var p = 0; p < 20; p++) settleOverlaps();
         updateDOM();
     }
 
     /* ═══════════════════════════════════════════════════
-       SPAWN a coin
+       SPAWN
        ═══════════════════════════════════════════════════ */
     function spawn(x, y, silent) {
         var id  = nextId++;
@@ -152,8 +146,7 @@
         var el  = $('<div class="fh-pf-coin' + (silent ? '' : ' fh-pf-coin-new') + '">' +
                     '<img src="' + coinImg + '" draggable="false"></div>');
         el.css({
-            left: x + '%',
-            top:  y + '%',
+            left: x + '%', top: y + '%',
             transform: 'translate(-50%,-50%) rotate(' + rot + 'deg) scale(' + sc + ')'
         });
         $field.append(el);
@@ -161,19 +154,14 @@
     }
 
     /* ═══════════════════════════════════════════════════
-       DROP INDICATOR — slides left ↔ right
+       DROP INDICATOR
        ═══════════════════════════════════════════════════ */
     function moveIndicator() {
         if (!$indicator || !$indicator.length) return;
         dropSliderX += dropSliderDir * dropSliderSpd;
-        if (dropSliderX > FIELD.right - COIN_SIZE / 2) {
-            dropSliderX = FIELD.right - COIN_SIZE / 2;
-            dropSliderDir = -1;
-        }
-        if (dropSliderX < FIELD.left + COIN_SIZE / 2) {
-            dropSliderX = FIELD.left + COIN_SIZE / 2;
-            dropSliderDir = 1;
-        }
+        if (dropSliderX > FIELD.right - COIN_SIZE / 2) { dropSliderDir = -1; }
+        if (dropSliderX < FIELD.left  + COIN_SIZE / 2) { dropSliderDir =  1; }
+        dropSliderX = Math.max(FIELD.left + COIN_SIZE/2, Math.min(FIELD.right - COIN_SIZE/2, dropSliderX));
         $indicator.css('left', dropSliderX + '%');
     }
 
@@ -182,8 +170,7 @@
        ═══════════════════════════════════════════════════ */
     function doDrop() {
         if (isDropping) return;
-        if (coins.length >= MAX_COINS) { showErr('Table full — wait for coins to fall!'); return; }
-
+        if (coins.length >= MAX_COINS) { showErr('Table full!'); return; }
         var have = parseInt($chips.text(), 10) || 0;
         if (have < DROP_COST) { showErr('Not enough nickels!'); return; }
 
@@ -200,11 +187,8 @@
             $dropBtn.prop('disabled', false);
             if (r.success) {
                 $chips.text(r.data.chips);
-                /* Spawn coin at drop zone — it will fall via gravity in tick() */
                 spawn(dropSliderX, FIELD.dropY, false);
-            } else {
-                showErr(r.data.message || 'Error');
-            }
+            } else { showErr(r.data.message || 'Error'); }
         }).fail(function () {
             isDropping = false;
             $dropBtn.prop('disabled', false);
@@ -213,7 +197,7 @@
     }
 
     /* ═══════════════════════════════════════════════════
-       GAME TICK — the core physics loop
+       GAME TICK
        ═══════════════════════════════════════════════════ */
     function tick() {
         if (!document.getElementById('fh-penny-falls')) { cleanup(); return; }
@@ -222,62 +206,68 @@
         pusherPhase += PUSHER_SPEED;
         if (pusherPhase > Math.PI * 2) pusherPhase -= Math.PI * 2;
         var t = (Math.sin(pusherPhase) + 1) / 2;
-        var newPusherY = FIELD.pusherHome + t * (FIELD.pusherMax - FIELD.pusherHome);
-        var pusherVel = newPusherY - lastPusherY;   // +ve = moving forward (down)
-        lastPusherY = pusherY;
-        pusherY = newPusherY;
+        pusherY = FIELD.pusherHome + t * (FIELD.pusherMax - FIELD.pusherHome);
+        var pusherDelta = pusherY - prevPusherY;          // +ve = advancing
+        prevPusherY = pusherY;
         $pusher.css('top', pusherY + '%');
 
-        var pusherFront = pusherY + PUSHER_DEPTH;
+        /* The pusher's BOTTOM EDGE — the solid wall nothing can pass */
+        var wallY = pusherY + PUSHER_IMG_H;
 
-        /* ── 2. Pusher pushes coins ── */
-        /* ONLY push when the pusher is actually advancing forward */
-        if (pusherVel > 0.01) {
-            coins.forEach(function (c) {
-                /* Coin is at or just in front of the pusher face */
-                if (c.y > pusherY - COIN_SIZE * 0.3 && c.y < pusherFront + COIN_SIZE * 0.5) {
-                    /* Give the coin forward velocity proportional to pusher speed */
-                    c.vy = Math.max(c.vy, pusherVel * 1.5);
-                    /* Slight random lateral nudge */
+        /* ── 2. Pusher wall enforcement ──
+         * ANY coin whose top is above the wall gets shoved to just below it.
+         * This is the core mechanic: the pusher is an impenetrable barrier. */
+        coins.forEach(function (c) {
+            var coinTop = c.y - COIN_SIZE * 0.4; // top edge of coin
+            if (coinTop < wallY && c.y > pusherY - COIN_SIZE) {
+                /* Coin is overlapping the pusher — push it below the wall */
+                var newY = wallY + COIN_SIZE * 0.4;
+                if (newY > c.y) {
+                    /* Transfer pusher movement as velocity */
+                    c.vy = Math.max(c.vy, (newY - c.y) * 1.5);
                     c.vx += (Math.random() - 0.5) * JITTER;
+                    c.y = newY;
                 }
-            });
-        }
-
-        /* ── 3. Coins behind the pusher get swept forward ── */
-        coins.forEach(function (c) {
-            if (c.y < pusherFront && c.y > pusherY) {
-                c.y = pusherFront + 0.2;
-                c.vy = Math.max(c.vy, Math.abs(pusherVel) * 0.8);
             }
         });
 
-        /* ── 4. Gravity for coins in the drop zone (above the tray) ── */
+        /* ── 3. Gravity for coins falling from drop zone ──
+         * Coins above the pusher top are in free-fall until they
+         * land on the pusher wall or on coins below the pusher */
         coins.forEach(function (c) {
-            if (c.y < pusherFront - COIN_SIZE * 0.5) {
-                c.vy += FALL_GRAVITY;   // coin is falling from the top
+            if (c.y < pusherY - COIN_SIZE * 0.5) {
+                c.vy += FALL_SPEED;
             }
         });
 
-        /* ── 5. Apply velocity + friction ── */
+        /* ── 4. Apply velocity + friction ── */
         coins.forEach(function (c) {
-            if (c.vx === 0 && c.vy === 0) return; // at rest, skip
+            if (c.vx === 0 && c.vy === 0) return;
             c.x += c.vx;
             c.y += c.vy;
             c.vx *= FRICTION;
             c.vy *= FRICTION;
-            /* Stop if barely moving */
             if (Math.abs(c.vx) < MIN_VEL) c.vx = 0;
             if (Math.abs(c.vy) < MIN_VEL) c.vy = 0;
         });
 
-        /* ── 6. Collision resolution with momentum transfer ── */
+        /* ── 5. Collisions with momentum transfer ── */
         resolveCollisions();
 
-        /* ── 7. Check fallen coins ── */
+        /* ── 6. Re-enforce pusher wall after collisions ──
+         * (collisions can push coins back into the pusher) */
+        coins.forEach(function (c) {
+            var coinTop = c.y - COIN_SIZE * 0.4;
+            if (coinTop < wallY && c.y > pusherY - COIN_SIZE) {
+                c.y = wallY + COIN_SIZE * 0.4;
+                if (c.vy < 0) c.vy = 0; // kill upward velocity
+            }
+        });
+
+        /* ── 7. Fallen coins ── */
         checkFallen();
 
-        /* ── 8. DOM update ── */
+        /* ── 8. DOM ── */
         updateDOM();
     }
 
@@ -285,104 +275,83 @@
        COLLISION — separate + transfer momentum
        ═══════════════════════════════════════════════════ */
     function resolveCollisions() {
-        var minD = COIN_SIZE * 0.8;
-        for (var pass = 0; pass < 3; pass++) {
+        var minD = COIN_SIZE * 0.78;
+        for (var pass = 0; pass < 4; pass++) {
             for (var i = 0; i < coins.length; i++) {
                 for (var j = i + 1; j < coins.length; j++) {
                     var a = coins[i], b = coins[j];
                     var dx = b.x - a.x;
                     var dy = b.y - a.y;
                     var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist >= minD || dist < 0.01) continue;
 
-                    if (dist < minD && dist > 0.01) {
-                        var overlap = (minD - dist) / 2;
-                        var nx = dx / dist;
-                        var ny = dy / dist;
+                    var overlap = (minD - dist) / 2;
+                    var nx = dx / dist;
+                    var ny = dy / dist;
 
-                        /* Separate the pair */
-                        a.x -= nx * overlap;
-                        a.y -= ny * overlap;
-                        b.x += nx * overlap;
-                        b.y += ny * overlap;
+                    /* Separate */
+                    a.x -= nx * overlap;
+                    a.y -= ny * overlap;
+                    b.x += nx * overlap;
+                    b.y += ny * overlap;
 
-                        /* Transfer velocity from the faster coin to the slower one */
-                        var aSpd = Math.abs(a.vx) + Math.abs(a.vy);
-                        var bSpd = Math.abs(b.vx) + Math.abs(b.vy);
+                    /* Transfer velocity from faster to slower */
+                    var aSpd = Math.abs(a.vx) + Math.abs(a.vy);
+                    var bSpd = Math.abs(b.vx) + Math.abs(b.vy);
 
-                        if (aSpd > bSpd && aSpd > MIN_VEL) {
-                            b.vx += a.vx * PUSH_TRANSFER;
-                            b.vy += a.vy * PUSH_TRANSFER;
-                            a.vx *= (1 - PUSH_TRANSFER * 0.5);
-                            a.vy *= (1 - PUSH_TRANSFER * 0.5);
-                        } else if (bSpd > aSpd && bSpd > MIN_VEL) {
-                            a.vx += b.vx * PUSH_TRANSFER;
-                            a.vy += b.vy * PUSH_TRANSFER;
-                            b.vx *= (1 - PUSH_TRANSFER * 0.5);
-                            b.vy *= (1 - PUSH_TRANSFER * 0.5);
-                        }
+                    if (aSpd > bSpd && aSpd > MIN_VEL) {
+                        b.vx += a.vx * PUSH_TRANSFER;
+                        b.vy += a.vy * PUSH_TRANSFER;
+                        a.vx *= (1 - PUSH_TRANSFER * 0.6);
+                        a.vy *= (1 - PUSH_TRANSFER * 0.6);
+                    } else if (bSpd > aSpd && bSpd > MIN_VEL) {
+                        a.vx += b.vx * PUSH_TRANSFER;
+                        a.vy += b.vy * PUSH_TRANSFER;
+                        b.vx *= (1 - PUSH_TRANSFER * 0.6);
+                        b.vy *= (1 - PUSH_TRANSFER * 0.6);
                     }
                 }
             }
         }
 
-        /* Clamp to field walls — kill velocity on impact */
+        /* Clamp walls */
         coins.forEach(function (c) {
-            if (c.x < FIELD.left + COIN_SIZE / 2) {
-                c.x = FIELD.left + COIN_SIZE / 2;
-                c.vx = 0;
-            }
-            if (c.x > FIELD.right - COIN_SIZE / 2) {
-                c.x = FIELD.right - COIN_SIZE / 2;
-                c.vx = 0;
-            }
-            /* Don't let coins drift above the field top */
-            if (c.y < FIELD.top) {
-                c.y = FIELD.top;
-                c.vy = 0;
-            }
+            c.x = clampX(c.x);
+            if (c.x <= FIELD.left + COIN_SIZE / 2 || c.x >= FIELD.right - COIN_SIZE / 2) c.vx = 0;
+            if (c.y < FIELD.top) { c.y = FIELD.top; c.vy = 0; }
         });
     }
 
     /* ═══════════════════════════════════════════════════
-       SETTLE — position-only overlap fix (no velocity)
-       Used during preload to pack coins without launching them
+       SETTLE — position-only (preload)
        ═══════════════════════════════════════════════════ */
     function settleOverlaps() {
-        var minD = COIN_SIZE * 0.8;
+        var minD = COIN_SIZE * 0.78;
         for (var i = 0; i < coins.length; i++) {
             for (var j = i + 1; j < coins.length; j++) {
                 var a = coins[i], b = coins[j];
-                var dx = b.x - a.x;
-                var dy = b.y - a.y;
+                var dx = b.x - a.x, dy = b.y - a.y;
                 var dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist < minD && dist > 0.01) {
-                    var overlap = (minD - dist) / 2;
-                    var nx = dx / dist;
-                    var ny = dy / dist;
-                    a.x -= nx * overlap;
-                    a.y -= ny * overlap;
-                    b.x += nx * overlap;
-                    b.y += ny * overlap;
+                    var ov = (minD - dist) / 2;
+                    var nx = dx / dist, ny = dy / dist;
+                    a.x -= nx * ov; a.y -= ny * ov;
+                    b.x += nx * ov; b.y += ny * ov;
                 }
             }
         }
-        coins.forEach(function (c) {
-            if (c.x < FIELD.left + COIN_SIZE / 2) c.x = FIELD.left + COIN_SIZE / 2;
-            if (c.x > FIELD.right - COIN_SIZE / 2) c.x = FIELD.right - COIN_SIZE / 2;
-        });
+        coins.forEach(function (c) { c.x = clampX(c.x); });
     }
 
     /* ═══════════════════════════════════════════════════
-       FALLEN COINS — front edge = tickets
+       FALLEN COINS
        ═══════════════════════════════════════════════════ */
     function checkFallen() {
         var won = 0;
         coins = coins.filter(function (c) {
             if (c.y >= FIELD.bottom) {
                 c.el.addClass('fh-pf-coin-fall');
-                (function (el) {
-                    setTimeout(function () { el.remove(); }, 500);
-                })(c.el);
+                (function (el) { setTimeout(function () { el.remove(); }, 500); })(c.el);
                 won++;
                 return false;
             }
@@ -397,24 +366,24 @@
     }
 
     /* ═══════════════════════════════════════════════════
-       AWARD TICKETS via AJAX (batched / debounced)
+       AWARD TICKETS
        ═══════════════════════════════════════════════════ */
     function flushAward() {
         if (pendingTix <= 0) return;
         var amt = pendingTix;
         pendingTix = 0;
         $.post(fishotelArcade.ajaxUrl, {
-            action:  'fishotel_penny_falls_award',
-            nonce:   fishotelArcade.nonce,
-            tickets: amt
-        }, function (r) {
-            if (r.success) $tickets.text(r.data.tickets);
-        });
+            action: 'fishotel_penny_falls_award', nonce: fishotelArcade.nonce, tickets: amt
+        }, function (r) { if (r.success) $tickets.text(r.data.tickets); });
     }
 
     /* ═══════════════════════════════════════════════════
        DOM helpers
        ═══════════════════════════════════════════════════ */
+    function clampX(x) {
+        return Math.max(FIELD.left + COIN_SIZE / 2, Math.min(FIELD.right - COIN_SIZE / 2, x));
+    }
+
     function updateDOM() {
         coins.forEach(function (c) {
             c.el.css({ left: c.x + '%', top: c.y + '%' });
@@ -441,13 +410,9 @@
         clearInterval(dropTimer);  dropTimer = null;
         clearTimeout(awardTimer);
         if (pendingTix > 0) flushAward();
-        coins = [];
-        nextId = 0;
-        pusherPhase = 0;
-        pusherY = FIELD.pusherHome;
-        lastPusherY = FIELD.pusherHome;
-        pendingTix = 0;
-        isDropping = false;
+        coins = []; nextId = 0; pusherPhase = 0;
+        pusherY = FIELD.pusherHome; prevPusherY = FIELD.pusherHome;
+        pendingTix = 0; isDropping = false;
     }
     window.cleanupPennyFalls = cleanup;
 

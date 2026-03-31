@@ -40,8 +40,8 @@
 /* ─── Pusher shelf ───────────────────────────────── */
 .fh-pf-pusher {
     position: absolute;
-    left: 0;
-    right: 0;
+    left: 12.5%;
+    right: 12.5%;
     top: 10%;           /* JS overrides this via animation */
     z-index: 5;
     pointer-events: none;
