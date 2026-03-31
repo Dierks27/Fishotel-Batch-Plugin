@@ -3732,6 +3732,7 @@ class FisHotel_Arcade {
 
                 <div class="fh-st-result">
                     <div class="fh-st-result-zone" id="fh-st-result-zone"></div>
+                    <div class="fh-st-captures" id="fh-st-captures"></div>
                     <div class="fh-st-result-payout" id="fh-st-result-payout"></div>
                 </div>
             </div>
@@ -3884,9 +3885,13 @@ class FisHotel_Arcade {
             $label      = 'MISS';
         }
 
-        $payout      = (int) floor( $bet * $multiplier );
-        $new_balance = max( 0, $chips - $bet + $payout );
-        update_user_meta( $uid, '_fishotel_casino_chips', $new_balance );
+        $payout    = (int) floor( $bet * $multiplier );
+        $new_chips = max( 0, $chips - $bet );
+        update_user_meta( $uid, '_fishotel_casino_chips', $new_chips );
+
+        $tickets     = (int) get_user_meta( $uid, 'fishotel_arcade_tickets', true );
+        $new_tickets = $tickets + $payout;
+        update_user_meta( $uid, 'fishotel_arcade_tickets', $new_tickets );
 
         wp_send_json_success( [
             'zone'       => $zone,
@@ -3895,7 +3900,8 @@ class FisHotel_Arcade {
             'bet'        => $bet,
             'multiplier' => $multiplier,
             'payout'     => $payout,
-            'chips'      => $new_balance,
+            'chips'      => $new_chips,
+            'tickets'    => $new_tickets,
         ] );
     }
 

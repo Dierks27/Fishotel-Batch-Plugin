@@ -4828,7 +4828,7 @@ trait FisHotel_Shortcodes {
                         </div>
                         <div class="fh-balance-item">
                             <img src="<?php echo esc_url( $ticket_url ); ?>" alt="Tickets" class="fh-balance-icon">
-                            <span class="fh-balance-amount"><?php echo number_format( $tickets ); ?></span>
+                            <span id="fh-arcade-tickets" class="fh-balance-amount"><?php echo number_format( $tickets ); ?></span>
                         </div>
                     </div>
                 </div>
