@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.8.2 - Add Penny Falls image assets, fix cabinet jpg reference.
- * Version:           10.8.2
+ * Description:       v10.8.3 - Replace cabinet JPG with PNG, fix reference.
+ * Version:           10.8.3
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.8.2' );
+define( 'FISHOTEL_VERSION', '10.8.3' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

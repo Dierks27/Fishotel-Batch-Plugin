@@ -3607,7 +3607,7 @@ class FisHotel_Arcade {
 
                 <!-- Penny Falls cabinet overlay on right deck -->
                 <div class="fh-arcbld-game-overlay fh-arcbld-game-overlay--pf" data-game="penny_falls">
-                    <img src="<?php echo esc_url( plugins_url( 'assists/arcade/penny-falls-cabinet.jpg', FISHOTEL_PLUGIN_FILE ) ); ?>"
+                    <img src="<?php echo esc_url( plugins_url( 'assists/arcade/penny-falls-cabinet.png', FISHOTEL_PLUGIN_FILE ) ); ?>"
                          alt="Penny Falls" class="fh-arcbld-game-img">
                     <span class="fh-arcbld-hotspot-label">Penny Falls</span>
                 </div>
@@ -3776,7 +3776,7 @@ class FisHotel_Arcade {
                 'playfield' => plugins_url( 'assists/arcade/penny-falls-playfield.png', FISHOTEL_PLUGIN_FILE ),
                 'coin'      => plugins_url( 'assists/arcade/penny-falls-coin.png', FISHOTEL_PLUGIN_FILE ),
                 'pusher'    => plugins_url( 'assists/arcade/penny-falls-pusher.png', FISHOTEL_PLUGIN_FILE ),
-                'cabinet'   => plugins_url( 'assists/arcade/penny-falls-cabinet.jpg', FISHOTEL_PLUGIN_FILE ),
+                'cabinet'   => plugins_url( 'assists/arcade/penny-falls-cabinet.png', FISHOTEL_PLUGIN_FILE ),
             ],
         ] );
 
