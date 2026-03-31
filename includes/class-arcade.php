@@ -44,6 +44,10 @@ class FisHotel_Arcade {
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_arcade_admin_assets' ] );
         add_action( 'wp_ajax_fishotel_strength_tester_play', [ $this, 'ajax_strength_tester_play' ] );
         add_action( 'wp_ajax_fishotel_st_save_zones',      [ $this, 'ajax_save_st_zones' ] );
+
+        /* Penny Falls coin pusher */
+        add_action( 'wp_ajax_fishotel_penny_falls_drop',   [ $this, 'ajax_penny_falls_drop' ] );
+        add_action( 'wp_ajax_fishotel_penny_falls_award',  [ $this, 'ajax_penny_falls_award' ] );
     }
 
     /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -656,6 +660,7 @@ class FisHotel_Arcade {
                     case 'draft':       renderDraft(body); break;
                     case 'slots':       renderSlotSelection(body); break;
                     case 'bingo':       renderBingoHall(body); break;
+                    case 'penny_falls': renderPennyFalls(body); break;
                     default:
                         body.innerHTML = '<p style="text-align:center;color:#aaa;padding:30px;font-family:Special Elite,cursive;">Game being rebuilt — coming soon!</p>';
                         break;
@@ -3566,8 +3571,13 @@ class FisHotel_Arcade {
     public function render_arcade_building( $batch_name = '' ) {
         $building_url = plugins_url( 'assists/arcade/Arcade-Building.png', FISHOTEL_PLUGIN_FILE );
         $st_base_url  = plugins_url( 'assists/arcade/strength-tester-base.png', FISHOTEL_PLUGIN_FILE );
+        $nickel_img   = plugins_url( 'assists/arcade/arcade-nickel.png', FISHOTEL_PLUGIN_FILE );
+        $ticket_img   = plugins_url( 'assists/arcade/arcade-ticket.png', FISHOTEL_PLUGIN_FILE );
         $logged_in    = is_user_logged_in();
         $login_url    = esc_url( wp_login_url( get_permalink() ) );
+        $uid          = get_current_user_id();
+        $chips        = $uid ? (int) get_user_meta( $uid, '_fishotel_casino_chips', true ) : 0;
+        $tickets      = $uid ? (int) get_user_meta( $uid, 'fishotel_arcade_tickets', true ) : 0;
 
         // Get game HTML (also enqueues arcade assets via wp_enqueue)
         $game_html = $logged_in ? $this->render_arcade_public( $batch_name ) : '';
@@ -3594,15 +3604,40 @@ class FisHotel_Arcade {
                     <img src="<?php echo esc_url( $st_base_url ); ?>" alt="Strength Tester" class="fh-arcbld-game-img">
                     <span class="fh-arcbld-hotspot-label">Strength Tester</span>
                 </div>
+
+                <!-- Penny Falls cabinet overlay on right deck -->
+                <div class="fh-arcbld-game-overlay fh-arcbld-game-overlay--pf" data-game="penny_falls">
+                    <img src="<?php echo esc_url( plugins_url( 'assists/arcade/penny-falls-cabinet.png', FISHOTEL_PLUGIN_FILE ) ); ?>"
+                         alt="Penny Falls" class="fh-arcbld-game-img">
+                    <span class="fh-arcbld-hotspot-label">Penny Falls</span>
+                </div>
                 <?php endif; ?>
             </div>
 
             <?php if ( $logged_in ) : ?>
             <!-- Strength Tester game modal -->
-            <div class="fh-arcbld-modal" id="fh-arcbld-modal" style="display:none;">
+            <div class="fh-arcbld-modal" id="fh-arcbld-modal-st" style="display:none;">
                 <div class="fh-arcbld-modal-inner">
-                    <button class="fh-arcbld-modal-close" id="fh-arcbld-modal-close">&#10005;</button>
+                    <button class="fh-arcbld-modal-close" data-modal="fh-arcbld-modal-st">&#10005;</button>
                     <?php echo $game_html; ?>
+                </div>
+            </div>
+
+            <!-- Penny Falls game modal -->
+            <div class="fh-arcbld-modal" id="fh-arcbld-modal-pf" style="display:none;">
+                <div class="fh-arcbld-modal-inner fh-arcbld-modal-inner--pf">
+                    <button class="fh-arcbld-modal-close" data-modal="fh-arcbld-modal-pf">&#10005;</button>
+                    <div class="fh-arcade-chip-bar">
+                        <div class="fh-arcade-chip-display">
+                            <img src="<?php echo esc_url( $nickel_img ); ?>" alt="Nickels" class="fh-balance-icon">
+                            Nickels:&nbsp;<span id="fh-arcade-chips-pf"><?php echo (int) $chips; ?></span>
+                        </div>
+                        <div class="fh-arcade-ticket-display">
+                            <img src="<?php echo esc_url( $ticket_img ); ?>" alt="Tickets" class="fh-balance-icon">
+                            Tickets:&nbsp;<span id="fh-arcade-tickets-pf"><?php echo (int) $tickets; ?></span>
+                        </div>
+                    </div>
+                    <div id="fh-pf-body"></div>
                 </div>
             </div>
             <?php endif; ?>
@@ -3622,9 +3657,12 @@ class FisHotel_Arcade {
         .fh-arcbld-game-img{width:100%;height:auto;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
         .fh-arcbld-hotspot-label{display:none;position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);background:rgba(26,58,92,.95);color:#96885f;padding:4px 12px;border-radius:4px;font-family:'Oswald',sans-serif;font-size:clamp(9px,1.2vw,12px);white-space:nowrap;z-index:10;pointer-events:none}
         .fh-arcbld-game-overlay:hover .fh-arcbld-hotspot-label{display:block}
+        /* Penny Falls overlay — right side of building (adjust left/top to taste) */
+        .fh-arcbld-game-overlay--pf{left:75%;top:54%;width:8%}
         /* ─── Game modal ─── */
         .fh-arcbld-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
-        .fh-arcbld-modal-inner{position:relative;background:#1a1a1a;border:2px solid #96885f;border-radius:12px;max-width:460px;width:100%;max-height:70vh;overflow-y:auto;padding:16px}
+        .fh-arcbld-modal-inner{position:relative;background:#1a1a1a;border:2px solid #96885f;border-radius:12px;max-width:460px;width:100%;max-height:85vh;overflow-y:auto;padding:16px}
+        .fh-arcbld-modal-inner--pf{max-width:420px}
         .fh-arcbld-modal-close{position:absolute;top:8px;right:8px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:14px;color:#96885f;background:rgba(0,0,0,.4);border:1px solid rgba(150,136,95,.35);border-radius:4px;padding:0;cursor:pointer;z-index:10;line-height:1;transition:all .2s}
         .fh-arcbld-modal-close:hover{color:#ffd700;background:rgba(255,255,255,.1);border-color:#ffd700}
         @media(max-width:640px){.fh-arcbld-modal{padding:10px}.fh-arcbld-modal-inner{padding:14px}}
@@ -3634,19 +3672,61 @@ class FisHotel_Arcade {
         (function(){
             var wrap = document.querySelector('.fh-arcbld-wrap');
             if (!wrap) return;
+
+            /* Map game → modal id */
+            var gameModals = {
+                strength_tester: 'fh-arcbld-modal-st',
+                penny_falls:    'fh-arcbld-modal-pf'
+            };
+
+            /* Open game modal on overlay click */
             wrap.querySelectorAll('.fh-arcbld-game-overlay').forEach(function(hs){
                 hs.addEventListener('click', function(){
-                    var modal = document.getElementById('fh-arcbld-modal');
-                    if (modal) modal.style.display = 'flex';
+                    var game = this.getAttribute('data-game') || 'strength_tester';
+                    var modalId = gameModals[game];
+                    var modal = document.getElementById(modalId);
+                    if (!modal) return;
+                    modal.style.display = 'flex';
+
+                    /* Penny Falls: init game when modal opens */
+                    if (game === 'penny_falls' && typeof renderPennyFalls === 'function') {
+                        var body = document.getElementById('fh-pf-body');
+                        if (body && !body.hasChildNodes()) {
+                            renderPennyFalls(body);
+                        }
+                    }
                 });
             });
-            var closeBtn = document.getElementById('fh-arcbld-modal-close');
-            if (closeBtn) closeBtn.addEventListener('click', function(){
-                document.getElementById('fh-arcbld-modal').style.display = 'none';
+
+            /* Close buttons */
+            document.querySelectorAll('.fh-arcbld-modal-close').forEach(function(btn){
+                btn.addEventListener('click', function(){
+                    var modalId = this.getAttribute('data-modal');
+                    var modal = document.getElementById(modalId);
+                    if (modal) {
+                        modal.style.display = 'none';
+                        /* Cleanup Penny Falls when closing */
+                        if (modalId === 'fh-arcbld-modal-pf' && typeof cleanupPennyFalls === 'function') {
+                            cleanupPennyFalls();
+                            var body = document.getElementById('fh-pf-body');
+                            if (body) body.innerHTML = '';
+                        }
+                    }
+                });
             });
-            var modal = document.getElementById('fh-arcbld-modal');
-            if (modal) modal.addEventListener('click', function(e){
-                if (e.target === this) this.style.display = 'none';
+
+            /* Click outside modal to close */
+            document.querySelectorAll('.fh-arcbld-modal').forEach(function(modal){
+                modal.addEventListener('click', function(e){
+                    if (e.target === this) {
+                        this.style.display = 'none';
+                        if (this.id === 'fh-arcbld-modal-pf' && typeof cleanupPennyFalls === 'function') {
+                            cleanupPennyFalls();
+                            var body = document.getElementById('fh-pf-body');
+                            if (body) body.innerHTML = '';
+                        }
+                    }
+                });
             });
         })();
         </script>
@@ -3689,10 +3769,31 @@ class FisHotel_Arcade {
         );
         $st_zones = get_option( 'fishotel_st_zones', [ 'bell' => 85, 'super' => 65, 'strong' => 40, 'good' => 20 ] );
         wp_localize_script( 'fishotel-arcade-scripts', 'fishotelArcade', [
-            'ajaxUrl' => $ajax,
-            'nonce'   => $nonce,
-            'zones'   => $st_zones,
+            'ajaxUrl'    => $ajax,
+            'nonce'      => $nonce,
+            'zones'      => $st_zones,
+            'pennyFalls' => [
+                'playfield' => plugins_url( 'assists/arcade/penny-falls-playfield.png', FISHOTEL_PLUGIN_FILE ),
+                'coin'      => plugins_url( 'assists/arcade/penny-falls-coin.png', FISHOTEL_PLUGIN_FILE ),
+                'pusher'    => plugins_url( 'assists/arcade/penny-falls-pusher.png', FISHOTEL_PLUGIN_FILE ),
+                'cabinet'   => plugins_url( 'assists/arcade/penny-falls-cabinet.png', FISHOTEL_PLUGIN_FILE ),
+            ],
         ] );
+
+        /* Penny Falls assets */
+        wp_enqueue_style(
+            'fishotel-penny-falls-styles',
+            plugins_url( 'assists/arcade/penny-falls-styles.css', FISHOTEL_PLUGIN_FILE ),
+            [],
+            FISHOTEL_VERSION
+        );
+        wp_enqueue_script(
+            'fishotel-penny-falls-scripts',
+            plugins_url( 'assists/arcade/penny-falls-scripts.js', FISHOTEL_PLUGIN_FILE ),
+            [ 'jquery' ],
+            FISHOTEL_VERSION,
+            true
+        );
 
         ob_start();
         ?>
@@ -3998,6 +4099,51 @@ class FisHotel_Arcade {
             'chips'      => $new_chips,
             'tickets'    => $new_tickets,
         ] );
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     *  PENNY FALLS — AJAX handlers
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    /**
+     * Drop a coin — deduct nickels.
+     */
+    public function ajax_penny_falls_drop() {
+        check_ajax_referer( 'fishotel_arcade_nonce', 'nonce' );
+        $uid = get_current_user_id();
+        if ( ! $uid ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
+
+        $cost = max( 1, min( 5, (int) ( $_POST['cost'] ?? 1 ) ) );
+
+        $chips = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
+        if ( $chips < $cost ) {
+            wp_send_json_error( [ 'message' => 'Not enough nickels.' ] );
+        }
+
+        $new_chips = $chips - $cost;
+        update_user_meta( $uid, '_fishotel_casino_chips', $new_chips );
+
+        wp_send_json_success( [ 'chips' => $new_chips ] );
+    }
+
+    /**
+     * Award tickets for coins that fell off the edge.
+     */
+    public function ajax_penny_falls_award() {
+        check_ajax_referer( 'fishotel_arcade_nonce', 'nonce' );
+        $uid = get_current_user_id();
+        if ( ! $uid ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
+
+        $amount = (int) ( $_POST['tickets'] ?? 0 );
+        if ( $amount < 1 || $amount > 25 ) {
+            wp_send_json_error( [ 'message' => 'Invalid amount.' ] );
+        }
+
+        $tickets     = (int) get_user_meta( $uid, 'fishotel_arcade_tickets', true );
+        $new_tickets = $tickets + $amount;
+        update_user_meta( $uid, 'fishotel_arcade_tickets', $new_tickets );
+
+        wp_send_json_success( [ 'tickets' => $new_tickets ] );
     }
 
 } /* end class FisHotel_Arcade */
