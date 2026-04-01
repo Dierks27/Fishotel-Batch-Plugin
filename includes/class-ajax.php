@@ -1417,6 +1417,14 @@ trait FisHotel_Ajax {
 
             $order->set_total( max( 0, $order_total ) );
             $order->calculate_taxes();
+
+            // Zero-balance orders (fully covered by deposit): move to processing.
+            // WooCommerce won't allow payment on $0 orders so 'pending' is a dead end.
+            // We don't auto-complete — that happens at ship time.
+            if ( $order_total <= 0 ) {
+                $order->set_status( 'processing' );
+            }
+
             $order->save();
 
             $orders_created++;
