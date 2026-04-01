@@ -1345,9 +1345,10 @@ trait FisHotel_Ajax {
         }
 
         // ── Process each customer ───────────────────────────────────────────
-        $orders_created   = 0;
-        $refunds_issued   = 0;
-        $missing_prices   = [];
+        $orders_created     = 0;
+        $refunds_issued     = 0;
+        $missing_prices     = [];   // global list for the summary message
+        $flagged_orders     = [];   // orders with missing prices → admin alert
 
         foreach ( $customer_fish as $uid => $fish_list ) {
             $total_fish = array_sum( array_column( $fish_list, 'qty' ) );
@@ -1363,7 +1364,8 @@ trait FisHotel_Ajax {
             $order = wc_create_order( [ 'customer_id' => $uid, 'status' => 'pending' ] );
             if ( is_wp_error( $order ) ) continue;
 
-            $subtotal = 0.00;
+            $subtotal             = 0.00;
+            $order_missing_labels = [];   // missing-price items for THIS order
 
             foreach ( $fish_list as $item ) {
                 $fish_post  = get_post( $item['fish_id'] );
@@ -1372,7 +1374,8 @@ trait FisHotel_Ajax {
                 $unit_price = $master_id ? (float) get_post_meta( $master_id, '_price', true ) : 0.0;
 
                 if ( $unit_price <= 0 ) {
-                    $missing_prices[] = $label;
+                    $order_missing_labels[] = $label;
+                    $missing_prices[]       = $label;
                 }
 
                 $line_total = $unit_price * $item['qty'];
@@ -1418,16 +1421,41 @@ trait FisHotel_Ajax {
             $order->set_total( max( 0, $order_total ) );
             $order->calculate_taxes();
 
-            // Zero-balance orders (fully covered by deposit): move to processing.
-            // WooCommerce won't allow payment on $0 orders so 'pending' is a dead end.
-            // We don't auto-complete — that happens at ship time.
-            if ( $order_total <= 0 ) {
+            if ( ! empty( $order_missing_labels ) ) {
+                // Missing prices: hold the order so it can't be paid until prices are fixed.
+                // Never mark these processing — the totals are wrong.
+                $order->set_status( 'on-hold' );
+                $note = 'FISHOTEL ALERT: Order held — missing prices for: ' . implode( ', ', $order_missing_labels ) . '. Update product prices and recalculate before releasing.';
+                $order->add_order_note( $note, false, false );
+                $user       = get_userdata( $uid );
+                $flagged_orders[] = [
+                    'order_id'   => $order->get_id(),
+                    'customer'   => $user ? $user->display_name . ' (' . $user->user_email . ')' : 'User #' . $uid,
+                    'missing'    => $order_missing_labels,
+                ];
+            } elseif ( $order_total <= 0 ) {
+                // Fully covered by deposit with correct prices: move to processing.
+                // WooCommerce blocks payment on $0 orders; complete happens at ship time.
                 $order->set_status( 'processing' );
+                $order->add_order_note( 'Order fully covered by deposit credit. Moved to processing — mark complete at ship time.', false, false );
             }
 
             $order->save();
 
             $orders_created++;
+        }
+
+        // ── Admin email alert for held/flagged orders ────────────────────────
+        if ( ! empty( $flagged_orders ) ) {
+            $admin_email = get_option( 'admin_email' );
+            $subject     = '[FisHotel] ' . count( $flagged_orders ) . ' invoice(s) held — missing fish prices (' . $batch_name . ')';
+            $body        = "The following orders were placed on-hold during invoice generation for batch \"{$batch_name}\" because one or more fish prices are missing or $0.\n\n";
+            foreach ( $flagged_orders as $f ) {
+                $body .= "• Order #{$f['order_id']} — {$f['customer']}\n";
+                $body .= "  Missing prices: " . implode( ', ', $f['missing'] ) . "\n\n";
+            }
+            $body .= "Fix the product prices in WooCommerce, then manually correct and release these orders.\n";
+            wp_mail( $admin_email, $subject, $body );
         }
 
         // ── Advance batch to invoicing ───────────────────────────────────────
