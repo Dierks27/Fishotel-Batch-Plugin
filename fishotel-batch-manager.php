@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.8.6 - Add debug overlay for Penny Falls zone visualization.
- * Version:           10.8.6
+ * Description:       v10.9.0 - Add animated carnival lights to Strength Tester.
+ * Version:           10.9.0
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.8.6' );
+define( 'FISHOTEL_VERSION', '10.9.0' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
