@@ -2622,21 +2622,7 @@ trait FisHotel_Shortcodes {
         // ─── Stage 7: Invoicing ──
         if ( $status === 'invoicing' ) {
             ob_end_clean();
-            $fonts_url = 'https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Special+Elite&display=swap';
-            ob_start();
-            ?>
-            <link href="<?php echo esc_url( $fonts_url ); ?>" rel="stylesheet">
-            <div style="max-width:680px;margin:40px auto;padding:40px;background:#f5f0e8;border:4px double #2e2418;text-align:center;font-family:'Courier New',monospace;color:#2e2418;color-scheme:light;">
-                <h2 style="font-family:'Oswald',sans-serif;letter-spacing:0.2em;color:#96885f;margin-top:0;">THE FISHOTEL</h2>
-                <p style="font-variant:small-caps;letter-spacing:0.15em;font-size:0.9rem;">Invoice Processing</p>
-                <hr style="border:none;border-top:1px solid #d6cfc2;margin:20px 0;">
-                <p style="font-family:'Special Elite',monospace;font-size:0.95rem;color:#555;line-height:1.6;">
-                    Your order is being finalized.<br>Invoice coming soon.
-                </p>
-                <p style="font-size:0.75rem;color:#998877;margin-top:24px;">THE FISHOTEL &middot; CHAMPLIN, MN &middot; EST. 2024</p>
-            </div>
-            <?php
-            return ob_get_clean();
+            return $this->render_invoice_view( $batch_name, $batch_slug );
         }
 
         // ─── Stage 3b: Arrival tracking view (arrived + all post-arrived stages) ──
@@ -4930,6 +4916,437 @@ trait FisHotel_Shortcodes {
         })();
         </script>
 
+        <?php
+        return ob_get_clean();
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     *  Stage 7: Invoice View
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    private function render_invoice_view( $batch_name, $batch_slug ) {
+        $user_id = get_current_user_id();
+
+        if ( ! $user_id ) {
+            return $this->render_invoice_login_prompt( $batch_name );
+        }
+
+        $order = $this->get_user_invoice_order( $user_id, $batch_name );
+
+        if ( ! $order ) {
+            return $this->render_invoice_no_fish( $batch_name );
+        }
+
+        return $this->render_invoice_with_fish( $order, $batch_name );
+    }
+
+    private function get_user_invoice_order( $user_id, $batch_name ) {
+        $orders = wc_get_orders( [
+            'customer_id' => $user_id,
+            'limit'       => 1,
+            'meta_query'  => [
+                [ 'key' => '_fishotel_batch',      'value' => $batch_name,    'compare' => '=' ],
+                [ 'key' => '_fishotel_order_type', 'value' => 'batch_invoice', 'compare' => '=' ],
+            ],
+        ] );
+        return ! empty( $orders ) ? $orders[0] : null;
+    }
+
+    private function fh_invoice_css() {
+        return '
+        <style>
+        .fh-invoice-wrap { color-scheme: light; font-family: "Courier New", Courier, monospace; }
+        .fh-invoice-container { max-width: 800px; margin: 32px auto; padding: 0 16px; position: relative; }
+        .fh-invoice-paper {
+            background: #f5f0e8;
+            border: 4px double #2e2418;
+            padding: 48px 52px;
+            color: #2e2418;
+            position: relative;
+        }
+
+        /* Header */
+        .fh-invoice-header { text-align: center; margin-bottom: 32px; }
+        .fh-invoice-title {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            background: linear-gradient(135deg, #7a6a3a 0%, #c8a84b 50%, #7a6a3a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: "Oswald", sans-serif;
+            margin-bottom: 4px;
+        }
+        .fh-invoice-form-number {
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            color: #7a6a3a;
+            margin-bottom: 16px;
+        }
+        .fh-invoice-copy-indicator {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            color: #998877;
+            margin-bottom: 12px;
+        }
+        .fh-invoice-guest-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 8px 0 4px;
+            font-family: "Special Elite", monospace;
+            letter-spacing: 0.05em;
+        }
+        .fh-invoice-batch {
+            font-size: 0.8rem;
+            letter-spacing: 0.15em;
+            color: #7a6a3a;
+            margin: 0 0 4px;
+            text-transform: uppercase;
+        }
+        .fh-invoice-date { font-size: 0.75rem; color: #998877; margin: 0; }
+
+        /* Table */
+        .fh-invoice-table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 0.85rem; }
+        .fh-invoice-table thead tr { background: #2e2418; color: #f5f0e8; }
+        .fh-invoice-table thead th { padding: 10px 12px; text-align: left; letter-spacing: 0.1em; font-weight: 700; }
+        .fh-invoice-table thead th:last-child { text-align: right; }
+        .fh-invoice-table tbody tr:nth-child(even) { background: rgba(46,36,24,0.06); }
+        .fh-invoice-table tbody td { padding: 9px 12px; border-bottom: 1px solid #d6cfc2; }
+        .fh-invoice-table tbody td:nth-child(2),
+        .fh-invoice-table tbody td:nth-child(3),
+        .fh-invoice-table tbody td:nth-child(4) { text-align: right; }
+        .fh-invoice-table tfoot td { padding: 8px 12px; border-top: 1px solid #2e2418; }
+        .fh-invoice-table tfoot td:last-child { text-align: right; }
+        .fh-invoice-credit-row td { color: #27ae60; font-style: italic; }
+        .fh-invoice-total-row { background: rgba(46,36,24,0.1); font-size: 1rem; }
+        .fh-invoice-total-row td { border-top: 2px solid #2e2418 !important; }
+
+        /* Paid stamp */
+        .fh-invoice-paid-stamp {
+            position: absolute;
+            top: 140px;
+            right: 60px;
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: rgba(39,174,96,0.25);
+            border: 6px solid rgba(39,174,96,0.25);
+            padding: 6px 18px;
+            border-radius: 6px;
+            letter-spacing: 0.2em;
+            transform: rotate(-18deg);
+            pointer-events: none;
+            font-family: "Oswald", sans-serif;
+        }
+        .fh-invoice-paid-message { text-align: center; color: #27ae60; font-size: 0.85rem; margin: 12px 0; }
+
+        /* Payment button */
+        .fh-invoice-payment-section { text-align: center; margin: 24px 0 16px; }
+        .fh-invoice-payment-message { color: #7a6a3a; font-size: 0.85rem; margin-bottom: 14px; }
+        .fh-invoice-pay-btn {
+            display: inline-block;
+            background: #1a3a5c;
+            color: #fff !important;
+            font-family: "Oswald", sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            padding: 14px 40px;
+            text-decoration: none !important;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+        .fh-invoice-pay-btn:hover { background: #245080; }
+
+        /* No-fish message */
+        .fh-invoice-message { text-align: center; padding: 32px 0; }
+        .fh-invoice-message h2 { font-family: "Oswald", sans-serif; letter-spacing: 0.2em; color: #2e2418; margin-bottom: 12px; }
+        .fh-invoice-thanks { font-style: italic; color: #998877; margin-top: 20px; }
+
+        /* Signature + footer */
+        .fh-invoice-signature-line { margin: 32px 0 16px; border-top: 1px solid #d6cfc2; padding-top: 16px; font-size: 0.8rem; color: #7a6a3a; }
+        .fh-invoice-footer { text-align: center; font-size: 0.65rem; letter-spacing: 0.2em; color: #998877; margin-top: 16px; padding-top: 12px; border-top: 1px solid #d6cfc2; }
+
+        /* Login overlay */
+        .fh-invoice-blurred { position: relative; }
+        .fh-invoice-blurred .fh-invoice-paper { pointer-events: none; user-select: none; }
+        .fh-invoice-login-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(245,240,232,0.15);
+            backdrop-filter: blur(2px);
+        }
+        .fh-invoice-login-box {
+            background: #2e2418;
+            color: #f5f0e8;
+            border: 2px solid #96885f;
+            padding: 36px 48px;
+            text-align: center;
+            max-width: 360px;
+        }
+        .fh-invoice-login-box h3 {
+            font-family: "Oswald", sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.2em;
+            color: #c8a84b;
+            margin: 0 0 12px;
+        }
+        .fh-invoice-login-box p { font-size: 0.85rem; color: #d6cfc2; margin: 0 0 20px; }
+        .fh-invoice-login-btn {
+            background: #96885f;
+            color: #1a1a1a;
+            border: none;
+            font-family: "Oswald", sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            padding: 12px 32px;
+            cursor: pointer;
+        }
+        .fh-invoice-login-btn:hover { background: #c8a84b; }
+
+        @media (max-width: 700px) {
+            .fh-invoice-paper { padding: 28px 20px; }
+            .fh-invoice-title { font-size: 1.4rem; }
+            .fh-invoice-table { font-size: 0.75rem; }
+            .fh-invoice-table thead th, .fh-invoice-table tbody td, .fh-invoice-table tfoot td { padding: 7px 6px; }
+            .fh-invoice-paid-stamp { font-size: 2rem; top: 100px; right: 20px; }
+            .fh-invoice-login-box { padding: 24px 20px; }
+        }
+        </style>
+        <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Special+Elite&display=swap" rel="stylesheet">
+        ';
+    }
+
+    private function render_invoice_login_prompt( $batch_name ) {
+        $ajax_url  = admin_url( 'admin-ajax.php' );
+        $nonce     = wp_create_nonce( 'fishotel_ajax_login' );
+        $redir_url = esc_url( get_permalink() );
+        ob_start();
+        echo $this->fh_invoice_css();
+        ?>
+        <div class="fh-invoice-wrap">
+        <div class="fh-invoice-container fh-invoice-blurred">
+            <div class="fh-invoice-paper" style="filter:blur(7px);">
+                <div class="fh-invoice-header">
+                    <div class="fh-invoice-title">THE FISHOTEL</div>
+                    <div class="fh-invoice-form-number">FORM FH-INV-001</div>
+                    <p class="fh-invoice-guest-name">Guest Name</p>
+                    <p class="fh-invoice-batch"><?php echo esc_html( $batch_name ); ?></p>
+                </div>
+                <table class="fh-invoice-table">
+                    <thead><tr><th>Species</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+                    <tbody>
+                        <tr><td>Sample Fish Species</td><td>2</td><td>$45.00</td><td>$90.00</td></tr>
+                        <tr><td>Another Species</td><td>1</td><td>$38.00</td><td>$38.00</td></tr>
+                    </tbody>
+                    <tfoot>
+                        <tr><td colspan="3">SUBTOTAL</td><td>$128.00</td></tr>
+                        <tr><td colspan="3">SHIPPING</td><td>$45.00</td></tr>
+                        <tr class="fh-invoice-total-row"><td colspan="3"><strong>TOTAL DUE</strong></td><td><strong>$173.00</strong></td></tr>
+                    </tfoot>
+                </table>
+                <div class="fh-invoice-footer">THE FISHOTEL &times; CHAMPLIN, MN &times; EST. 2024</div>
+            </div>
+
+            <div class="fh-invoice-login-overlay">
+                <div class="fh-invoice-login-box">
+                    <h3>PLEASE IDENTIFY YOURSELF AT THE FRONT DESK</h3>
+                    <p>Log in to view your final invoice.</p>
+                    <button class="fh-invoice-login-btn" onclick="document.getElementById('fh-inv-login-modal').style.display='flex'">LOG IN</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Modal -->
+        <div id="fh-inv-login-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(4,12,22,0.95);z-index:9999;align-items:center;justify-content:center;">
+            <div style="background:#0a1828;border:1px solid #96885f;border-radius:8px;padding:40px 36px;max-width:380px;width:90%;position:relative;color:#f5f0e8;">
+                <button onclick="document.getElementById('fh-inv-login-modal').style.display='none'" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#96885f;font-size:20px;cursor:pointer;">&times;</button>
+                <h3 style="font-family:'Special Elite',monospace;font-size:13px;letter-spacing:0.3em;color:#d4bc7e;text-transform:uppercase;text-align:center;margin:0 0 24px;">Gate Access Required</h3>
+                <div id="fh-inv-login-err" style="display:none;background:rgba(231,76,60,0.15);border:1px solid #e74c3c;color:#e74c3c;padding:10px 14px;border-radius:4px;font-size:13px;margin-bottom:16px;"></div>
+                <form id="fh-inv-login-form" style="display:flex;flex-direction:column;gap:14px;">
+                    <input type="text" id="fh-inv-username" placeholder="Username" autocomplete="username" style="background:#071420;border:1px solid #334;color:#e8dcc0;padding:12px 14px;border-radius:4px;font-size:15px;">
+                    <input type="password" id="fh-inv-password" placeholder="Password" autocomplete="current-password" style="background:#071420;border:1px solid #334;color:#e8dcc0;padding:12px 14px;border-radius:4px;font-size:15px;">
+                    <button type="submit" style="background:linear-gradient(135deg,#96885f,#c8a84b);color:#000;font-weight:700;border:none;padding:13px;border-radius:4px;font-size:15px;letter-spacing:0.05em;cursor:pointer;">LOG IN</button>
+                </form>
+            </div>
+        </div>
+        <script>
+        (function(){
+            var form = document.getElementById('fh-inv-login-form');
+            if (!form) return;
+            form.addEventListener('submit', function(e){
+                e.preventDefault();
+                var err = document.getElementById('fh-inv-login-err');
+                err.style.display = 'none';
+                var fd = new FormData();
+                fd.append('action', 'fishotel_ajax_login');
+                fd.append('nonce', '<?php echo esc_js( $nonce ); ?>');
+                fd.append('username', document.getElementById('fh-inv-username').value);
+                fd.append('password', document.getElementById('fh-inv-password').value);
+                fd.append('redirect_to', '<?php echo esc_js( $redir_url ); ?>');
+                fetch('<?php echo esc_js( $ajax_url ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
+                    .then(function(r){ return r.json(); })
+                    .then(function(resp){
+                        if (resp.success) { window.location.href = resp.data.redirect || '<?php echo esc_js( $redir_url ); ?>'; }
+                        else { err.textContent = resp.data && resp.data.message ? resp.data.message : 'Login failed.'; err.style.display = 'block'; }
+                    });
+            });
+        })();
+        </script>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    private function render_invoice_no_fish( $batch_name ) {
+        $user = wp_get_current_user();
+        ob_start();
+        echo $this->fh_invoice_css();
+        ?>
+        <div class="fh-invoice-wrap">
+        <div class="fh-invoice-container">
+            <div class="fh-invoice-paper">
+                <div class="fh-invoice-header">
+                    <div class="fh-invoice-title">THE FISHOTEL</div>
+                    <div class="fh-invoice-form-number">FORM FH-INV-001</div>
+                    <p class="fh-invoice-guest-name"><?php echo esc_html( $user->display_name ); ?></p>
+                    <p class="fh-invoice-batch"><?php echo esc_html( $batch_name ); ?></p>
+                </div>
+
+                <div class="fh-invoice-message">
+                    <h2>NO CHARGES FOR THIS STAY</h2>
+                    <p>Your $25 deposit has been refunded to your wallet.</p>
+                    <p class="fh-invoice-thanks">Thank you for staying at The FisHotel.</p>
+                </div>
+
+                <div class="fh-invoice-signature-line">
+                    <p>GUEST SIGNATURE: _______________________________</p>
+                </div>
+                <div class="fh-invoice-footer">THE FISHOTEL &times; CHAMPLIN, MN &times; EST. 2024</div>
+            </div>
+        </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    private function render_invoice_with_fish( $order, $batch_name ) {
+        $user     = wp_get_current_user();
+        $is_paid  = $order->is_paid();
+
+        $subtotal      = 0.0;
+        $shipping      = 0.0;
+        $wallet_credit = 0.0;
+
+        foreach ( $order->get_items( 'line_item' ) as $item ) {
+            $subtotal += (float) $item->get_total();
+        }
+        foreach ( $order->get_items( 'shipping' ) as $item ) {
+            $shipping += (float) $item->get_total();
+        }
+        foreach ( $order->get_fees() as $fee ) {
+            if ( stripos( $fee->get_name(), 'Deposit Credit' ) !== false || stripos( $fee->get_name(), 'Wallet Credit' ) !== false ) {
+                $wallet_credit += abs( (float) $fee->get_total() );
+            }
+        }
+
+        $total      = (float) $order->get_total();
+        $shop_items = json_decode( $order->get_meta( '_fishotel_shop_items' ), true ) ?: [];
+
+        ob_start();
+        echo $this->fh_invoice_css();
+        ?>
+        <div class="fh-invoice-wrap">
+        <div class="fh-invoice-container">
+            <div class="fh-invoice-paper">
+
+                <?php if ( $is_paid ) : ?>
+                <div class="fh-invoice-paid-stamp">PAID</div>
+                <?php endif; ?>
+
+                <div class="fh-invoice-header">
+                    <div class="fh-invoice-title">THE FISHOTEL</div>
+                    <div class="fh-invoice-form-number">FORM FH-INV-001</div>
+                    <div class="fh-invoice-copy-indicator">COPY 1 &mdash; GUEST</div>
+                    <p class="fh-invoice-guest-name"><?php echo esc_html( $user->display_name ); ?></p>
+                    <p class="fh-invoice-batch"><?php echo esc_html( $batch_name ); ?></p>
+                    <p class="fh-invoice-date"><?php echo date( 'F j, Y' ); ?></p>
+                </div>
+
+                <table class="fh-invoice-table">
+                    <thead>
+                        <tr>
+                            <th>SPECIES</th>
+                            <th style="text-align:right;">QTY</th>
+                            <th style="text-align:right;">PRICE</th>
+                            <th style="text-align:right;">TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $order->get_items( 'line_item' ) as $item ) :
+                            $qty       = $item->get_quantity();
+                            $line_tot  = (float) $item->get_total();
+                            $unit      = $qty > 0 ? $line_tot / $qty : 0;
+                        ?>
+                        <tr>
+                            <td><?php echo esc_html( $item->get_name() ); ?></td>
+                            <td><?php echo intval( $qty ); ?></td>
+                            <td>$<?php echo number_format( $unit, 2 ); ?></td>
+                            <td>$<?php echo number_format( $line_tot, 2 ); ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+
+                        <?php foreach ( $shop_items as $si ) : ?>
+                        <tr>
+                            <td><?php echo esc_html( $si['name'] ); ?> <em style="color:#998877;">(<?php echo esc_html( $si['source'] ?? 'shop' ); ?>)</em></td>
+                            <td><?php echo intval( $si['qty'] ); ?></td>
+                            <td>$<?php echo number_format( (float)( $si['cost'] ?? 0 ), 2 ); ?></td>
+                            <td>$<?php echo number_format( (float)( $si['cost'] ?? 0 ) * intval( $si['qty'] ), 2 ); ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3">SUBTOTAL</td>
+                            <td>$<?php echo number_format( $subtotal, 2 ); ?></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">SHIPPING</td>
+                            <td>$<?php echo number_format( $shipping, 2 ); ?></td>
+                        </tr>
+                        <?php if ( $wallet_credit > 0 ) : ?>
+                        <tr class="fh-invoice-credit-row">
+                            <td colspan="3">WALLET CREDIT APPLIED</td>
+                            <td>-$<?php echo number_format( $wallet_credit, 2 ); ?></td>
+                        </tr>
+                        <?php endif; ?>
+                        <tr class="fh-invoice-total-row">
+                            <td colspan="3"><strong>TOTAL DUE</strong></td>
+                            <td><strong>$<?php echo number_format( $total, 2 ); ?></strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <?php if ( $is_paid ) : ?>
+                    <p class="fh-invoice-paid-message">&#10003; Payment received. Thank you for staying at The FisHotel.</p>
+                <?php else : ?>
+                    <div class="fh-invoice-payment-section">
+                        <p class="fh-invoice-payment-message">Please complete payment to finalize your order.</p>
+                        <a href="<?php echo esc_url( $order->get_checkout_payment_url() ); ?>" class="fh-invoice-pay-btn">COMPLETE PAYMENT</a>
+                    </div>
+                <?php endif; ?>
+
+                <div class="fh-invoice-signature-line">
+                    <p>GUEST SIGNATURE: _______________________________</p>
+                </div>
+                <div class="fh-invoice-footer">THE FISHOTEL &times; CHAMPLIN, MN &times; EST. 2024</div>
+            </div>
+        </div>
+        </div>
         <?php
         return ob_get_clean();
     }
