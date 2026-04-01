@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.10.0 - Remove Penny Falls, fix Strength Tester light positions.
- * Version:           10.10.0
+ * Description:       v10.10.1 - Fix Strength Tester light nth-child offset.
+ * Version:           10.10.1
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.10.0' );
+define( 'FISHOTEL_VERSION', '10.10.1' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
