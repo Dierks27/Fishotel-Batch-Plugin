@@ -1095,7 +1095,7 @@ trait FisHotel_Admin {
 
         <style>
             #fishotel-summary-table { width:100%; border-collapse:collapse; background:#1e1e1e; color:#fff; font-size:0.93em; }
-            #fishotel-summary-table thead { position:sticky; top:32px; z-index:5; background:#111; }
+            #fishotel-summary-table thead { position:sticky; top:0; z-index:5; background:#111; }
             #fishotel-summary-table th { padding:10px 14px; text-align:left; color:#b5a165; border-bottom:2px solid #444; cursor:pointer; user-select:none; white-space:nowrap; }
             #fishotel-summary-table th:hover { background:#1a1a1a; }
             #fishotel-summary-table th.sort-asc::after  { content:" ▲"; font-size:0.75em; }
@@ -3596,7 +3596,9 @@ trait FisHotel_Admin {
             echo '<input type="hidden" name="action" value="fishotel_open_lastcall">';
             echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
             $disabled = ( ! $can_open || ! $queue_exists ) ? ' disabled' : '';
-            echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;"' . $disabled . '>Open Last Call</button>';
+            $btn_style = 'background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;';
+            if ( $disabled ) $btn_style .= 'opacity:0.4;cursor:not-allowed;';
+            echo '<button type="submit" style="' . $btn_style . '"' . $disabled . '>Open Last Call</button>';
             echo '</form></div>';
             } // end else (not casino stage)
 
@@ -4311,6 +4313,7 @@ trait FisHotel_Admin {
             if ( get_post_meta( $batch_id, '_batch_name', true ) !== $batch_name ) continue;
 
             update_post_meta( $batch_id, '_graduation_qty', intval( $qty ) );
+            update_post_meta( $batch_id, '_current_qty', intval( $qty ) );
         }
 
         // Advance batch status to graduation and build verification queue

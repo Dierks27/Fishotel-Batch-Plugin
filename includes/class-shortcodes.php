@@ -2266,15 +2266,15 @@ trait FisHotel_Shortcodes {
                 .fh-nav-red {
                     background: #ff4444;
                     box-shadow: 0 0 3px 2px rgba(255,40,40,0.8), 0 0 6px 3px rgba(255,0,0,0.4);
-                    top: 23px;
-                    left: 8px;
+                    top: 20px;
+                    left: 3px;
                     animation-delay: 0s;
                 }
                 .fh-nav-green {
                     background: #44ff66;
                     box-shadow: 0 0 3px 2px rgba(40,255,80,0.8), 0 0 6px 3px rgba(0,255,50,0.4);
-                    top: 23px;
-                    left: 63px;
+                    top: 20px;
+                    left: 68px;
                     animation-delay: 0.6s;
                 }
                 @keyframes fh-blink {
@@ -3053,7 +3053,7 @@ trait FisHotel_Shortcodes {
                             <thead><tr>
                                 <th>Species</th>
                                 <th>Qty Declared</th>
-                                <th>Qty Received</th>
+                                <th>Qty Alive</th>
                                 <th>Condition</th>
                                 <th>Queue Pos.</th>
                             </tr></thead>
@@ -3092,7 +3092,7 @@ trait FisHotel_Shortcodes {
                             <tr>
                                 <td class="fh-customs-species"><?php echo esc_html( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $fish_name ) ); ?></td>
                                 <td><?php echo $my_qty; ?></td>
-                                <td><?php echo $recv_c; ?></td>
+                                <td><?php echo intval( $sa_c['alive'] ); ?></td>
                                 <td><span class="<?php echo esc_attr( $c_stat[1] ); ?>"><?php echo esc_html( $c_stat[0] ); ?></span></td>
                                 <td><?php echo esc_html( $position_c ); ?></td>
                             </tr>
@@ -4949,7 +4949,11 @@ trait FisHotel_Shortcodes {
                 [ 'key' => '_fishotel_order_type', 'value' => 'batch_invoice', 'compare' => '=' ],
             ],
         ] );
-        return ! empty( $orders ) ? $orders[0] : null;
+        if ( empty( $orders ) ) return null;
+        $order = $orders[0];
+        $order_batch = $order->get_meta( '_fishotel_batch' );
+        if ( $order_batch !== $batch_name ) return null;
+        return $order;
     }
 
     private function fh_invoice_css() {
