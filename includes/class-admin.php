@@ -29,6 +29,7 @@ trait FisHotel_Admin {
         add_menu_page( 'FisHotel Batch Manager', 'FisHotel Batch', 'manage_options', 'fishotel-batch-hq', [$this, 'batch_hq_html'], $fish_icon, 56 );
         add_submenu_page( 'fishotel-batch-hq', 'Batch HQ', 'Batch HQ', 'manage_options', 'fishotel-batch-hq' );
         add_submenu_page( 'fishotel-batch-hq', 'QT Operations', 'QT Operations', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
+        add_submenu_page( 'fishotel-batch-hq', 'Invoicing',     'Invoicing',     'manage_options', 'fishotel-invoicing',      [$this, 'render_invoicing_page'] );
         add_submenu_page( 'fishotel-batch-hq', 'Sourcing', 'Sourcing', 'manage_options', 'fishotel-sourcing', [$this, 'sourcing_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Hotel Program', 'Hotel Program', 'manage_options', 'fishotel-hotel-program', [$this, 'hotel_program_html'] );
         // Hidden backward-compat pages (old slugs still work via direct URL)
@@ -4580,6 +4581,231 @@ trait FisHotel_Admin {
 
         wp_redirect( admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) . '&tab=lastcall&updated=1' ) );
         exit;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     *  Stage 7: Invoicing Admin Page
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    public function render_invoicing_page() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( 'Unauthorized.' );
+        }
+
+        $tab      = sanitize_key( $_GET['tab'] ?? 'unpaid' );
+        $ajax_url = admin_url( 'admin-ajax.php' );
+
+        // Batches in invoicing stage
+        $statuses         = get_option( 'fishotel_batch_statuses', [] );
+        $invoicing_batches = array_keys( array_filter( $statuses, fn( $s ) => $s === 'invoicing' ) );
+
+        $unpaid_nonce   = wp_create_nonce( 'fishotel_unpaid_invoices' );
+        $packing_nonce  = wp_create_nonce( 'fishotel_packing_list' );
+        ?>
+        <div class="wrap">
+        <h1>Invoicing</h1>
+
+        <nav class="nav-tab-wrapper" style="margin-bottom:20px;">
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-invoicing&tab=unpaid' ) ); ?>" class="nav-tab<?php echo $tab === 'unpaid' ? ' nav-tab-active' : ''; ?>">Unpaid Invoices</a>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-invoicing&tab=packing' ) ); ?>" class="nav-tab<?php echo $tab === 'packing' ? ' nav-tab-active' : ''; ?>">Packing Lists</a>
+        </nav>
+
+        <?php if ( $tab === 'unpaid' ) : ?>
+
+        <!-- ═══ TAB: Unpaid Invoices ═══ -->
+        <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;max-width:900px;">
+            <h2 style="color:#b5a165;margin-top:0;font-size:1.1em;">Unpaid Invoices</h2>
+            <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Generate a forum-ready list of customers who have not yet paid their batch invoice.</p>
+
+            <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:20px;">
+                <div>
+                    <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Batch</label>
+                    <select id="fh-inv-batch" style="padding:7px 10px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;min-width:200px;">
+                        <option value="">— Select Batch —</option>
+                        <?php foreach ( $invoicing_batches as $b ) : ?>
+                        <option value="<?php echo esc_attr( $b ); ?>"><?php echo esc_html( $b ); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <button id="fh-inv-generate" style="background:#96885f;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Generate List</button>
+                <span id="fh-inv-spinner" style="display:none;color:#aaa;font-size:13px;">&#8987; Loading&hellip;</span>
+            </div>
+
+            <div id="fh-inv-output" style="display:none;">
+                <h3 style="color:#ddd;font-size:0.95em;margin:0 0 8px;">Forum Text</h3>
+                <div style="position:relative;">
+                    <textarea id="fh-inv-forum-text" readonly style="width:100%;min-height:140px;background:#2a2a2a;border:1px solid #555;color:#ddd;border-radius:6px;padding:12px;font-family:'Courier New',monospace;font-size:12px;resize:vertical;box-sizing:border-box;"></textarea>
+                    <button id="fh-inv-copy" style="position:absolute;top:8px;right:8px;background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer;">Copy</button>
+                </div>
+                <span id="fh-inv-copy-msg" style="display:none;color:#27ae60;font-size:12px;margin-top:4px;"></span>
+
+                <h3 style="color:#ddd;font-size:0.95em;margin:16px 0 8px;">Invoice Table</h3>
+                <table id="fh-inv-table" style="width:100%;border-collapse:collapse;font-size:13px;">
+                    <thead>
+                        <tr style="background:#2a2a2a;">
+                            <th style="padding:8px 10px;text-align:left;color:#b5a165;border-bottom:1px solid #444;">Customer</th>
+                            <th style="padding:8px 10px;text-align:left;color:#b5a165;border-bottom:1px solid #444;">HF Username</th>
+                            <th style="padding:8px 10px;text-align:right;color:#b5a165;border-bottom:1px solid #444;">Amount Due</th>
+                            <th style="padding:8px 10px;text-align:left;color:#b5a165;border-bottom:1px solid #444;">Payment Link</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fh-inv-tbody"></tbody>
+                </table>
+                <p id="fh-inv-empty" style="display:none;color:#27ae60;font-size:13px;margin-top:10px;">&#10003; All invoices are paid!</p>
+            </div>
+        </div>
+
+        <?php elseif ( $tab === 'packing' ) : ?>
+
+        <!-- ═══ TAB: Packing Lists ═══ -->
+        <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;max-width:900px;" class="fh-no-print">
+            <h2 style="color:#b5a165;margin-top:0;font-size:1.1em;">Packing Lists</h2>
+            <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Generate a print-ready packing list for all paid orders shipping on a given date.</p>
+
+            <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:20px;">
+                <div>
+                    <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Shipping Date</label>
+                    <input type="date" id="fh-pack-date" style="padding:7px 10px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">
+                </div>
+                <button id="fh-pack-generate" style="background:#96885f;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Generate Packing List</button>
+                <button id="fh-pack-print" style="display:none;background:#1a3a5c;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">&#128438; Print</button>
+                <span id="fh-pack-spinner" style="display:none;color:#aaa;font-size:13px;">&#8987; Loading&hellip;</span>
+            </div>
+            <div id="fh-pack-error" style="display:none;color:#e74c3c;font-size:13px;margin-bottom:10px;"></div>
+        </div>
+
+        <div id="fh-pack-output" style="margin-top:16px;"></div>
+
+        <?php endif; ?>
+        </div><!-- .wrap -->
+
+        <style>
+        /* Packing list print styles */
+        .fh-packing-list { font-family: Arial, sans-serif; font-size: 13px; color: #000; }
+        .fh-packing-list-header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #000; padding-bottom: 12px; }
+        .fh-packing-list-header h1 { margin: 0 0 6px; font-size: 22px; }
+        .fh-packing-list-header h2 { margin: 0 0 4px; font-size: 16px; font-weight: normal; }
+        .fh-packing-list-order { border: 1px solid #ccc; border-radius: 6px; padding: 20px; margin-bottom: 16px; background: #fff; }
+        .fh-packing-order-header h3 { margin: 0 0 6px; font-size: 15px; }
+        .fh-packing-order-header p { margin: 2px 0; color: #444; font-size: 12px; }
+        .fh-packing-address { margin: 12px 0; }
+        .fh-packing-address h4, .fh-packing-items h4, .fh-packing-notes h4, .fh-packing-shop-items h4 { margin: 8px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #555; border-bottom: 1px solid #eee; padding-bottom: 3px; }
+        .fh-packing-address p { margin: 0; line-height: 1.7; font-size: 13px; }
+        .fh-packing-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+        .fh-packing-table th { background: #333; color: #fff; padding: 7px 10px; text-align: left; font-size: 12px; }
+        .fh-packing-table td { padding: 7px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .fh-packing-table tbody tr:nth-child(even) { background: #f9f9f9; }
+        .fh-packing-notes p { margin: 4px 0; font-size: 13px; color: #555; }
+        .fh-packing-signature { margin-top: 20px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 12px; color: #555; }
+        .fh-packing-page-break { height: 0; }
+        #fh-pack-output { background: #fff; padding: 16px; border-radius: 6px; }
+
+        @media print {
+            .fh-no-print, #adminmenumain, #wpadminbar, #wpfooter, .nav-tab-wrapper, h1 { display: none !important; }
+            body, #wpcontent, #wpbody, #wpbody-content { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+            #fh-pack-output { padding: 0; }
+            .fh-packing-page-break { page-break-after: always; }
+            .fh-packing-list-order { border: 1px solid #999; break-inside: avoid; }
+        }
+        </style>
+
+        <script>
+        (function(){
+            // ── Unpaid Invoices ──
+            var genBtn = document.getElementById('fh-inv-generate');
+            if (genBtn) {
+                genBtn.addEventListener('click', function(){
+                    var batch = document.getElementById('fh-inv-batch').value;
+                    if (!batch) { alert('Please select a batch.'); return; }
+                    genBtn.disabled = true;
+                    document.getElementById('fh-inv-spinner').style.display = 'inline';
+                    document.getElementById('fh-inv-output').style.display = 'none';
+
+                    var fd = new FormData();
+                    fd.append('action', 'fishotel_get_unpaid_invoices');
+                    fd.append('nonce', '<?php echo esc_js( $unpaid_nonce ); ?>');
+                    fd.append('batch_name', batch);
+                    fetch('<?php echo esc_js( $ajax_url ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
+                        .then(function(r){ return r.json(); })
+                        .then(function(resp){
+                            genBtn.disabled = false;
+                            document.getElementById('fh-inv-spinner').style.display = 'none';
+                            if (!resp.success) { alert(resp.data && resp.data.message ? resp.data.message : 'Error.'); return; }
+                            document.getElementById('fh-inv-forum-text').value = resp.data.forum_text;
+                            var tbody = document.getElementById('fh-inv-tbody');
+                            tbody.innerHTML = '';
+                            var invoices = resp.data.invoices;
+                            if (invoices.length === 0) {
+                                document.getElementById('fh-inv-empty').style.display = 'block';
+                            } else {
+                                document.getElementById('fh-inv-empty').style.display = 'none';
+                                invoices.forEach(function(inv){
+                                    var tr = document.createElement('tr');
+                                    tr.style.borderBottom = '1px solid #333';
+                                    tr.innerHTML = '<td style="padding:8px 10px;color:#ddd;">' + inv.customer_name + '</td>'
+                                        + '<td style="padding:8px 10px;color:#aaa;">' + (inv.hf_username ? '@' + inv.hf_username : '—') + '</td>'
+                                        + '<td style="padding:8px 10px;text-align:right;color:#ddd;">$' + parseFloat(inv.total).toFixed(2) + '</td>'
+                                        + '<td style="padding:8px 10px;"><a href="' + inv.payment_link + '" target="_blank" style="color:#96885f;font-size:12px;">Payment Link &#8599;</a></td>';
+                                    tbody.appendChild(tr);
+                                });
+                            }
+                            document.getElementById('fh-inv-output').style.display = 'block';
+                        })
+                        .catch(function(){ genBtn.disabled = false; document.getElementById('fh-inv-spinner').style.display = 'none'; alert('Request failed.'); });
+                });
+
+                // Copy to clipboard
+                document.getElementById('fh-inv-copy').addEventListener('click', function(){
+                    var ta = document.getElementById('fh-inv-forum-text');
+                    ta.select();
+                    document.execCommand('copy');
+                    var msg = document.getElementById('fh-inv-copy-msg');
+                    msg.textContent = '✓ Copied to clipboard!';
+                    msg.style.display = 'inline';
+                    setTimeout(function(){ msg.style.display = 'none'; }, 2500);
+                });
+            }
+
+            // ── Packing List ──
+            var packBtn = document.getElementById('fh-pack-generate');
+            if (packBtn) {
+                packBtn.addEventListener('click', function(){
+                    var date = document.getElementById('fh-pack-date').value;
+                    if (!date) { alert('Please select a shipping date.'); return; }
+                    packBtn.disabled = true;
+                    document.getElementById('fh-pack-spinner').style.display = 'inline';
+                    document.getElementById('fh-pack-error').style.display = 'none';
+                    document.getElementById('fh-pack-print').style.display = 'none';
+                    document.getElementById('fh-pack-output').innerHTML = '';
+
+                    var fd = new FormData();
+                    fd.append('action', 'fishotel_get_packing_list');
+                    fd.append('nonce', '<?php echo esc_js( $packing_nonce ); ?>');
+                    fd.append('shipping_date', date);
+                    fetch('<?php echo esc_js( $ajax_url ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
+                        .then(function(r){ return r.json(); })
+                        .then(function(resp){
+                            packBtn.disabled = false;
+                            document.getElementById('fh-pack-spinner').style.display = 'none';
+                            if (!resp.success) {
+                                var errEl = document.getElementById('fh-pack-error');
+                                errEl.textContent = resp.data && resp.data.message ? resp.data.message : 'Error.';
+                                errEl.style.display = 'block';
+                                return;
+                            }
+                            document.getElementById('fh-pack-output').innerHTML = resp.data.html;
+                            document.getElementById('fh-pack-print').style.display = 'inline-block';
+                        })
+                        .catch(function(){ packBtn.disabled = false; document.getElementById('fh-pack-spinner').style.display = 'none'; alert('Request failed.'); });
+                });
+
+                document.getElementById('fh-pack-print').addEventListener('click', function(){
+                    window.print();
+                });
+            }
+        })();
+        </script>
+        <?php
     }
 
 }

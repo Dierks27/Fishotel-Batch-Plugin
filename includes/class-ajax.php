@@ -1439,4 +1439,169 @@ trait FisHotel_Ajax {
         ] );
     }
 
+    /* ─────────────────────────────────────────────
+     *  Stage 7: Unpaid Invoices List
+     * ───────────────────────────────────────────── */
+
+    public function ajax_get_unpaid_invoices() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['nonce'] ?? '', 'fishotel_unpaid_invoices' ) ) {
+            wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
+        }
+
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        if ( ! $batch_name ) {
+            wp_send_json_error( [ 'message' => 'No batch specified.' ] );
+        }
+
+        $orders = wc_get_orders( [
+            'limit'      => -1,
+            'status'     => [ 'pending', 'on-hold' ],
+            'meta_query' => [
+                [ 'key' => '_fishotel_batch',      'value' => $batch_name,     'compare' => '=' ],
+                [ 'key' => '_fishotel_order_type', 'value' => 'batch_invoice', 'compare' => '=' ],
+            ],
+        ] );
+
+        $invoices    = [];
+        $forum_lines = [];
+
+        foreach ( $orders as $order ) {
+            $user_id     = $order->get_customer_id();
+            $user        = get_userdata( $user_id );
+            $hf_username = get_user_meta( $user_id, '_fishotel_humble_username', true );
+            $display     = $user ? $user->display_name : 'User #' . $user_id;
+            $hf_display  = $hf_username ? '@' . $hf_username : $display;
+            $amount      = '$' . number_format( (float) $order->get_total(), 2 );
+            $link        = $order->get_checkout_payment_url();
+
+            $invoices[] = [
+                'customer_name' => $display,
+                'hf_username'   => $hf_username,
+                'total'         => $order->get_total(),
+                'payment_link'  => $link,
+                'order_id'      => $order->get_id(),
+            ];
+
+            $forum_lines[] = $hf_display . ' - ' . $amount . ' - ' . $link;
+        }
+
+        $forum_text  = '**Unpaid Invoices for ' . $batch_name . "**\n\n";
+        $forum_text .= implode( "\n", $forum_lines );
+        if ( $forum_lines ) {
+            $forum_text .= "\n\nPlease complete payment at your earliest convenience.";
+        } else {
+            $forum_text = 'No unpaid invoices for ' . $batch_name . '.';
+        }
+
+        wp_send_json_success( [
+            'invoices'   => $invoices,
+            'forum_text' => $forum_text,
+        ] );
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Stage 7: Packing List
+     * ───────────────────────────────────────────── */
+
+    public function ajax_get_packing_list() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( $_POST['nonce'] ?? '', 'fishotel_packing_list' ) ) {
+            wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
+        }
+
+        $shipping_date = sanitize_text_field( $_POST['shipping_date'] ?? '' );
+        if ( ! $shipping_date || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $shipping_date ) ) {
+            wp_send_json_error( [ 'message' => 'Invalid date.' ] );
+        }
+
+        $orders = wc_get_orders( [
+            'limit'      => -1,
+            'status'     => [ 'processing', 'completed' ],
+            'meta_query' => [
+                [ 'key' => '_fishotel_shipping_date', 'value' => $shipping_date, 'compare' => '=' ],
+            ],
+        ] );
+
+        if ( empty( $orders ) ) {
+            wp_send_json_error( [ 'message' => 'No paid orders found for this shipping date.' ] );
+        }
+
+        $date_obj    = new DateTime( $shipping_date );
+        $display_date = $date_obj->format( 'l, F j, Y' );
+
+        ob_start();
+        ?>
+        <div class="fh-packing-list">
+            <div class="fh-packing-list-header">
+                <h1>FisHotel Packing List</h1>
+                <h2>Shipping Date: <?php echo esc_html( $display_date ); ?></h2>
+                <p>Total Orders: <?php echo count( $orders ); ?></p>
+            </div>
+
+            <?php foreach ( $orders as $order ) :
+                $user       = get_userdata( $order->get_customer_id() );
+                $batch_name = $order->get_meta( '_fishotel_batch' );
+                $shop_items = json_decode( $order->get_meta( '_fishotel_shop_items' ), true ) ?: [];
+                $addr2      = $order->get_shipping_address_2();
+            ?>
+            <div class="fh-packing-list-order">
+                <div class="fh-packing-order-header">
+                    <h3>Order #<?php echo $order->get_order_number(); ?> &mdash; <?php echo esc_html( $user ? $user->display_name : 'Unknown' ); ?></h3>
+                    <?php if ( $batch_name ) : ?><p><strong>Batch:</strong> <?php echo esc_html( $batch_name ); ?></p><?php endif; ?>
+                    <p><strong>Email:</strong> <?php echo esc_html( $order->get_billing_email() ); ?></p>
+                    <p><strong>Phone:</strong> <?php echo esc_html( $order->get_billing_phone() ); ?></p>
+                </div>
+
+                <div class="fh-packing-address">
+                    <h4>Shipping Address</h4>
+                    <p>
+                        <?php echo esc_html( trim( $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name() ) ); ?><br>
+                        <?php echo esc_html( $order->get_shipping_address_1() ); ?><br>
+                        <?php if ( $addr2 ) : ?><?php echo esc_html( $addr2 ); ?><br><?php endif; ?>
+                        <?php echo esc_html( $order->get_shipping_city() . ', ' . $order->get_shipping_state() . ' ' . $order->get_shipping_postcode() ); ?>
+                    </p>
+                </div>
+
+                <div class="fh-packing-items">
+                    <h4>Fish to Pack</h4>
+                    <table class="fh-packing-table">
+                        <thead><tr><th>Species</th><th>Qty</th><th style="width:60px;">Packed</th></tr></thead>
+                        <tbody>
+                        <?php foreach ( $order->get_items( 'line_item' ) as $item ) : ?>
+                            <tr>
+                                <td><?php echo esc_html( $item->get_name() ); ?></td>
+                                <td><?php echo intval( $item->get_quantity() ); ?></td>
+                                <td>&#9744;</td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <?php if ( ! empty( $shop_items ) ) : ?>
+                <div class="fh-packing-shop-items">
+                    <h4>Shop Items</h4>
+                    <ul>
+                        <?php foreach ( $shop_items as $si ) : ?>
+                        <li><?php echo esc_html( $si['name'] ); ?> &times;<?php echo intval( $si['qty'] ); ?> (<?php echo esc_html( $si['source'] ?? '' ); ?>)</li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
+
+                <div class="fh-packing-notes">
+                    <h4>Customer Notes</h4>
+                    <p><?php echo $order->get_customer_note() ? esc_html( $order->get_customer_note() ) : '<em>None</em>'; ?></p>
+                </div>
+
+                <div class="fh-packing-signature">
+                    <p>Packed by: ______________________ &nbsp;&nbsp; Date: ______________________</p>
+                </div>
+            </div>
+            <div class="fh-packing-page-break"></div>
+            <?php endforeach; ?>
+        </div>
+        <?php
+        wp_send_json_success( [ 'html' => ob_get_clean() ] );
+    }
+
 }

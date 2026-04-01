@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.13.0 - Stage 7: Customer invoice view (3 audiences).
- * Version:           10.13.0
+ * Description:       v10.14.0 - Stage 7: Unpaid invoices list and packing lists.
+ * Version:           10.14.0
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.13.0' );
+define( 'FISHOTEL_VERSION', '10.14.0' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -279,6 +279,8 @@ class FisHotel_Batch_Manager {
 
         // Invoicing AJAX
         add_action( 'wp_ajax_fishotel_generate_invoices',      [$this, 'ajax_generate_invoices'] );
+        add_action( 'wp_ajax_fishotel_get_unpaid_invoices',    [$this, 'ajax_get_unpaid_invoices'] );
+        add_action( 'wp_ajax_fishotel_get_packing_list',       [$this, 'ajax_get_packing_list'] );
 
         add_action( 'woocommerce_after_checkout_form', [$this, 'add_return_to_fish_button'] );
         add_action( 'woocommerce_thankyou', [$this, 'add_return_to_fish_button'] );
