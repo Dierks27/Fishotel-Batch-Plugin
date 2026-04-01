@@ -1264,8 +1264,8 @@ trait FisHotel_Ajax {
 
         $slug     = sanitize_title( $batch_name );
         $statuses = get_option( 'fishotel_batch_statuses', [] );
-        if ( ( $statuses[ $batch_name ] ?? '' ) !== 'casino' ) {
-            wp_send_json_error( [ 'message' => 'Batch must be in casino stage.' ] );
+        if ( ! in_array( $statuses[ $batch_name ] ?? '', [ 'draft', 'casino' ], true ) ) {
+            wp_send_json_error( [ 'message' => 'Batch must be in draft or casino stage.' ] );
         }
 
         $queue_data = get_option( 'fishotel_verification_queue_' . $slug, [] );

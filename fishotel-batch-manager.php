@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.14.0 - Stage 7: Unpaid invoices list and packing lists.
- * Version:           10.14.0
+ * Description:       v10.14.1 - Fix: Generate Invoices accepts draft or casino stage.
+ * Version:           10.14.1
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.14.0' );
+define( 'FISHOTEL_VERSION', '10.14.1' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

@@ -3088,7 +3088,7 @@ trait FisHotel_Admin {
         $batches_str   = get_option( 'fishotel_batches', '' );
         $batches_array = array_values( array_filter( array_map( 'trim', explode( "\n", $batches_str ) ) ) );
         $statuses      = get_option( 'fishotel_batch_statuses', [] );
-        $arrived_plus  = [ 'arrived', 'in_quarantine', 'graduation', 'verification', 'draft', 'invoicing' ];
+        $arrived_plus  = [ 'arrived', 'in_quarantine', 'graduation', 'verification', 'draft', 'casino', 'invoicing' ];
 
         $eligible = array_filter( $batches_array, function ( $b ) use ( $statuses, $arrived_plus ) {
             return in_array( $statuses[ $b ] ?? '', $arrived_plus, true );
@@ -3519,7 +3519,7 @@ trait FisHotel_Admin {
         if ( ! $lc_is_open ) {
 
             // ── Generate Invoices panel (casino stage + results exist) ──
-            if ( $current_stage === 'casino' && $lc_has_results ) {
+            if ( in_array( $current_stage, [ 'draft', 'casino' ], true ) && $lc_has_results ) {
                 $gi_nonce = wp_create_nonce( 'fishotel_generate_invoices_nonce' );
                 echo '<div style="background:#1e1e1e;border:1px solid #96885f;border-radius:8px;padding:24px;margin-bottom:16px;">';
                 echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Stage 7 — Generate Invoices</h2>';
