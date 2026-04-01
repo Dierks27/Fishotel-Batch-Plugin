@@ -1245,4 +1245,198 @@ trait FisHotel_Ajax {
         wp_send_json_success();
     }
 
+    /* ─────────────────────────────────────────────
+     *  Stage 7: Generate Invoices
+     * ───────────────────────────────────────────── */
+
+    public function ajax_generate_invoices() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( [ 'message' => 'Permission denied.' ] );
+        }
+        if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'fishotel_generate_invoices_nonce' ) ) {
+            wp_send_json_error( [ 'message' => 'Security check failed.' ] );
+        }
+
+        $batch_name = sanitize_text_field( $_POST['batch_name'] ?? '' );
+        if ( ! $batch_name ) {
+            wp_send_json_error( [ 'message' => 'No batch specified.' ] );
+        }
+
+        $slug     = sanitize_title( $batch_name );
+        $statuses = get_option( 'fishotel_batch_statuses', [] );
+        if ( ( $statuses[ $batch_name ] ?? '' ) !== 'casino' ) {
+            wp_send_json_error( [ 'message' => 'Batch must be in casino stage.' ] );
+        }
+
+        $queue_data = get_option( 'fishotel_verification_queue_' . $slug, [] );
+        $lc_results = get_option( 'fishotel_lastcall_results_' . $slug, [] );
+
+        if ( empty( $lc_results['picks'] ) && empty( $queue_data['species'] ) ) {
+            wp_send_json_error( [ 'message' => 'No draft results or verification data found.' ] );
+        }
+
+        // ── Build customer → fish list ──────────────────────────────────────
+        // customer_fish[ user_id ] = [ { fish_id, fish_name, qty, source } ]
+
+        $customer_fish = [];
+
+        // Stage 5: accepted fish from verification queue
+        if ( ! empty( $queue_data['species'] ) ) {
+            foreach ( $queue_data['species'] as $fish_id => $sp ) {
+                foreach ( ( $sp['queue'] ?? [] ) as $entry ) {
+                    if ( ( $entry['status'] ?? '' ) !== 'accepted' ) continue;
+                    $uid = intval( $entry['user_id'] ?? 0 );
+                    $qty = intval( $entry['accepted_qty'] ?? 0 );
+                    if ( ! $uid || $qty < 1 ) continue;
+
+                    if ( ! isset( $customer_fish[ $uid ] ) ) $customer_fish[ $uid ] = [];
+
+                    // Check if this fish_id already added from stage 5
+                    $found = false;
+                    foreach ( $customer_fish[ $uid ] as &$existing ) {
+                        if ( $existing['fish_id'] === intval( $fish_id ) ) {
+                            $existing['qty'] += $qty;
+                            $found = true;
+                            break;
+                        }
+                    }
+                    unset( $existing );
+
+                    if ( ! $found ) {
+                        $post = get_post( intval( $fish_id ) );
+                        $customer_fish[ $uid ][] = [
+                            'fish_id'   => intval( $fish_id ),
+                            'fish_name' => $post ? $post->post_title : 'Fish #' . $fish_id,
+                            'qty'       => $qty,
+                            'source'    => 'verification',
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Stage 6: last call draft picks
+        foreach ( ( $lc_results['picks'] ?? [] ) as $pick ) {
+            $uid     = intval( $pick['user_id'] ?? 0 );
+            $fish_id = intval( $pick['fish_id'] ?? 0 );
+            $qty     = intval( $pick['qty'] ?? 0 );
+            if ( ! $uid || $qty < 1 ) continue;
+
+            if ( ! isset( $customer_fish[ $uid ] ) ) $customer_fish[ $uid ] = [];
+
+            $found = false;
+            foreach ( $customer_fish[ $uid ] as &$existing ) {
+                if ( $existing['fish_id'] === $fish_id ) {
+                    $existing['qty'] += $qty;
+                    $found = true;
+                    break;
+                }
+            }
+            unset( $existing );
+
+            if ( ! $found ) {
+                $customer_fish[ $uid ][] = [
+                    'fish_id'   => $fish_id,
+                    'fish_name' => sanitize_text_field( $pick['fish_name'] ?? 'Fish #' . $fish_id ),
+                    'qty'       => $qty,
+                    'source'    => 'lastcall',
+                ];
+            }
+        }
+
+        // ── Process each customer ───────────────────────────────────────────
+        $orders_created   = 0;
+        $refunds_issued   = 0;
+        $missing_prices   = [];
+
+        foreach ( $customer_fish as $uid => $fish_list ) {
+            $total_fish = array_sum( array_column( $fish_list, 'qty' ) );
+
+            // Zero fish → refund deposit
+            if ( $total_fish < 1 ) {
+                $this->update_user_deposit_balance( $uid, 25.00 );
+                $refunds_issued++;
+                continue;
+            }
+
+            // ── Build WooCommerce order ──────────────────────────────────────
+            $order = wc_create_order( [ 'customer_id' => $uid, 'status' => 'pending' ] );
+            if ( is_wp_error( $order ) ) continue;
+
+            $subtotal = 0.00;
+
+            foreach ( $fish_list as $item ) {
+                $fish_post  = get_post( $item['fish_id'] );
+                $label      = $fish_post ? $fish_post->post_title : $item['fish_name'];
+                $master_id  = (int) get_post_meta( $item['fish_id'], '_master_id', true );
+                $unit_price = $master_id ? (float) get_post_meta( $master_id, '_price', true ) : 0.0;
+
+                if ( $unit_price <= 0 ) {
+                    $missing_prices[] = $label;
+                }
+
+                $line_total = $unit_price * $item['qty'];
+                $subtotal  += $line_total;
+
+                // Add as custom line item (no WC product required)
+                $line_item = new WC_Order_Item_Product();
+                $line_item->set_name( $label );
+                $line_item->set_quantity( $item['qty'] );
+                $line_item->set_subtotal( $line_total );
+                $line_item->set_total( $line_total );
+                $line_item->add_meta_data( '_fishotel_fish_id', $item['fish_id'] );
+                $order->add_item( $line_item );
+            }
+
+            // Shipping
+            $shipping_cost = $subtotal < 400 ? 45.00 : 9.00;
+            $shipping_item = new WC_Order_Item_Shipping();
+            $shipping_item->set_name( 'Shipping' );
+            $shipping_item->set_total( $shipping_cost );
+            $order->add_item( $shipping_item );
+
+            $order_total = $subtotal + $shipping_cost;
+
+            // Wallet credit as negative fee
+            $wallet_balance = $this->get_user_deposit_balance( $uid );
+            $wallet_credit  = min( $wallet_balance, $order_total );
+            if ( $wallet_credit > 0 ) {
+                $fee = new WC_Order_Item_Fee();
+                $fee->set_name( 'Deposit Credit' );
+                $fee->set_total( -$wallet_credit );
+                $order->add_item( $fee );
+                $this->update_user_deposit_balance( $uid, -$wallet_credit );
+                $order_total -= $wallet_credit;
+            }
+
+            // Order meta
+            $order->update_meta_data( '_fishotel_batch',      $batch_name );
+            $order->update_meta_data( '_fishotel_order_type', 'batch_invoice' );
+            $order->update_meta_data( '_fishotel_fish_data',  wp_json_encode( $fish_list ) );
+            $order->update_meta_data( '_fishotel_shop_items', wp_json_encode( [] ) );
+
+            $order->set_total( max( 0, $order_total ) );
+            $order->calculate_taxes();
+            $order->save();
+
+            $orders_created++;
+        }
+
+        // ── Advance batch to invoicing ───────────────────────────────────────
+        $statuses[ $batch_name ] = 'invoicing';
+        update_option( 'fishotel_batch_statuses', $statuses );
+
+        $msg = $orders_created . ' orders created, ' . $refunds_issued . ' customer(s) refunded $25 deposit.';
+        if ( ! empty( $missing_prices ) ) {
+            $msg .= ' Warning: missing prices for: ' . implode( ', ', array_unique( $missing_prices ) ) . '.';
+        }
+
+        wp_send_json_success( [
+            'message'        => $msg,
+            'orders_created' => $orders_created,
+            'refunds_issued' => $refunds_issued,
+            'missing_prices' => array_unique( $missing_prices ),
+        ] );
+    }
+
 }

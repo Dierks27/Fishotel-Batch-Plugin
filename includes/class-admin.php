@@ -3374,8 +3374,69 @@ trait FisHotel_Admin {
             }
         }
 
-        // ── NOT YET OPEN — show Open button ──
+        // ── NOT YET OPEN — show Open button or Generate Invoices ──
         if ( ! $lc_is_open ) {
+
+            // ── Generate Invoices panel (casino stage + results exist) ──
+            if ( $current_stage === 'casino' && $lc_has_results ) {
+                $gi_nonce = wp_create_nonce( 'fishotel_generate_invoices_nonce' );
+                echo '<div style="background:#1e1e1e;border:1px solid #96885f;border-radius:8px;padding:24px;margin-bottom:16px;">';
+                echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Stage 7 — Generate Invoices</h2>';
+                echo '<p style="color:#aaa;font-size:13px;margin-bottom:4px;">Draft complete. Casino Night is over. Ready to build WooCommerce orders for all customers.</p>';
+                echo '<ul style="color:#aaa;font-size:12px;margin:0 0 16px 16px;line-height:1.8;">';
+                echo '<li>Customers with fish get a WooCommerce order with line items, shipping, and deposit credit applied.</li>';
+                echo '<li>Customers with zero fish get a $25 deposit refund to their wallet.</li>';
+                echo '<li>Batch advances to <strong style="color:#ddd;">Invoicing</strong> stage.</li>';
+                echo '</ul>';
+                echo '<button id="fh-gen-invoices-btn" data-batch="' . esc_attr( $selected ) . '" data-nonce="' . esc_attr( $gi_nonce ) . '" style="background:#27ae60;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Generate Invoices</button>';
+                echo '<span id="fh-gen-invoices-spinner" style="display:none;margin-left:12px;color:#aaa;font-size:13px;">&#8987; Processing&hellip;</span>';
+                echo '<div id="fh-gen-invoices-result" style="margin-top:14px;font-size:13px;display:none;"></div>';
+                echo '</div>';
+                ?>
+                <script>
+                (function(){
+                    var btn = document.getElementById('fh-gen-invoices-btn');
+                    if (!btn) return;
+                    btn.addEventListener('click', function(){
+                        if (!confirm('Generate invoices for <?php echo esc_js( $selected ); ?>? This will create WooCommerce orders and advance the batch to Invoicing. This cannot be undone.')) return;
+                        btn.disabled = true;
+                        document.getElementById('fh-gen-invoices-spinner').style.display = 'inline';
+                        var fd = new FormData();
+                        fd.append('action',     'fishotel_generate_invoices');
+                        fd.append('nonce',      btn.getAttribute('data-nonce'));
+                        fd.append('batch_name', btn.getAttribute('data-batch'));
+                        fetch('<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
+                            .then(function(r){ return r.json(); })
+                            .then(function(resp){
+                                document.getElementById('fh-gen-invoices-spinner').style.display = 'none';
+                                var el = document.getElementById('fh-gen-invoices-result');
+                                el.style.display = 'block';
+                                if (resp.success) {
+                                    var color = resp.data.missing_prices && resp.data.missing_prices.length ? '#e67e22' : '#27ae60';
+                                    el.style.color = color;
+                                    el.innerHTML = '&#10003; ' + resp.data.message;
+                                    btn.style.display = 'none';
+                                    setTimeout(function(){ location.reload(); }, 2000);
+                                } else {
+                                    el.style.color = '#e74c3c';
+                                    el.textContent = 'Error: ' + (resp.data && resp.data.message ? resp.data.message : 'Unknown error.');
+                                    btn.disabled = false;
+                                }
+                            })
+                            .catch(function(){
+                                document.getElementById('fh-gen-invoices-spinner').style.display = 'none';
+                                var el = document.getElementById('fh-gen-invoices-result');
+                                el.style.display = 'block';
+                                el.style.color = '#e74c3c';
+                                el.textContent = 'Request failed. Check console.';
+                                btn.disabled = false;
+                            });
+                    });
+                })();
+                </script>
+                <?php
+            } else {
+            // ── Standard "Open Last Call" panel ──
             $can_open     = in_array( $current_stage, [ 'verification', 'graduation' ], true );
             $queue_exists = ! empty( $lc_queue );
 
@@ -3396,6 +3457,7 @@ trait FisHotel_Admin {
             $disabled = ( ! $can_open || ! $queue_exists ) ? ' disabled' : '';
             echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;"' . $disabled . '>Open Last Call</button>';
             echo '</form></div>';
+            } // end else (not casino stage)
 
         } else {
         // ── LAST CALL IS OPEN — full control panel ──
