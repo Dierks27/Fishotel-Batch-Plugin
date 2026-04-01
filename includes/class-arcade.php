@@ -3744,7 +3744,7 @@ class FisHotel_Arcade {
                 <div class="fh-st-machine">
                     <img src="<?php echo esc_url( $base ); ?>" class="fh-st-base" alt="Strength Tester">
                     <div class="fh-st-bell-glow" id="fh-st-bell-glow"></div>
-                    <?php for ( $i = 0; $i < 25; $i++ ) : ?><div class="fh-st-light"></div><?php endfor; ?>
+                    <div class="fh-st-lights"><?php for ( $i = 0; $i < 25; $i++ ) : ?><div class="fh-st-light"></div><?php endfor; ?></div>
                     <div class="fh-st-puck-track">
                         <img src="<?php echo esc_url( $puck ); ?>" class="fh-st-puck" id="fh-st-puck" alt="Puck">
                     </div>
@@ -3850,7 +3850,7 @@ class FisHotel_Arcade {
                     <div class="fh-st-machine">
                         <img src="<?php echo esc_url( $base ); ?>" class="fh-st-base" alt="Strength Tester">
                         <div class="fh-st-bell-glow" id="fh-st-bell-glow"></div>
-                        <?php for ( $i = 0; $i < 25; $i++ ) : ?><div class="fh-st-light"></div><?php endfor; ?>
+                        <div class="fh-st-lights"><?php for ( $i = 0; $i < 25; $i++ ) : ?><div class="fh-st-light"></div><?php endfor; ?></div>
                         <div class="fh-st-puck-track">
                             <img src="<?php echo esc_url( $puck ); ?>" class="fh-st-puck" id="fh-st-puck" alt="Puck">
                         </div>
