@@ -234,6 +234,24 @@ trait FisHotel_Admin {
                 update_option( 'fishotel_lastcall_rounds', max( 1, min( 10, intval( $_POST['lastcall_rounds'] ) ) ) );
             }
 
+            // Shipping Settings
+            $valid_days = [ 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ];
+            $shipping_days = array_intersect( (array) ( $_POST['shipping_days'] ?? [] ), $valid_days );
+            update_option( 'fishotel_shipping_days', array_values( $shipping_days ) );
+            update_option( 'fishotel_shipping_min_advance', max( 0, intval( $_POST['shipping_min_advance'] ?? 1 ) ) );
+            update_option( 'fishotel_shipping_max_ahead', max( 1, intval( $_POST['shipping_max_ahead'] ?? 30 ) ) );
+
+            // Blacklist: merge existing with any newly added dates, remove any flagged for removal
+            $existing_blacklist = get_option( 'fishotel_shipping_blacklist', [] );
+            $add_date = sanitize_text_field( $_POST['shipping_blacklist_add'] ?? '' );
+            if ( $add_date && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $add_date ) ) {
+                $existing_blacklist[] = $add_date;
+            }
+            $remove_dates = array_map( 'sanitize_text_field', (array) ( $_POST['shipping_blacklist_remove'] ?? [] ) );
+            $existing_blacklist = array_values( array_unique( array_diff( $existing_blacklist, $remove_dates ) ) );
+            sort( $existing_blacklist );
+            update_option( 'fishotel_shipping_blacklist', $existing_blacklist );
+
             $new_assignments = [];
             $new_statuses = [];
             $new_deposit_amounts = [];
@@ -528,6 +546,128 @@ trait FisHotel_Admin {
                                 </td>
                             </tr>
                         </table>
+
+                        <?php
+                        $ship_days      = get_option( 'fishotel_shipping_days', [ 'Monday', 'Tuesday', 'Wednesday' ] );
+                        $ship_min       = intval( get_option( 'fishotel_shipping_min_advance', 1 ) );
+                        $ship_max       = intval( get_option( 'fishotel_shipping_max_ahead', 30 ) );
+                        $ship_blacklist = get_option( 'fishotel_shipping_blacklist', [] );
+                        $all_days       = [ 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ];
+                        ?>
+                        <hr style="border-color:#444;margin:20px 0;">
+                        <h3 style="color:#b5a165;margin:0 0 14px;font-size:1em;text-transform:uppercase;letter-spacing:1px;">&#128666; Shipping Settings</h3>
+                        <table class="form-table">
+                            <tr>
+                                <th style="color:#ddd;vertical-align:top;padding-top:10px;">Shipping Days</th>
+                                <td>
+                                    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                                    <?php foreach ( $all_days as $day ) : ?>
+                                        <label style="color:#ddd;font-size:13px;display:flex;align-items:center;gap:6px;">
+                                            <input type="checkbox" name="shipping_days[]" form="fishotel-save-all-form" value="<?php echo esc_attr( $day ); ?>"<?php checked( in_array( $day, $ship_days, true ) ); ?>>
+                                            <?php echo esc_html( substr( $day, 0, 3 ) ); ?>
+                                        </label>
+                                    <?php endforeach; ?>
+                                    </div>
+                                    <small style="display:block;margin-top:6px;color:#aaa;">Days customers can select for shipping</small>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="color:#ddd;">Min Advance Days</th>
+                                <td>
+                                    <input type="number" name="shipping_min_advance" form="fishotel-save-all-form" value="<?php echo esc_attr( $ship_min ); ?>" min="0" style="width:70px;padding:5px 8px;border-radius:4px;">
+                                    <small style="display:block;margin-top:5px;color:#aaa;">Earliest an order placed today can ship (days from now)</small>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="color:#ddd;">Max Days Ahead</th>
+                                <td>
+                                    <input type="number" name="shipping_max_ahead" form="fishotel-save-all-form" value="<?php echo esc_attr( $ship_max ); ?>" min="1" style="width:70px;padding:5px 8px;border-radius:4px;">
+                                    <small style="display:block;margin-top:5px;color:#aaa;">How far out customers can schedule shipping</small>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="color:#ddd;vertical-align:top;padding-top:10px;">Block Specific Dates</th>
+                                <td>
+                                    <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
+                                        <input type="date" id="fh-bl-datepicker" style="padding:5px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">
+                                        <button type="button" id="fh-bl-add" style="background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:6px 14px;font-size:12px;cursor:pointer;">+ Add Date</button>
+                                    </div>
+                                    <div id="fh-bl-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;">
+                                    <?php if ( empty( $ship_blacklist ) ) : ?>
+                                        <span id="fh-bl-empty" style="color:#666;font-size:12px;">No blocked dates.</span>
+                                    <?php else : ?>
+                                        <span id="fh-bl-empty" style="color:#666;font-size:12px;display:none;">No blocked dates.</span>
+                                        <?php foreach ( $ship_blacklist as $bl_date ) : ?>
+                                        <div class="fh-bl-row" style="display:flex;align-items:center;gap:10px;">
+                                            <input type="hidden" name="shipping_blacklist_remove[]" form="fishotel-save-all-form" value="<?php echo esc_attr( $bl_date ); ?>" disabled class="fh-bl-remove-input">
+                                            <span style="color:#ddd;font-size:13px;"><?php echo esc_html( date( 'l, F j, Y', strtotime( $bl_date ) ) ); ?></span>
+                                            <button type="button" class="fh-bl-remove" style="background:#c0392b;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;">Remove</button>
+                                        </div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                    </div>
+                                    <input type="hidden" name="shipping_blacklist_add" id="fh-bl-add-val" form="fishotel-save-all-form" value="">
+                                    <small style="display:block;margin-top:8px;color:#aaa;">Holidays or other days you will never ship</small>
+                                </td>
+                            </tr>
+                        </table>
+                        <script>
+                        (function(){
+                            var addBtn  = document.getElementById('fh-bl-add');
+                            var dp      = document.getElementById('fh-bl-datepicker');
+                            var list    = document.getElementById('fh-bl-list');
+                            var empty   = document.getElementById('fh-bl-empty');
+                            var addVal  = document.getElementById('fh-bl-add-val');
+
+                            // pending additions this session (stored as hidden add val, only 1 per save — reloads after save)
+                            addBtn.addEventListener('click', function(){
+                                var d = dp.value;
+                                if (!d) return;
+                                // Check for duplicates already in list
+                                var existing = list.querySelectorAll('span[data-date]');
+                                for (var i=0; i<existing.length; i++) { if (existing[i].getAttribute('data-date') === d) return; }
+                                addVal.value = d;
+                                // Show preview row (will persist after form save)
+                                var row = document.createElement('div');
+                                row.className = 'fh-bl-row';
+                                row.style.cssText = 'display:flex;align-items:center;gap:10px;';
+                                var label = document.createElement('span');
+                                label.setAttribute('data-date', d);
+                                label.style.cssText = 'color:#ddd;font-size:13px;';
+                                label.textContent = d + ' (pending save)';
+                                var rmBtn = document.createElement('button');
+                                rmBtn.type = 'button';
+                                rmBtn.textContent = 'Remove';
+                                rmBtn.style.cssText = 'background:#c0392b;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;';
+                                rmBtn.addEventListener('click', function(){ row.remove(); addVal.value = ''; checkEmpty(); });
+                                row.appendChild(label);
+                                row.appendChild(rmBtn);
+                                list.appendChild(row);
+                                empty.style.display = 'none';
+                                dp.value = '';
+                            });
+
+                            // Remove existing dates
+                            list.addEventListener('click', function(e){
+                                if (!e.target.classList.contains('fh-bl-remove')) return;
+                                var row = e.target.closest('.fh-bl-row');
+                                var inp = row.querySelector('.fh-bl-remove-input');
+                                if (inp) inp.disabled = false; // enable so it submits
+                                row.style.opacity = '0.4';
+                                e.target.textContent = 'Removing…';
+                                e.target.disabled = true;
+                                checkEmpty();
+                            });
+
+                            function checkEmpty(){
+                                var rows = list.querySelectorAll('.fh-bl-row');
+                                var allFaded = true;
+                                rows.forEach(function(r){ if (r.style.opacity !== '0.4') allFaded = false; });
+                                empty.style.display = (rows.length === 0 || allFaded) ? 'block' : 'none';
+                            }
+                        })();
+                        </script>
+
                     </div>
                 </div>
 

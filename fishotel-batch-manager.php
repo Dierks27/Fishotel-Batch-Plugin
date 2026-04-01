@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.11.0 - Stage 7: Invoice generator and admin button.
- * Version:           10.11.0
+ * Description:       v10.12.0 - Universal shipping date selector at checkout.
+ * Version:           10.12.0
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.11.0' );
+define( 'FISHOTEL_VERSION', '10.12.0' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -282,6 +282,12 @@ class FisHotel_Batch_Manager {
 
         add_action( 'woocommerce_after_checkout_form', [$this, 'add_return_to_fish_button'] );
         add_action( 'woocommerce_thankyou', [$this, 'add_return_to_fish_button'] );
+
+        // Shipping date selector
+        add_action( 'woocommerce_after_order_notes',                 [$this, 'fishotel_shipping_date_field'] );
+        add_action( 'woocommerce_checkout_process',                  [$this, 'fishotel_shipping_date_validate'] );
+        add_action( 'woocommerce_checkout_update_order_meta',        [$this, 'fishotel_shipping_date_save'] );
+        add_action( 'woocommerce_admin_order_data_after_billing_address', [$this, 'fishotel_shipping_date_display'] );
     }
 
     // ─── Helpers — Arrival Species ──────────────────────────────────────

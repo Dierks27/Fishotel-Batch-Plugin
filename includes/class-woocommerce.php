@@ -416,6 +416,93 @@ trait FisHotel_WooCommerce {
         <?php
     }
 
+    /* ─────────────────────────────────────────────
+     *  Shipping Date — Checkout Integration
+     * ───────────────────────────────────────────── */
+
+    private function fishotel_cart_contains_fish() {
+        if ( ! WC()->cart ) return false;
+        foreach ( WC()->cart->get_cart() as $item ) {
+            if ( has_term( [ 'quarantined-fish', 'inverts', 'invoices' ], 'product_cat', $item['product_id'] ) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function fishotel_get_available_shipping_dates() {
+        $allowed_days = get_option( 'fishotel_shipping_days', [ 'Monday', 'Tuesday', 'Wednesday' ] );
+        $min_advance  = intval( get_option( 'fishotel_shipping_min_advance', 1 ) );
+        $max_ahead    = intval( get_option( 'fishotel_shipping_max_ahead', 30 ) );
+        $blacklist     = get_option( 'fishotel_shipping_blacklist', [] );
+
+        $dates      = [];
+        $start_date = new DateTime( 'now', new DateTimeZone( 'America/Chicago' ) );
+        $start_date->modify( "+{$min_advance} days" );
+
+        for ( $i = 0; $i < $max_ahead; $i++ ) {
+            $check_date  = clone $start_date;
+            $check_date->modify( "+{$i} days" );
+            $day_name    = $check_date->format( 'l' );
+            $date_string = $check_date->format( 'Y-m-d' );
+
+            if ( ! in_array( $day_name, $allowed_days, true ) ) continue;
+            if ( in_array( $date_string, $blacklist, true ) ) continue;
+
+            $dates[ $date_string ] = $check_date->format( 'l, F j, Y' );
+        }
+
+        return $dates;
+    }
+
+    public function fishotel_shipping_date_field( $checkout ) {
+        if ( ! $this->fishotel_cart_contains_fish() ) return;
+
+        $available = $this->fishotel_get_available_shipping_dates();
+        if ( empty( $available ) ) {
+            echo '<div id="fishotel-shipping-date-field"><p style="color:#e74c3c;font-weight:700;">No shipping dates are currently available. Please contact us before placing your order.</p></div>';
+            return;
+        }
+
+        echo '<div id="fishotel-shipping-date-field">';
+        woocommerce_form_field( 'fishotel_shipping_date', [
+            'type'     => 'select',
+            'class'    => [ 'form-row-wide' ],
+            'label'    => 'Select Shipping Day',
+            'required' => true,
+            'options'  => array_merge( [ '' => '— Choose a shipping date —' ], $available ),
+        ], $checkout->get_value( 'fishotel_shipping_date' ) );
+        echo '</div>';
+    }
+
+    public function fishotel_shipping_date_validate() {
+        if ( ! $this->fishotel_cart_contains_fish() ) return;
+
+        $date = sanitize_text_field( $_POST['fishotel_shipping_date'] ?? '' );
+        if ( empty( $date ) ) {
+            wc_add_notice( 'Please select a shipping date.', 'error' );
+            return;
+        }
+        $available = $this->fishotel_get_available_shipping_dates();
+        if ( ! isset( $available[ $date ] ) ) {
+            wc_add_notice( 'The selected shipping date is not available. Please choose a different date.', 'error' );
+        }
+    }
+
+    public function fishotel_shipping_date_save( $order_id ) {
+        $date = sanitize_text_field( $_POST['fishotel_shipping_date'] ?? '' );
+        if ( $date ) {
+            update_post_meta( $order_id, '_fishotel_shipping_date', $date );
+        }
+    }
+
+    public function fishotel_shipping_date_display( $order ) {
+        $date = $order->get_meta( '_fishotel_shipping_date' );
+        if ( ! $date ) return;
+        $display = date( 'l, F j, Y', strtotime( $date ) );
+        echo '<p><strong>FisHotel Shipping Date:</strong> ' . esc_html( $display ) . '</p>';
+    }
+
     public function add_fishotel_price_field() {
         woocommerce_wp_text_input( [
             'id'          => '_fishotel_selling_price',
