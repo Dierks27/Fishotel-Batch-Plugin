@@ -311,6 +311,17 @@ trait FisHotel_Admin {
             update_option( 'fishotel_batch_closed_times', $new_closed_times );
             update_option( 'fishotel_batch_origins', $new_origins );
 
+            // Build verification queue for any batch newly set to 'verification'
+            foreach ( $new_statuses as $batch => $stage ) {
+                if ( $stage === 'verification' ) {
+                    $was = $statuses[ $batch ] ?? '';
+                    $queue_key = 'fishotel_verification_queue_' . sanitize_title( $batch );
+                    if ( $was !== 'verification' || ! get_option( $queue_key ) ) {
+                        $this->build_verification_queue( $batch );
+                    }
+                }
+            }
+
             wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
             exit;
         }

@@ -44,8 +44,8 @@ trait FisHotel_Ajax {
                 if ( ! $already_paid && ! $is_admin_test ) {
                     $this->update_user_deposit_balance( $user_id, -$deposit_amount );
                     $this->mark_deposit_paid( $user_id, $batch_name, $deposit_amount, 0, false );
-                    update_post_meta( $request_id, '_deposit_paid', 1 );
                 }
+                update_post_meta( $request_id, '_deposit_paid', 1 );
 
                 foreach ( $cart_items as $item ) {
                     $batch_id = intval( $item['batch_id'] );
