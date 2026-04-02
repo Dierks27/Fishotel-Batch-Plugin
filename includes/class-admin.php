@@ -2017,6 +2017,29 @@ trait FisHotel_Admin {
 .notice-warning { border-left-color: #f39c12 !important; }
 .notice-info { border-left-color: #2986cc !important; }
 
+/* Casino / Arcade admin dark overrides */
+.fishotel-admin form[method=post],
+.fishotel-admin fieldset,
+.fishotel-admin div[style*='background:#f'],
+.fishotel-admin div[style*='background: #f'],
+.fishotel-admin div[style*='background:#fff'],
+.fishotel-admin div[style*='background:white'] {
+    background: #1e1e1e !important;
+    border-color: #444 !important;
+    color: #ddd !important;
+}
+.fishotel-admin table { background: #1e1e1e !important; color: #ddd !important; }
+.fishotel-admin table th { color: #2986cc !important; }
+.fishotel-admin table td { color: #ddd !important; border-color: #333 !important; }
+.fishotel-admin table tr:nth-child(even) { background: #242424 !important; }
+.fishotel-admin table tr:nth-child(odd) { background: #1e1e1e !important; }
+.fishotel-admin legend { color: #ddd !important; }
+.fishotel-admin p { color: #ccc; }
+.fishotel-admin strong { color: #fff; }
+.fishotel-admin code { background: #333 !important; color: #ddd !important; }
+.fishotel-admin small { color: #aaa !important; }
+.fishotel-admin hr { border-color: #444 !important; }
+
 /* Postbox / metabox panels */
 .fishotel-admin .postbox {
     background: #1e1e1e;
