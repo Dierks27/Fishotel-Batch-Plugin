@@ -32,6 +32,7 @@ trait FisHotel_Admin {
         add_submenu_page( 'fishotel-batch-hq', 'Invoicing',     'Invoicing',     'manage_options', 'fishotel-invoicing',      [$this, 'render_invoicing_page'] );
         add_submenu_page( 'fishotel-batch-hq', 'Sourcing', 'Sourcing', 'manage_options', 'fishotel-sourcing', [$this, 'sourcing_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Hotel Program', 'Hotel Program', 'manage_options', 'fishotel-hotel-program', [$this, 'hotel_program_html'] );
+        add_submenu_page( 'fishotel-batch-hq', 'Batch Guide', 'Batch Guide', 'manage_options', 'fishotel-guide', [$this, 'guide_html'] );
         // Hidden backward-compat pages (old slugs still work via direct URL)
         add_submenu_page( null, 'FisHotel Settings', '', 'manage_options', 'fishotel-batch-settings', [$this, 'batch_settings_html'] );
         add_submenu_page( null, 'Batch Requests', '', 'manage_options', 'fishotel-batch-orders', [$this, 'batch_orders_html'] );
@@ -124,6 +125,132 @@ trait FisHotel_Admin {
         $arcade->render_admin_page();
     }
 
+    // ─── Batch Guide page ──────────────────────────────────────────
+
+    public function guide_html() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
+        $hq_url = admin_url( 'admin.php?page=fishotel-batch-hq' );
+        $qt_url = admin_url( 'admin.php?page=fishotel-arrival-entry' );
+        $inv_url = admin_url( 'admin.php?page=fishotel-invoicing' );
+        ?>
+        <div class="wrap fishotel-admin">
+            <h1 style="color:#b5a165;font-family:'Oswald',sans-serif;letter-spacing:0.05em;">Batch Guide</h1>
+            <p style="color:#aaa;margin-bottom:24px;">Complete reference for running a FisHotel batch from start to finish. Version <?php echo FISHOTEL_VERSION; ?></p>
+
+            <style>
+                .fhg-card{background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:20px 24px;margin-bottom:16px;}
+                .fhg-card h2{color:#b5a165;font-size:16px;margin:0 0 12px;cursor:pointer;user-select:none;}
+                .fhg-card h2::before{content:'';display:inline-block;width:0;height:0;border-left:6px solid #b5a165;border-top:4px solid transparent;border-bottom:4px solid transparent;margin-right:8px;transition:transform .2s;}
+                .fhg-card.open h2::before{transform:rotate(90deg);}
+                .fhg-body{display:none;color:#ccc;font-size:13px;line-height:1.7;}
+                .fhg-card.open .fhg-body{display:block;}
+                .fhg-table{width:100%;border-collapse:collapse;margin:12px 0;}
+                .fhg-table th{text-align:left;color:#b5a165;padding:8px 12px;border-bottom:1px solid #444;font-size:12px;font-weight:700;}
+                .fhg-table td{padding:8px 12px;border-bottom:1px solid #333;font-size:12px;color:#ccc;}
+                .fhg-table tr:last-child td{border-bottom:none;}
+                .fhg-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#b5a165;color:#1a1a1a;font-size:11px;font-weight:700;margin-right:8px;flex-shrink:0;}
+                .fhg-step{display:flex;align-items:flex-start;margin:10px 0;padding:8px 12px;background:#252525;border-radius:6px;}
+                .fhg-step p{margin:0;color:#ccc;font-size:12px;line-height:1.6;}
+                .fhg-step a{color:#b5a165;}
+                .fhg-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;margin-left:6px;}
+            </style>
+
+            <!-- Section 1: The 9 Stages -->
+            <div class="fhg-card open">
+                <h2 onclick="this.parentElement.classList.toggle('open')">The 9 Batch Stages</h2>
+                <div class="fhg-body">
+                    <table class="fhg-table">
+                        <tr><th>#</th><th>Stage</th><th>What Happens</th><th>Admin Action</th><th>Prerequisite</th></tr>
+                        <tr><td>1</td><td>Open Ordering</td><td>Fish list is live. Customers browse and request fish.</td><td>Import CSV, assign page, set deposit.</td><td>Batch created + CSV imported</td></tr>
+                        <tr><td>2</td><td>Orders Closed</td><td>Order window closed. Page shows countdown to arrival.</td><td>Wait for shipment.</td><td>At least 1 customer request</td></tr>
+                        <tr><td>3</td><td>Arrived</td><td>Fish have arrived. Time to count.</td><td>Go to <a href="<?php echo esc_url( $qt_url ); ?>">QT Operations</a> &rarr; Counting tab. Enter received qty for each species.</td><td>&mdash;</td></tr>
+                        <tr><td>4</td><td>In Quarantine</td><td>Fish in QT. Hotel Program postcards sent to customers.</td><td>Log survival counts in <a href="<?php echo esc_url( $qt_url ); ?>">QT Operations</a> &rarr; QT Tracker.</td><td>Arrival quantities entered</td></tr>
+                        <tr><td>5</td><td>Graduation Day</td><td>QT complete. Final counts needed.</td><td>Enter graduation quantities in <a href="<?php echo esc_url( $qt_url ); ?>">QT Operations</a> &rarr; Graduation tab, then Save.</td><td>&mdash;</td></tr>
+                        <tr><td>6</td><td>Accept or Pass</td><td>Guest Folio is live. Customers accept or pass on their fish.</td><td>Monitor. Cron auto-advances when all resolved.</td><td>Graduation quantities entered (builds the verification queue)</td></tr>
+                        <tr><td>7</td><td>Draft Pool</td><td>Unclaimed fish available for last-call picks.</td><td>Monitor draft picks.</td><td>All verification decisions made</td></tr>
+                        <tr><td>8</td><td>Casino Night</td><td>Casino arcade is live with Draft Room.</td><td>Monitor casino activity.</td><td>&mdash;</td></tr>
+                        <tr><td>9</td><td>Invoicing</td><td>Generate WooCommerce orders for each customer.</td><td>Go to <a href="<?php echo esc_url( $inv_url ); ?>">Invoicing</a> and generate invoices.</td><td>&mdash;</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section 2: Step-by-Step Walkthrough -->
+            <div class="fhg-card">
+                <h2 onclick="this.parentElement.classList.toggle('open')">Step-by-Step Walkthrough</h2>
+                <div class="fhg-body">
+                    <div class="fhg-step"><span class="fhg-num">1</span><p><strong>Create a batch</strong> &mdash; Go to <a href="<?php echo esc_url( $hq_url ); ?>">Batch HQ &rarr; Settings</a>. Type a name in "Add New Batch" and click Add. Assign a public page and set the deposit amount.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">2</span><p><strong>Import fish CSV</strong> &mdash; Use the Import Card at the top of Batch HQ. Upload your CSV, map columns (Scientific Name, Common Name, Qty, Item Code), select the batch, and import.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">3</span><p><strong>Open ordering</strong> &mdash; The batch starts in "Open Ordering." The assigned page shows the fish list. Share the page with customers.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">4</span><p><strong>Close ordering</strong> &mdash; Click the <strong>Close Ordering</strong> button on the batch row. This locks the order window.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">5</span><p><strong>Mark as arrived</strong> &mdash; When the shipment arrives, click <strong>Mark as Arrived</strong>.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">6</span><p><strong>Enter arrival quantities</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">QT Operations &rarr; Counting</a>. Enter received qty and DOA for each species. Then click <strong>Begin Quarantine</strong>.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">7</span><p><strong>Track quarantine survival</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">QT Operations &rarr; QT Tracker</a>. Log survival counts periodically. Hotel Program postcards auto-send to customers.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">8</span><p><strong>Graduate the batch</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">QT Operations &rarr; Graduation</a>. Enter final graduation quantities for each species. Click <strong>Save Graduation Data</strong> &mdash; this builds the verification queue and opens the Guest Folio.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">9</span><p><strong>Customers accept or pass</strong> &mdash; The Guest Folio page goes live. Customers see their requests and accept or pass. A cron job auto-passes customers who don't respond within the window.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">10</span><p><strong>Draft &amp; Casino</strong> &mdash; After verification completes, unclaimed fish go to the Draft Pool, then Casino Night. Advance using the action buttons.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">11</span><p><strong>Generate invoices</strong> &mdash; Go to <a href="<?php echo esc_url( $inv_url ); ?>">Invoicing</a> and generate WooCommerce orders for each customer.</p></div>
+                </div>
+            </div>
+
+            <!-- Section 3: Common Mistakes & Fixes -->
+            <div class="fhg-card">
+                <h2 onclick="this.parentElement.classList.toggle('open')">Common Mistakes &amp; Fixes</h2>
+                <div class="fhg-body">
+                    <table class="fhg-table">
+                        <tr><th>Problem</th><th>Cause</th><th>Fix</th></tr>
+                        <tr>
+                            <td><strong>Guest Folio shows "No requests on file"</strong></td>
+                            <td>Graduation quantities were never entered. The verification queue needs graduation data to know how many fish are available.</td>
+                            <td>Go back to Graduation Day stage. Enter graduation quantities in QT Operations &rarr; Graduation, then Save. This builds the queue.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Can't advance to next stage (dropdown locked)</strong></td>
+                            <td>The next stage has a data prerequisite that isn't met yet.</td>
+                            <td>Read the hint below the dropdown &mdash; it tells you exactly what to do. Complete that step first, then advance.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Stock shows 0 on a fish</strong></td>
+                            <td>Normal &mdash; stock is decremented when customers place orders. This is the available-to-order quantity, not the physical count.</td>
+                            <td>No action needed. Use <em>_current_qty</em> (set during graduation) for actual inventory.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Deposit shows unpaid on request post but paid in Requests tab</strong></td>
+                            <td>Fixed in v10.14.5. Was caused by deposit flag only being set when a new charge occurred.</td>
+                            <td>Update to latest version. New requests will have the flag set correctly.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Need to go back a stage</strong></td>
+                            <td>Sometimes you need to re-do a step.</td>
+                            <td>Use the stage dropdown to move backward. A confirmation will appear. All data is preserved.</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section 4: Glossary -->
+            <div class="fhg-card">
+                <h2 onclick="this.parentElement.classList.toggle('open')">Glossary</h2>
+                <div class="fhg-body">
+                    <table class="fhg-table">
+                        <tr><th>Term</th><th>Meaning</th></tr>
+                        <tr><td><strong>fish_batch</strong></td><td>A WordPress post representing one species in one batch (e.g., "Red Fairy Anthias in Batch #6"). Created during CSV import.</td></tr>
+                        <tr><td><strong>fish_request</strong></td><td>A WordPress post representing a customer's order for one or more fish. Contains <em>_cart_items</em> JSON linking to fish_batch post IDs.</td></tr>
+                        <tr><td><strong>fish_master</strong></td><td>A WordPress post representing a species in the Fish Library. Links to common name, scientific name, and master data.</td></tr>
+                        <tr><td><strong>Verification Queue</strong></td><td>A WordPress option (<em>fishotel_verification_queue_{slug}</em>) that stores the first-come-first-served queue for each species. Built during graduation.</td></tr>
+                        <tr><td><strong>Guest Folio</strong></td><td>The customer-facing page during "Accept or Pass" stage. Shows each customer their requests and lets them accept or pass.</td></tr>
+                        <tr><td><strong>Draft Room</strong></td><td>The last-call mechanism where unclaimed fish are available for draft picks.</td></tr>
+                        <tr><td><strong>Casino Night</strong></td><td>The arcade experience with Draft Room, roulette, blackjack, and sticker shop.</td></tr>
+                        <tr><td><strong>_stock</strong></td><td>Available-to-order quantity on a fish_batch post. Decremented when customers order. Set during CSV import.</td></tr>
+                        <tr><td><strong>_current_qty</strong></td><td>Actual physical quantity after QT/graduation. Set during survival tracking or graduation. Used for verification queue.</td></tr>
+                        <tr><td><strong>_arrival_qty_received</strong></td><td>Number of fish received on arrival day. Set in QT Operations &rarr; Counting tab.</td></tr>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+        <?php
+    }
+
     // ─── Tab wrapper: Sourcing ──────────────────────────────────────
 
     public function sourcing_html() {
@@ -181,6 +308,17 @@ trait FisHotel_Admin {
     public function batch_settings_html() {
         if ( isset( $_GET['updated'] ) ) echo '<div class="notice notice-success is-dismissible"><p>All settings saved successfully!</p></div>';
         if ( isset( $_GET['error'] ) ) echo '<div class="notice notice-error is-dismissible"><p>Invalid parameters. Please try again.</p></div>';
+        // Stage gating errors
+        $stage_errors = get_transient( 'fishotel_stage_errors_' . get_current_user_id() );
+        if ( $stage_errors ) {
+            delete_transient( 'fishotel_stage_errors_' . get_current_user_id() );
+            echo '<div class="notice notice-error is-dismissible" style="border-left-color:#c0392b;">';
+            echo '<p style="font-weight:700;font-size:14px;">⚠ Stage transition blocked</p>';
+            foreach ( $stage_errors as $batch => $msgs ) {
+                echo '<p><strong>' . esc_html( $batch ) . ':</strong> ' . esc_html( implode( ' ', $msgs ) ) . '</p>';
+            }
+            echo '</div>';
+        }
         if ( isset( $_GET['fishotel_update_checked'] ) ) {
             $v = sanitize_text_field( $_GET['fishotel_update_checked'] );
             echo $v === 'error'
@@ -303,6 +441,21 @@ trait FisHotel_Admin {
                     delete_option( $force_day_option );
                 }
             }
+            // Validate stage transitions (gating)
+            $stage_errors = [];
+            foreach ( $new_statuses as $batch => $new_stage ) {
+                $old_stage = $statuses[ $batch ] ?? 'open_ordering';
+                if ( $old_stage === $new_stage ) continue;
+                $errs = $this->validate_stage_transition( $batch, $old_stage, $new_stage );
+                if ( ! empty( $errs ) ) {
+                    $stage_errors[ $batch ] = $errs;
+                    $new_statuses[ $batch ] = $old_stage; // revert this batch
+                }
+            }
+            if ( ! empty( $stage_errors ) ) {
+                set_transient( 'fishotel_stage_errors_' . get_current_user_id(), $stage_errors, 60 );
+            }
+
             update_option( 'fishotel_batch_page_assignments', $new_assignments );
             update_option( 'fishotel_batch_statuses', $new_statuses );
             update_option( 'fishotel_batch_deposit_amounts', $new_deposit_amounts );
@@ -436,11 +589,38 @@ trait FisHotel_Admin {
                                 </select>
                             </td>
                             <td>
-                                <select name="status_<?php echo $key; ?>" style="width:100%;">
-                                    <?php foreach ( $stage_options as $value => $label ) : ?>
-                                        <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current_status, $value ); ?>><?php echo esc_html( $label ); ?></option>
+                                <?php
+                                $cur_idx    = $this->stage_index( $current_status );
+                                $stage_order = $this->get_stage_order();
+                                ?>
+                                <select name="status_<?php echo $key; ?>" style="width:100%;"
+                                        data-original="<?php echo esc_attr( $current_status ); ?>"
+                                        onchange="fhStageChangeWarn(this)">
+                                    <?php foreach ( $stage_options as $value => $label ) :
+                                        $s_idx = $this->stage_index( $value );
+                                        $disabled = false;
+                                        $suffix   = '';
+                                        // Disable stages more than 1 step forward if prereqs not met
+                                        if ( $s_idx > $cur_idx + 1 ) {
+                                            $disabled = true;
+                                            $suffix   = ' (locked — complete earlier stages first)';
+                                        } elseif ( $s_idx === $cur_idx + 1 ) {
+                                            $prereq = $this->check_stage_prerequisite( $batch, $value );
+                                            if ( $prereq !== true ) {
+                                                $disabled = true;
+                                                $suffix   = ' (requires data — see hint)';
+                                            }
+                                        }
+                                    ?>
+                                        <option value="<?php echo esc_attr( $value ); ?>"
+                                                <?php selected( $current_status, $value ); ?>
+                                                <?php echo $disabled && $value !== $current_status ? 'disabled' : ''; ?>
+                                        ><?php echo esc_html( $label . $suffix ); ?></option>
                                     <?php endforeach; ?>
                                 </select>
+                                <div style="margin-top:4px;font-size:11px;color:#96885f;font-style:italic;">
+                                    <?php echo wp_kses_post( $this->get_next_action_hint( $batch, $current_status ) ); ?>
+                                </div>
                             </td>
                             <td style="white-space:nowrap;padding:6px 10px;">
                                 <?php if ( $view_url ) : ?>
@@ -460,7 +640,9 @@ trait FisHotel_Admin {
                         </tr>
                         <tr id="fh-detail-<?php echo $key; ?>" style="display:none;">
                             <td colspan="4" style="padding:12px 16px;background:#1a1a1a;border-top:1px dashed #444;">
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;max-width:600px;">
+                                <!-- Stage Pipeline -->
+                                <?php $this->render_stage_pipeline( $current_status ); ?>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;max-width:600px;margin-top:16px;">
                                     <div>
                                         <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Public Page</label>
                                         <select name="assign_<?php echo $key; ?>" style="width:100%;padding:5px 8px;border-radius:4px;">
@@ -790,6 +972,18 @@ trait FisHotel_Admin {
             } else {
                 row.style.display = 'none';
                 chev.style.transform = '';
+            }
+        }
+        var fhStageOrder = <?php echo wp_json_encode( $this->get_stage_order() ); ?>;
+        function fhStageChangeWarn(sel) {
+            var orig = sel.getAttribute('data-original');
+            var newVal = sel.value;
+            var origIdx = fhStageOrder.indexOf(orig);
+            var newIdx = fhStageOrder.indexOf(newVal);
+            if (newIdx < origIdx && newIdx >= 0) {
+                if (!confirm('Move this batch BACKWARD to "' + sel.options[sel.selectedIndex].text.split(' (')[0] + '"? The public page will change. Data is preserved.')) {
+                    sel.value = orig;
+                }
             }
         }
         function fhCopyLink(btn, url) {
@@ -2593,16 +2787,195 @@ trait FisHotel_Admin {
     }
 
     /**
+     * Canonical ordered list of stages for gating logic.
+     */
+    private function get_stage_order(): array {
+        return array_keys( $this->get_valid_stages() );
+    }
+
+    /**
+     * Returns the integer index of a stage in the pipeline (0-based), or -1 if unknown.
+     */
+    private function stage_index( string $stage ): int {
+        $idx = array_search( $stage, $this->get_stage_order(), true );
+        return $idx !== false ? $idx : -1;
+    }
+
+    /**
+     * Validate a stage transition. Returns an empty array if valid, or an array of error strings.
+     */
+    private function validate_stage_transition( string $batch_name, string $old_stage, string $new_stage ): array {
+        if ( $old_stage === $new_stage ) return []; // re-save, always OK
+
+        $old_idx = $this->stage_index( $old_stage );
+        $new_idx = $this->stage_index( $new_stage );
+        $stages  = $this->get_valid_stages();
+        $errors  = [];
+
+        // Backward movement — always allowed (admin correction)
+        if ( $new_idx < $old_idx ) return [];
+
+        // Forward by more than 1 — list skipped stages
+        if ( $new_idx > $old_idx + 1 ) {
+            $order   = $this->get_stage_order();
+            $skipped = [];
+            for ( $i = $old_idx + 1; $i < $new_idx; $i++ ) {
+                $skipped[] = $stages[ $order[ $i ] ];
+            }
+            $errors[] = 'Cannot skip stages. You would skip: ' . implode( ' → ', $skipped ) . '.';
+            return $errors;
+        }
+
+        // Forward by exactly 1 — check prerequisite
+        $prereq = $this->check_stage_prerequisite( $batch_name, $new_stage );
+        if ( $prereq !== true ) {
+            $errors[] = $prereq;
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Check whether the data prerequisites for a target stage are met.
+     * Returns true on success or a human-readable error string on failure.
+     */
+    private function check_stage_prerequisite( string $batch_name, string $target_stage ) {
+        switch ( $target_stage ) {
+            case 'orders_closed':
+                $count = (int) ( new \WP_Query( [
+                    'post_type'      => 'fish_request',
+                    'posts_per_page' => 1,
+                    'post_status'    => 'any',
+                    'fields'         => 'ids',
+                    'meta_query'     => [ [ 'key' => '_batch_name', 'value' => $batch_name ] ],
+                ] ) )->found_posts;
+                return $count > 0 ? true : 'No customer requests exist for this batch yet. Open ordering first and let customers place requests.';
+
+            case 'in_quarantine':
+                $fish = get_posts( [
+                    'post_type' => 'fish_batch', 'numberposts' => -1, 'post_status' => 'any',
+                    'meta_query' => [ [ 'key' => '_batch_name', 'value' => $batch_name ] ],
+                ] );
+                foreach ( $fish as $f ) {
+                    if ( intval( get_post_meta( $f->ID, '_arrival_qty_received', true ) ) > 0 ) return true;
+                }
+                return 'No arrival quantities entered. Go to QT Operations → Counting tab and enter received quantities first.';
+
+            case 'verification':
+                $fish = get_posts( [
+                    'post_type' => 'fish_batch', 'numberposts' => -1, 'post_status' => 'any',
+                    'meta_query' => [ [ 'key' => '_batch_name', 'value' => $batch_name ] ],
+                ] );
+                foreach ( $fish as $f ) {
+                    if ( get_post_meta( $f->ID, '_is_admin_order', true ) ) continue;
+                    $cq = get_post_meta( $f->ID, '_current_qty', true );
+                    if ( $cq !== '' && $cq !== false && intval( $cq ) > 0 ) return true;
+                    $aq = get_post_meta( $f->ID, '_arrival_qty_received', true );
+                    if ( $aq !== '' && $aq !== false && intval( $aq ) > 0 ) return true;
+                }
+                return 'No graduation or arrival quantities found. Go to QT Operations → Graduation tab and enter quantities first.';
+
+            default:
+                return true; // no data prerequisite
+        }
+    }
+
+    /**
+     * Get a human-readable hint for what the admin should do at this stage.
+     */
+    private function get_next_action_hint( string $batch_name, string $stage ): string {
+        $qt_url = admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $batch_name ) );
+        switch ( $stage ) {
+            case 'open_ordering':   return 'Customers are ordering. Close ordering when the window ends.';
+            case 'orders_closed':   return 'Waiting for shipment to arrive.';
+            case 'arrived':         return 'Enter received quantities in <a href="' . esc_url( $qt_url . '&tab=counting' ) . '">QT Operations → Counting</a>.';
+            case 'in_quarantine':   return 'Track survival in <a href="' . esc_url( $qt_url . '&tab=tracker' ) . '">QT Operations → QT Tracker</a>.';
+            case 'graduation':      return 'Enter final quantities in <a href="' . esc_url( $qt_url . '&tab=graduation' ) . '">QT Operations → Graduation</a>, then save to open the Folio.';
+            case 'verification':    return 'Guest Folio is live — customers are accepting or passing.';
+            case 'draft':           return 'Draft Pool is open for last-call picks.';
+            case 'casino':          return 'Casino Night is active.';
+            case 'invoicing':       return 'Generate WooCommerce invoices to complete the batch.';
+            default:                return '';
+        }
+    }
+
+    /**
+     * Render a horizontal pipeline progress bar for a batch.
+     */
+    private function render_stage_pipeline( string $current_stage ): void {
+        $stages = $this->get_valid_stages();
+        $order  = $this->get_stage_order();
+        $cur    = $this->stage_index( $current_stage );
+        $total  = count( $order );
+        // Short labels for the pipeline
+        $short = [
+            'open_ordering' => 'Order', 'orders_closed' => 'Closed', 'arrived' => 'Arrived',
+            'in_quarantine' => 'QT', 'graduation' => 'Grad', 'verification' => 'Folio',
+            'draft' => 'Draft', 'casino' => 'Casino', 'invoicing' => 'Invoice',
+        ];
+        ?>
+        <div style="display:flex;align-items:center;gap:0;margin-bottom:4px;overflow-x:auto;">
+            <?php foreach ( $order as $i => $slug ) :
+                $is_done    = $i < $cur;
+                $is_current = $i === $cur;
+                $dot_bg     = $is_done ? '#b5a165' : ( $is_current ? '#1a1a1a' : '#333' );
+                $dot_border = $is_done ? '#b5a165' : ( $is_current ? '#b5a165' : '#555' );
+                $label_color = $is_done ? '#b5a165' : ( $is_current ? '#fff' : '#666' );
+                $font_weight = $is_current ? '700' : '400';
+            ?>
+                <?php if ( $i > 0 ) : ?>
+                    <div style="flex:1;height:2px;min-width:12px;background:<?php echo $is_done || $is_current ? '#b5a165' : '#444'; ?>;"></div>
+                <?php endif; ?>
+                <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;">
+                    <div style="width:<?php echo $is_current ? '14' : '10'; ?>px;height:<?php echo $is_current ? '14' : '10'; ?>px;border-radius:50%;background:<?php echo $dot_bg; ?>;border:2px solid <?php echo $dot_border; ?>;<?php echo $is_current ? 'box-shadow:0 0 6px rgba(181,161,101,0.5);' : ''; ?>"></div>
+                    <span style="font-size:9px;color:<?php echo $label_color; ?>;font-weight:<?php echo $font_weight; ?>;margin-top:3px;white-space:nowrap;"><?php echo esc_html( $short[ $slug ] ?? $slug ); ?></span>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <?php
+    }
+
+    /**
      * Maps each stage to the action that advances it to the next stage.
      * To add a new stage transition, append an entry here — no other changes needed.
      */
     private function get_stage_actions() {
         return [
             'open_ordering' => [
-                'next_stage' => 'arrived',
+                'next_stage' => 'orders_closed',
                 'label'      => 'Close Ordering',
                 'style'      => 'background:#c0392b;color:#fff;border-color:#a93226;',
-                'confirm'    => "Close ordering for '%s'? This immediately sets the stage to Arrived.",
+                'confirm'    => "Close ordering for '%s'?",
+            ],
+            'orders_closed' => [
+                'next_stage' => 'arrived',
+                'label'      => 'Mark as Arrived',
+                'style'      => 'background:#2980b9;color:#fff;border-color:#1f6da3;',
+                'confirm'    => "Mark '%s' as arrived?",
+            ],
+            'arrived' => [
+                'next_stage' => 'in_quarantine',
+                'label'      => 'Begin Quarantine',
+                'style'      => 'background:#8e44ad;color:#fff;border-color:#7d3c98;',
+                'confirm'    => "Move '%s' into quarantine?",
+            ],
+            'in_quarantine' => [
+                'next_stage' => 'graduation',
+                'label'      => 'Start Graduation',
+                'style'      => 'background:#d35400;color:#fff;border-color:#ba4a00;',
+                'confirm'    => "Start graduation for '%s'?",
+            ],
+            'graduation' => [
+                'next_stage' => 'verification',
+                'label'      => 'Open Guest Folio',
+                'style'      => 'background:#b5a165;color:#1a1a1a;border-color:#96885f;',
+                'confirm'    => "Open the Guest Folio for '%s'? Customers will be able to accept or pass.",
+            ],
+            'verification' => [
+                'next_stage' => 'draft',
+                'label'      => 'Open Draft Pool',
+                'style'      => 'background:#16a085;color:#fff;border-color:#117a65;',
+                'confirm'    => "Open the Draft Pool for '%s'?",
             ],
             'draft' => [
                 'next_stage' => 'casino',
@@ -2633,9 +3006,19 @@ trait FisHotel_Admin {
         if ( ! in_array( $next_stage, $valid_next, true ) ) {
             wp_die( 'Invalid stage transition.' );
         }
-        $statuses = get_option( 'fishotel_batch_statuses', [] );
+        $statuses   = get_option( 'fishotel_batch_statuses', [] );
+        $old_stage  = $statuses[ $batch_name ] ?? 'open_ordering';
+        $gate_errs  = $this->validate_stage_transition( $batch_name, $old_stage, $next_stage );
+        if ( ! empty( $gate_errs ) ) {
+            wp_die( 'Stage transition blocked: ' . implode( ' ', $gate_errs ) );
+        }
         $statuses[ $batch_name ] = $next_stage;
         update_option( 'fishotel_batch_statuses', $statuses );
+
+        // Build verification queue when entering verification stage
+        if ( $next_stage === 'verification' ) {
+            $this->build_verification_queue( $batch_name );
+        }
 
         // Record the date when ordering closes (used for transit progress calculation).
         if ( $next_stage === 'orders_closed' ) {
@@ -2646,7 +3029,7 @@ trait FisHotel_Admin {
             }
         }
 
-        wp_redirect( admin_url( 'admin.php?page=fishotel-batch-settings&updated=1' ) );
+        wp_redirect( admin_url( 'admin.php?page=fishotel-batch-hq&updated=1' ) );
         exit;
     }
 

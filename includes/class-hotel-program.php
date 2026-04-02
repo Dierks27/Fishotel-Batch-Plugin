@@ -3539,43 +3539,7 @@ trait FisHotel_HotelProgram {
      * ───────────────────────────────────────────── */
 
     public function build_verification_queue( $batch_name ) {
-        // Step 1 — Gather species data
-        $batch_fish = get_posts( [
-            'post_type'        => 'fish_batch',
-            'numberposts'      => -1,
-            'post_status'      => 'any',
-            'suppress_filters' => true,
-            'meta_query'       => [
-                [
-                    'key'   => '_batch_name',
-                    'value' => $batch_name,
-                ],
-            ],
-        ] );
-
-        $species = [];
-        foreach ( $batch_fish as $bp ) {
-            if ( get_post_meta( $bp->ID, '_is_admin_order', true ) ) continue;
-
-            $cq = get_post_meta( $bp->ID, '_current_qty', true );
-            if ( $cq !== '' && $cq !== false ) {
-                $graduated_qty = intval( $cq );
-            } else {
-                $aq = get_post_meta( $bp->ID, '_arrival_qty', true );
-                $graduated_qty = ( $aq !== '' && $aq !== false ) ? intval( $aq ) : intval( get_post_meta( $bp->ID, '_stock', true ) );
-            }
-            if ( $graduated_qty <= 0 ) continue;
-
-            $common = FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title );
-
-            $species[ $bp->ID ] = [
-                'name'          => $common,
-                'graduated_qty' => $graduated_qty,
-                'queue'         => [],
-            ];
-        }
-
-        // Step 2 — Gather request data
+        // Step 1 — Gather request data first (needed for stock reconstruction)
         $requests = get_posts( [
             'post_type'        => 'fish_request',
             'numberposts'      => -1,
@@ -3589,7 +3553,8 @@ trait FisHotel_HotelProgram {
             ],
         ] );
 
-        $items_by_fish = []; // fish_batch_post_id => [ { user_id, qty, requested_at } ]
+        $items_by_fish  = []; // fish_batch_post_id => [ { user_id, qty, requested_at } ]
+        $ordered_totals = []; // fish_batch_post_id => total ordered qty (for stock reconstruction)
         foreach ( $requests as $req ) {
             if ( get_post_meta( $req->ID, '_is_admin_order', true ) ) continue;
 
@@ -3608,7 +3573,54 @@ trait FisHotel_HotelProgram {
                     'requested_qty' => $qty,
                     'requested_at' => $requested_at,
                 ];
+                $ordered_totals[ $fish_id ] = ( $ordered_totals[ $fish_id ] ?? 0 ) + $qty;
             }
+        }
+
+        // Step 2 — Gather species data
+        $batch_fish = get_posts( [
+            'post_type'        => 'fish_batch',
+            'numberposts'      => -1,
+            'post_status'      => 'any',
+            'suppress_filters' => true,
+            'meta_query'       => [
+                [
+                    'key'   => '_batch_name',
+                    'value' => $batch_name,
+                ],
+            ],
+        ] );
+
+        $species = [];
+        foreach ( $batch_fish as $bp ) {
+            if ( get_post_meta( $bp->ID, '_is_admin_order', true ) ) continue;
+
+            // Graduated qty: prefer _current_qty (set during graduation/survival tracking),
+            // then _arrival_qty_received (set during arrival entry),
+            // then reconstruct original stock (_stock + total ordered qty).
+            $cq = get_post_meta( $bp->ID, '_current_qty', true );
+            if ( $cq !== '' && $cq !== false ) {
+                $graduated_qty = intval( $cq );
+            } else {
+                $aq = get_post_meta( $bp->ID, '_arrival_qty_received', true );
+                if ( $aq !== '' && $aq !== false ) {
+                    $graduated_qty = intval( $aq );
+                } else {
+                    // Reconstruct original stock: current _stock + total ordered qty
+                    $current_stock = intval( get_post_meta( $bp->ID, '_stock', true ) );
+                    $total_ordered = $ordered_totals[ $bp->ID ] ?? 0;
+                    $graduated_qty = $current_stock + $total_ordered;
+                }
+            }
+            if ( $graduated_qty <= 0 ) continue;
+
+            $common = FisHotel_Batch_Manager::resolve_common_name( $bp->ID, $bp->post_title );
+
+            $species[ $bp->ID ] = [
+                'name'          => $common,
+                'graduated_qty' => $graduated_qty,
+                'queue'         => [],
+            ];
         }
 
         // Step 3 — Build per-species queues (sorted by requested_at ascending)
