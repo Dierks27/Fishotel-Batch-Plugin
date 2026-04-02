@@ -2565,7 +2565,7 @@ class FisHotel_Arcade {
         $page = sanitize_text_field( $_GET['page'] ?? 'fishotel-batch-hq' );
 
         echo '<div style="margin-top:16px;">';
-        echo '<h2 style="margin:0 0 12px 0;color:#333;">Casino Management</h2>';
+        echo '<h2 style="margin:0 0 12px 0;color:#2986cc;">Casino Management</h2>';
         echo '<nav class="nav-tab-wrapper" style="margin-bottom:16px;">';
         $tabs = [
             'stickers'  => 'Badges &amp; Prizes',

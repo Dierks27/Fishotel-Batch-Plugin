@@ -507,7 +507,7 @@ trait FisHotel_NorthStar {
         $nonce = wp_create_nonce( 'fishotel_northstar_nonce' );
         ?>
         <div class="wrap fishotel-admin">
-        <h1 style="color:#b5a165;font-size:26px;font-weight:700;margin-bottom:20px;">North Star Stock</h1>
+        <h1 style="color:#2986cc;font-size:26px;font-weight:700;margin-bottom:20px;">North Star Stock</h1>
         <?php if ( $orphan_count > 0 ) : ?>
         <div style="background:#2a2a2a;border:1px solid #27ae60;border-radius:6px;padding:12px 18px;margin-bottom:16px;color:#27ae60;font-size:14px;">
             Auto-fixed <?php echo $orphan_count; ?> batch fish post<?php echo $orphan_count > 1 ? 's' : ''; ?> with missing batch name meta.
@@ -518,21 +518,21 @@ trait FisHotel_NorthStar {
         <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;margin-bottom:20px;">
             <h2 style="color:#fff;font-size:18px;margin:0 0 15px 0;">Select Categories to Fetch</h2>
             <div style="margin-bottom:12px;">
-                <button type="button" id="ns-select-all" style="background:#2a2a2a;color:#b5a165;border:1px solid #555;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:13px;margin-right:8px;">Select All</button>
-                <button type="button" id="ns-deselect-all" style="background:#2a2a2a;color:#b5a165;border:1px solid #555;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:13px;">Deselect All</button>
+                <button type="button" id="ns-select-all" style="background:#2a2a2a;color:#2986cc;border:1px solid #555;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:13px;margin-right:8px;">Select All</button>
+                <button type="button" id="ns-deselect-all" style="background:#2a2a2a;color:#2986cc;border:1px solid #555;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:13px;">Deselect All</button>
             </div>
             <div id="ns-categories" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px 16px;">
                 <?php foreach ( $categories as $id => $label ) :
                     $is_all = ( $id === '4422867000000439035' );
                 ?>
-                <label style="display:flex;align-items:center;gap:8px;color:<?php echo $is_all ? '#e67e22' : '#ddd'; ?>;font-size:14px;cursor:pointer;<?php echo $is_all ? 'font-weight:700;grid-column:1/-1;border-bottom:1px solid #444;padding-bottom:10px;margin-bottom:4px;' : ''; ?>">
-                    <input type="checkbox" class="ns-cat-cb" value="<?php echo esc_attr( $id ); ?>" data-label="<?php echo esc_attr( $label ); ?>" style="accent-color:#e67e22;">
+                <label style="display:flex;align-items:center;gap:8px;color:<?php echo $is_all ? '#2986cc' : '#ddd'; ?>;font-size:14px;cursor:pointer;<?php echo $is_all ? 'font-weight:700;grid-column:1/-1;border-bottom:1px solid #444;padding-bottom:10px;margin-bottom:4px;' : ''; ?>">
+                    <input type="checkbox" class="ns-cat-cb" value="<?php echo esc_attr( $id ); ?>" data-label="<?php echo esc_attr( $label ); ?>" style="accent-color:#2986cc;">
                     <?php echo esc_html( $label ); ?>
                 </label>
                 <?php endforeach; ?>
             </div>
             <div style="margin-top:16px;">
-                <button type="button" id="ns-fetch-btn" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:12px 28px;cursor:pointer;font-size:15px;">Fetch Selected Categories</button>
+                <button type="button" id="ns-fetch-btn" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:12px 28px;cursor:pointer;font-size:15px;">Fetch Selected Categories</button>
                 <span id="ns-fetch-status" style="margin-left:14px;color:#aaa;font-size:14px;"></span>
             </div>
         </div>
@@ -542,12 +542,12 @@ trait FisHotel_NorthStar {
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px;">
                 <h2 style="color:#fff;font-size:18px;margin:0;">Results</h2>
                 <span id="ns-fetched-at" style="color:#888;font-size:13px;"><?php echo $fetched_at ? 'Last fetched: ' . esc_html( $fetched_at ) : ''; ?></span>
-                <button type="button" id="ns-refresh-btn" style="background:#2a2a2a;color:#b5a165;border:1px solid #555;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:13px;margin-left:auto;">Refresh</button>
+                <button type="button" id="ns-refresh-btn" style="background:#2a2a2a;color:#2986cc;border:1px solid #555;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:13px;margin-left:auto;">Refresh</button>
             </div>
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:14px;">
                 <input type="text" id="ns-search" placeholder="Search by name..." style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:8px 12px;border-radius:4px;width:260px;font-size:14px;">
                 <label style="color:#ddd;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;">
-                    <input type="checkbox" id="ns-instock-filter" checked style="accent-color:#e67e22;"> In Stock only
+                    <input type="checkbox" id="ns-instock-filter" checked style="accent-color:#2986cc;"> In Stock only
                 </label>
                 <span id="ns-count" style="color:#888;font-size:13px;margin-left:auto;"></span>
             </div>
@@ -555,12 +555,12 @@ trait FisHotel_NorthStar {
                 <table id="ns-table" style="width:100%;border-collapse:collapse;font-size:14px;">
                     <thead>
                         <tr style="border-bottom:2px solid #555;">
-                            <th style="padding:10px 8px;text-align:left;color:#b5a165;width:40px;"><input type="checkbox" id="ns-select-all-rows" style="accent-color:#e67e22;"></th>
-                            <th style="padding:10px 8px;text-align:left;color:#b5a165;">Common Name</th>
-                            <th style="padding:10px 8px;text-align:left;color:#b5a165;">Category</th>
-                            <th style="padding:10px 8px;text-align:center;color:#b5a165;">Stock</th>
-                            <th style="padding:10px 8px;text-align:center;color:#b5a165;" id="ns-qty-header">Qty</th>
-                            <th style="padding:10px 8px;text-align:right;color:#b5a165;">Price</th>
+                            <th style="padding:10px 8px;text-align:left;color:#2986cc;width:40px;"><input type="checkbox" id="ns-select-all-rows" style="accent-color:#2986cc;"></th>
+                            <th style="padding:10px 8px;text-align:left;color:#2986cc;">Common Name</th>
+                            <th style="padding:10px 8px;text-align:left;color:#2986cc;">Category</th>
+                            <th style="padding:10px 8px;text-align:center;color:#2986cc;">Stock</th>
+                            <th style="padding:10px 8px;text-align:center;color:#2986cc;" id="ns-qty-header">Qty</th>
+                            <th style="padding:10px 8px;text-align:right;color:#2986cc;">Price</th>
                         </tr>
                     </thead>
                     <tbody id="ns-tbody"></tbody>
@@ -578,7 +578,7 @@ trait FisHotel_NorthStar {
                     <option value="<?php echo esc_attr( $b ); ?>"><?php echo esc_html( $b ); ?></option>
                     <?php endforeach; ?>
                 </select>
-                <button type="button" id="ns-import-btn" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-size:14px;">Import Selected to Batch</button>
+                <button type="button" id="ns-import-btn" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-size:14px;">Import Selected to Batch</button>
                 <span id="ns-import-status" style="color:#aaa;font-size:14px;"></span>
             </div>
         </div>
@@ -628,7 +628,7 @@ trait FisHotel_NorthStar {
                     }
 
                     html += '<tr style="border-bottom:1px solid #333;" data-idx="' + i + '">';
-                    html += '<td style="padding:8px;"><input type="checkbox" class="ns-row-cb" data-idx="' + i + '" style="accent-color:#e67e22;"></td>';
+                    html += '<td style="padding:8px;"><input type="checkbox" class="ns-row-cb" data-idx="' + i + '" style="accent-color:#2986cc;"></td>';
                     html += '<td style="padding:8px;color:#fff;">' + escHtml(p.name) + '</td>';
                     html += '<td style="padding:8px;color:#aaa;">' + escHtml(p.category || '') + '</td>';
                     html += '<td style="padding:8px;text-align:center;">' + stockBadge + '</td>';

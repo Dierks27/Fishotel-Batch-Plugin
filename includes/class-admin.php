@@ -24,14 +24,15 @@ trait FisHotel_Admin {
     }
 
     public function add_admin_menu() {
-        $fish_icon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmgiIHZpZXdCb3g9IjAgMCAxMDAgNjAiPjxwYXRoIGZpbGw9IiNhN2FhYWQiIGQ9Ik02NSAzMEMxMCAzMCAwIDU1IDAgNTVzMzAtMTUgMzUtMzBDMTAgMjUgMCAxMCAwIDVjMCAwIDMwIDIwIDM1IDE1IDAtMTAgMjAtMjAgNDAtMjAgMjAgMCAzNSAxNSAzNSAzMCAwIDE1LTE1IDMwLTM1IDMwLTIwIDAtNDAtMTAtNDAtMjB6Ii8+PGVsbGlwc2UgZmlsbD0iIzIzMjgzMyIgY3g9Ijc4IiBjeT0iMjciIHJ4PSIzIiByeT0iMyIvPjwvc3ZnPg==';
+        $fish_icon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgNjAiPjxwYXRoIGZpbGw9IiMyOTg2Y2MiIGQ9Ik02NSAzMEMxMCAzMCAwIDU1IDAgNTVzMzAtMTUgMzUtMzBDMTAgMjUgMCAxMCAwIDVjMCAwIDMwIDIwIDM1IDE1IDAtMTAgMjAtMjAgNDAtMjAgMjAgMCAzNSAxNSAzNSAzMCAwIDE1LTE1IDMwLTM1IDMwLTIwIDAtNDAtMTAtNDAtMjB6Ii8+PGVsbGlwc2UgZmlsbD0iIzFhMWExYSIgY3g9Ijc4IiBjeT0iMjciIHJ4PSIzIiByeT0iMyIvPjwvc3ZnPg==';
         // 3 visible menu items
-        add_menu_page( 'FisHotel Batch Manager', 'FisHotel Batch', 'manage_options', 'fishotel-batch-hq', [$this, 'batch_hq_html'], $fish_icon, 56 );
-        add_submenu_page( 'fishotel-batch-hq', 'Batch HQ', 'Batch HQ', 'manage_options', 'fishotel-batch-hq' );
-        add_submenu_page( 'fishotel-batch-hq', 'QT Operations', 'QT Operations', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
+        add_menu_page( 'FisHotel Batch Manager', 'FisHotel', 'manage_options', 'fishotel-batch-hq', [$this, 'batch_hq_html'], $fish_icon, 56 );
+        add_submenu_page( 'fishotel-batch-hq', 'Batches', 'Batches', 'manage_options', 'fishotel-batch-hq' );
+        add_submenu_page( 'fishotel-batch-hq', 'Fish Care', 'Fish Care', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Invoicing',     'Invoicing',     'manage_options', 'fishotel-invoicing',      [$this, 'render_invoicing_page'] );
-        add_submenu_page( 'fishotel-batch-hq', 'Sourcing', 'Sourcing', 'manage_options', 'fishotel-sourcing', [$this, 'sourcing_html'] );
-        add_submenu_page( 'fishotel-batch-hq', 'Hotel Program', 'Hotel Program', 'manage_options', 'fishotel-hotel-program', [$this, 'hotel_program_html'] );
+        add_submenu_page( 'fishotel-batch-hq', 'Supplier Stock', 'Supplier Stock', 'manage_options', 'fishotel-sourcing', [$this, 'sourcing_html'] );
+        add_submenu_page( 'fishotel-batch-hq', 'Postcards', 'Postcards', 'manage_options', 'fishotel-hotel-program', [$this, 'hotel_program_html'] );
+        add_submenu_page( 'fishotel-batch-hq', 'Casino', 'Casino', 'manage_options', 'fishotel-casino', [$this, 'casino_standalone_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Batch Guide', 'Batch Guide', 'manage_options', 'fishotel-guide', [$this, 'guide_html'] );
         // Hidden backward-compat pages (old slugs still work via direct URL)
         add_submenu_page( null, 'FisHotel Settings', '', 'manage_options', 'fishotel-batch-settings', [$this, 'batch_settings_html'] );
@@ -89,13 +90,13 @@ trait FisHotel_Admin {
         echo '<div style="margin:8px 0 -8px 0;padding:0;">';
         $parts = [];
         foreach ( $crumbs as $c ) {
-            $parts[] = '<a href="' . esc_url( $c[1] ) . '" style="color:#b5a165;text-decoration:none;font-size:13px;">' . esc_html( $c[0] ) . '</a>';
+            $parts[] = '<a href="' . esc_url( $c[1] ) . '" style="color:#2986cc;text-decoration:none;font-size:13px;">' . esc_html( $c[0] ) . '</a>';
         }
         echo implode( ' <span style="color:#666;font-size:13px;">&#8250;</span> ', $parts );
         echo '</div>';
     }
 
-    // ─── Tab wrapper: Batch HQ ────────────────────────────────────────
+    // ─── Tab wrapper: Batches ────────────────────────────────────────
 
     public function batch_hq_html() {
         if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
@@ -105,15 +106,13 @@ trait FisHotel_Admin {
             'requests' => 'Requests',
             'summary'  => 'Order Summary',
             'wallets'  => 'Wallets',
-            'casino'   => 'Casino',
         ];
-        $this->render_admin_tabs( 'fishotel-batch-hq', 'Batch HQ', $tabs, $tab );
+        $this->render_admin_tabs( 'fishotel-batch-hq', 'Batches', $tabs, $tab );
 
         switch ( $tab ) {
             case 'requests': $this->batch_orders_html(); break;
             case 'summary':  $this->order_summary_html(); break;
             case 'wallets':  $this->wallets_html(); break;
-            case 'casino':   $this->batch_casino_html(); break;
             default:         $this->batch_settings_html(); break;
         }
     }
@@ -125,6 +124,14 @@ trait FisHotel_Admin {
         $arcade->render_admin_page();
     }
 
+    public function casino_standalone_html() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
+        echo '<div class="wrap fishotel-admin">';
+        echo '<h1>Casino</h1>';
+        $this->batch_casino_html();
+        echo '</div>';
+    }
+
     // ─── Batch Guide page ──────────────────────────────────────────
 
     public function guide_html() {
@@ -134,24 +141,24 @@ trait FisHotel_Admin {
         $inv_url = admin_url( 'admin.php?page=fishotel-invoicing' );
         ?>
         <div class="wrap fishotel-admin">
-            <h1 style="color:#b5a165;font-family:'Oswald',sans-serif;letter-spacing:0.05em;">Batch Guide</h1>
+            <h1 style="color:#2986cc;font-family:'Righteous',cursive;letter-spacing:0.05em;">Batch Guide</h1>
             <p style="color:#aaa;margin-bottom:24px;">Complete reference for running a FisHotel batch from start to finish. Version <?php echo FISHOTEL_VERSION; ?></p>
 
             <style>
                 .fhg-card{background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:20px 24px;margin-bottom:16px;}
-                .fhg-card h2{color:#b5a165;font-size:16px;margin:0 0 12px;cursor:pointer;user-select:none;}
-                .fhg-card h2::before{content:'';display:inline-block;width:0;height:0;border-left:6px solid #b5a165;border-top:4px solid transparent;border-bottom:4px solid transparent;margin-right:8px;transition:transform .2s;}
+                .fhg-card h2{color:#2986cc;font-size:16px;margin:0 0 12px;cursor:pointer;user-select:none;}
+                .fhg-card h2::before{content:'';display:inline-block;width:0;height:0;border-left:6px solid #2986cc;border-top:4px solid transparent;border-bottom:4px solid transparent;margin-right:8px;transition:transform .2s;}
                 .fhg-card.open h2::before{transform:rotate(90deg);}
                 .fhg-body{display:none;color:#ccc;font-size:13px;line-height:1.7;}
                 .fhg-card.open .fhg-body{display:block;}
                 .fhg-table{width:100%;border-collapse:collapse;margin:12px 0;}
-                .fhg-table th{text-align:left;color:#b5a165;padding:8px 12px;border-bottom:1px solid #444;font-size:12px;font-weight:700;}
+                .fhg-table th{text-align:left;color:#2986cc;padding:8px 12px;border-bottom:1px solid #444;font-size:12px;font-weight:700;}
                 .fhg-table td{padding:8px 12px;border-bottom:1px solid #333;font-size:12px;color:#ccc;}
                 .fhg-table tr:last-child td{border-bottom:none;}
-                .fhg-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#b5a165;color:#1a1a1a;font-size:11px;font-weight:700;margin-right:8px;flex-shrink:0;}
+                .fhg-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#2986cc;color:#1a1a1a;font-size:11px;font-weight:700;margin-right:8px;flex-shrink:0;}
                 .fhg-step{display:flex;align-items:flex-start;margin:10px 0;padding:8px 12px;background:#252525;border-radius:6px;}
                 .fhg-step p{margin:0;color:#ccc;font-size:12px;line-height:1.6;}
-                .fhg-step a{color:#b5a165;}
+                .fhg-step a{color:#2986cc;}
                 .fhg-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;margin-left:6px;}
             </style>
 
@@ -163,9 +170,9 @@ trait FisHotel_Admin {
                         <tr><th>#</th><th>Stage</th><th>What Happens</th><th>Admin Action</th><th>Prerequisite</th></tr>
                         <tr><td>1</td><td>Open Ordering</td><td>Fish list is live. Customers browse and request fish.</td><td>Import CSV, assign page, set deposit.</td><td>Batch created + CSV imported</td></tr>
                         <tr><td>2</td><td>Orders Closed</td><td>Order window closed. Page shows countdown to arrival.</td><td>Wait for shipment.</td><td>At least 1 customer request</td></tr>
-                        <tr><td>3</td><td>Arrived</td><td>Fish have arrived. Time to count.</td><td>Go to <a href="<?php echo esc_url( $qt_url ); ?>">QT Operations</a> &rarr; Counting tab. Enter received qty for each species.</td><td>&mdash;</td></tr>
-                        <tr><td>4</td><td>In Quarantine</td><td>Fish in QT. Hotel Program postcards sent to customers.</td><td>Log survival counts in <a href="<?php echo esc_url( $qt_url ); ?>">QT Operations</a> &rarr; QT Tracker.</td><td>Arrival quantities entered</td></tr>
-                        <tr><td>5</td><td>Graduation Day</td><td>QT complete. Final counts needed.</td><td>Enter graduation quantities in <a href="<?php echo esc_url( $qt_url ); ?>">QT Operations</a> &rarr; Graduation tab, then Save.</td><td>&mdash;</td></tr>
+                        <tr><td>3</td><td>Arrived</td><td>Fish have arrived. Time to count.</td><td>Go to <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care</a> &rarr; Counting tab. Enter received qty for each species.</td><td>&mdash;</td></tr>
+                        <tr><td>4</td><td>In Quarantine</td><td>Fish in QT. Postcards sent to customers.</td><td>Log survival counts in <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care</a> &rarr; Quarantine.</td><td>Arrival quantities entered</td></tr>
+                        <tr><td>5</td><td>Graduation Day</td><td>QT complete. Final counts needed.</td><td>Enter graduation quantities in <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care</a> &rarr; Graduation tab, then Save.</td><td>&mdash;</td></tr>
                         <tr><td>6</td><td>Accept or Pass</td><td>Guest Folio is live. Customers accept or pass on their fish.</td><td>Monitor. Cron auto-advances when all resolved.</td><td>Graduation quantities entered (builds the verification queue)</td></tr>
                         <tr><td>7</td><td>Draft Pool</td><td>Unclaimed fish available for last-call picks.</td><td>Monitor draft picks.</td><td>All verification decisions made</td></tr>
                         <tr><td>8</td><td>Casino Night</td><td>Casino arcade is live with Draft Room.</td><td>Monitor casino activity.</td><td>&mdash;</td></tr>
@@ -178,14 +185,14 @@ trait FisHotel_Admin {
             <div class="fhg-card">
                 <h2 onclick="this.parentElement.classList.toggle('open')">Step-by-Step Walkthrough</h2>
                 <div class="fhg-body">
-                    <div class="fhg-step"><span class="fhg-num">1</span><p><strong>Create a batch</strong> &mdash; Go to <a href="<?php echo esc_url( $hq_url ); ?>">Batch HQ &rarr; Settings</a>. Type a name in "Add New Batch" and click Add. Assign a public page and set the deposit amount.</p></div>
-                    <div class="fhg-step"><span class="fhg-num">2</span><p><strong>Import fish CSV</strong> &mdash; Use the Import Card at the top of Batch HQ. Upload your CSV, map columns (Scientific Name, Common Name, Qty, Item Code), select the batch, and import.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">1</span><p><strong>Create a batch</strong> &mdash; Go to <a href="<?php echo esc_url( $hq_url ); ?>">Batches &rarr; Settings</a>. Type a name in "Add New Batch" and click Add. Assign a public page and set the deposit amount.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">2</span><p><strong>Import fish CSV</strong> &mdash; Use the Import Card at the top of Batches. Upload your CSV, map columns (Scientific Name, Common Name, Qty, Item Code), select the batch, and import.</p></div>
                     <div class="fhg-step"><span class="fhg-num">3</span><p><strong>Open ordering</strong> &mdash; The batch starts in "Open Ordering." The assigned page shows the fish list. Share the page with customers.</p></div>
                     <div class="fhg-step"><span class="fhg-num">4</span><p><strong>Close ordering</strong> &mdash; Click the <strong>Close Ordering</strong> button on the batch row. This locks the order window.</p></div>
                     <div class="fhg-step"><span class="fhg-num">5</span><p><strong>Mark as arrived</strong> &mdash; When the shipment arrives, click <strong>Mark as Arrived</strong>.</p></div>
-                    <div class="fhg-step"><span class="fhg-num">6</span><p><strong>Enter arrival quantities</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">QT Operations &rarr; Counting</a>. Enter received qty and DOA for each species. Then click <strong>Begin Quarantine</strong>.</p></div>
-                    <div class="fhg-step"><span class="fhg-num">7</span><p><strong>Track quarantine survival</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">QT Operations &rarr; QT Tracker</a>. Log survival counts periodically. Hotel Program postcards auto-send to customers.</p></div>
-                    <div class="fhg-step"><span class="fhg-num">8</span><p><strong>Graduate the batch</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">QT Operations &rarr; Graduation</a>. Enter final graduation quantities for each species. Click <strong>Save Graduation Data</strong> &mdash; this builds the verification queue and opens the Guest Folio.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">6</span><p><strong>Enter arrival quantities</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care &rarr; Counting</a>. Enter received qty and DOA for each species. Then click <strong>Begin Quarantine</strong>.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">7</span><p><strong>Track quarantine survival</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care &rarr; Quarantine</a>. Log survival counts periodically. Postcards auto-send to customers.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">8</span><p><strong>Graduate the batch</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care &rarr; Graduation</a>. Enter final graduation quantities for each species. Click <strong>Save Graduation Data</strong> &mdash; this builds the verification queue and opens the Guest Folio.</p></div>
                     <div class="fhg-step"><span class="fhg-num">9</span><p><strong>Customers accept or pass</strong> &mdash; The Guest Folio page goes live. Customers see their requests and accept or pass. A cron job auto-passes customers who don't respond within the window.</p></div>
                     <div class="fhg-step"><span class="fhg-num">10</span><p><strong>Draft &amp; Casino</strong> &mdash; After verification completes, unclaimed fish go to the Draft Pool, then Casino Night. Advance using the action buttons.</p></div>
                     <div class="fhg-step"><span class="fhg-num">11</span><p><strong>Generate invoices</strong> &mdash; Go to <a href="<?php echo esc_url( $inv_url ); ?>">Invoicing</a> and generate WooCommerce orders for each customer.</p></div>
@@ -201,7 +208,7 @@ trait FisHotel_Admin {
                         <tr>
                             <td><strong>Guest Folio shows "No requests on file"</strong></td>
                             <td>Graduation quantities were never entered. The verification queue needs graduation data to know how many fish are available.</td>
-                            <td>Go back to Graduation Day stage. Enter graduation quantities in QT Operations &rarr; Graduation, then Save. This builds the queue.</td>
+                            <td>Go back to Graduation Day stage. Enter graduation quantities in Fish Care &rarr; Graduation, then Save. This builds the queue.</td>
                         </tr>
                         <tr>
                             <td><strong>Can't advance to next stage (dropdown locked)</strong></td>
@@ -242,7 +249,7 @@ trait FisHotel_Admin {
                         <tr><td><strong>Casino Night</strong></td><td>The arcade experience with Draft Room, roulette, blackjack, and sticker shop.</td></tr>
                         <tr><td><strong>_stock</strong></td><td>Available-to-order quantity on a fish_batch post. Decremented when customers order. Set during CSV import.</td></tr>
                         <tr><td><strong>_current_qty</strong></td><td>Actual physical quantity after QT/graduation. Set during survival tracking or graduation. Used for verification queue.</td></tr>
-                        <tr><td><strong>_arrival_qty_received</strong></td><td>Number of fish received on arrival day. Set in QT Operations &rarr; Counting tab.</td></tr>
+                        <tr><td><strong>_arrival_qty_received</strong></td><td>Number of fish received on arrival day. Set in Fish Care &rarr; Counting tab.</td></tr>
                     </table>
                 </div>
             </div>
@@ -257,12 +264,12 @@ trait FisHotel_Admin {
         if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
         $tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'northstar';
         $tabs = [
-            'northstar' => 'North Star Stock',
+            'northstar' => 'Browse Stock',
             'library'   => [ 'label' => 'Fish Library', 'url' => admin_url( 'edit.php?post_type=fish_master' ) ],
             'batch'     => [ 'label' => 'Batch Fish', 'url' => admin_url( 'edit.php?post_type=fish_batch' ) ],
-            'sync'      => 'Sync QT Fish',
+            'sync'      => 'Sync',
         ];
-        $this->render_admin_tabs( 'fishotel-sourcing', 'Sourcing', $tabs, $tab );
+        $this->render_admin_tabs( 'fishotel-sourcing', 'Supplier Stock', $tabs, $tab );
 
         switch ( $tab ) {
             case 'sync':    $this->sync_page_html(); break;
@@ -274,7 +281,7 @@ trait FisHotel_Admin {
 
     private function render_admin_tabs( string $page_slug, string $title, array $tabs, string $active ) {
         echo '<div class="wrap fishotel-admin" style="margin-bottom:0;padding-bottom:0;">';
-        echo '<h1 style="color:#b5a165;font-size:26px;font-weight:700;margin-bottom:12px;">' . esc_html( $title ) . '</h1>';
+        echo '<h1 style="color:#2986cc;font-family:Righteous,cursive;font-size:1.8rem;font-weight:700;margin-bottom:12px;">' . esc_html( $title ) . '</h1>';
         echo '<nav class="nav-tab-wrapper" style="border-bottom:2px solid #555;margin-bottom:0;">';
         foreach ( $tabs as $key => $tab_data ) {
             if ( is_array( $tab_data ) ) {
@@ -286,7 +293,7 @@ trait FisHotel_Admin {
             }
             $class = ( $active === $key ) ? ' nav-tab-active' : '';
             $style = ( $active === $key )
-                ? 'background:#1e1e1e;color:#b5a165;border:2px solid #555;border-bottom:2px solid #1e1e1e;margin-bottom:-2px;font-weight:700;'
+                ? 'background:#1e1e1e;color:#2986cc;border:2px solid #555;border-bottom:2px solid #1e1e1e;margin-bottom:-2px;font-weight:700;'
                 : 'background:transparent;color:#aaa;border:2px solid transparent;';
             echo '<a href="' . esc_url( $url ) . '" class="nav-tab' . $class . '" style="' . $style . 'padding:8px 18px;font-size:14px;text-decoration:none;">' . esc_html( $label ) . '</a>';
         }
@@ -484,7 +491,7 @@ trait FisHotel_Admin {
         ?>
         <div class="wrap fishotel-admin">
             <h1>FisHotel Batch Manager</h1>
-            <p class="page-description">Complete backend control for fishotel.com batch system &nbsp;·&nbsp; v<?php echo FISHOTEL_VERSION; ?> &nbsp;·&nbsp; <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-batch-settings&fishotel_force_update_check=1' ) ); ?>" style="color:#b5a165;">Check for updates</a></p>
+            <p class="page-description">Complete backend control for fishotel.com batch system &nbsp;·&nbsp; v<?php echo FISHOTEL_VERSION; ?> &nbsp;·&nbsp; <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-batch-settings&fishotel_force_update_check=1' ) ); ?>" style="color:#2986cc;">Check for updates</a></p>
 
             <!-- ===== ZONE 1: Import Card ===== -->
             <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;margin-top:24px;">
@@ -495,7 +502,7 @@ trait FisHotel_Admin {
                             <input type="hidden" name="action" value="fishotel_import_csv">
                             <label style="display:block;font-weight:700;color:#fff;margin-bottom:10px;">Import Exporter CSV</label>
                             <input type="file" name="fish_csv" accept=".csv" style="display:block;color:#ddd;margin-bottom:14px;">
-                            <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-size:14px;">Upload &amp; Analyze</button>
+                            <button type="submit" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-size:14px;">Upload &amp; Analyze</button>
                         </form>
                     </div>
                     <div style="flex:1;min-width:220px;">
@@ -514,7 +521,7 @@ trait FisHotel_Admin {
                             <label style="display:block;font-weight:700;color:#fff;margin-bottom:10px;">Add New Batch</label>
                             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                                 <input type="text" name="new_batch" placeholder="e.g. Fiji 3-15-26" style="flex:1;min-width:160px;">
-                                <button type="submit" name="add_batch_submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:9px 18px;cursor:pointer;white-space:nowrap;">Add Batch</button>
+                                <button type="submit" name="add_batch_submit" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:9px 18px;cursor:pointer;white-space:nowrap;">Add Batch</button>
                             </div>
                         </form>
                     </div>
@@ -526,18 +533,18 @@ trait FisHotel_Admin {
             .fh-icon-btn {
                 position:relative; display:inline-flex; align-items:center; justify-content:center;
                 width:32px; height:32px; border-radius:5px; border:1px solid #555;
-                background:#2a2a2a; color:#b5a165; font-size:17px; cursor:pointer;
+                background:#2a2a2a; color:#2986cc; font-size:17px; cursor:pointer;
                 text-decoration:none; line-height:1; padding:0; margin:0 2px;
                 box-sizing:border-box; vertical-align:middle;
                 transition:background .15s,border-color .15s;
             }
-            .fh-icon-btn:hover { background:#3a3a3a; border-color:#888; color:#d4bc7e; }
+            .fh-icon-btn:hover { background:#3a3a3a; border-color:#888; color:#5ba3d9; }
             .fh-icon-btn.fh-red { background:#7b1a10; border-color:#c0392b; color:#fff; }
             .fh-icon-btn.fh-red:hover { background:#c0392b; border-color:#e74c3c; }
             .fh-icon-btn::after {
                 content:attr(data-tip);
                 position:absolute; bottom:calc(100% + 7px); left:50%; transform:translateX(-50%);
-                background:#1a1a1a; color:#b5a165; border:1px solid #555; border-radius:4px;
+                background:#1a1a1a; color:#2986cc; border:1px solid #555; border-radius:4px;
                 padding:3px 9px; font-size:11px; white-space:nowrap;
                 pointer-events:none; opacity:0; transition:opacity .12s; z-index:200;
             }
@@ -573,11 +580,11 @@ trait FisHotel_Admin {
                         ?>
                         <tr>
                             <td>
-                                <strong style="color:#b5a165;cursor:pointer;" onclick="fhToggleDetail('<?php echo $key; ?>')">
+                                <strong style="color:#2986cc;cursor:pointer;" onclick="fhToggleDetail('<?php echo $key; ?>')">
                                     <span id="fh-chev-<?php echo $key; ?>" style="display:inline-block;transition:transform .2s;font-size:11px;margin-right:4px;">&#9654;</span><?php echo esc_html( $batch ); ?>
                                 </strong>
                                 <?php if ( $force_day_cur > 0 ) : ?>
-                                    <span style="color:#e67e22;font-size:11px;margin-left:8px;">&#9888; Preview Day <?php echo $force_day_cur; ?></span>
+                                    <span style="color:#2986cc;font-size:11px;margin-left:8px;">&#9888; Preview Day <?php echo $force_day_cur; ?></span>
                                 <?php endif; ?>
                             </td>
                             <td>
@@ -618,7 +625,7 @@ trait FisHotel_Admin {
                                         ><?php echo esc_html( $label . $suffix ); ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <div style="margin-top:4px;font-size:11px;color:#96885f;font-style:italic;">
+                                <div style="margin-top:4px;font-size:11px;color:#1e6fa5;font-style:italic;">
                                     <?php echo wp_kses_post( $this->get_next_action_hint( $batch, $current_status ) ); ?>
                                 </div>
                             </td>
@@ -682,7 +689,7 @@ trait FisHotel_Admin {
 
                 <!-- Save All Settings -->
                 <p style="text-align:center;margin:28px 0 12px 0;">
-                    <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:8px;padding:16px 60px;font-size:18px;cursor:pointer;">Save All Settings</button>
+                    <button type="submit" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:8px;padding:16px 60px;font-size:18px;cursor:pointer;">Save All Settings</button>
                 </p>
 
             </form>
@@ -734,7 +741,7 @@ trait FisHotel_Admin {
                                         <p style="color:#aaa;margin:0 0 10px;font-size:13px;">CSV columns: <code style="background:#333;padding:2px 5px;border-radius:3px;">SCIENTIFIC NAME</code> &amp; <code style="background:#333;padding:2px 5px;border-radius:3px;">PRICE</code>. Updates <code style="background:#333;padding:2px 5px;border-radius:3px;">_selling_price</code> on matching fish_master posts.</p>
                                         <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
                                             <input type="file" name="prices_csv" accept=".csv" style="color:#ddd;">
-                                            <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:8px 20px;cursor:pointer;font-size:13px;">Upload &amp; Apply Prices</button>
+                                            <button type="submit" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 20px;cursor:pointer;font-size:13px;">Upload &amp; Apply Prices</button>
                                         </div>
                                     </form>
                                 </td>
@@ -749,7 +756,7 @@ trait FisHotel_Admin {
                         $all_days       = [ 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ];
                         ?>
                         <hr style="border-color:#444;margin:20px 0;">
-                        <h3 style="color:#b5a165;margin:0 0 14px;font-size:1em;text-transform:uppercase;letter-spacing:1px;">&#128666; Shipping Settings</h3>
+                        <h3 style="color:#2986cc;margin:0 0 14px;font-size:1em;text-transform:uppercase;letter-spacing:1px;">&#128666; Shipping Settings</h3>
                         <table class="form-table">
                             <tr>
                                 <th style="color:#ddd;vertical-align:top;padding-top:10px;">Shipping Days</th>
@@ -893,8 +900,8 @@ trait FisHotel_Admin {
                             <?php endforeach; ?>
                         </div>
                         <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">
-                            <button type="button" id="fishotel-ticker-add" style="background:#333;color:#b5a165;border:1px solid #555;border-radius:6px;padding:8px 18px;cursor:pointer;font-size:13px;font-weight:700;">+ Add Message</button>
-                            <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:8px 22px;cursor:pointer;font-size:13px;">Save Ticker Messages</button>
+                            <button type="button" id="fishotel-ticker-add" style="background:#333;color:#2986cc;border:1px solid #555;border-radius:6px;padding:8px 18px;cursor:pointer;font-size:13px;font-weight:700;">+ Add Message</button>
+                            <button type="submit" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 22px;cursor:pointer;font-size:13px;">Save Ticker Messages</button>
                         </div>
                     </form>
                 </div>
@@ -917,7 +924,7 @@ trait FisHotel_Admin {
                     <tbody>
                         <?php foreach ( $origin_locations as $i => $loc ) : ?>
                         <tr>
-                            <td><strong style="color:#b5a165;"><?php echo esc_html( $loc['name'] ); ?></strong></td>
+                            <td><strong style="color:#2986cc;"><?php echo esc_html( $loc['name'] ); ?></strong></td>
                             <td style="color:#ccc;"><?php echo esc_html( $loc['lat'] ); ?></td>
                             <td style="color:#ccc;"><?php echo esc_html( $loc['lng'] ); ?></td>
                             <td>
@@ -955,7 +962,7 @@ trait FisHotel_Admin {
                             style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:8px 12px;border-radius:6px;width:120px;">
                     </div>
                     <button type="submit"
-                        style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:9px 22px;cursor:pointer;font-size:14px;">Add Location</button>
+                        style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:9px 22px;cursor:pointer;font-size:14px;">Add Location</button>
                 </form>
             </div>
             </div>
@@ -1143,14 +1150,14 @@ trait FisHotel_Admin {
 
         <div id="wallet-adjust-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;">
             <div style="background:#1e1e1e;padding:30px;border-radius:12px;width:420px;max-width:92%;color:#fff;">
-                <h3 style="margin:0 0 20px 0;color:#e67e22;">Adjust Wallet for <span id="modal-user-name"></span></h3>
+                <h3 style="margin:0 0 20px 0;color:#2986cc;">Adjust Wallet for <span id="modal-user-name"></span></h3>
                 <form id="wallet-adjust-form" method="post" action="<?php echo admin_url( 'admin-post.php' ); ?>">
                     <input type="hidden" name="action" value="fishotel_adjust_wallet">
                     <input type="hidden" name="user_id" id="modal-user-id">
                     <?php wp_nonce_field( 'adjust_wallet' ); ?>
                     <p><label>Amount (positive = add, negative = subtract)<br><input type="number" step="0.01" name="amount" id="modal-amount" style="width:100%;padding:10px;background:#333;border:1px solid #555;color:#fff;" required></label></p>
                     <p><label>Reason / Note<br><input type="text" name="reason" id="modal-reason" placeholder="e.g. Manual deposit, Refund, etc." style="width:100%;padding:10px;background:#333;border:1px solid #555;color:#fff;" required></label></p>
-                    <p><button type="submit" class="button button-primary" style="width:100%;padding:12px;background:#e67e22;color:#000;font-weight:700;">Save Adjustment</button></p>
+                    <p><button type="submit" class="button button-primary" style="width:100%;padding:12px;background:#2986cc;color:#fff;font-weight:700;">Save Adjustment</button></p>
                 </form>
                 <button onclick="closeAdjustModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;color:#aaa;font-size:24px;cursor:pointer;">×</button>
             </div>
@@ -1292,23 +1299,23 @@ trait FisHotel_Admin {
         </p>
 
         <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:20px;margin-bottom:16px;display:flex;gap:40px;flex-wrap:wrap;">
-            <div><span style="color:#aaa;font-size:13px;">BATCH</span><br><strong style="color:#b5a165;font-size:1.2em;"><?php echo esc_html( $selected ); ?></strong></div>
+            <div><span style="color:#aaa;font-size:13px;">BATCH</span><br><strong style="color:#2986cc;font-size:1.2em;"><?php echo esc_html( $selected ); ?></strong></div>
             <div><span style="color:#aaa;font-size:13px;">SPECIES</span><br><strong style="color:#fff;font-size:1.2em;"><?php echo $num_species; ?></strong></div>
-            <div><span style="color:#aaa;font-size:13px;">TOTAL FISH QTY</span><br><strong style="color:#e67e22;font-size:1.2em;"><?php echo $total_fish; ?></strong></div>
+            <div><span style="color:#aaa;font-size:13px;">TOTAL FISH QTY</span><br><strong style="color:#2986cc;font-size:1.2em;"><?php echo $total_fish; ?></strong></div>
             <div><span style="color:#aaa;font-size:13px;">REQUESTS</span><br><strong style="color:#fff;font-size:1.2em;"><?php echo count( $requests ); ?></strong></div>
         </div>
 
         <style>
             #fishotel-summary-table { width:100%; border-collapse:collapse; background:#1e1e1e; color:#fff; font-size:0.93em; }
             #fishotel-summary-table thead { position:sticky; top:0; z-index:5; background:#111; }
-            #fishotel-summary-table th { padding:10px 14px; text-align:left; color:#b5a165; border-bottom:2px solid #444; cursor:pointer; user-select:none; white-space:nowrap; }
+            #fishotel-summary-table th { padding:10px 14px; text-align:left; color:#2986cc; border-bottom:2px solid #444; cursor:pointer; user-select:none; white-space:nowrap; }
             #fishotel-summary-table th:hover { background:#1a1a1a; }
             #fishotel-summary-table th.sort-asc::after  { content:" ▲"; font-size:0.75em; }
             #fishotel-summary-table th.sort-desc::after { content:" ▼"; font-size:0.75em; }
             #fishotel-summary-table td { padding:9px 14px; border-bottom:1px solid #2a2a2a; vertical-align:top; }
             #fishotel-summary-table tr:hover td { background:#252525; }
             #fishotel-summary-table .sci { font-style:italic; color:#aaa; }
-            #fishotel-summary-table .qty-badge { background:#e67e22; color:#000; font-weight:700; border-radius:12px; padding:2px 10px; display:inline-block; }
+            #fishotel-summary-table .qty-badge { background:#2986cc; color:#fff; font-weight:700; border-radius:12px; padding:2px 10px; display:inline-block; }
             #fishotel-summary-table .customer-list { color:#ccc; font-size:0.9em; }
             #fishotel-summary-table .customer-list span { display:inline-block; background:#2a2a2a; border:1px solid #444; border-radius:4px; padding:2px 7px; margin:2px 3px 2px 0; }
         </style>
@@ -1337,7 +1344,7 @@ trait FisHotel_Admin {
                         <td style="text-align:center;"><span class="qty-badge"><?php echo intval( $data['total'] ); ?></span></td>
                         <td class="customer-list"><?php
                             foreach ( $data['customers'] as $cname => $cqty ) {
-                                echo '<span>' . esc_html( $cname ) . ' <strong style="color:#e67e22;">×' . intval( $cqty ) . '</strong></span>';
+                                echo '<span>' . esc_html( $cname ) . ' <strong style="color:#2986cc;">×' . intval( $cqty ) . '</strong></span>';
                             }
                         ?></td>
                     </tr>
@@ -1406,7 +1413,7 @@ trait FisHotel_Admin {
 
         ?>
         <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-top:28px;">
-            <h2 style="color:#e67e22;margin-top:0;font-size:1.2em;">🛒 Add My Order</h2>
+            <h2 style="color:#2986cc;margin-top:0;font-size:1.2em;">🛒 Add My Order</h2>
             <p style="color:#aaa;margin-top:0;font-size:13px;">Enter quantities for fish you want to include in your own importer order. Saves as an admin request alongside customer orders.</p>
 
             <?php if ( empty( $batch_fish ) ) : ?>
@@ -1419,7 +1426,7 @@ trait FisHotel_Admin {
 
                 <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
                     <thead>
-                        <tr style="background:#111;color:#b5a165;">
+                        <tr style="background:#111;color:#2986cc;">
                             <th style="padding:9px 12px;text-align:left;border-bottom:2px solid #444;">Fish Name</th>
                             <th style="padding:9px 12px;text-align:left;border-bottom:2px solid #444;font-style:italic;">Scientific Name</th>
                             <th style="padding:9px 12px;text-align:right;border-bottom:2px solid #444;">Price</th>
@@ -1440,7 +1447,7 @@ trait FisHotel_Admin {
                         <tr style="border-bottom:1px solid #2a2a2a;<?php echo $stock === 0 ? 'opacity:0.45;' : ''; ?>">
                             <td style="padding:8px 12px;color:#fff;font-weight:600;"><?php echo esc_html( $master->post_title ); ?></td>
                             <td style="padding:8px 12px;color:#aaa;font-style:italic;"><?php echo esc_html( $sci_name ); ?></td>
-                            <td style="padding:8px 12px;color:#e67e22;text-align:right;">$<?php echo number_format( $price, 2 ); ?></td>
+                            <td style="padding:8px 12px;color:#2986cc;text-align:right;">$<?php echo number_format( $price, 2 ); ?></td>
                             <td style="padding:8px 12px;text-align:center;color:<?php echo $stock > 0 ? '#27ae60' : '#e74c3c'; ?>;font-weight:700;"><?php echo $stock; ?></td>
                             <td style="padding:8px 12px;text-align:center;">
                                 <input type="number" name="items[<?php echo $bp->ID; ?>]"
@@ -1455,7 +1462,7 @@ trait FisHotel_Admin {
                     </tbody>
                 </table>
 
-                <button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Save My Order</button>
+                <button type="submit" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Save My Order</button>
             </form>
             <?php endif; ?>
         </div>
@@ -1636,7 +1643,7 @@ trait FisHotel_Admin {
                                 <td><?php echo $paid_html; ?></td>
                                 <td style="white-space:nowrap;">
                                     <a href="<?php echo admin_url( 'post.php?post=' . $req->ID . '&action=edit' ); ?>" class="button button-small" style="background:#3498db;color:#fff;" title="View Fish">V</a>
-                                    <a href="<?php echo esc_url( $cancel_url ); ?>" class="button button-small" style="background:#e67e22;color:#000;" title="Cancel & Restore Stock" onclick="return confirm('Cancel and restore stock?');">C</a>
+                                    <a href="<?php echo esc_url( $cancel_url ); ?>" class="button button-small" style="background:#2986cc;color:#fff;" title="Cancel & Restore Stock" onclick="return confirm('Cancel and restore stock?');">C</a>
                                     <a href="<?php echo esc_url( $mark_unpaid_url ); ?>" class="button button-small" style="background:#27ae60;color:#000;" title="Mark Unpaid" onclick="return confirm('Mark UNPAID?');">M</a>
                                     <a href="<?php echo esc_url( $full_delete_url ); ?>" class="button button-small" style="background:#e74c3c;color:#fff;" title="Permanently Delete" onclick="return confirm('PERMANENTLY DELETE?');">D</a>
                                 </td>
@@ -1936,6 +1943,10 @@ trait FisHotel_Admin {
             'fishotel-northstar',
             'fishotel-arrival-entry',
             'fishotel-arcade',
+            'fishotel-invoicing',
+            'fishotel-hotel-program',
+            'fishotel-guide',
+            'fishotel-casino',
         ];
         $page = $_GET['page'] ?? '';
         $is_fishotel = in_array( $page, $fishotel_pages, true )
@@ -1949,15 +1960,23 @@ trait FisHotel_Admin {
         if ( $is_fishotel ) {
             $css = "
 /* ===== FisHotel Admin Brand Theme ===== */
+@import url('https://fonts.googleapis.com/css2?family=Righteous&display=swap');
+
+/* Unified heading styles */
+.fishotel-admin h1 { color: #2986cc; font-family: 'Righteous', cursive; font-size: 1.8rem; }
+.fishotel-admin h2 { color: #2986cc; font-family: 'Righteous', cursive; font-size: 1.2rem; }
+.fishotel-admin h3 { color: #ddd; font-size: 1rem; }
+.fishotel-admin h4 { color: #ccc; font-size: 0.9rem; }
 
 /* Page title */
 .fishotel-admin .wrap > h1 {
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: 800;
-    border-bottom: 3px solid #b5a165;
+    border-bottom: 3px solid #2986cc;
     padding-bottom: 12px;
     margin-bottom: 24px;
-    color: #ffffff;
+    color: #2986cc;
+    font-family: 'Righteous', cursive;
 }
 .fishotel-admin .wrap > h1::before {
     content: '';
@@ -1976,13 +1995,13 @@ trait FisHotel_Admin {
 }
 .fishotel-admin .postbox .hndle {
     background: #2a2a2a;
-    color: #b5a165;
+    color: #2986cc;
     border-bottom: 1px solid #444;
     border-radius: 8px 8px 0 0;
     font-weight: 700;
 }
 .fishotel-admin .postbox .hndle h2 {
-    color: #b5a165;
+    color: #2986cc;
 }
 .fishotel-admin .postbox .inside {
     color: #ffffff;
@@ -1990,17 +2009,17 @@ trait FisHotel_Admin {
 
 /* .button-primary */
 .fishotel-admin .button-primary {
-    background: #e67e22 !important;
-    border-color: #e67e22 !important;
-    color: #000000 !important;
+    background: #2986cc !important;
+    border-color: #2986cc !important;
+    color: #ffffff !important;
     font-weight: 700 !important;
     border-radius: 6px !important;
     text-shadow: none !important;
     box-shadow: none !important;
 }
 .fishotel-admin .button-primary:hover {
-    background: #cf6d17 !important;
-    border-color: #cf6d17 !important;
+    background: #1e6fa5 !important;
+    border-color: #1e6fa5 !important;
 }
 
 /* Tables .widefat */
@@ -2012,8 +2031,8 @@ trait FisHotel_Admin {
 .fishotel-admin .widefat thead th,
 .fishotel-admin .widefat tfoot th {
     background: #2a2a2a;
-    color: #b5a165;
-    border-bottom: 2px solid #b5a165;
+    color: #2986cc;
+    border-bottom: 2px solid #2986cc;
     font-weight: 700;
 }
 .fishotel-admin .widefat tbody tr {
@@ -2054,8 +2073,8 @@ trait FisHotel_Admin {
 .fishotel-admin input[type=number]:focus,
 .fishotel-admin select:focus,
 .fishotel-admin textarea:focus {
-    border-color: #b5a165 !important;
-    box-shadow: 0 0 0 1px #b5a165 !important;
+    border-color: #2986cc !important;
+    box-shadow: 0 0 0 1px #2986cc !important;
     outline: none !important;
 }
 
@@ -2136,7 +2155,7 @@ trait FisHotel_Admin {
     color: #ffffff;
     font-size: 2rem;
     font-weight: 800;
-    border-bottom: 3px solid #b5a165;
+    border-bottom: 3px solid #2986cc;
     padding-bottom: 12px;
     margin-bottom: 24px;
 }
@@ -2158,8 +2177,8 @@ trait FisHotel_Admin {
 :is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .wp-list-table thead th,
 :is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .wp-list-table tfoot th {
     background: #2a2a2a;
-    color: #b5a165;
-    border-bottom: 2px solid #b5a165;
+    color: #2986cc;
+    border-bottom: 2px solid #2986cc;
     font-weight: 700;
 }
 :is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .wp-list-table td {
@@ -2180,11 +2199,11 @@ trait FisHotel_Admin {
 /* Title links */
 :is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .column-title a,
 :is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .column-title strong a {
-    color: #b5a165;
+    color: #2986cc;
     font-weight: 700;
 }
 :is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .column-title a:hover {
-    color: #e67e22;
+    color: #2986cc;
 }
 
 /* Row actions */
@@ -2192,20 +2211,20 @@ trait FisHotel_Admin {
     color: #aaaaaa;
 }
 :is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .row-actions .trash a { color: #e74c3c; }
-:is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .row-actions .edit a { color: #e67e22; }
+:is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .row-actions .edit a { color: #2986cc; }
 
 /* Add New / page-title-action button */
 :is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .page-title-action {
-    background: #e67e22 !important;
-    color: #000000 !important;
-    border-color: #e67e22 !important;
+    background: #2986cc !important;
+    color: #ffffff !important;
+    border-color: #2986cc !important;
     border-radius: 6px !important;
     font-weight: 700 !important;
     text-shadow: none !important;
 }
 :is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .page-title-action:hover {
-    background: #cf6d17 !important;
-    border-color: #cf6d17 !important;
+    background: #1e6fa5 !important;
+    border-color: #1e6fa5 !important;
 }
 
 /* General buttons on list pages */
@@ -2221,9 +2240,9 @@ trait FisHotel_Admin {
     color: #ffffff;
 }
 :is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .button-primary {
-    background: #e67e22 !important;
-    border-color: #e67e22 !important;
-    color: #000000 !important;
+    background: #2986cc !important;
+    border-color: #2986cc !important;
+    color: #ffffff !important;
     font-weight: 700 !important;
     text-shadow: none !important;
 }
@@ -2245,7 +2264,7 @@ trait FisHotel_Admin {
     color: #aaaaaa;
 }
 :is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .subsubsub a.current {
-    color: #b5a165;
+    color: #2986cc;
     font-weight: 700;
 }
 
@@ -2258,7 +2277,7 @@ trait FisHotel_Admin {
     color: #aaaaaa;
 }
 :is(body.post-type-fish_master, body.post-type-fish_batch, body.post-type-fish_request) .tablenav-pages a:hover {
-    color: #b5a165;
+    color: #2986cc;
 }
 ";
             wp_add_inline_style( 'wp-admin', $css );
@@ -2859,7 +2878,7 @@ trait FisHotel_Admin {
                 foreach ( $fish as $f ) {
                     if ( intval( get_post_meta( $f->ID, '_arrival_qty_received', true ) ) > 0 ) return true;
                 }
-                return 'No arrival quantities entered. Go to QT Operations → Counting tab and enter received quantities first.';
+                return 'No arrival quantities entered. Go to Fish Care → Counting tab and enter received quantities first.';
 
             case 'verification':
                 $fish = get_posts( [
@@ -2873,7 +2892,7 @@ trait FisHotel_Admin {
                     $aq = get_post_meta( $f->ID, '_arrival_qty_received', true );
                     if ( $aq !== '' && $aq !== false && intval( $aq ) > 0 ) return true;
                 }
-                return 'No graduation or arrival quantities found. Go to QT Operations → Graduation tab and enter quantities first.';
+                return 'No graduation or arrival quantities found. Go to Fish Care → Graduation tab and enter quantities first.';
 
             default:
                 return true; // no data prerequisite
@@ -2888,9 +2907,9 @@ trait FisHotel_Admin {
         switch ( $stage ) {
             case 'open_ordering':   return 'Customers are ordering. Close ordering when the window ends.';
             case 'orders_closed':   return 'Waiting for shipment to arrive.';
-            case 'arrived':         return 'Enter received quantities in <a href="' . esc_url( $qt_url . '&tab=counting' ) . '">QT Operations → Counting</a>.';
-            case 'in_quarantine':   return 'Track survival in <a href="' . esc_url( $qt_url . '&tab=tracker' ) . '">QT Operations → QT Tracker</a>.';
-            case 'graduation':      return 'Enter final quantities in <a href="' . esc_url( $qt_url . '&tab=graduation' ) . '">QT Operations → Graduation</a>, then save to open the Folio.';
+            case 'arrived':         return 'Enter received quantities in <a href="' . esc_url( $qt_url . '&tab=counting' ) . '">Fish Care → Counting</a>.';
+            case 'in_quarantine':   return 'Track survival in <a href="' . esc_url( $qt_url . '&tab=tracker' ) . '">Fish Care → Quarantine</a>.';
+            case 'graduation':      return 'Enter final quantities in <a href="' . esc_url( $qt_url . '&tab=graduation' ) . '">Fish Care → Graduation</a>, then save to open the Folio.';
             case 'verification':    return 'Guest Folio is live — customers are accepting or passing.';
             case 'draft':           return 'Draft Pool is open for last-call picks.';
             case 'casino':          return 'Casino Night is active.';
@@ -2918,13 +2937,13 @@ trait FisHotel_Admin {
             <?php foreach ( $order as $i => $slug ) :
                 $is_done    = $i < $cur;
                 $is_current = $i === $cur;
-                $dot_bg     = $is_done ? '#b5a165' : ( $is_current ? '#1a1a1a' : '#333' );
-                $dot_border = $is_done ? '#b5a165' : ( $is_current ? '#b5a165' : '#555' );
-                $label_color = $is_done ? '#b5a165' : ( $is_current ? '#fff' : '#666' );
+                $dot_bg     = $is_done ? '#2986cc' : ( $is_current ? '#1a1a1a' : '#333' );
+                $dot_border = $is_done ? '#2986cc' : ( $is_current ? '#2986cc' : '#555' );
+                $label_color = $is_done ? '#2986cc' : ( $is_current ? '#fff' : '#666' );
                 $font_weight = $is_current ? '700' : '400';
             ?>
                 <?php if ( $i > 0 ) : ?>
-                    <div style="flex:1;height:2px;min-width:12px;background:<?php echo $is_done || $is_current ? '#b5a165' : '#444'; ?>;"></div>
+                    <div style="flex:1;height:2px;min-width:12px;background:<?php echo $is_done || $is_current ? '#2986cc' : '#444'; ?>;"></div>
                 <?php endif; ?>
                 <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;">
                     <div style="width:<?php echo $is_current ? '14' : '10'; ?>px;height:<?php echo $is_current ? '14' : '10'; ?>px;border-radius:50%;background:<?php echo $dot_bg; ?>;border:2px solid <?php echo $dot_border; ?>;<?php echo $is_current ? 'box-shadow:0 0 6px rgba(181,161,101,0.5);' : ''; ?>"></div>
@@ -2968,7 +2987,7 @@ trait FisHotel_Admin {
             'graduation' => [
                 'next_stage' => 'verification',
                 'label'      => 'Open Guest Folio',
-                'style'      => 'background:#b5a165;color:#1a1a1a;border-color:#96885f;',
+                'style'      => 'background:#2986cc;color:#1a1a1a;border-color:#1e6fa5;',
                 'confirm'    => "Open the Guest Folio for '%s'? Customers will be able to accept or pass.",
             ],
             'verification' => [
@@ -2980,7 +2999,7 @@ trait FisHotel_Admin {
             'draft' => [
                 'next_stage' => 'casino',
                 'label'      => 'Close Draft &amp; Open Casino',
-                'style'      => 'background:#96885f;color:#fff;border-color:#7a6f4e;',
+                'style'      => 'background:#1e6fa5;color:#fff;border-color:#7a6f4e;',
                 'confirm'    => "Close the draft for '%s' and open Casino Night?",
             ],
             'casino' => [
@@ -3492,8 +3511,8 @@ trait FisHotel_Admin {
             ? sanitize_text_field( wp_unslash( $_GET['batch'] ) )
             : ( ! empty( $eligible ) ? reset( $eligible ) : '' );
 
-        echo '<div class="wrap">';
-        echo '<h1>QT Operations</h1>';
+        echo '<div class="wrap fishotel-admin">';
+        echo '<h1>Fish Care</h1>';
         echo '<p style="color:#aaa;">Manage arrivals, track quarantine survival, and confirm graduation counts.</p>';
 
         // Batch selector
@@ -3540,9 +3559,9 @@ trait FisHotel_Admin {
 
         $tab_base = admin_url( 'admin.php?page=fishotel-arrival-entry&batch=' . urlencode( $selected ) );
         echo '<nav class="nav-tab-wrapper" style="margin-bottom:20px;">';
-        echo '<a href="' . esc_url( $tab_base . '&tab=arrival' ) . '" class="nav-tab' . ( $tab === 'arrival' ? ' nav-tab-active' : '' ) . '">Arrival Data</a>';
-        echo '<a href="' . esc_url( $tab_base . '&tab=tracker' ) . '" class="nav-tab' . ( $tab === 'tracker' ? ' nav-tab-active' : '' ) . '">Quarantine Tracker</a>';
-        echo '<a href="' . esc_url( $tab_base . '&tab=graduation' ) . '" class="nav-tab' . ( $tab === 'graduation' ? ' nav-tab-active' : '' ) . '">Graduation Headcount</a>';
+        echo '<a href="' . esc_url( $tab_base . '&tab=arrival' ) . '" class="nav-tab' . ( $tab === 'arrival' ? ' nav-tab-active' : '' ) . '">Counting</a>';
+        echo '<a href="' . esc_url( $tab_base . '&tab=tracker' ) . '" class="nav-tab' . ( $tab === 'tracker' ? ' nav-tab-active' : '' ) . '">Quarantine</a>';
+        echo '<a href="' . esc_url( $tab_base . '&tab=graduation' ) . '" class="nav-tab' . ( $tab === 'graduation' ? ' nav-tab-active' : '' ) . '">Graduation</a>';
         echo '<a href="' . esc_url( $tab_base . '&tab=lastcall' ) . '" class="nav-tab' . ( $tab === 'lastcall' ? ' nav-tab-active' : '' ) . '">Last Call</a>';
         echo '</nav>';
 
@@ -3572,8 +3591,8 @@ trait FisHotel_Admin {
         // ── Arrival Data Form ──────────────────────────────────────────────
         if ( $tab === 'arrival' ) :
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:28px;">';
-        echo '<h2 style="color:#e67e22;margin-top:0;font-size:1.2em;">Arrival Data</h2>';
-        echo '<input type="text" id="fh-arrival-search" placeholder="Search species..." style="width:100%;padding:10px 14px;margin-bottom:16px;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:6px;font-size:14px;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor=\'#e67e22\'" onblur="this.style.borderColor=\'#555\'">';
+        echo '<h2 style="color:#2986cc;margin-top:0;font-size:1.2em;">Arrival Data</h2>';
+        echo '<input type="text" id="fh-arrival-search" placeholder="Search species..." style="width:100%;padding:10px 14px;margin-bottom:16px;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:6px;font-size:14px;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor=\'#2986cc\'" onblur="this.style.borderColor=\'#555\'">';
 
         echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
         wp_nonce_field( 'fishotel_save_arrival_nonce' );
@@ -3595,15 +3614,15 @@ trait FisHotel_Admin {
 
         echo '<table style="width:100%;border-collapse:collapse;">';
         echo '<thead><tr style="border-bottom:2px solid #444;text-align:left;">';
-        echo '<th style="padding:8px;color:#b5a165;">Common Name</th>';
-        echo '<th style="padding:8px;color:#b5a165;">Scientific Name</th>';
-        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Demand</th>';
-        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Qty Ordered</th>';
-        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Qty Received</th>';
-        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Qty DOA</th>';
-        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Tank</th>';
-        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Status</th>';
-        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Fill Rate</th>';
+        echo '<th style="padding:8px;color:#2986cc;">Common Name</th>';
+        echo '<th style="padding:8px;color:#2986cc;">Scientific Name</th>';
+        echo '<th style="padding:8px;color:#2986cc;text-align:center;">Demand</th>';
+        echo '<th style="padding:8px;color:#2986cc;text-align:center;">Qty Ordered</th>';
+        echo '<th style="padding:8px;color:#2986cc;text-align:center;">Qty Received</th>';
+        echo '<th style="padding:8px;color:#2986cc;text-align:center;">Qty DOA</th>';
+        echo '<th style="padding:8px;color:#2986cc;text-align:center;">Tank</th>';
+        echo '<th style="padding:8px;color:#2986cc;text-align:center;">Status</th>';
+        echo '<th style="padding:8px;color:#2986cc;text-align:center;">Fill Rate</th>';
         echo '</tr></thead><tbody>';
 
         foreach ( $demanded_fish as $bp ) {
@@ -3665,7 +3684,7 @@ trait FisHotel_Admin {
         // ── Add Surprise Fish ──
         if ( ! empty( $surprise_fish ) ) {
             echo '<div style="margin-top:16px;border-top:1px solid #444;padding-top:16px;">';
-            echo '<button type="button" id="fh-surprise-toggle" style="background:#333;color:#b5a165;border:1px solid #555;border-radius:6px;padding:8px 20px;font-size:13px;cursor:pointer;" onclick="document.getElementById(\'fh-surprise-form\').style.display=document.getElementById(\'fh-surprise-form\').style.display===\'none\'?\'block\':\'none\'">+ Add Surprise Fish</button>';
+            echo '<button type="button" id="fh-surprise-toggle" style="background:#333;color:#2986cc;border:1px solid #555;border-radius:6px;padding:8px 20px;font-size:13px;cursor:pointer;" onclick="document.getElementById(\'fh-surprise-form\').style.display=document.getElementById(\'fh-surprise-form\').style.display===\'none\'?\'block\':\'none\'">+ Add Surprise Fish</button>';
             echo '<div id="fh-surprise-form" style="display:none;margin-top:12px;background:#252525;border:1px solid #444;border-radius:6px;padding:16px;">';
             echo '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">';
             echo '<div><label style="color:#aaa;font-size:11px;display:block;margin-bottom:4px;">Species</label>';
@@ -3691,7 +3710,7 @@ trait FisHotel_Admin {
         }
 
         echo '<div style="margin-top:16px;text-align:right;">';
-        echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Save Arrival Data</button>';
+        echo '<button type="submit" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Save Arrival Data</button>';
         echo '</div></form></div>';
 
         // ── HF Post Generator ──────────────────────────────────────────────
@@ -3727,8 +3746,8 @@ trait FisHotel_Admin {
         $hf_post .= 'Quarantine ends: [b]' . $hf_qt_end . '[/b]';
 
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:28px;">';
-        echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">HF Arrival Summary</h2>';
-        echo '<button type="button" id="fh-gen-hf" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;margin-bottom:12px;" onclick="document.getElementById(\'fh-hf-output\').style.display=\'block\';this.style.display=\'none\';">Generate HF Post</button>';
+        echo '<h2 style="color:#2986cc;margin-top:0;font-size:1.2em;">HF Arrival Summary</h2>';
+        echo '<button type="button" id="fh-gen-hf" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;margin-bottom:12px;" onclick="document.getElementById(\'fh-hf-output\').style.display=\'block\';this.style.display=\'none\';">Generate HF Post</button>';
         echo '<textarea id="fh-hf-output" readonly style="display:none;width:100%;min-height:200px;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:6px;padding:12px;font-family:monospace;font-size:13px;resize:vertical;" onclick="this.select()">' . esc_textarea( $hf_post ) . '</textarea>';
         echo '</div>';
         endif; // arrival tab
@@ -3736,7 +3755,7 @@ trait FisHotel_Admin {
         // ── Survival Tracker ───────────────────────────────────────────────
         if ( $tab === 'tracker' ) :
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;">';
-        echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Quarantine Survival Tracker</h2>';
+        echo '<h2 style="color:#2986cc;margin-top:0;font-size:1.2em;">Quarantine Survival Tracker</h2>';
         echo '<p style="color:#aaa;margin-top:0;font-size:13px;">Log daily live counts per species. Entries are append-only.</p>';
 
         echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
@@ -3746,9 +3765,9 @@ trait FisHotel_Admin {
 
         echo '<table style="width:100%;border-collapse:collapse;">';
         echo '<thead><tr style="border-bottom:2px solid #444;text-align:left;">';
-        echo '<th style="padding:8px;color:#b5a165;">Species</th>';
-        echo '<th style="padding:8px;color:#b5a165;">Recent Log</th>';
-        echo '<th style="padding:8px;color:#b5a165;text-align:center;">Today\'s Count</th>';
+        echo '<th style="padding:8px;color:#2986cc;">Species</th>';
+        echo '<th style="padding:8px;color:#2986cc;">Recent Log</th>';
+        echo '<th style="padding:8px;color:#2986cc;text-align:center;">Today\'s Count</th>';
         echo '</tr></thead><tbody>';
 
         foreach ( $batch_fish as $bp ) {
@@ -3790,11 +3809,11 @@ trait FisHotel_Admin {
 
         if ( $grad_has_entries ) {
             echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;">';
-            echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Graduation Headcount</h2>';
+            echo '<h2 style="color:#2986cc;margin-top:0;font-size:1.2em;">Graduation Headcount</h2>';
             echo '<p style="color:#aaa;margin-top:0;font-size:13px;">Final confirmed counts after QT. These numbers lock when batch advances to graduation.</p>';
 
             if ( $grad_locked ) {
-                echo '<p style="color:#e67e22;font-size:12px;margin-bottom:12px;">&#x1F512; Counts locked &mdash; batch has advanced to graduation stage. Edit batch status to unlock.</p>';
+                echo '<p style="color:#2986cc;font-size:12px;margin-bottom:12px;">&#x1F512; Counts locked &mdash; batch has advanced to graduation stage. Edit batch status to unlock.</p>';
             }
 
             echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
@@ -3804,10 +3823,10 @@ trait FisHotel_Admin {
 
             echo '<table style="width:100%;border-collapse:collapse;">';
             echo '<thead><tr style="border-bottom:2px solid #444;text-align:left;">';
-            echo '<th style="padding:8px;color:#b5a165;">Species</th>';
-            echo '<th style="padding:8px;color:#b5a165;text-align:center;">Arrived Qty</th>';
-            echo '<th style="padding:8px;color:#b5a165;text-align:center;">DOA</th>';
-            echo '<th style="padding:8px;color:#b5a165;text-align:center;">Graduated Qty</th>';
+            echo '<th style="padding:8px;color:#2986cc;">Species</th>';
+            echo '<th style="padding:8px;color:#2986cc;text-align:center;">Arrived Qty</th>';
+            echo '<th style="padding:8px;color:#2986cc;text-align:center;">DOA</th>';
+            echo '<th style="padding:8px;color:#2986cc;text-align:center;">Graduated Qty</th>';
             echo '</tr></thead><tbody>';
 
             foreach ( $batch_fish as $bp ) {
@@ -3835,7 +3854,7 @@ trait FisHotel_Admin {
             echo '</tbody></table>';
             if ( ! $grad_locked ) {
                 echo '<div style="margin-top:16px;text-align:right;">';
-                echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Save Graduation Counts</button>';
+                echo '<button type="submit" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">Save Graduation Counts</button>';
                 echo '</div>';
             }
             echo '</form></div>';
@@ -3871,8 +3890,8 @@ trait FisHotel_Admin {
             $hf_grad .= 'Stage 5 (Accept or Pass) opening soon — watch for your notification!';
 
             echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-top:28px;">';
-            echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">HF Graduation Summary</h2>';
-            echo '<button type="button" id="fh-gen-hf-grad" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;margin-bottom:12px;" onclick="document.getElementById(\'fh-hf-grad-output\').style.display=\'block\';this.style.display=\'none\';">Generate HF Post</button>';
+            echo '<h2 style="color:#2986cc;margin-top:0;font-size:1.2em;">HF Graduation Summary</h2>';
+            echo '<button type="button" id="fh-gen-hf-grad" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;margin-bottom:12px;" onclick="document.getElementById(\'fh-hf-grad-output\').style.display=\'block\';this.style.display=\'none\';">Generate HF Post</button>';
             echo '<textarea id="fh-hf-grad-output" readonly style="display:none;width:100%;min-height:200px;background:#2a2a2a;border:1px solid #555;color:#fff;border-radius:6px;padding:12px;font-family:monospace;font-size:13px;resize:vertical;" onclick="this.select()">' . esc_textarea( $hf_grad ) . '</textarea>';
             echo '</div>';
         }
@@ -3915,8 +3934,8 @@ trait FisHotel_Admin {
             // ── Generate Invoices panel (casino stage + results exist) ──
             if ( in_array( $current_stage, [ 'draft', 'casino' ], true ) && $lc_has_results ) {
                 $gi_nonce = wp_create_nonce( 'fishotel_generate_invoices_nonce' );
-                echo '<div style="background:#1e1e1e;border:1px solid #96885f;border-radius:8px;padding:24px;margin-bottom:16px;">';
-                echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Stage 7 — Generate Invoices</h2>';
+                echo '<div style="background:#1e1e1e;border:1px solid #1e6fa5;border-radius:8px;padding:24px;margin-bottom:16px;">';
+                echo '<h2 style="color:#2986cc;margin-top:0;font-size:1.2em;">Stage 7 — Generate Invoices</h2>';
                 echo '<p style="color:#aaa;font-size:13px;margin-bottom:4px;">Draft complete. Casino Night is over. Ready to build WooCommerce orders for all customers.</p>';
                 echo '<ul style="color:#aaa;font-size:12px;margin:0 0 16px 16px;line-height:1.8;">';
                 echo '<li>Customers with fish get a WooCommerce order with line items, shipping, and deposit credit applied.</li>';
@@ -3947,7 +3966,7 @@ trait FisHotel_Admin {
                                 var el = document.getElementById('fh-gen-invoices-result');
                                 el.style.display = 'block';
                                 if (resp.success) {
-                                    var color = resp.data.missing_prices && resp.data.missing_prices.length ? '#e67e22' : '#27ae60';
+                                    var color = resp.data.missing_prices && resp.data.missing_prices.length ? '#2986cc' : '#27ae60';
                                     el.style.color = color;
                                     el.innerHTML = '&#10003; ' + resp.data.message;
                                     btn.style.display = 'none';
@@ -3976,13 +3995,13 @@ trait FisHotel_Admin {
             $queue_exists = ! empty( $lc_queue );
 
             echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;">';
-            echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Last Call — Draft Pool</h2>';
+            echo '<h2 style="color:#2986cc;margin-top:0;font-size:1.2em;">Last Call — Draft Pool</h2>';
             echo '<p style="color:#aaa;font-size:13px;margin-bottom:16px;">Opens the Last Call draft pool. Builds the available fish pool from verification leftovers and creates the draft order.</p>';
 
             if ( ! $queue_exists ) {
                 echo '<p style="color:#e74c3c;font-size:12px;">No verification queue found. Run verification first.</p>';
             } elseif ( ! $can_open ) {
-                echo '<p style="color:#e67e22;font-size:12px;">Batch must be at verification or graduation stage. Current: <strong>' . esc_html( $current_stage ) . '</strong></p>';
+                echo '<p style="color:#2986cc;font-size:12px;">Batch must be at verification or graduation stage. Current: <strong>' . esc_html( $current_stage ) . '</strong></p>';
             }
 
             echo '<form method="post" action="' . $admin_post_url . '">';
@@ -3990,7 +4009,7 @@ trait FisHotel_Admin {
             echo '<input type="hidden" name="action" value="fishotel_open_lastcall">';
             echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
             $disabled = ( ! $can_open || ! $queue_exists ) ? ' disabled' : '';
-            $btn_style = 'background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;';
+            $btn_style = 'background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;';
             if ( $disabled ) $btn_style .= 'opacity:0.4;cursor:not-allowed;';
             echo '<button type="submit" style="' . $btn_style . '"' . $disabled . '>Open Last Call</button>';
             echo '</form></div>';
@@ -4003,14 +4022,14 @@ trait FisHotel_Admin {
         if ( $lc_has_results ) {
             $badge = '<span style="background:#27ae60;color:#fff;padding:3px 12px;border-radius:4px;font-size:12px;font-weight:700;">DRAFT COMPLETE</span>';
         } elseif ( $lc_window_closed ) {
-            $badge = '<span style="background:#e67e22;color:#000;padding:3px 12px;border-radius:4px;font-size:12px;font-weight:700;">CLOSED</span>';
+            $badge = '<span style="background:#2986cc;color:#fff;padding:3px 12px;border-radius:4px;font-size:12px;font-weight:700;">CLOSED</span>';
         } else {
             $badge = '<span style="background:#27ae60;color:#fff;padding:3px 12px;border-radius:4px;font-size:12px;font-weight:700;">OPEN</span>';
         }
 
         // ── Section 1: Status & Settings ──
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:16px;">';
-        echo '<h2 style="color:#b5a165;margin-top:0;font-size:1.2em;">Last Call — Status ' . $badge . '</h2>';
+        echo '<h2 style="color:#2986cc;margin-top:0;font-size:1.2em;">Last Call — Status ' . $badge . '</h2>';
         echo '<table style="width:100%;border-collapse:collapse;">';
         echo '<tr style="border-bottom:1px solid #333;"><td style="padding:8px;color:#aaa;width:160px;">Opened</td><td style="padding:8px;color:#ddd;">' . ( $lc_opened ? date( 'F j, Y g:i A', $lc_opened ) : 'N/A' ) . '</td></tr>';
         echo '</table>';
@@ -4032,15 +4051,15 @@ trait FisHotel_Admin {
         // ── Section 2: The Pool ──
         if ( ! $lc_has_results ) {
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:16px;">';
-        echo '<h3 style="color:#b5a165;margin-top:0;font-size:1.1em;">The Pool</h3>';
+        echo '<h3 style="color:#2986cc;margin-top:0;font-size:1.1em;">The Pool</h3>';
 
         if ( ! empty( $lc_pool ) ) {
             echo '<table style="width:100%;border-collapse:collapse;margin-bottom:12px;">';
             echo '<thead><tr style="border-bottom:2px solid #444;">';
-            echo '<th style="padding:8px;color:#b5a165;text-align:left;">Species</th>';
-            echo '<th style="padding:8px;color:#b5a165;text-align:center;">Qty</th>';
-            echo '<th style="padding:8px;color:#b5a165;text-align:center;">Update</th>';
-            echo '<th style="padding:8px;color:#b5a165;text-align:center;">Remove</th>';
+            echo '<th style="padding:8px;color:#2986cc;text-align:left;">Species</th>';
+            echo '<th style="padding:8px;color:#2986cc;text-align:center;">Qty</th>';
+            echo '<th style="padding:8px;color:#2986cc;text-align:center;">Update</th>';
+            echo '<th style="padding:8px;color:#2986cc;text-align:center;">Remove</th>';
             echo '</tr></thead><tbody>';
             foreach ( $lc_pool as $idx => $item ) {
                 echo '<tr style="border-bottom:1px solid #333;">';
@@ -4092,7 +4111,7 @@ trait FisHotel_Admin {
             }
             echo '</select>';
             echo '<input type="number" name="add_qty" value="1" min="1" style="width:60px;padding:6px;border:1px solid #555;background:#2a2a2a;color:#fff;border-radius:4px;text-align:center;">';
-            echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:7px 18px;font-size:12px;cursor:pointer;">Add</button>';
+            echo '<button type="submit" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:7px 18px;font-size:12px;cursor:pointer;">Add</button>';
             echo '</form>';
         }
         echo '</div>';
@@ -4101,13 +4120,13 @@ trait FisHotel_Admin {
         // ── Section 3: Draft Order ──
         if ( ! $lc_has_results && ! empty( $lc_order ) ) {
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:16px;">';
-        echo '<h3 style="color:#b5a165;margin-top:0;font-size:1.1em;">Draft Order <span style="color:#888;font-size:0.8em;">(' . count( $lc_order ) . ' customers)</span></h3>';
+        echo '<h3 style="color:#2986cc;margin-top:0;font-size:1.1em;">Draft Order <span style="color:#888;font-size:0.8em;">(' . count( $lc_order ) . ' customers)</span></h3>';
         echo '<table style="width:100%;border-collapse:collapse;">';
         echo '<thead><tr style="border-bottom:2px solid #444;">';
-        echo '<th style="padding:6px 8px;color:#b5a165;text-align:center;width:40px;">#</th>';
-        echo '<th style="padding:6px 8px;color:#b5a165;text-align:left;">Customer</th>';
-        echo '<th style="padding:6px 8px;color:#b5a165;text-align:left;">HF Username</th>';
-        echo '<th style="padding:6px 8px;color:#b5a165;text-align:center;width:100px;">Move</th>';
+        echo '<th style="padding:6px 8px;color:#2986cc;text-align:center;width:40px;">#</th>';
+        echo '<th style="padding:6px 8px;color:#2986cc;text-align:left;">Customer</th>';
+        echo '<th style="padding:6px 8px;color:#2986cc;text-align:left;">HF Username</th>';
+        echo '<th style="padding:6px 8px;color:#2986cc;text-align:center;width:100px;">Move</th>';
         echo '</tr></thead><tbody>';
         foreach ( $lc_order as $pos => $uid ) {
             $u       = get_user_by( 'id', $uid );
@@ -4155,12 +4174,12 @@ trait FisHotel_Admin {
         }, $lc_pool ) );
 
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:16px;">';
-        echo '<h3 style="color:#b5a165;margin-top:0;font-size:1.1em;">Wishlists</h3>';
+        echo '<h3 style="color:#2986cc;margin-top:0;font-size:1.1em;">Wishlists</h3>';
         echo '<table style="width:100%;border-collapse:collapse;">';
         echo '<thead><tr style="border-bottom:2px solid #444;">';
-        echo '<th style="padding:6px 8px;color:#b5a165;text-align:left;">Customer</th>';
-        echo '<th style="padding:6px 8px;color:#b5a165;text-align:center;">Items</th>';
-        echo '<th style="padding:6px 8px;color:#b5a165;text-align:center;">Saved</th>';
+        echo '<th style="padding:6px 8px;color:#2986cc;text-align:left;">Customer</th>';
+        echo '<th style="padding:6px 8px;color:#2986cc;text-align:center;">Items</th>';
+        echo '<th style="padding:6px 8px;color:#2986cc;text-align:center;">Saved</th>';
         echo '</tr></thead><tbody>';
         $wl_idx = 0;
         foreach ( $lc_order as $uid ) {
@@ -4192,7 +4211,7 @@ trait FisHotel_Admin {
                         if ( intval( $p['fish_id'] ) === intval( $wi['fish_id'] ) ) { $fish_name = $p['name']; break; }
                     }
                     if ( ! $fish_name ) $fish_name = 'Fish #' . $wi['fish_id'];
-                    $alt_label = ! empty( $wi['is_alternative_to'] ) ? ' <span style="color:#e67e22;font-size:10px;">(alt)</span>' : '';
+                    $alt_label = ! empty( $wi['is_alternative_to'] ) ? ' <span style="color:#2986cc;font-size:10px;">(alt)</span>' : '';
                     echo '<li style="margin:2px 0;">' . esc_html( $fish_name ) . $alt_label . '</li>';
                 }
                 echo '</ol>';
@@ -4369,7 +4388,7 @@ trait FisHotel_Admin {
 
         // ── Section 5: Actions ──
         echo '<div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;margin-bottom:16px;">';
-        echo '<h3 style="color:#b5a165;margin-top:0;font-size:1.1em;">Actions</h3>';
+        echo '<h3 style="color:#2986cc;margin-top:0;font-size:1.1em;">Actions</h3>';
 
         if ( ! $lc_window_closed && ! $lc_has_results ) {
             // Window open — close early button
@@ -4377,7 +4396,7 @@ trait FisHotel_Admin {
             wp_nonce_field( 'fishotel_lc_close_window_nonce' );
             echo '<input type="hidden" name="action" value="fishotel_lc_close_window">';
             echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
-            echo '<button type="submit" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;">Close Window Early</button>';
+            echo '<button type="submit" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;">Close Window Early</button>';
             echo '</form>';
 
         } elseif ( $lc_window_closed && ! $lc_has_results ) {
@@ -4385,9 +4404,9 @@ trait FisHotel_Admin {
             $draft_nonce = wp_create_nonce( 'fishotel_lastcall_draft_nonce' );
             ?>
             <div class="fh-draft-control-panel">
-                <p style="color:#e67e22;font-size:13px;margin-bottom:12px;">Wishlist window has closed. Ready to run the draft.</p>
+                <p style="color:#2986cc;font-size:13px;margin-bottom:12px;">Wishlist window has closed. Ready to run the draft.</p>
                 <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-                    <button type="button" id="fh-run-draft-btn" style="background:#e67e22;color:#000;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">&#x25B6; Run Draft</button>
+                    <button type="button" id="fh-run-draft-btn" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 32px;font-size:14px;cursor:pointer;">&#x25B6; Run Draft</button>
                     <span id="fh-draft-status" style="font-size:12px;color:#aaa;"></span>
                 </div>
             </div>
@@ -4397,11 +4416,11 @@ trait FisHotel_Admin {
                 <p id="fh-results-meta" style="color:#aaa;font-size:12px;margin-bottom:8px;"></p>
                 <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
                     <thead><tr style="border-bottom:2px solid #444;">
-                        <th style="padding:6px 8px;color:#b5a165;text-align:center;">Rd</th>
-                        <th style="padding:6px 8px;color:#b5a165;text-align:center;">Pick</th>
-                        <th style="padding:6px 8px;color:#b5a165;text-align:left;">Customer</th>
-                        <th style="padding:6px 8px;color:#b5a165;text-align:left;">Fish</th>
-                        <th style="padding:6px 8px;color:#b5a165;text-align:center;">Qty</th>
+                        <th style="padding:6px 8px;color:#2986cc;text-align:center;">Rd</th>
+                        <th style="padding:6px 8px;color:#2986cc;text-align:center;">Pick</th>
+                        <th style="padding:6px 8px;color:#2986cc;text-align:left;">Customer</th>
+                        <th style="padding:6px 8px;color:#2986cc;text-align:left;">Fish</th>
+                        <th style="padding:6px 8px;color:#2986cc;text-align:center;">Qty</th>
                     </tr></thead>
                     <tbody id="fh-results-tbody"></tbody>
                 </table>
@@ -4486,10 +4505,10 @@ trait FisHotel_Admin {
             echo '<p style="color:#aaa;font-size:12px;margin-bottom:8px;">Ran ' . date( 'F j, Y g:i A', $lc_results['run_at'] ) . ' &mdash; ' . count( $lc_results['picks'] ) . ' picks, ' . $lc_results['rounds'] . ' rounds</p>';
             echo '<table style="width:100%;border-collapse:collapse;margin-bottom:12px;">';
             echo '<thead><tr style="border-bottom:2px solid #444;">';
-            echo '<th style="padding:6px 8px;color:#b5a165;text-align:center;">Rd</th>';
-            echo '<th style="padding:6px 8px;color:#b5a165;text-align:left;">Customer</th>';
-            echo '<th style="padding:6px 8px;color:#b5a165;text-align:left;">Fish</th>';
-            echo '<th style="padding:6px 8px;color:#b5a165;text-align:center;">Qty</th>';
+            echo '<th style="padding:6px 8px;color:#2986cc;text-align:center;">Rd</th>';
+            echo '<th style="padding:6px 8px;color:#2986cc;text-align:left;">Customer</th>';
+            echo '<th style="padding:6px 8px;color:#2986cc;text-align:left;">Fish</th>';
+            echo '<th style="padding:6px 8px;color:#2986cc;text-align:center;">Qty</th>';
             echo '</tr></thead><tbody>';
             foreach ( $lc_results['picks'] as $pick ) {
                 $u       = get_user_by( 'id', $pick['user_id'] );
@@ -4513,7 +4532,7 @@ trait FisHotel_Admin {
             echo '<input type="hidden" name="action" value="fishotel_advance_stage">';
             echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
             echo '<input type="hidden" name="new_stage" value="casino">';
-            echo '<button type="submit" style="background:#96885f;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;" onclick="return confirm(\'Close the draft and open Casino Night?\');">Close Draft &amp; Open Casino</button>';
+            echo '<button type="submit" style="background:#1e6fa5;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 24px;font-size:13px;cursor:pointer;" onclick="return confirm(\'Close the draft and open Casino Night?\');">Close Draft &amp; Open Casino</button>';
             echo '</form>';
 
             echo '<form method="post" action="' . $admin_post_url . '" style="margin:0;" onsubmit="return confirm(\'Reset the draft? Clears all results and notifications.\');">';
@@ -5011,7 +5030,7 @@ trait FisHotel_Admin {
 
         <!-- ═══ TAB: Unpaid Invoices ═══ -->
         <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;max-width:900px;">
-            <h2 style="color:#b5a165;margin-top:0;font-size:1.1em;">Unpaid Invoices</h2>
+            <h2 style="color:#2986cc;margin-top:0;font-size:1.1em;">Unpaid Invoices</h2>
             <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Generate a forum-ready list of customers who have not yet paid their batch invoice.</p>
 
             <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:20px;">
@@ -5024,7 +5043,7 @@ trait FisHotel_Admin {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <button id="fh-inv-generate" style="background:#96885f;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Generate List</button>
+                <button id="fh-inv-generate" style="background:#1e6fa5;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Generate List</button>
                 <span id="fh-inv-spinner" style="display:none;color:#aaa;font-size:13px;">&#8987; Loading&hellip;</span>
             </div>
 
@@ -5040,10 +5059,10 @@ trait FisHotel_Admin {
                 <table id="fh-inv-table" style="width:100%;border-collapse:collapse;font-size:13px;">
                     <thead>
                         <tr style="background:#2a2a2a;">
-                            <th style="padding:8px 10px;text-align:left;color:#b5a165;border-bottom:1px solid #444;">Customer</th>
-                            <th style="padding:8px 10px;text-align:left;color:#b5a165;border-bottom:1px solid #444;">HF Username</th>
-                            <th style="padding:8px 10px;text-align:right;color:#b5a165;border-bottom:1px solid #444;">Amount Due</th>
-                            <th style="padding:8px 10px;text-align:left;color:#b5a165;border-bottom:1px solid #444;">Payment Link</th>
+                            <th style="padding:8px 10px;text-align:left;color:#2986cc;border-bottom:1px solid #444;">Customer</th>
+                            <th style="padding:8px 10px;text-align:left;color:#2986cc;border-bottom:1px solid #444;">HF Username</th>
+                            <th style="padding:8px 10px;text-align:right;color:#2986cc;border-bottom:1px solid #444;">Amount Due</th>
+                            <th style="padding:8px 10px;text-align:left;color:#2986cc;border-bottom:1px solid #444;">Payment Link</th>
                         </tr>
                     </thead>
                     <tbody id="fh-inv-tbody"></tbody>
@@ -5056,7 +5075,7 @@ trait FisHotel_Admin {
 
         <!-- ═══ TAB: Packing Lists ═══ -->
         <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;max-width:900px;" class="fh-no-print">
-            <h2 style="color:#b5a165;margin-top:0;font-size:1.1em;">Packing Lists</h2>
+            <h2 style="color:#2986cc;margin-top:0;font-size:1.1em;">Packing Lists</h2>
             <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Generate a print-ready packing list for all paid orders shipping on a given date.</p>
 
             <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:20px;">
@@ -5064,7 +5083,7 @@ trait FisHotel_Admin {
                     <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Shipping Date</label>
                     <input type="date" id="fh-pack-date" style="padding:7px 10px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">
                 </div>
-                <button id="fh-pack-generate" style="background:#96885f;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Generate Packing List</button>
+                <button id="fh-pack-generate" style="background:#1e6fa5;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Generate Packing List</button>
                 <button id="fh-pack-print" style="display:none;background:#1a3a5c;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">&#128438; Print</button>
                 <span id="fh-pack-spinner" style="display:none;color:#aaa;font-size:13px;">&#8987; Loading&hellip;</span>
             </div>
@@ -5142,7 +5161,7 @@ trait FisHotel_Admin {
                                     tr.innerHTML = '<td style="padding:8px 10px;color:#ddd;">' + inv.customer_name + '</td>'
                                         + '<td style="padding:8px 10px;color:#aaa;">' + (inv.hf_username ? '@' + inv.hf_username : '—') + '</td>'
                                         + '<td style="padding:8px 10px;text-align:right;color:#ddd;">$' + parseFloat(inv.total).toFixed(2) + '</td>'
-                                        + '<td style="padding:8px 10px;"><a href="' + inv.payment_link + '" target="_blank" style="color:#96885f;font-size:12px;">Payment Link &#8599;</a></td>';
+                                        + '<td style="padding:8px 10px;"><a href="' + inv.payment_link + '" target="_blank" style="color:#1e6fa5;font-size:12px;">Payment Link &#8599;</a></td>';
                                     tbody.appendChild(tr);
                                 });
                             }

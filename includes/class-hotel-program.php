@@ -1514,8 +1514,8 @@ trait FisHotel_HotelProgram {
             'assets'     => 'Assets',
         ];
         ?>
-        <div class="wrap" style="max-width:1100px;">
-            <h1 style="font-size:24px;margin-bottom:4px;">Hotel Program</h1>
+        <div class="wrap fishotel-admin" style="max-width:1100px;">
+            <h1>Postcards</h1>
             <p style="color:#aaa;margin-top:0;">Manage the FisHotel guest experience — activities, categories &amp; daily schedule.</p>
 
             <nav class="nav-tab-wrapper" style="margin-bottom:20px;">
@@ -3885,7 +3885,7 @@ trait FisHotel_HotelProgram {
             // On-site notification
             $message = 'Your Last Call picks for <strong>' . esc_html( $batch_name ) . '</strong> are in! '
                      . $pick_html
-                     . '<a href="' . esc_url( $batch_url ) . '" style="color:#b5a165;text-decoration:underline;">View your results</a>.';
+                     . '<a href="' . esc_url( $batch_url ) . '" style="color:#2986cc;text-decoration:underline;">View your results</a>.';
 
             $notif_id = wp_insert_post( [
                 'post_type'    => 'fishotel_notification',
@@ -4060,7 +4060,7 @@ trait FisHotel_HotelProgram {
         $batch_url   = $page ? get_permalink( $page->ID ) : 'https://fishotel.com/live-fish-list/';
 
         // Create on-site notification
-        $message = 'Your order for <strong>' . esc_html( $batch_name ) . '</strong> is ready for review. <a href="' . esc_url( $batch_url ) . '" style="color:#b5a165;text-decoration:underline;">Accept or pass your items now</a>.';
+        $message = 'Your order for <strong>' . esc_html( $batch_name ) . '</strong> is ready for review. <a href="' . esc_url( $batch_url ) . '" style="color:#2986cc;text-decoration:underline;">Accept or pass your items now</a>.';
         $notif_id = wp_insert_post( [
             'post_type'    => 'fishotel_notification',
             'post_title'   => (string) $user_id,
