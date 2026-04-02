@@ -1982,10 +1982,40 @@ trait FisHotel_Admin {
     content: '';
 }
 
-/* Wrap background */
-.fishotel-admin .wrap {
+/* Dark background for entire admin area on FisHotel pages */
+#wpcontent, #wpbody-content, .wrap {
+    background: #1a1a1a !important;
+}
+
+/* Wrap text */
+.fishotel-admin, .fishotel-admin .wrap {
     color: #ffffff;
 }
+
+/* Nav tabs dark theme */
+.fishotel-admin .nav-tab-wrapper,
+.nav-tab-wrapper {
+    border-bottom-color: #555 !important;
+    background: transparent !important;
+}
+.nav-tab {
+    background: #2a2a2a !important;
+    color: #aaa !important;
+    border-color: #555 !important;
+}
+.nav-tab-active, .nav-tab-active:hover {
+    background: #1e1e1e !important;
+    color: #2986cc !important;
+    border-bottom-color: #1e1e1e !important;
+}
+
+/* WP notices on dark bg */
+.notice { background: #2a2a2a !important; border-color: #555 !important; color: #ddd !important; }
+.notice a { color: #2986cc !important; }
+.notice-success { border-left-color: #27ae60 !important; }
+.notice-error { border-left-color: #c0392b !important; }
+.notice-warning { border-left-color: #f39c12 !important; }
+.notice-info { border-left-color: #2986cc !important; }
 
 /* Postbox / metabox panels */
 .fishotel-admin .postbox {
@@ -2084,6 +2114,15 @@ trait FisHotel_Admin {
     color: #aaaaaa;
     font-style: italic;
 }
+
+/* Labels, th, and general text */
+.fishotel-admin label,
+.fishotel-admin th,
+.fishotel-admin td {
+    color: #ddd;
+}
+.fishotel-admin a { color: #2986cc; }
+.fishotel-admin a:hover { color: #5ba3d9; }
 
 /* Regular .button (not primary) */
 .fishotel-admin .button:not(.button-primary) {
