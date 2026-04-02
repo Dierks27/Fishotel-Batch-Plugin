@@ -3561,7 +3561,8 @@ trait FisHotel_HotelProgram {
             if ( $cq !== '' && $cq !== false ) {
                 $graduated_qty = intval( $cq );
             } else {
-                $graduated_qty = intval( get_post_meta( $bp->ID, '_arrival_qty', true ) );
+                $aq = get_post_meta( $bp->ID, '_arrival_qty', true );
+                $graduated_qty = ( $aq !== '' && $aq !== false ) ? intval( $aq ) : intval( get_post_meta( $bp->ID, '_stock', true ) );
             }
             if ( $graduated_qty <= 0 ) continue;
 

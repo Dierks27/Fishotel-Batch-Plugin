@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       FisHotel Batch Manager
  * Description:       v10.14.5 - Fix: Folio empty when stage set via dropdown; deposit_paid always set on requests.
- * Version:           10.14.5
+ * Version:           10.14.6
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.14.5' );
+define( 'FISHOTEL_VERSION', '10.14.6' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
