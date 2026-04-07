@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.16.0 - Admin redesign: new names, blue theme, Righteous font, Casino promoted, Guide updated.
- * Version:           10.16.2
+ * Description:       v10.17.0 - Shipping controls promoted to own submenu page.
+ * Version:           10.17.0
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.16.2' );
+define( 'FISHOTEL_VERSION', '10.17.0' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
