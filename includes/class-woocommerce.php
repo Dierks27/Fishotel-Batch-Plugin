@@ -431,10 +431,11 @@ trait FisHotel_WooCommerce {
     }
 
     private function fishotel_get_available_shipping_dates() {
-        $allowed_days = get_option( 'fishotel_shipping_days', [ 'Monday', 'Tuesday', 'Wednesday' ] );
-        $min_advance  = intval( get_option( 'fishotel_shipping_min_advance', 1 ) );
-        $max_ahead    = intval( get_option( 'fishotel_shipping_max_ahead', 30 ) );
+        $allowed_days  = get_option( 'fishotel_shipping_days', [ 'Monday', 'Tuesday', 'Wednesday' ] );
+        $min_advance   = intval( get_option( 'fishotel_shipping_min_advance', 1 ) );
+        $max_ahead     = intval( get_option( 'fishotel_shipping_max_ahead', 30 ) );
         $blacklist     = get_option( 'fishotel_shipping_blacklist', [] );
+        $max_per_day   = intval( get_option( 'fishotel_shipping_max_per_day', 6 ) );
 
         $dates      = [];
         $start_date = new DateTime( 'now', new DateTimeZone( 'America/Chicago' ) );
@@ -450,6 +451,38 @@ trait FisHotel_WooCommerce {
             if ( in_array( $date_string, $blacklist, true ) ) continue;
 
             $dates[ $date_string ] = $check_date->format( 'l, F j, Y' );
+        }
+
+        // Remove dates that have reached the daily shipment limit.
+        if ( $max_per_day > 0 && ! empty( $dates ) ) {
+            $date_keys = array_keys( $dates );
+            $orders = get_posts( [
+                'post_type'   => 'shop_order',
+                'post_status' => [ 'wc-pending', 'wc-processing', 'wc-on-hold', 'wc-completed' ],
+                'meta_query'  => [
+                    [
+                        'key'     => '_fishotel_shipping_date',
+                        'value'   => $date_keys,
+                        'compare' => 'IN',
+                    ],
+                ],
+                'fields'         => 'ids',
+                'posts_per_page' => -1,
+            ] );
+
+            $counts = [];
+            foreach ( $orders as $order_id ) {
+                $ship_date = get_post_meta( $order_id, '_fishotel_shipping_date', true );
+                if ( $ship_date ) {
+                    $counts[ $ship_date ] = ( $counts[ $ship_date ] ?? 0 ) + 1;
+                }
+            }
+
+            foreach ( $counts as $date => $count ) {
+                if ( $count >= $max_per_day ) {
+                    unset( $dates[ $date ] );
+                }
+            }
         }
 
         return $dates;

@@ -323,6 +323,7 @@ trait FisHotel_Admin {
             update_option( 'fishotel_shipping_days', array_values( $shipping_days ) );
             update_option( 'fishotel_shipping_min_advance', max( 0, intval( $_POST['shipping_min_advance'] ?? 1 ) ) );
             update_option( 'fishotel_shipping_max_ahead', max( 1, intval( $_POST['shipping_max_ahead'] ?? 30 ) ) );
+            update_option( 'fishotel_shipping_max_per_day', max( 0, intval( $_POST['shipping_max_per_day'] ?? 6 ) ) );
 
             $existing_blacklist = get_option( 'fishotel_shipping_blacklist', [] );
             $add_date = sanitize_text_field( $_POST['shipping_blacklist_add'] ?? '' );
@@ -337,11 +338,12 @@ trait FisHotel_Admin {
             echo '<div class="notice notice-success is-dismissible"><p>Shipping settings saved!</p></div>';
         }
 
-        $ship_days      = get_option( 'fishotel_shipping_days', [ 'Monday', 'Tuesday', 'Wednesday' ] );
-        $ship_min       = intval( get_option( 'fishotel_shipping_min_advance', 1 ) );
-        $ship_max       = intval( get_option( 'fishotel_shipping_max_ahead', 30 ) );
-        $ship_blacklist = get_option( 'fishotel_shipping_blacklist', [] );
-        $all_days       = [ 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ];
+        $ship_days        = get_option( 'fishotel_shipping_days', [ 'Monday', 'Tuesday', 'Wednesday' ] );
+        $ship_min         = intval( get_option( 'fishotel_shipping_min_advance', 1 ) );
+        $ship_max         = intval( get_option( 'fishotel_shipping_max_ahead', 30 ) );
+        $ship_max_per_day = intval( get_option( 'fishotel_shipping_max_per_day', 6 ) );
+        $ship_blacklist   = get_option( 'fishotel_shipping_blacklist', [] );
+        $all_days         = [ 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ];
         ?>
         <div class="wrap fishotel-admin">
             <h1 style="color:#2986cc;font-family:Righteous,cursive;font-size:1.8rem;font-weight:700;margin-bottom:20px;">Shipping</h1>
@@ -379,6 +381,13 @@ trait FisHotel_Admin {
                             <td>
                                 <input type="number" name="shipping_max_ahead" value="<?php echo esc_attr( $ship_max ); ?>" min="1" style="width:70px;padding:5px 8px;border-radius:4px;">
                                 <small style="display:block;margin-top:5px;color:#aaa;">How far out customers can schedule shipping</small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th style="color:#ddd;">Max Shipments Per Day</th>
+                            <td>
+                                <input type="number" name="shipping_max_per_day" value="<?php echo esc_attr( $ship_max_per_day ); ?>" min="0" style="width:70px;padding:5px 8px;border-radius:4px;">
+                                <small style="display:block;margin-top:5px;color:#aaa;">Maximum orders that can ship on the same day (0 = unlimited)</small>
                             </td>
                         </tr>
                     </table>
