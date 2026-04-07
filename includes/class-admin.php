@@ -1989,6 +1989,7 @@ trait FisHotel_Admin {
             'fishotel-hotel-program',
             'fishotel-guide',
             'fishotel-casino',
+            'fishotel-shipping',
         ];
         $page = $_GET['page'] ?? '';
         $is_fishotel = in_array( $page, $fishotel_pages, true )
