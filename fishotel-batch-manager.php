@@ -288,8 +288,10 @@ class FisHotel_Batch_Manager {
         // Shipping date selector
         add_action( 'woocommerce_after_order_notes',                 [$this, 'fishotel_shipping_date_field'] );
         add_action( 'woocommerce_checkout_process',                  [$this, 'fishotel_shipping_date_validate'] );
+        add_action( 'woocommerce_after_checkout_validation',         [$this, 'fishotel_shipping_date_validate_backup'], 10, 2 );
         add_action( 'woocommerce_checkout_update_order_meta',        [$this, 'fishotel_shipping_date_save'] );
         add_action( 'woocommerce_admin_order_data_after_billing_address', [$this, 'fishotel_shipping_date_display'] );
+        add_action( 'woocommerce_process_shop_order_meta',           [$this, 'fishotel_shipping_date_admin_save'] );
     }
 
     // ─── Helpers — Arrival Species ──────────────────────────────────────

@@ -522,6 +522,25 @@ trait FisHotel_WooCommerce {
         }
     }
 
+    /**
+     * Secondary validation via woocommerce_after_checkout_validation.
+     * Catches orders that bypass the woocommerce_checkout_process hook
+     * (e.g. Block-based checkout, off-site payment gateways).
+     */
+    public function fishotel_shipping_date_validate_backup( $data, $errors ) {
+        if ( ! $this->fishotel_cart_contains_fish() ) return;
+
+        $date = sanitize_text_field( $_POST['fishotel_shipping_date'] ?? '' );
+        if ( empty( $date ) ) {
+            $errors->add( 'shipping_date', 'Please select a shipping date.' );
+            return;
+        }
+        $available = $this->fishotel_get_available_shipping_dates();
+        if ( ! isset( $available[ $date ] ) ) {
+            $errors->add( 'shipping_date', 'The selected shipping date is not available. Please choose a different date.' );
+        }
+    }
+
     public function fishotel_shipping_date_save( $order_id ) {
         $date = sanitize_text_field( $_POST['fishotel_shipping_date'] ?? '' );
         if ( $date ) {
@@ -529,11 +548,36 @@ trait FisHotel_WooCommerce {
         }
     }
 
+    /**
+     * Editable shipping date field on the admin Edit Order screen.
+     */
     public function fishotel_shipping_date_display( $order ) {
-        $date = $order->get_meta( '_fishotel_shipping_date' );
-        if ( ! $date ) return;
-        $display = date( 'l, F j, Y', strtotime( $date ) );
-        echo '<p><strong>FisHotel Shipping Date:</strong> ' . esc_html( $display ) . '</p>';
+        $date  = $order->get_meta( '_fishotel_shipping_date' );
+        $value = $date ? esc_attr( $date ) : '';
+        wp_nonce_field( 'fishotel_save_shipping_date', 'fishotel_shipping_date_nonce' );
+        echo '<p class="form-field form-field-wide">';
+        echo '<label for="fishotel_shipping_date_admin"><strong>FisHotel Shipping Date:</strong></label><br>';
+        echo '<input type="date" id="fishotel_shipping_date_admin" name="fishotel_shipping_date_admin" value="' . $value . '" style="width:100%;max-width:220px;">';
+        if ( $date ) {
+            echo '<br><span style="color:#999;font-size:12px;">' . esc_html( date( 'l, F j, Y', strtotime( $date ) ) ) . '</span>';
+        }
+        echo '</p>';
+    }
+
+    /**
+     * Save admin-edited shipping date from the Edit Order screen.
+     */
+    public function fishotel_shipping_date_admin_save( $order_id ) {
+        if ( ! isset( $_POST['fishotel_shipping_date_nonce'] ) ) return;
+        if ( ! wp_verify_nonce( $_POST['fishotel_shipping_date_nonce'], 'fishotel_save_shipping_date' ) ) return;
+        if ( ! current_user_can( 'edit_shop_orders' ) ) return;
+
+        $date = sanitize_text_field( $_POST['fishotel_shipping_date_admin'] ?? '' );
+        if ( $date ) {
+            update_post_meta( $order_id, '_fishotel_shipping_date', $date );
+        } else {
+            delete_post_meta( $order_id, '_fishotel_shipping_date' );
+        }
     }
 
     public function add_fishotel_price_field() {
