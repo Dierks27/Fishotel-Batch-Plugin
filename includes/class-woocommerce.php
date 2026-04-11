@@ -422,11 +422,73 @@ trait FisHotel_WooCommerce {
 
     private function fishotel_cart_contains_fish() {
         if ( ! WC()->cart ) return false;
-        foreach ( WC()->cart->get_cart() as $item ) {
-            if ( has_term( [ 'quarantined-fish', 'inverts', 'invoices' ], 'product_cat', $item['product_id'] ) ) {
+
+        $fish_cats = [ 'quarantined-fish', 'inverts', 'invoices' ];
+
+        foreach ( WC()->cart->get_cart() as $cart_item ) {
+
+            // 1. Check the primary product_id (works for normal cart items)
+            if ( has_term( $fish_cats, 'product_cat', $cart_item['product_id'] ) ) {
                 return true;
             }
+
+            // 2. Check variation parent (variable products)
+            if ( ! empty( $cart_item['variation_id'] ) ) {
+                $parent_id = wp_get_post_parent_id( $cart_item['variation_id'] );
+                if ( $parent_id && has_term( $fish_cats, 'product_cat', $parent_id ) ) {
+                    return true;
+                }
+            }
+
+            // 3. Check the WC_Product object — WooCommerce always populates $item['data'],
+            //    even for bundle child items. This catches bundle plugins where product_id
+            //    points to the bundle wrapper instead of the actual fish product.
+            $product = $cart_item['data'] ?? null;
+            if ( $product instanceof WC_Product ) {
+                if ( has_term( $fish_cats, 'product_cat', $product->get_id() ) ) {
+                    return true;
+                }
+                $parent_id = $product->get_parent_id();
+                if ( $parent_id && has_term( $fish_cats, 'product_cat', $parent_id ) ) {
+                    return true;
+                }
+            }
         }
+
+        return false;
+    }
+
+    /**
+     * Check whether a finalized WC_Order contains fish/invert/invoice products.
+     * Operates on order items (not the cart), so it works regardless of how
+     * the order was created (checkout, REST API, bundle plugin, admin).
+     */
+    private function fishotel_order_contains_fish( $order ) {
+        $fish_cats = [ 'quarantined-fish', 'inverts', 'invoices' ];
+
+        foreach ( $order->get_items() as $item ) {
+            $product_id = $item->get_product_id();
+            if ( $product_id && has_term( $fish_cats, 'product_cat', $product_id ) ) {
+                return true;
+            }
+
+            $variation_id = $item->get_variation_id();
+            if ( $variation_id ) {
+                $parent_id = wp_get_post_parent_id( $variation_id );
+                if ( $parent_id && has_term( $fish_cats, 'product_cat', $parent_id ) ) {
+                    return true;
+                }
+            }
+
+            $product = $item->get_product();
+            if ( $product ) {
+                $parent_id = $product->get_parent_id();
+                if ( $parent_id && has_term( $fish_cats, 'product_cat', $parent_id ) ) {
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 
@@ -546,6 +608,77 @@ trait FisHotel_WooCommerce {
         if ( $date ) {
             update_post_meta( $order_id, '_fishotel_shipping_date', $date );
         }
+    }
+
+    /**
+     * Safety net: After an order is created via checkout, verify that fish orders
+     * have a shipping date. If not, put the order on-hold with an admin note.
+     *
+     * Catches any bypass — bundle plugins, block checkout, express payments, etc.
+     * Hooked to woocommerce_checkout_order_processed (fires after order meta is saved).
+     */
+    public function fishotel_shipping_date_safety_net( $order_id ) {
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) return;
+
+        if ( $order->get_meta( '_fishotel_order_type' ) === 'batch_invoice' ) return;
+
+        $shipping_date = $order->get_meta( '_fishotel_shipping_date' );
+        if ( ! empty( $shipping_date ) ) return;
+
+        if ( ! $this->fishotel_order_contains_fish( $order ) ) return;
+
+        $order->set_status( 'on-hold' );
+        $order->add_order_note(
+            'FISHOTEL ALERT: This order contains quarantined fish but no shipping date was selected at checkout. '
+            . 'Order placed on hold automatically. Please contact the customer to confirm a shipping date before releasing.'
+        );
+        $order->save();
+
+        $admin_email = get_option( 'admin_email' );
+        wp_mail(
+            $admin_email,
+            '[FisHotel] Order #' . $order_id . ' held — missing shipping date',
+            "Order #{$order_id} contains fish products but was placed without a shipping date.\n\n"
+            . "Customer: {$order->get_billing_first_name()} {$order->get_billing_last_name()} ({$order->get_billing_email()})\n"
+            . "Order total: {$order->get_formatted_order_total()}\n\n"
+            . "The order has been placed on-hold. Please set a shipping date and release the order.\n\n"
+            . admin_url( 'post.php?post=' . $order_id . '&action=edit' )
+        );
+    }
+
+    /**
+     * Belt-and-suspenders: When an order transitions to processing or completed,
+     * verify fish orders have a shipping date. Absolute last line of defense.
+     */
+    public function fishotel_shipping_date_status_check( $order_id ) {
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) return;
+
+        if ( $order->get_meta( '_fishotel_order_type' ) === 'batch_invoice' ) return;
+        if ( $order->get_meta( '_fishotel_shipping_date_checked' ) ) return;
+
+        $order->update_meta_data( '_fishotel_shipping_date_checked', '1' );
+        $order->save_meta_data();
+
+        $shipping_date = $order->get_meta( '_fishotel_shipping_date' );
+        if ( ! empty( $shipping_date ) ) return;
+
+        if ( ! $this->fishotel_order_contains_fish( $order ) ) return;
+
+        $order->set_status( 'on-hold',
+            'FISHOTEL: Order held automatically — contains fish products but no shipping date. '
+            . 'Please contact the customer and set a shipping date before releasing.'
+        );
+        $order->save();
+
+        wp_mail(
+            get_option( 'admin_email' ),
+            '[FisHotel] Order #' . $order_id . ' held — missing shipping date',
+            "Order #{$order_id} was transitioning to processing/completed but has no shipping date.\n"
+            . "It has been placed on-hold.\n\n"
+            . admin_url( 'post.php?post=' . $order_id . '&action=edit' )
+        );
     }
 
     /**

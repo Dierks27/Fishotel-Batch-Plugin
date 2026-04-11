@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.18.0 - Fix shipping date checkout bypass; add admin shipping date editor.
- * Version:           10.18.0
+ * Description:       v10.19.0 - Harden shipping date validation against bundle plugin bypass; add post-order safety net.
+ * Version:           10.19.0
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.18.0' );
+define( 'FISHOTEL_VERSION', '10.19.0' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -292,6 +292,11 @@ class FisHotel_Batch_Manager {
         add_action( 'woocommerce_checkout_update_order_meta',        [$this, 'fishotel_shipping_date_save'] );
         add_action( 'woocommerce_admin_order_data_after_billing_address', [$this, 'fishotel_shipping_date_display'] );
         add_action( 'woocommerce_process_shop_order_meta',           [$this, 'fishotel_shipping_date_admin_save'] );
+
+        // Safety net: catch fish orders that bypass checkout validation (bundle plugins, block checkout, etc.)
+        add_action( 'woocommerce_checkout_order_processed',          [$this, 'fishotel_shipping_date_safety_net'] );
+        add_action( 'woocommerce_order_status_processing',           [$this, 'fishotel_shipping_date_status_check'], 5 );
+        add_action( 'woocommerce_order_status_completed',            [$this, 'fishotel_shipping_date_status_check'], 5 );
     }
 
     // ─── Helpers — Arrival Species ──────────────────────────────────────
