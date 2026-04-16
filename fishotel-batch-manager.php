@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.19.0 - Harden shipping date validation against bundle plugin bypass; add post-order safety net.
- * Version:           10.19.0
+ * Description:       v10.20.0 - Fix North Star Aquatics selectors after theme update.
+ * Version:           10.20.0
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */

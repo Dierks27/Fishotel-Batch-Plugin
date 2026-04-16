@@ -103,8 +103,8 @@ trait FisHotel_NorthStar {
         $cards = $xpath->query( "//*[contains(@class, 'theme-prod-box')]" );
 
         foreach ( $cards as $card ) {
-            // Name: inside .theme-prod-name a
-            $name_links = $xpath->query( ".//*[contains(@class, 'theme-prod-name')]//a", $card );
+            // Name: inside .theme-product-name a
+            $name_links = $xpath->query( ".//*[contains(@class, 'theme-product-name')]//a", $card );
             if ( $name_links->length === 0 ) continue;
 
             $name_el = $name_links->item( 0 );
@@ -117,19 +117,19 @@ trait FisHotel_NorthStar {
             if ( isset( $seen[ $href ] ) ) continue;
             $seen[ $href ] = true;
 
-            // Stock: .theme-button text — if it contains "out of stock" (case-insensitive) → out_of_stock, otherwise → in_stock
+            // Stock: .theme-ribbon-stock — if present and text contains "out of stock" → out_of_stock, otherwise → in_stock
             $stock = 'in_stock';
-            $buttons = $xpath->query( ".//*[contains(@class, 'theme-button')]", $card );
-            if ( $buttons->length > 0 ) {
-                $btn_text = strtolower( trim( $buttons->item( 0 )->textContent ) );
-                if ( strpos( $btn_text, 'out of stock' ) !== false ) {
+            $ribbons = $xpath->query( ".//*[contains(@class, 'theme-ribbon-stock')]", $card );
+            if ( $ribbons->length > 0 ) {
+                $ribbon_text = strtolower( trim( $ribbons->item( 0 )->textContent ) );
+                if ( strpos( $ribbon_text, 'out of stock' ) !== false ) {
                     $stock = 'out_of_stock';
                 }
             }
 
-            // Price: .theme-prod-price — grab first $XX.XX pattern
+            // Price: .theme-product-price — grab first $XX.XX pattern
             $price = '';
-            $price_nodes = $xpath->query( ".//*[contains(@class, 'theme-prod-price')]", $card );
+            $price_nodes = $xpath->query( ".//*[contains(@class, 'theme-product-price')]", $card );
             if ( $price_nodes->length > 0 ) {
                 $price_text = trim( $price_nodes->item( 0 )->textContent );
                 if ( preg_match( '/\$[\d,]+\.?\d*/', $price_text, $m ) ) {
