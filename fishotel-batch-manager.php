@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.20.0 - Fix North Star Aquatics selectors after theme update.
- * Version:           10.20.0
+ * Description:       v10.21.0 - Add SDC CSV import integration for Sea Dwelling Creatures stock.
+ * Version:           10.21.0
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -245,6 +245,7 @@ class FisHotel_Batch_Manager {
         add_action( 'wp_ajax_fishotel_save_arrival_field', [$this, 'ajax_save_arrival_field'] );
         add_action( 'wp_ajax_fishotel_northstar_fetch',  [$this, 'ajax_northstar_fetch'] );
         add_action( 'wp_ajax_fishotel_northstar_import', [$this, 'ajax_northstar_import'] );
+        add_action( 'wp_ajax_fishotel_sdc_import',       [$this, 'ajax_sdc_import'] );
 
         // Layer Designer AJAX
         add_action( 'wp_ajax_fishotel_save_layer_config',   [$this, 'ajax_save_layer_config'] );

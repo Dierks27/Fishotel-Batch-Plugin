@@ -266,6 +266,7 @@ trait FisHotel_Admin {
         $tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'northstar';
         $tabs = [
             'northstar' => 'Browse Stock',
+            'sdc'       => 'SDC',
             'library'   => [ 'label' => 'Fish Library', 'url' => admin_url( 'edit.php?post_type=fish_master' ) ],
             'batch'     => [ 'label' => 'Batch Fish', 'url' => admin_url( 'edit.php?post_type=fish_batch' ) ],
             'sync'      => 'Sync',
@@ -273,6 +274,7 @@ trait FisHotel_Admin {
         $this->render_admin_tabs( 'fishotel-sourcing', 'Supplier Stock', $tabs, $tab );
 
         switch ( $tab ) {
+            case 'sdc':     $this->sdc_stock_html(); break;
             case 'sync':    $this->sync_page_html(); break;
             default:        $this->northstar_stock_html(); break;
         }

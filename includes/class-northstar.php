@@ -774,4 +774,333 @@ trait FisHotel_NorthStar {
         </div>
         <?php
     }
+
+    // ─── SDC CSV Import ────────────────────────────────────────────────
+
+    public function sdc_stock_html() {
+        if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
+
+        $batches_str = get_option( 'fishotel_batches', '' );
+        $batches_array = array_filter( array_map( 'trim', explode( "\n", $batches_str ) ) );
+        $nonce = wp_create_nonce( 'fishotel_sdc_nonce' );
+        ?>
+        <div class="wrap fishotel-admin">
+        <h1 style="color:#2986cc;font-size:26px;font-weight:700;margin-bottom:20px;">SDC CSV Import</h1>
+
+        <!-- Upload Section -->
+        <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;margin-bottom:20px;">
+            <p style="color:#aaa;font-size:14px;margin:0 0 16px 0;">
+                Download your stock CSV from <strong style="color:#fff;">shop.seadwelling.com</strong> &rarr; Download Stock &rarr; Saltwater, then upload it here.
+            </p>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;">
+                <input type="file" id="sdc-file" accept=".csv" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:8px 12px;border-radius:4px;font-size:14px;">
+                <button type="button" id="sdc-preview-btn" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-size:15px;">Preview</button>
+                <span id="sdc-preview-status" style="color:#aaa;font-size:14px;"></span>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="sdc-results" style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;margin-bottom:20px;display:none;">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:14px;">
+                <h2 style="color:#fff;font-size:18px;margin:0;">Preview</h2>
+                <input type="text" id="sdc-search" placeholder="Search by name..." style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:8px 12px;border-radius:4px;width:260px;font-size:14px;">
+                <span id="sdc-count" style="color:#888;font-size:13px;margin-left:auto;"></span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table id="sdc-table" style="width:100%;border-collapse:collapse;font-size:14px;">
+                    <thead>
+                        <tr style="border-bottom:2px solid #555;">
+                            <th style="padding:10px 8px;text-align:left;color:#2986cc;width:40px;"><input type="checkbox" id="sdc-select-all" style="accent-color:#2986cc;"></th>
+                            <th style="padding:10px 8px;text-align:left;color:#2986cc;">Name</th>
+                            <th style="padding:10px 8px;text-align:left;color:#2986cc;">Scientific Name</th>
+                            <th style="padding:10px 8px;text-align:center;color:#2986cc;">Size</th>
+                            <th style="padding:10px 8px;text-align:right;color:#2986cc;">Price</th>
+                            <th style="padding:10px 8px;text-align:center;color:#2986cc;">Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sdc-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Import Section -->
+        <div id="sdc-import-section" style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;display:none;">
+            <h2 style="color:#fff;font-size:18px;margin:0 0 15px 0;">Import to Batch</h2>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;">
+                <select id="sdc-batch-select" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:8px 12px;border-radius:4px;font-size:14px;min-width:220px;">
+                    <option value="">— Select Batch —</option>
+                    <?php foreach ( $batches_array as $b ) : ?>
+                    <option value="<?php echo esc_attr( $b ); ?>"><?php echo esc_html( $b ); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="button" id="sdc-import-btn" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 24px;cursor:pointer;font-size:14px;">Import Selected to Batch</button>
+                <span id="sdc-import-status" style="color:#aaa;font-size:14px;"></span>
+            </div>
+        </div>
+
+        <script>
+        (function(){
+            var products = [];
+            var ajaxUrl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
+            var nonce = '<?php echo esc_js( $nonce ); ?>';
+
+            function escHtml(s){ var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+            // ─── CSV parser (handles quoted fields) ────────
+            function parseCSV(text) {
+                var lines = [];
+                var current = [];
+                var field = '';
+                var inQuotes = false;
+
+                for ( var i = 0; i < text.length; i++ ) {
+                    var c = text[i];
+                    if ( inQuotes ) {
+                        if ( c === '"' ) {
+                            if ( i + 1 < text.length && text[i + 1] === '"' ) {
+                                field += '"';
+                                i++;
+                            } else {
+                                inQuotes = false;
+                            }
+                        } else {
+                            field += c;
+                        }
+                    } else {
+                        if ( c === '"' ) {
+                            inQuotes = true;
+                        } else if ( c === ',' ) {
+                            current.push(field);
+                            field = '';
+                        } else if ( c === '\n' || c === '\r' ) {
+                            if ( c === '\r' && i + 1 < text.length && text[i + 1] === '\n' ) i++;
+                            current.push(field);
+                            field = '';
+                            if ( current.length > 1 || current[0] !== '' ) lines.push(current);
+                            current = [];
+                        } else {
+                            field += c;
+                        }
+                    }
+                }
+                current.push(field);
+                if ( current.length > 1 || current[0] !== '' ) lines.push(current);
+
+                // Skip header row
+                if ( lines.length > 0 ) lines.shift();
+                return lines;
+            }
+
+            // ─── Render table ──────────────────────────────
+            function renderTable() {
+                var tbody = document.getElementById('sdc-tbody');
+                var search = document.getElementById('sdc-search').value.toLowerCase();
+                var html = '';
+                var shown = 0;
+
+                for ( var i = 0; i < products.length; i++ ) {
+                    var p = products[i];
+                    if ( search && p.name.toLowerCase().indexOf(search) === -1 && p.sci.toLowerCase().indexOf(search) === -1 ) continue;
+                    shown++;
+                    html += '<tr style="border-bottom:1px solid #333;">';
+                    html += '<td style="padding:8px;"><input type="checkbox" class="sdc-row-cb" data-idx="' + i + '" style="accent-color:#2986cc;"></td>';
+                    html += '<td style="padding:8px;color:#fff;">' + escHtml(p.name) + '</td>';
+                    html += '<td style="padding:8px;color:#aaa;font-style:italic;">' + escHtml(p.sci) + '</td>';
+                    html += '<td style="padding:8px;text-align:center;color:#fff;">' + escHtml(p.size) + '</td>';
+                    html += '<td style="padding:8px;text-align:right;color:#fff;">' + escHtml(p.price) + '</td>';
+                    html += '<td style="padding:8px;text-align:center;color:#fff;">' + p.stock + '</td>';
+                    html += '</tr>';
+                }
+
+                tbody.innerHTML = html;
+                document.getElementById('sdc-count').textContent = shown + ' of ' + products.length + ' products';
+            }
+
+            document.getElementById('sdc-search').addEventListener('input', renderTable);
+
+            document.getElementById('sdc-select-all').addEventListener('change', function(){
+                var checked = this.checked;
+                document.querySelectorAll('.sdc-row-cb').forEach(function(cb){ cb.checked = checked; });
+            });
+
+            // ─── Preview ───────────────────────────────────
+            document.getElementById('sdc-preview-btn').addEventListener('click', function(){
+                var fileInput = document.getElementById('sdc-file');
+                if ( ! fileInput.files.length ) { alert('Select a CSV file first.'); return; }
+
+                var status = document.getElementById('sdc-preview-status');
+                status.textContent = 'Parsing...';
+
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var rows = parseCSV(e.target.result);
+                    products = [];
+
+                    for ( var i = 0; i < rows.length; i++ ) {
+                        var row = rows[i];
+                        var title = (row[0] || '').trim();
+                        var sku   = (row[1] || '').trim();
+                        var size  = (row[2] || '').trim();
+                        var price = (row[3] || '').trim();
+                        var stock = parseInt(row[4] || '0', 10);
+
+                        if ( ! title || ! stock || stock <= 0 ) continue;
+                        if ( /pack/i.test(title) ) continue;
+
+                        // Split "Common Name - Scientific name"
+                        var dash = title.indexOf(' - ');
+                        var commonName = dash !== -1 ? title.substring(0, dash).trim() : title;
+                        var sciName    = dash !== -1 ? title.substring(dash + 3).trim() : '';
+
+                        products.push({ name: commonName, sci: sciName, size: size, price: price, stock: stock, sku: sku });
+                    }
+
+                    status.textContent = products.length + ' in-stock items loaded.';
+                    document.getElementById('sdc-results').style.display = '';
+                    document.getElementById('sdc-import-section').style.display = '';
+                    renderTable();
+                };
+                reader.readAsText(fileInput.files[0]);
+            });
+
+            // ─── Import ────────────────────────────────────
+            document.getElementById('sdc-import-btn').addEventListener('click', function(){
+                var batch = document.getElementById('sdc-batch-select').value;
+                if ( ! batch ) { alert('Select a batch first.'); return; }
+
+                var checked = document.querySelectorAll('.sdc-row-cb:checked');
+                if ( ! checked.length ) { alert('Select at least one fish to import.'); return; }
+
+                var items = [];
+                checked.forEach(function(cb){
+                    var p = products[ parseInt(cb.dataset.idx) ];
+                    items.push({ name: p.name, size: p.size, price: p.price, qty: p.stock, sku: p.sku });
+                });
+
+                if ( ! confirm('Import ' + items.length + ' items into "' + batch + '"?') ) return;
+
+                var btn = document.getElementById('sdc-import-btn');
+                var status = document.getElementById('sdc-import-status');
+                btn.disabled = true;
+                btn.textContent = 'Importing...';
+
+                var fd = new FormData();
+                fd.append('action', 'fishotel_sdc_import');
+                fd.append('nonce', nonce);
+                fd.append('batch_name', batch);
+                items.forEach(function(item, i){
+                    fd.append('items[' + i + '][name]', item.name);
+                    fd.append('items[' + i + '][size]', item.size);
+                    fd.append('items[' + i + '][price]', item.price);
+                    fd.append('items[' + i + '][qty]', item.qty);
+                    fd.append('items[' + i + '][sku]', item.sku);
+                });
+
+                fetch(ajaxUrl, { method:'POST', body: fd })
+                    .then(function(r){ return r.json(); })
+                    .then(function(res){
+                        btn.disabled = false;
+                        btn.textContent = 'Import Selected to Batch';
+
+                        if ( res.success ) {
+                            var msg = 'Imported ' + res.data.imported + ' items';
+                            if ( res.data.skipped ) {
+                                msg += ', skipped ' + res.data.skipped + ' duplicates';
+                                if ( res.data.skipped_names && res.data.skipped_names.length ) {
+                                    msg += ' (' + res.data.skipped_names.join(', ') + ')';
+                                }
+                            }
+                            status.textContent = msg;
+                            status.style.color = '#27ae60';
+                        } else {
+                            status.textContent = 'Error: ' + (res.data || 'Unknown error');
+                            status.style.color = '#c0392b';
+                        }
+                    })
+                    .catch(function(e){
+                        btn.disabled = false;
+                        btn.textContent = 'Import Selected to Batch';
+                        status.textContent = 'Network error: ' + e.message;
+                        status.style.color = '#c0392b';
+                    });
+            });
+        })();
+        </script>
+        </div>
+        <?php
+    }
+
+    public function ajax_sdc_import() {
+        check_ajax_referer( 'fishotel_sdc_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Access denied.' );
+
+        $batch_name = isset( $_POST['batch_name'] ) ? sanitize_text_field( $_POST['batch_name'] ) : '';
+        $items      = isset( $_POST['items'] ) ? $_POST['items'] : [];
+
+        if ( empty( $batch_name ) ) wp_send_json_error( 'No batch selected.' );
+        if ( empty( $items ) || ! is_array( $items ) ) wp_send_json_error( 'No items selected.' );
+
+        // Get existing fish_batch posts for this batch to check duplicates
+        $existing = get_posts( [
+            'post_type'   => 'fish_batch',
+            'numberposts' => -1,
+            'meta_key'    => '_batch_name',
+            'meta_value'  => $batch_name,
+        ] );
+
+        $existing_names = [];
+        foreach ( $existing as $ep ) {
+            $common = preg_replace( "/\s+[\x{2013}\x{2014}-]\s+.+$/u", '', $ep->post_title );
+            $existing_names[] = strtolower( trim( $common ) );
+        }
+
+        $imported = 0;
+        $skipped = 0;
+        $skipped_names = [];
+
+        foreach ( $items as $item ) {
+            $common_name = sanitize_text_field( $item['name'] ?? '' );
+            $size        = sanitize_text_field( $item['size'] ?? '' );
+            $price       = sanitize_text_field( $item['price'] ?? '' );
+            $qty         = intval( $item['qty'] ?? 0 );
+            $sku         = sanitize_text_field( $item['sku'] ?? '' );
+
+            if ( empty( $common_name ) ) continue;
+
+            $display_name = trim( $common_name . ( $size ? ' ' . $size : '' ) );
+
+            if ( in_array( strtolower( $display_name ), $existing_names, true ) ) {
+                $skipped++;
+                $skipped_names[] = $display_name;
+                continue;
+            }
+
+            $master_id = $this->northstar_find_or_create_master( $display_name );
+
+            $post_id = wp_insert_post( [
+                'post_type'   => 'fish_batch',
+                'post_title'  => $display_name . ' - ' . $batch_name,
+                'post_status' => 'publish',
+            ] );
+
+            if ( $post_id && ! is_wp_error( $post_id ) ) {
+                if ( $master_id && ! is_wp_error( $master_id ) ) {
+                    update_post_meta( $post_id, '_master_id', $master_id );
+                }
+                update_post_meta( $post_id, '_batch_name', $batch_name );
+                update_post_meta( $post_id, '_northstar_price', $price );
+                update_post_meta( $post_id, '_stock', $qty );
+                update_post_meta( $post_id, '_item_code', $sku );
+                update_post_meta( $post_id, '_sdc_import', 1 );
+                $imported++;
+                $existing_names[] = strtolower( $display_name );
+            }
+        }
+
+        wp_send_json_success( [
+            'imported'      => $imported,
+            'skipped'       => $skipped,
+            'skipped_names' => $skipped_names,
+        ] );
+    }
 }
