@@ -33,7 +33,7 @@ trait FisHotel_Admin {
         add_submenu_page( 'fishotel-batch-hq', 'Supplier Stock', 'Supplier Stock', 'manage_options', 'fishotel-sourcing', [$this, 'sourcing_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Postcards', 'Postcards', 'manage_options', 'fishotel-hotel-program', [$this, 'hotel_program_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Casino', 'Casino', 'manage_options', 'fishotel-casino', [$this, 'casino_standalone_html'] );
-        add_submenu_page( 'fishotel-batch-hq', 'Shipping', 'Shipping', 'manage_options', 'fishotel-shipping', [$this, 'shipping_html'] );
+        add_submenu_page( 'fishotel-batch-hq', 'Delivery', 'Delivery', 'manage_options', 'fishotel-shipping', [$this, 'shipping_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Batch Guide', 'Batch Guide', 'manage_options', 'fishotel-guide', [$this, 'guide_html'] );
         // Hidden backward-compat pages (old slugs still work via direct URL)
         add_submenu_page( null, 'FisHotel Settings', '', 'manage_options', 'fishotel-batch-settings', [$this, 'batch_settings_html'] );
@@ -337,7 +337,7 @@ trait FisHotel_Admin {
             sort( $existing_blacklist );
             update_option( 'fishotel_shipping_blacklist', $existing_blacklist );
 
-            echo '<div class="notice notice-success is-dismissible"><p>Shipping settings saved!</p></div>';
+            echo '<div class="notice notice-success is-dismissible"><p>Delivery settings saved!</p></div>';
         }
 
         $ship_days        = get_option( 'fishotel_shipping_days', [ 'Monday', 'Tuesday', 'Wednesday' ] );
@@ -348,17 +348,17 @@ trait FisHotel_Admin {
         $all_days         = [ 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ];
         ?>
         <div class="wrap fishotel-admin">
-            <h1 style="color:#2986cc;font-family:Righteous,cursive;font-size:1.8rem;font-weight:700;margin-bottom:20px;">Shipping</h1>
+            <h1 style="color:#2986cc;font-family:Righteous,cursive;font-size:1.8rem;font-weight:700;margin-bottom:20px;">Delivery</h1>
 
             <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;max-width:700px;">
                 <form method="post">
                     <?php wp_nonce_field( 'fishotel_save_shipping_nonce' ); ?>
                     <input type="hidden" name="fishotel_save_shipping" value="1">
 
-                    <h3 style="color:#2986cc;margin:0 0 14px;font-size:1em;text-transform:uppercase;letter-spacing:1px;">&#128666; Shipping Days</h3>
+                    <h3 style="color:#2986cc;margin:0 0 14px;font-size:1em;text-transform:uppercase;letter-spacing:1px;">&#128666; Delivery Days</h3>
                     <table class="form-table">
                         <tr>
-                            <th style="color:#ddd;vertical-align:top;padding-top:10px;">Shipping Days</th>
+                            <th style="color:#ddd;vertical-align:top;padding-top:10px;">Delivery Days</th>
                             <td>
                                 <div style="display:flex;gap:16px;flex-wrap:wrap;">
                                 <?php foreach ( $all_days as $day ) : ?>
@@ -368,28 +368,28 @@ trait FisHotel_Admin {
                                     </label>
                                 <?php endforeach; ?>
                                 </div>
-                                <small style="display:block;margin-top:6px;color:#aaa;">Days customers can select for shipping</small>
+                                <small style="display:block;margin-top:6px;color:#aaa;">Days customers can select for delivery</small>
                             </td>
                         </tr>
                         <tr>
                             <th style="color:#ddd;">Min Advance Days</th>
                             <td>
                                 <input type="number" name="shipping_min_advance" value="<?php echo esc_attr( $ship_min ); ?>" min="0" style="width:70px;padding:5px 8px;border-radius:4px;">
-                                <small style="display:block;margin-top:5px;color:#aaa;">Earliest an order placed today can ship (days from now)</small>
+                                <small style="display:block;margin-top:5px;color:#aaa;">Earliest an order placed today can be delivered (days from now)</small>
                             </td>
                         </tr>
                         <tr>
                             <th style="color:#ddd;">Max Days Ahead</th>
                             <td>
                                 <input type="number" name="shipping_max_ahead" value="<?php echo esc_attr( $ship_max ); ?>" min="1" style="width:70px;padding:5px 8px;border-radius:4px;">
-                                <small style="display:block;margin-top:5px;color:#aaa;">How far out customers can schedule shipping</small>
+                                <small style="display:block;margin-top:5px;color:#aaa;">How far out customers can schedule delivery</small>
                             </td>
                         </tr>
                         <tr>
-                            <th style="color:#ddd;">Max Shipments Per Day</th>
+                            <th style="color:#ddd;">Max Deliveries Per Day</th>
                             <td>
                                 <input type="number" name="shipping_max_per_day" value="<?php echo esc_attr( $ship_max_per_day ); ?>" min="0" style="width:70px;padding:5px 8px;border-radius:4px;">
-                                <small style="display:block;margin-top:5px;color:#aaa;">Maximum orders that can ship on the same day (0 = unlimited)</small>
+                                <small style="display:block;margin-top:5px;color:#aaa;">Maximum orders that can be delivered on the same day (0 = unlimited)</small>
                             </td>
                         </tr>
                     </table>
@@ -419,13 +419,13 @@ trait FisHotel_Admin {
                                 <?php endif; ?>
                                 </div>
                                 <input type="hidden" name="shipping_blacklist_add" id="fh-bl-add-val" value="">
-                                <small style="display:block;margin-top:8px;color:#aaa;">Holidays or other days you will never ship</small>
+                                <small style="display:block;margin-top:8px;color:#aaa;">Holidays or other days you will never deliver</small>
                             </td>
                         </tr>
                     </table>
 
                     <div style="margin-top:20px;">
-                        <button type="submit" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 28px;cursor:pointer;font-size:14px;">Save Shipping Settings</button>
+                        <button type="submit" style="background:#2986cc;color:#fff;font-weight:700;border:none;border-radius:6px;padding:10px 28px;cursor:pointer;font-size:14px;">Save Delivery Settings</button>
                     </div>
                 </form>
             </div>
@@ -5192,11 +5192,11 @@ trait FisHotel_Admin {
         <!-- ═══ TAB: Packing Lists ═══ -->
         <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;max-width:900px;" class="fh-no-print">
             <h2 style="color:#2986cc;margin-top:0;font-size:1.1em;">Packing Lists</h2>
-            <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Generate a print-ready packing list for all paid orders shipping on a given date.</p>
+            <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Generate a print-ready packing list for all paid orders with a given delivery date.</p>
 
             <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:20px;">
                 <div>
-                    <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Shipping Date</label>
+                    <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Delivery Date</label>
                     <input type="date" id="fh-pack-date" style="padding:7px 10px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">
                 </div>
                 <button id="fh-pack-generate" style="background:#1e6fa5;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Generate Packing List</button>
@@ -5303,7 +5303,7 @@ trait FisHotel_Admin {
             if (packBtn) {
                 packBtn.addEventListener('click', function(){
                     var date = document.getElementById('fh-pack-date').value;
-                    if (!date) { alert('Please select a shipping date.'); return; }
+                    if (!date) { alert('Please select a delivery date.'); return; }
                     packBtn.disabled = true;
                     document.getElementById('fh-pack-spinner').style.display = 'inline';
                     document.getElementById('fh-pack-error').style.display = 'none';

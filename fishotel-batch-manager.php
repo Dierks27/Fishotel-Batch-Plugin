@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.21.0 - Add SDC CSV import integration for Sea Dwelling Creatures stock.
- * Version:           10.21.0
+ * Description:       v10.22 - Rename Stage 7 ship date to delivery date + migrate processing orders.
+ * Version:           10.22
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.19.0' );
+define( 'FISHOTEL_VERSION', '10.22' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -1084,9 +1084,57 @@ register_activation_hook( __FILE__, function() {
     if ( ! wp_next_scheduled( 'fishotel_lastcall_cron' ) ) {
         wp_schedule_event( time(), 'hourly', 'fishotel_lastcall_cron' );
     }
+    fishotel_maybe_run_delivery_date_migration();
 } );
 
 register_deactivation_hook( __FILE__, function() {
     wp_clear_scheduled_hook( 'fishotel_verification_cron' );
     wp_clear_scheduled_hook( 'fishotel_lastcall_cron' );
 } );
+
+/**
+ * One-time migration: shift every wc-processing order's stored FisHotel date
+ * forward by +1 calendar day. Introduced with v10.22 when Stage 7 was relabeled
+ * from "ship date" to "delivery date" — processing orders had the old ship-date
+ * semantics stored, so they need +1 day to represent the customer delivery day.
+ * Completed orders and all other statuses are left untouched.
+ */
+function fishotel_maybe_run_delivery_date_migration() {
+    if ( get_option( 'fishotel_delivery_date_migration_done' ) ) {
+        return;
+    }
+    if ( ! function_exists( 'wc_get_orders' ) ) {
+        return;
+    }
+
+    $orders = wc_get_orders( [
+        'status'   => 'processing',
+        'limit'    => -1,
+        'meta_key' => '_fishotel_shipping_date',
+        'return'   => 'objects',
+    ] );
+
+    $migrated = 0;
+    foreach ( $orders as $order ) {
+        $old_date = $order->get_meta( '_fishotel_shipping_date' );
+        if ( empty( $old_date ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $old_date ) ) {
+            continue;
+        }
+        try {
+            $dt = new DateTime( $old_date, new DateTimeZone( 'America/Chicago' ) );
+            $dt->modify( '+1 day' );
+            $new_date = $dt->format( 'Y-m-d' );
+        } catch ( Exception $e ) {
+            error_log( sprintf( '[FisHotel migration] Order #%d — skipped (date parse failed: %s)', $order->get_id(), $old_date ) );
+            continue;
+        }
+        $order->update_meta_data( '_fishotel_shipping_date', $new_date );
+        $order->save_meta_data();
+        error_log( sprintf( '[FisHotel migration] Order #%d — %s → %s', $order->get_id(), $old_date, $new_date ) );
+        $migrated++;
+    }
+
+    error_log( sprintf( '[FisHotel migration] Delivery-date migration complete. %d processing orders shifted by +1 day.', $migrated ) );
+    update_option( 'fishotel_delivery_date_migration_done', 1, false );
+}
+add_action( 'admin_init', 'fishotel_maybe_run_delivery_date_migration' );

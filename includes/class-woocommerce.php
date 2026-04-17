@@ -555,7 +555,7 @@ trait FisHotel_WooCommerce {
 
         $available = $this->fishotel_get_available_shipping_dates();
         if ( empty( $available ) ) {
-            echo '<div id="fishotel-shipping-date-field"><p style="color:#e74c3c;font-weight:700;">No shipping dates are currently available. Please contact us before placing your order.</p></div>';
+            echo '<div id="fishotel-shipping-date-field"><p style="color:#e74c3c;font-weight:700;">No delivery dates are currently available. Please contact us before placing your order.</p></div>';
             return;
         }
 
@@ -563,9 +563,9 @@ trait FisHotel_WooCommerce {
         woocommerce_form_field( 'fishotel_shipping_date', [
             'type'     => 'select',
             'class'    => [ 'form-row-wide' ],
-            'label'    => 'Select Shipping Day',
+            'label'    => 'Select Delivery Day',
             'required' => true,
-            'options'  => array_merge( [ '' => '— Choose a shipping date —' ], $available ),
+            'options'  => array_merge( [ '' => '— Choose a delivery date —' ], $available ),
         ], $checkout->get_value( 'fishotel_shipping_date' ) );
         echo '</div>';
     }
@@ -575,12 +575,12 @@ trait FisHotel_WooCommerce {
 
         $date = sanitize_text_field( $_POST['fishotel_shipping_date'] ?? '' );
         if ( empty( $date ) ) {
-            wc_add_notice( 'Please select a shipping date.', 'error' );
+            wc_add_notice( 'Please select a delivery date.', 'error' );
             return;
         }
         $available = $this->fishotel_get_available_shipping_dates();
         if ( ! isset( $available[ $date ] ) ) {
-            wc_add_notice( 'The selected shipping date is not available. Please choose a different date.', 'error' );
+            wc_add_notice( 'The selected delivery date is not available. Please choose a different date.', 'error' );
         }
     }
 
@@ -594,12 +594,12 @@ trait FisHotel_WooCommerce {
 
         $date = sanitize_text_field( $_POST['fishotel_shipping_date'] ?? '' );
         if ( empty( $date ) ) {
-            $errors->add( 'shipping_date', 'Please select a shipping date.' );
+            $errors->add( 'shipping_date', 'Please select a delivery date.' );
             return;
         }
         $available = $this->fishotel_get_available_shipping_dates();
         if ( ! isset( $available[ $date ] ) ) {
-            $errors->add( 'shipping_date', 'The selected shipping date is not available. Please choose a different date.' );
+            $errors->add( 'shipping_date', 'The selected delivery date is not available. Please choose a different date.' );
         }
     }
 
@@ -630,19 +630,19 @@ trait FisHotel_WooCommerce {
 
         $order->set_status( 'on-hold' );
         $order->add_order_note(
-            'FISHOTEL ALERT: This order contains quarantined fish but no shipping date was selected at checkout. '
-            . 'Order placed on hold automatically. Please contact the customer to confirm a shipping date before releasing.'
+            'FISHOTEL ALERT: This order contains quarantined fish but no delivery date was selected at checkout. '
+            . 'Order placed on hold automatically. Please contact the customer to confirm a delivery date before releasing.'
         );
         $order->save();
 
         $admin_email = get_option( 'admin_email' );
         wp_mail(
             $admin_email,
-            '[FisHotel] Order #' . $order_id . ' held — missing shipping date',
-            "Order #{$order_id} contains fish products but was placed without a shipping date.\n\n"
+            '[FisHotel] Order #' . $order_id . ' held — missing delivery date',
+            "Order #{$order_id} contains fish products but was placed without a delivery date.\n\n"
             . "Customer: {$order->get_billing_first_name()} {$order->get_billing_last_name()} ({$order->get_billing_email()})\n"
             . "Order total: {$order->get_formatted_order_total()}\n\n"
-            . "The order has been placed on-hold. Please set a shipping date and release the order.\n\n"
+            . "The order has been placed on-hold. Please set a delivery date and release the order.\n\n"
             . admin_url( 'post.php?post=' . $order_id . '&action=edit' )
         );
     }
@@ -667,15 +667,15 @@ trait FisHotel_WooCommerce {
         if ( ! $this->fishotel_order_contains_fish( $order ) ) return;
 
         $order->set_status( 'on-hold',
-            'FISHOTEL: Order held automatically — contains fish products but no shipping date. '
-            . 'Please contact the customer and set a shipping date before releasing.'
+            'FISHOTEL: Order held automatically — contains fish products but no delivery date. '
+            . 'Please contact the customer and set a delivery date before releasing.'
         );
         $order->save();
 
         wp_mail(
             get_option( 'admin_email' ),
-            '[FisHotel] Order #' . $order_id . ' held — missing shipping date',
-            "Order #{$order_id} was transitioning to processing/completed but has no shipping date.\n"
+            '[FisHotel] Order #' . $order_id . ' held — missing delivery date',
+            "Order #{$order_id} was transitioning to processing/completed but has no delivery date.\n"
             . "It has been placed on-hold.\n\n"
             . admin_url( 'post.php?post=' . $order_id . '&action=edit' )
         );
@@ -689,7 +689,7 @@ trait FisHotel_WooCommerce {
         $value = $date ? esc_attr( $date ) : '';
         wp_nonce_field( 'fishotel_save_shipping_date', 'fishotel_shipping_date_nonce' );
         echo '<p class="form-field form-field-wide">';
-        echo '<label for="fishotel_shipping_date_admin"><strong>FisHotel Shipping Date:</strong></label><br>';
+        echo '<label for="fishotel_shipping_date_admin"><strong>FisHotel Delivery Date:</strong></label><br>';
         echo '<input type="date" id="fishotel_shipping_date_admin" name="fishotel_shipping_date_admin" value="' . $value . '" style="width:100%;max-width:220px;">';
         if ( $date ) {
             echo '<br><span style="color:#999;font-size:12px;">' . esc_html( date( 'l, F j, Y', strtotime( $date ) ) ) . '</span>';

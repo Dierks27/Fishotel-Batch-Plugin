@@ -1559,7 +1559,7 @@ trait FisHotel_Ajax {
         ] );
 
         if ( empty( $orders ) ) {
-            wp_send_json_error( [ 'message' => 'No paid orders found for this shipping date.' ] );
+            wp_send_json_error( [ 'message' => 'No paid orders found for this delivery date.' ] );
         }
 
         $date_obj    = new DateTime( $shipping_date );
@@ -1570,7 +1570,7 @@ trait FisHotel_Ajax {
         <div class="fh-packing-list">
             <div class="fh-packing-list-header">
                 <h1>FisHotel Packing List</h1>
-                <h2>Shipping Date: <?php echo esc_html( $display_date ); ?></h2>
+                <h2>Delivery Date: <?php echo esc_html( $display_date ); ?></h2>
                 <p>Total Orders: <?php echo count( $orders ); ?></p>
             </div>
 
