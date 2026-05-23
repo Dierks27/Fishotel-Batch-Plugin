@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.22 - Rename Stage 7 ship date to delivery date + migrate processing orders.
- * Version:           10.22
+ * Description:       v10.23 - Count wc-fulfillment orders toward daily delivery capacity; ignore fulfilled source orders.
+ * Version:           10.23
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.22' );
+define( 'FISHOTEL_VERSION', '10.23' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

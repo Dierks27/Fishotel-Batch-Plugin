@@ -520,12 +520,17 @@ trait FisHotel_WooCommerce {
             $date_keys = array_keys( $dates );
             $orders = get_posts( [
                 'post_type'   => 'shop_order',
-                'post_status' => [ 'wc-pending', 'wc-processing', 'wc-on-hold', 'wc-completed' ],
+                'post_status' => [ 'wc-pending', 'wc-processing', 'wc-on-hold', 'wc-completed', 'wc-fulfillment' ],
                 'meta_query'  => [
+                    'relation' => 'AND',
                     [
                         'key'     => '_fishotel_shipping_date',
                         'value'   => $date_keys,
                         'compare' => 'IN',
+                    ],
+                    [
+                        'key'     => '_fishotel_fulfilled_by_order',
+                        'compare' => 'NOT EXISTS',
                     ],
                 ],
                 'fields'         => 'ids',
