@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.23 - Count wc-fulfillment orders toward daily delivery capacity; ignore fulfilled source orders.
- * Version:           10.23
+ * Description:       v10.24 - Repeat-customer fish checkout inherits the delivery date from their open order (re-order date lock, Piece 1).
+ * Version:           10.24
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.23' );
+define( 'FISHOTEL_VERSION', '10.24' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

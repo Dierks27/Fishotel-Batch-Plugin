@@ -555,9 +555,74 @@ trait FisHotel_WooCommerce {
         return $dates;
     }
 
+    /**
+     * The current shopper's open unshipped order, or null. Mirrors the theme's
+     * re-order lock resolution (customer_id for logged-in, billing email for
+     * guests) and honors the unified kill switch. Cached per request.
+     */
+    private function fishotel_reorder_open_order() {
+        if ( defined( 'FISHOTEL_REORDER_CHECKOUT_LOCK_OFF' ) && FISHOTEL_REORDER_CHECKOUT_LOCK_OFF ) {
+            return null;
+        }
+        if ( ! function_exists( 'fishotel_get_open_unshipped_order_for_customer' ) ) {
+            return null;
+        }
+        static $cache = [];
+
+        $uid = get_current_user_id();
+        $key = $uid > 0
+            ? (string) $uid
+            : ( ( function_exists( 'WC' ) && WC()->customer )
+                ? strtolower( trim( (string) WC()->customer->get_billing_email() ) )
+                : '' );
+        if ( '' === $key ) {
+            return null;
+        }
+        if ( ! array_key_exists( $key, $cache ) ) {
+            $cache[ $key ] = fishotel_get_open_unshipped_order_for_customer( $uid > 0 ? $uid : $key );
+        }
+        return $cache[ $key ];
+    }
+
+    /** The inherited delivery date (raw stored key) from the open order, or ''. */
+    private function fishotel_reorder_inherited_date() {
+        $order = $this->fishotel_reorder_open_order();
+        if ( ! $order instanceof WC_Order ) {
+            return '';
+        }
+        if ( function_exists( 'fishotel_get_effective_delivery_date' ) ) {
+            return (string) fishotel_get_effective_delivery_date( $order );
+        }
+        return (string) $order->get_meta( '_fishotel_shipping_date' );
+    }
+
     public function fishotel_shipping_date_field( $checkout ) {
         if ( ! $this->fishotel_cart_contains_fish() ) return;
 
+        // ── Re-order lock (Piece 1): inherit the open order's date, read-only. ──
+        $inherited = $this->fishotel_reorder_inherited_date();
+        if ( '' !== $inherited ) {
+            // The theme's 2a lock card already renders ONE unified notice with the
+            // inherited address AND date. When active, just submit the date silently.
+            $theme_card = class_exists( 'FisHotel_Reorder_Checkout_Lock' )
+                && FisHotel_Reorder_Checkout_Lock::anchor_order() instanceof WC_Order;
+            if ( $theme_card ) {
+                echo '<input type="hidden" name="fishotel_shipping_date" value="' . esc_attr( $inherited ) . '" />';
+                return;
+            }
+
+            // Standalone block (older theme without the 2a card).
+            $ts     = strtotime( $inherited );
+            $pretty = $ts ? date_i18n( 'l, F j, Y', $ts ) : $inherited;
+            echo '<div id="fishotel-shipping-date-field" class="fh-reorder-date-lock" style="background:#0f0f0f;border:1px solid #d4a574;border-radius:6px;padding:14px 16px;margin:0 0 16px;color:#EDE0C0;">';
+            echo '<p style="margin:0 0 8px;font-weight:600;color:#EDE0C0;">' . esc_html__( "We will use your current shipping Address and Requested Delivery Date from any previous Order. If you need to change anything please visit 'My Account' after checkout.", 'fishotel' ) . '</p>';
+            echo '<p style="margin:0;"><span style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#a8895f;">' . esc_html__( 'Requested delivery', 'fishotel' ) . '</span><br><span style="color:#d4a574;font-weight:600;">' . esc_html( $pretty ) . '</span></p>';
+            echo '<input type="hidden" name="fishotel_shipping_date" value="' . esc_attr( $inherited ) . '" />';
+            echo '</div>';
+            return;
+        }
+
+        // ── Normal picker (unchanged) ──
         $available = $this->fishotel_get_available_shipping_dates();
         if ( empty( $available ) ) {
             echo '<div id="fishotel-shipping-date-field"><p style="color:#e74c3c;font-weight:700;">No delivery dates are currently available. Please contact us before placing your order.</p></div>';
@@ -579,6 +644,14 @@ trait FisHotel_WooCommerce {
         if ( ! $this->fishotel_cart_contains_fish() ) return;
 
         $date = sanitize_text_field( $_POST['fishotel_shipping_date'] ?? '' );
+
+        // Re-order lock: accept the inherited date even when it's no longer in the
+        // currently available list (older lead time / a date no longer offered).
+        $inherited = $this->fishotel_reorder_inherited_date();
+        if ( '' !== $inherited && $date === $inherited ) {
+            return;
+        }
+
         if ( empty( $date ) ) {
             wc_add_notice( 'Please select a delivery date.', 'error' );
             return;
@@ -598,6 +671,14 @@ trait FisHotel_WooCommerce {
         if ( ! $this->fishotel_cart_contains_fish() ) return;
 
         $date = sanitize_text_field( $_POST['fishotel_shipping_date'] ?? '' );
+
+        // Re-order lock: accept the inherited date even when it's no longer in the
+        // currently available list (older lead time / a date no longer offered).
+        $inherited = $this->fishotel_reorder_inherited_date();
+        if ( '' !== $inherited && $date === $inherited ) {
+            return;
+        }
+
         if ( empty( $date ) ) {
             $errors->add( 'shipping_date', 'Please select a delivery date.' );
             return;
