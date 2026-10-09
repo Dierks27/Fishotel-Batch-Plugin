@@ -75,7 +75,7 @@ trait FisHotel_Shortcodes {
         jQuery(document).ready(function($) {
             $('.qty-minus').click(function() { let input = $('#deposit-amount'); let val = parseFloat(input.val()) || 0; if (val > 0.01) input.val((val - 0.01).toFixed(2)); });
             $('.qty-plus').click(function() { let input = $('#deposit-amount'); let val = parseFloat(input.val()) || 0; input.val((val + 0.01).toFixed(2)); });
-            $('#deposit-form').submit(function(e) { e.preventDefault(); let amount = parseFloat($('#deposit-amount').val()); if (amount <= 0) { alert('Please enter a valid amount.'); return; } window.location.href = '<?php echo wc_get_checkout_url(); ?>?add-to-cart=deposit&amount=' + amount; });
+            $('#deposit-form').submit(function(e) { e.preventDefault(); let amount = parseFloat($('#deposit-amount').val()); if (amount <= 0) { alert('Please enter a valid amount.'); return; } window.location.href = '<?php echo wc_get_checkout_url(); ?>?add-to-cart=deposit&_fhnonce=<?php echo rawurlencode( wp_create_nonce( 'fishotel_deposit_add' ) ); ?>&amount=' + amount; });
         });
         </script>
         <?php
@@ -1562,7 +1562,7 @@ trait FisHotel_Shortcodes {
                                 type: "POST",
                                 data: {
                                     action: "fishotel_check_balance",
-                                    batch_name: "<?php echo esc_js( $batch_name ); ?>",
+                                    batch_name: <?php echo wp_json_encode( $batch_name, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ); ?>, // JSON literal, not esc_js(): script text is not entity-decoded, so "&" was posted as "&amp;" and the batch lookup missed
                                     nonce: '<?php echo wp_create_nonce( 'fishotel_batch_ajax' ); ?>'
                                 },
                                 success: function(response) {
@@ -1727,7 +1727,7 @@ trait FisHotel_Shortcodes {
                                 action: "fishotel_submit_requests",
                                 cart_items: JSON.stringify(cartItems),
                                 total: cartTotal,
-                                batch_name: "<?php echo esc_js( $batch_name ); ?>",
+                                batch_name: <?php echo wp_json_encode( $batch_name, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ); ?>, // JSON literal, not esc_js(): "&" in a batch name was posted as "&amp;" and the server rejected every line
                                 nonce: '<?php echo wp_create_nonce( 'fishotel_batch_ajax' ); ?>'
                             },
                             success: function(response) {
@@ -3829,7 +3829,7 @@ trait FisHotel_Shortcodes {
         (function(){
             var ajaxUrl = '<?php echo admin_url( "admin-ajax.php" ); ?>';
             var nonce   = '<?php echo $nonce; ?>';
-            var batch   = '<?php echo esc_js( $batch_name ); ?>';
+            var batch   = <?php echo wp_json_encode( $batch_name, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ); ?>; // JSON literal: esc_js() entity-encodes "&" and script text is not decoded
 
             window.fhvAccept = function(btn) {
                 var cell    = btn.closest('.fhv-action-cell');
@@ -4651,7 +4651,7 @@ trait FisHotel_Shortcodes {
                 var fd = new FormData();
                 fd.append('action', 'fishotel_save_lastcall_wishlist');
                 fd.append('nonce', '<?php echo esc_js( $nonce ); ?>');
-                fd.append('batch_name', '<?php echo esc_js( $batch_name ); ?>');
+                fd.append('batch_name', <?php echo wp_json_encode( $batch_name, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ); ?>); // JSON literal: esc_js() entity-encodes "&" and script text is not decoded
                 fd.append('wishlist', JSON.stringify(wl));
                 fetch('<?php echo esc_url( $ajax_url ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
                     .then(function(r){ return r.json(); })
@@ -5127,7 +5127,9 @@ trait FisHotel_Shortcodes {
 
     private function render_invoice_login_prompt( $batch_name ) {
         $ajax_url  = admin_url( 'admin-ajax.php' );
-        $nonce     = wp_create_nonce( 'fishotel_ajax_login' );
+        // ajax_login() verifies 'fishotel_batch_ajax' (same as every other login caller);
+        // signing with a different action made every submit from this modal fail with -1.
+        $nonce     = wp_create_nonce( 'fishotel_batch_ajax' );
         $redir_url = esc_url( get_permalink() );
         ob_start();
         echo $this->fh_invoice_css();
@@ -5197,6 +5199,11 @@ trait FisHotel_Shortcodes {
                     .then(function(resp){
                         if (resp.success) { window.location.href = resp.data.redirect || '<?php echo esc_js( $redir_url ); ?>'; }
                         else { err.textContent = resp.data && resp.data.message ? resp.data.message : 'Login failed.'; err.style.display = 'block'; }
+                    })
+                    .catch(function(){
+                        // A non-JSON reply (e.g. "-1" from a failed nonce/referer check) used to leave the form dead.
+                        err.textContent = 'Login failed. Please try again.';
+                        err.style.display = 'block';
                     });
             });
         })();

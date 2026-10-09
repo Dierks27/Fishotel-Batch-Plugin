@@ -1248,6 +1248,8 @@ class FisHotel_Arcade {
                 let bet = 50, playing = false, autoDaub = true, cashedOut = false;
                 let card = [], daubed = [], calledNumbers = [], callerInterval = null;
                 let patternsWon = {}, totalWinnings = 0;
+                /* audit features-1: the live game's id + server-generated draw order */
+                let gameId = 0, drawOrder = [];
                 let audioCtx = null, muted = false;
 
                 /* ── Sound effects ── */
@@ -1440,7 +1442,11 @@ class FisHotel_Arcade {
                     ballCount.textContent = '0';
                     history.innerHTML = '';
 
-                    card = generateCard();
+                    /* audit features-1: card + 35-ball draw come from the server, which
+                     * keeps a copy and recomputes the payout at cash out. */
+                    gameId    = parseInt(res.data.game_id, 10) || 0;
+                    card      = Array.isArray(res.data.card) ? res.data.card : generateCard();
+                    drawOrder = Array.isArray(res.data.draw) ? res.data.draw : [];
                     daubed = Array.from({length:5}, () => Array(5).fill(false));
                     daubed[2][2] = true; /* FREE */
                     renderGrid();
@@ -1466,8 +1472,14 @@ class FisHotel_Arcade {
                         callerInterval = null;
                         return;
                     }
-                    let n;
-                    do { n = 1 + Math.floor(Math.random() * 75); } while (calledNumbers.includes(n));
+                    /* audit features-1: balls follow the server's draw order (no client RNG) */
+                    const n = parseInt(drawOrder[calledNumbers.length], 10);
+                    if (!n) {
+                        clearInterval(callerInterval);
+                        callerInterval = null;
+                        endGame();
+                        return;
+                    }
                     calledNumbers.push(n);
                     ballCount.textContent = calledNumbers.length;
 
@@ -1616,13 +1628,25 @@ class FisHotel_Arcade {
                     if (callerInterval) { clearInterval(callerInterval); callerInterval = null; }
                     playing = false;
 
-                    if (totalWinnings > 0) {
-                        const res = await casinoPost('fishotel_casino_bingo_cashout', { bet: bet, winnings: totalWinnings });
-                        if (res.success) updateChips(res.data.chips);
-                        caller.textContent = 'WON ' + Number(totalWinnings).toLocaleString() + ' CHIPS!';
-                        sfxWin();
+                    /* audit features-1: the server recomputes the payout from the stored
+                     * card + draw; the browser only says which game ended. The on-screen
+                     * running total is replaced by the authoritative amount. */
+                    let res = null;
+                    try {
+                        res = await casinoPost('fishotel_casino_bingo_cashout', { game_id: gameId });
+                    } catch (e) { res = null; }
+                    if (res && res.success) {
+                        updateChips(res.data.chips);
+                        totalWinnings = parseInt(res.data.winnings, 10) || 0;
+                        winDisp.textContent = Number(totalWinnings).toLocaleString();
+                        if (totalWinnings > 0) {
+                            caller.textContent = 'WON ' + Number(totalWinnings).toLocaleString() + ' CHIPS!';
+                            sfxWin();
+                        } else {
+                            caller.textContent = 'GAME OVER \u2014 NO WINS';
+                        }
                     } else {
-                        caller.textContent = 'GAME OVER \u2014 NO WINS';
+                        caller.textContent = (res && res.data && res.data.message) ? res.data.message : 'CASH OUT FAILED \u2014 PLEASE RELOAD';
                     }
 
                     cashBtn.style.display = 'none';
@@ -2187,19 +2211,28 @@ class FisHotel_Arcade {
         $uid = get_current_user_id();
         if ( ! $uid ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
 
-        $last = get_user_meta( $uid, self::META_DAILY_BONUS, true );
-        if ( ! empty( $last ) && ( time() - (int) $last ) < 86400 ) {
+        global $wpdb;
+        $now = time();
+        // audit features-6: claim with a conditional UPDATE (only when the last
+        // claim is >= 24h old) so two simultaneous requests cannot both pass a
+        // stale "already claimed?" read and both credit the bonus.
+        $rows = $wpdb->query( $wpdb->prepare(
+            "UPDATE {$wpdb->usermeta} SET meta_value = %d
+             WHERE user_id = %d AND meta_key = %s AND CAST( meta_value AS SIGNED ) <= %d",
+            $now, $uid, self::META_DAILY_BONUS, $now - 86400
+        ) );
+        // No row flipped: never claimed (unique add succeeds) or claimed <24h ago.
+        $claimed = $rows || add_user_meta( $uid, self::META_DAILY_BONUS, $now, true );
+        wp_cache_delete( $uid, 'user_meta' );
+        if ( ! $claimed ) {
             wp_send_json_error( [ 'message' => 'You already claimed your daily bonus. Come back tomorrow!' ] );
         }
 
-        update_user_meta( $uid, self::META_DAILY_BONUS, time() );
-
-        /* Add chips via Casino class constants */
-        $current = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
-        update_user_meta( $uid, '_fishotel_casino_chips', $current + self::DAILY_BONUS_CHIPS );
+        /* Add chips atomically through the Casino wallet primitive */
+        $new_balance = FisHotel_Casino::credit_chips( $uid, self::DAILY_BONUS_CHIPS );
 
         wp_send_json_success( [
-            'chips'   => $current + self::DAILY_BONUS_CHIPS,
+            'chips'   => $new_balance,
             'message' => 'Here\'s your daily ' . self::DAILY_BONUS_CHIPS . ' chips! Come back tomorrow for more.',
         ] );
     }
@@ -2266,8 +2299,13 @@ class FisHotel_Arcade {
             wp_send_json_error( [ 'message' => 'Sold out!' ] );
         }
 
-        /* Deduct chips */
-        update_user_meta( $uid, '_fishotel_casino_chips', $chips - $price );
+        /* Deduct chips atomically (audit features-6): the balance guard sits
+         * inside the UPDATE, so parallel purchases cannot all pass the stale
+         * read above and queue several physical stickers for one price. */
+        if ( ! FisHotel_Casino::debit_chips( $uid, $price ) ) {
+            wp_send_json_error( [ 'message' => 'Not enough chips! You need ' . number_format( $price ) . '.' ] );
+        }
+        $chips_after = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
 
         /* Decrement stock */
         if ( $stock !== -1 ) {
@@ -2303,7 +2341,7 @@ class FisHotel_Arcade {
         update_user_meta( $uid, '_fishotel_physical_prizes', $prizes );
 
         wp_send_json_success( [
-            'chips'   => $chips - $price,
+            'chips'   => $chips_after,
             'message' => 'Purchase complete! ' . $sticker->post_title . ' will be included with your fish shipment!',
         ] );
     }
@@ -4013,8 +4051,11 @@ class FisHotel_Arcade {
         }
 
         $payout    = (int) floor( $bet * $multiplier );
-        $new_chips = max( 0, $chips - $bet );
-        update_user_meta( $uid, '_fishotel_casino_chips', $new_chips );
+        // audit features-6: atomic debit instead of read-modify-write.
+        if ( ! FisHotel_Casino::debit_chips( $uid, $bet ) ) {
+            wp_send_json_error( [ 'message' => 'Not enough nickels.' ] );
+        }
+        $new_chips = (int) get_user_meta( $uid, '_fishotel_casino_chips', true );
 
         $tickets     = (int) get_user_meta( $uid, 'fishotel_arcade_tickets', true );
         $new_tickets = $tickets + $payout;

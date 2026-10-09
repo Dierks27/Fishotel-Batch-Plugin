@@ -19,6 +19,11 @@ class FisHotel_Casino {
     const META_STATS        = '_fishotel_casino_stats';
     const META_DAILY        = '_fishotel_casino_last_daily';
     const META_LEADERBOARD  = '_fishotel_casino_total_winnings';
+    /** Smallest bet the game UIs offer (10/50/100/250); enforced server-side too. */
+    const MIN_BET           = 10;
+    /** Bingo: balls called per game and the all-patterns-at-once payout ceiling. */
+    const BINGO_BALLS       = 35;
+    const BINGO_MAX_MULT    = 35; // 0.75 + 0.75 + 1.5 + 1.5 + 2.5 + 5 + 8 + 15
 
     /* ─── Boot ──────────────────────────────────────────────── */
     public function __construct() {
@@ -53,28 +58,113 @@ class FisHotel_Casino {
         return $amount;
     }
 
-    private function add_chips( $user_id, $amount ) {
-        $current = $this->get_chips( $user_id );
-        return $this->set_chips( $user_id, $current + (int) $amount );
+    /**
+     * Atomically credit chips (audit features-6).
+     *
+     * One UPDATE on wp_usermeta instead of get -> add -> update, so two payouts
+     * landing at the same moment cannot overwrite each other with a stale read.
+     * Public + static so the arcade (daily bonus, prize shop, strength tester)
+     * shares the same primitive instead of its own read-modify-write.
+     *
+     * @return int New balance.
+     */
+    public static function credit_chips( $user_id, $amount ) {
+        global $wpdb;
+        $user_id = (int) $user_id;
+        $amount  = (int) $amount;
+        if ( $user_id <= 0 || $amount <= 0 ) {
+            return (int) get_user_meta( $user_id, self::META_CHIPS, true );
+        }
+        $sql  = "UPDATE {$wpdb->usermeta}
+                 SET meta_value = GREATEST( CAST( meta_value AS SIGNED ), 0 ) + %d
+                 WHERE user_id = %d AND meta_key = %s";
+        $rows = $wpdb->query( $wpdb->prepare( $sql, $amount, $user_id, self::META_CHIPS ) );
+        if ( ! $rows ) {
+            // No balance row yet (brand-new player): create it. If a parallel
+            // request created it a moment ago the unique add fails, so retry the
+            // UPDATE against that new row instead of losing this credit.
+            if ( ! add_user_meta( $user_id, self::META_CHIPS, $amount, true ) ) {
+                $wpdb->query( $wpdb->prepare( $sql, $amount, $user_id, self::META_CHIPS ) );
+            }
+        }
+        wp_cache_delete( $user_id, 'user_meta' ); // the direct UPDATE bypassed WP's meta cache
+        return (int) get_user_meta( $user_id, self::META_CHIPS, true );
     }
 
+    /**
+     * Atomically debit chips (audit features-6).
+     *
+     * The "balance >= amount" guard is inside the same UPDATE, so of N parallel
+     * requests only those the balance really covers succeed; the others get
+     * false and the caller must abort the play/purchase before paying anything.
+     *
+     * @return bool True when the debit was applied.
+     */
+    public static function debit_chips( $user_id, $amount ) {
+        global $wpdb;
+        $user_id = (int) $user_id;
+        $amount  = (int) $amount;
+        if ( $user_id <= 0 || $amount < 0 ) {
+            return false;
+        }
+        if ( 0 === $amount ) {
+            return true;
+        }
+        $rows = $wpdb->query( $wpdb->prepare(
+            "UPDATE {$wpdb->usermeta}
+             SET meta_value = CAST( meta_value AS SIGNED ) - %d
+             WHERE user_id = %d AND meta_key = %s AND CAST( meta_value AS SIGNED ) >= %d",
+            $amount, $user_id, self::META_CHIPS, $amount
+        ) );
+        wp_cache_delete( $user_id, 'user_meta' ); // the direct UPDATE bypassed WP's meta cache
+        return (bool) $rows;
+    }
+
+    private function add_chips( $user_id, $amount ) {
+        return self::credit_chips( $user_id, $amount );
+    }
+
+    /** @return bool False when the balance did not cover the amount (nothing deducted). */
     private function deduct_chips( $user_id, $amount ) {
-        $current = $this->get_chips( $user_id );
-        $amount  = min( (int) $amount, $current ); // never go negative
-        return $this->set_chips( $user_id, $current - $amount );
+        return self::debit_chips( $user_id, $amount );
     }
 
     /** Award daily chip allotment (once per calendar day). */
     private function maybe_claim_daily( $user_id ) {
-        $last  = get_user_meta( $user_id, self::META_DAILY, true );
+        global $wpdb;
         $today = current_time( 'Y-m-d' );
-        if ( $last === $today ) {
+        // features-6: claim the day with a conditional UPDATE (it only flips when
+        // the stored day differs) so two simultaneous claims cannot both pass a
+        // stale "already claimed?" read and both credit DAILY_CHIPS.
+        $rows = $wpdb->query( $wpdb->prepare(
+            "UPDATE {$wpdb->usermeta} SET meta_value = %s
+             WHERE user_id = %d AND meta_key = %s AND meta_value <> %s",
+            $today, $user_id, self::META_DAILY, $today
+        ) );
+        // No row flipped: either never claimed (unique add succeeds) or already
+        // claimed today (row exists, unique add fails).
+        $claimed = $rows || add_user_meta( $user_id, self::META_DAILY, $today, true );
+        wp_cache_delete( $user_id, 'user_meta' );
+        if ( ! $claimed ) {
             return false; // already claimed
         }
-        update_user_meta( $user_id, self::META_DAILY, $today );
         $this->add_chips( $user_id, self::DAILY_CHIPS );
         $this->track_stat( $user_id, 'days_played', 1 );
         return true;
+    }
+
+    /**
+     * Read + validate the posted bet (audit features-7, conservative part).
+     * The game UIs only offer 10/50/100/250 but the handlers accepted any
+     * bet >= 1, which let a scripted client farm jackpot triggers with 1-chip
+     * plays funded by the free daily chips. Enforce the UI minimum here.
+     */
+    private function read_bet() {
+        $bet = (int) sanitize_text_field( $_POST['bet'] ?? 0 );
+        if ( $bet < self::MIN_BET ) {
+            wp_send_json_error( [ 'message' => 'Minimum bet is ' . self::MIN_BET . ' chips.' ] );
+        }
+        return $bet;
     }
 
     /* ─── Stats helpers ─────────────────────────────────────── */
@@ -408,7 +498,7 @@ class FisHotel_Casino {
         $uid = get_current_user_id();
         if ( ! $uid ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
 
-        $bet      = max( 1, (int) sanitize_text_field( $_POST['bet'] ?? 0 ) );
+        $bet      = $this->read_bet();
         $bet_type = sanitize_text_field( $_POST['bet_type'] ?? 'red' );
 
         if ( $bet > $this->get_chips( $uid ) ) {
@@ -453,8 +543,11 @@ class FisHotel_Casino {
                 break;
         }
 
-        // Deduct bet, add payout
-        $this->deduct_chips( $uid, $bet );
+        // Deduct bet, add payout. features-6: the atomic debit is the real
+        // balance check — a parallel spin that already spent the chips fails here.
+        if ( ! $this->deduct_chips( $uid, $bet ) ) {
+            wp_send_json_error( [ 'message' => 'Not enough chips.' ] );
+        }
         if ( $payout > 0 ) {
             $this->add_chips( $uid, $payout );
         }
@@ -521,11 +614,11 @@ class FisHotel_Casino {
         $move = sanitize_text_field( $_POST['move'] ?? '' );
 
         if ( $move === 'deal' ) {
-            $bet = max( 1, (int) sanitize_text_field( $_POST['bet'] ?? 0 ) );
-            if ( $bet > $this->get_chips( $uid ) ) {
+            $bet = $this->read_bet();
+            // features-6: atomic debit doubles as the authoritative balance check.
+            if ( $bet > $this->get_chips( $uid ) || ! $this->deduct_chips( $uid, $bet ) ) {
                 wp_send_json_error( [ 'message' => 'Not enough chips.' ] );
             }
-            $this->deduct_chips( $uid, $bet );
 
             $deck   = $this->bj_new_deck();
             $player = [ array_pop( $deck ), array_pop( $deck ) ];
@@ -546,11 +639,13 @@ class FisHotel_Casino {
 
             if ( $pval === 21 ) {
                 $state['status'] = 'blackjack';
+                // features-4: a natural is settled right here, so the hand is NOT
+                // stored. Persisting it let a follow-up `stand` with the same
+                // game_id replay the dealer and pay the hand a second time.
                 if ( $dval === 21 ) {
                     // Push
                     $this->add_chips( $uid, $bet );
                     $this->record_game( $uid, 'blackjack', $bet, $bet );
-                    set_transient( "fhc_bj_{$uid}_{$game_id}", $state, 3600 );
                     wp_send_json_success( [
                         'game_id' => $game_id,
                         'state'   => $state,
@@ -567,7 +662,6 @@ class FisHotel_Casino {
                     'result' => 'blackjack', 'payout' => $payout, 'wager' => $bet,
                     'player_cards' => $player, 'player_value' => $pval,
                 ] );
-                set_transient( "fhc_bj_{$uid}_{$game_id}", $state, 3600 );
                 wp_send_json_success( [
                     'game_id' => $game_id,
                     'state'   => $state,
@@ -591,6 +685,10 @@ class FisHotel_Casino {
         $game_id = (int) sanitize_text_field( $_POST['game_id'] ?? 0 );
         $state   = get_transient( "fhc_bj_{$uid}_{$game_id}" );
         if ( ! $state ) wp_send_json_error( [ 'message' => 'Game expired.' ] );
+        // features-4: only a live hand can be played on; anything else is settled.
+        if ( ( $state['status'] ?? '' ) !== 'playing' ) {
+            wp_send_json_error( [ 'message' => 'Hand already finished.' ] );
+        }
 
         $bet  = $state['bet'];
         $deck = $state['deck'];
@@ -622,10 +720,10 @@ class FisHotel_Casino {
         }
 
         if ( $move === 'double' ) {
-            if ( $bet > $this->get_chips( $uid ) ) {
+            // features-6: atomic debit doubles as the authoritative balance check.
+            if ( $bet > $this->get_chips( $uid ) || ! $this->deduct_chips( $uid, $bet ) ) {
                 wp_send_json_error( [ 'message' => 'Not enough chips to double.' ] );
             }
-            $this->deduct_chips( $uid, $bet );
             $state['bet'] = $bet * 2;
             $bet = $state['bet'];
             $state['player'][] = array_pop( $deck );
@@ -689,7 +787,7 @@ class FisHotel_Casino {
         $uid = get_current_user_id();
         if ( ! $uid ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
 
-        $bet = max( 1, (int) sanitize_text_field( $_POST['bet'] ?? 0 ) );
+        $bet = $this->read_bet();
         if ( $bet > $this->get_chips( $uid ) ) {
             wp_send_json_error( [ 'message' => 'Not enough chips.' ] );
         }
@@ -725,7 +823,10 @@ class FisHotel_Casino {
         }
 
         $payout = $bet * $multiplier;
-        $this->deduct_chips( $uid, $bet );
+        // features-6: the atomic debit is the real balance check.
+        if ( ! $this->deduct_chips( $uid, $bet ) ) {
+            wp_send_json_error( [ 'message' => 'Not enough chips.' ] );
+        }
         if ( $payout > 0 ) {
             $this->add_chips( $uid, $payout );
         }
@@ -754,7 +855,7 @@ class FisHotel_Casino {
         $uid = get_current_user_id();
         if ( ! $uid ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
 
-        $bet = max( 1, (int) sanitize_text_field( $_POST['bet'] ?? 0 ) );
+        $bet = $this->read_bet();
         if ( $bet > $this->get_chips( $uid ) ) {
             wp_send_json_error( [ 'message' => 'Not enough chips.' ] );
         }
@@ -812,7 +913,10 @@ class FisHotel_Casino {
         }
 
         $payout = $bet * $multiplier;
-        $this->deduct_chips( $uid, $bet );
+        // features-6: the atomic debit is the real balance check.
+        if ( ! $this->deduct_chips( $uid, $bet ) ) {
+            wp_send_json_error( [ 'message' => 'Not enough chips.' ] );
+        }
         if ( $payout > 0 ) {
             $this->add_chips( $uid, $payout );
         }
@@ -887,11 +991,11 @@ class FisHotel_Casino {
         $move = sanitize_text_field( $_POST['move'] ?? '' );
 
         if ( $move === 'deal' ) {
-            $bet = max( 1, (int) sanitize_text_field( $_POST['bet'] ?? 0 ) );
-            if ( $bet > $this->get_chips( $uid ) ) {
+            $bet = $this->read_bet();
+            // features-6: atomic debit doubles as the authoritative balance check.
+            if ( $bet > $this->get_chips( $uid ) || ! $this->deduct_chips( $uid, $bet ) ) {
                 wp_send_json_error( [ 'message' => 'Not enough chips.' ] );
             }
-            $this->deduct_chips( $uid, $bet );
 
             $deck = $this->poker_new_deck();
             $hand = array_splice( $deck, 0, 5 );
@@ -1016,20 +1120,99 @@ class FisHotel_Casino {
      *  BINGO HALL
      * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
+    /**
+     * A 75-ball card, column-major like the JS renderer (card[col][row]):
+     * B 1-15, I 16-30, N 31-45, G 46-60, O 61-75; the centre is FREE (0).
+     */
+    private function bingo_new_card() {
+        $ranges = [ [ 1, 15 ], [ 16, 30 ], [ 31, 45 ], [ 46, 60 ], [ 61, 75 ] ];
+        $card   = [];
+        foreach ( $ranges as $col => $r ) {
+            $nums = range( $r[0], $r[1] );
+            shuffle( $nums );
+            $card[ $col ] = array_slice( $nums, 0, 5 );
+        }
+        $card[2][2] = 0; // FREE
+        return $card;
+    }
+
+    /**
+     * Winnings for every pattern completed by $called on $card. Same pattern
+     * table and multipliers as the paytable/checkPatterns in class-arcade.php
+     * (each pattern pays at most once per game, patterns stack).
+     *
+     * @return array [ int $payout, string[] $patterns ]
+     */
+    private function bingo_payout( $card, $called, $bet ) {
+        $called = array_map( 'intval', (array) $called );
+        $d      = []; // daubed[col][row]
+        for ( $c = 0; $c < 5; $c++ ) {
+            for ( $r = 0; $r < 5; $r++ ) {
+                $d[ $c ][ $r ] = ( $c === 2 && $r === 2 ) || in_array( (int) ( $card[ $c ][ $r ] ?? -1 ), $called, true );
+            }
+        }
+        $all = function ( $cells ) use ( $d ) {
+            foreach ( $cells as $cr ) {
+                if ( empty( $d[ $cr[0] ][ $cr[1] ] ) ) return false;
+            }
+            return true;
+        };
+
+        $mults = [];
+        for ( $r = 0; $r < 5; $r++ ) { // any row
+            if ( $all( [ [0,$r],[1,$r],[2,$r],[3,$r],[4,$r] ] ) ) { $mults['row'] = 0.75; break; }
+        }
+        for ( $c = 0; $c < 5; $c++ ) { // any column
+            if ( $all( [ [$c,0],[$c,1],[$c,2],[$c,3],[$c,4] ] ) ) { $mults['col'] = 0.75; break; }
+        }
+        $d1 = $all( [ [0,0],[1,1],[2,2],[3,3],[4,4] ] );
+        $d2 = $all( [ [0,4],[1,3],[2,2],[3,1],[4,0] ] );
+        if ( $d1 || $d2 ) $mults['diag'] = 1.5;
+        $stamps = [
+            [ [0,0],[1,0],[0,1],[1,1] ], [ [3,0],[4,0],[3,1],[4,1] ],
+            [ [0,3],[1,3],[0,4],[1,4] ], [ [3,3],[4,3],[3,4],[4,4] ],
+        ];
+        foreach ( $stamps as $sq ) {
+            if ( $all( $sq ) ) { $mults['stamp'] = 1.5; break; }
+        }
+        if ( $all( [ [0,0],[4,0],[0,4],[4,4] ] ) ) $mults['corners'] = 2.5;
+        if ( $all( [ [0,0],[1,0],[2,0],[3,0],[4,0],[1,1],[3,1],[2,2],[2,3],[1,4],[2,4],[3,4] ] ) ) $mults['wine'] = 5;
+        if ( $all( [ [0,0],[1,0],[2,0],[3,0],[4,0],[3,1],[2,2],[1,3],[0,4] ] ) ) $mults['lucky7'] = 8;
+        if ( $d1 && $d2 ) $mults['xpattern'] = 15;
+
+        $payout = 0;
+        foreach ( $mults as $m ) {
+            $payout += (int) floor( $bet * $m );
+        }
+        return [ $payout, array_keys( $mults ) ];
+    }
+
     public function fishotel_casino_bingo_buy() {
         check_ajax_referer( 'fishotel_casino_nonce', 'nonce' );
         $uid = get_current_user_id();
         if ( ! $uid ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
 
-        $bet = max( 1, (int) sanitize_text_field( $_POST['bet'] ?? 0 ) );
-        if ( $bet > $this->get_chips( $uid ) ) {
+        $bet = $this->read_bet();
+        // features-6: atomic debit doubles as the authoritative balance check.
+        if ( $bet > $this->get_chips( $uid ) || ! $this->deduct_chips( $uid, $bet ) ) {
             wp_send_json_error( [ 'message' => 'Not enough chips.' ] );
         }
 
-        $this->deduct_chips( $uid, $bet );
+        // features-1: the card AND the 35-ball draw are generated here and kept
+        // server-side (same transient pattern as blackjack) so cashout can
+        // recompute the winnings instead of trusting a number from the browser.
+        $card = $this->bingo_new_card();
+        $draw = range( 1, 75 );
+        shuffle( $draw );
+        $draw    = array_slice( $draw, 0, self::BINGO_BALLS );
+        $game_id = wp_rand( 100000, 999999 );
+        set_transient( "fhc_bingo_{$uid}_{$game_id}", [ 'bet' => $bet, 'card' => $card, 'draw' => $draw ], HOUR_IN_SECONDS );
 
         wp_send_json_success( [
-            'chips' => $this->get_chips( $uid ),
+            'chips'   => $this->get_chips( $uid ),
+            'game_id' => $game_id,
+            'card'    => $card,
+            'draw'    => $draw,
         ] );
     }
 
@@ -1038,8 +1221,25 @@ class FisHotel_Casino {
         $uid = get_current_user_id();
         if ( ! $uid ) wp_send_json_error( [ 'message' => 'Not logged in.' ] );
 
-        $bet      = max( 0, (int) sanitize_text_field( $_POST['bet'] ?? 0 ) );
-        $winnings = max( 0, (int) sanitize_text_field( $_POST['winnings'] ?? 0 ) );
+        // features-1: this used to credit whatever `winnings` the browser posted
+        // (unlimited chip minting). The posted bet/winnings are now ignored; the
+        // payout is recomputed from the card + draw stored at buy time.
+        $game_id = (int) sanitize_text_field( $_POST['game_id'] ?? 0 );
+        $key     = "fhc_bingo_{$uid}_{$game_id}";
+        $game    = $game_id ? get_transient( $key ) : false;
+        if ( ! is_array( $game ) || empty( $game['card'] ) || empty( $game['draw'] ) ) {
+            wp_send_json_error( [ 'message' => 'Game expired.' ] );
+        }
+        // Delete first and only pay when THIS request removed the record, so a
+        // replayed cashout cannot collect the same card twice.
+        if ( ! delete_transient( $key ) ) {
+            wp_send_json_error( [ 'message' => 'Game already cashed out.' ] );
+        }
+
+        $bet = max( 0, (int) $game['bet'] );
+        list( $winnings, $patterns ) = $this->bingo_payout( $game['card'], $game['draw'], $bet );
+        // Hard ceiling = every pattern at once (BINGO_MAX_MULT x the buy-in).
+        $winnings = min( $winnings, (int) floor( $bet * self::BINGO_MAX_MULT ) );
 
         if ( $winnings > 0 ) {
             $this->add_chips( $uid, $winnings );
@@ -1047,7 +1247,9 @@ class FisHotel_Casino {
         $this->record_game( $uid, 'bingo', $bet, $winnings );
 
         wp_send_json_success( [
-            'chips' => $this->get_chips( $uid ),
+            'chips'    => $this->get_chips( $uid ),
+            'winnings' => $winnings,
+            'patterns' => $patterns,
         ] );
     }
 
