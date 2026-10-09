@@ -182,7 +182,24 @@ trait FisHotel_WooCommerce {
     }
 
     public function handle_deposit_add_to_cart() {
+        // audit core-21: the wallet-refill link is built by wallet_deposit_shortcode()
+        // (class-shortcodes.php). Stamp a nonce onto that link via the shortcode
+        // output filter so the nonce contract lives next to the handler verifying it.
+        add_filter( 'do_shortcode_tag', [ $this, 'deposit_link_add_nonce' ], 10, 2 );
+
         if ( ! isset( $_GET['add-to-cart'] ) || $_GET['add-to-cart'] !== 'deposit' || ! isset( $_GET['amount'] ) ) return;
+        // core-21: outside the front end (wp-admin, REST, cron) WC()->cart is null and
+        // the calls below would fatal; there is nothing to do there anyway.
+        if ( ! function_exists( 'WC' ) || ! WC()->cart ) return;
+        // core-21: this ran on ANY request carrying ?add-to-cart=deposit, so a crafted
+        // link in an email/forum post emptied the victim's cart. Require the nonce the
+        // deposit page put on its own link; never touch the cart without it.
+        $nonce = sanitize_text_field( wp_unslash( $_GET['_fhnonce'] ?? '' ) );
+        if ( ! wp_verify_nonce( $nonce, 'fishotel_deposit_add' ) ) {
+            wc_add_notice( 'Your wallet refill link has expired. Please try again.', 'error' );
+            wp_safe_redirect( home_url( '/wallet-deposit' ) );
+            exit;
+        }
         $amount = floatval( $_GET['amount'] );
         if ( $amount <= 0 ) {
             wc_add_notice( 'Please enter a valid amount.', 'error' );
@@ -198,6 +215,20 @@ trait FisHotel_WooCommerce {
         wc_add_notice( 'Wallet Refill of $' . number_format( $amount, 2 ) . ' added to cart.', 'success' );
         wp_redirect( wc_get_checkout_url() );
         exit;
+    }
+
+    /**
+     * audit core-21: inject the nonce into the [fishotel_wallet_deposit] redirect
+     * URL. Matches the literal built in wallet_deposit_shortcode(); becomes a
+     * no-op once that markup carries `_fhnonce` itself.
+     */
+    public function deposit_link_add_nonce( $output, $tag ) {
+        if ( 'fishotel_wallet_deposit' !== $tag || ! is_string( $output ) ) return $output;
+        return str_replace(
+            '?add-to-cart=deposit&amount=',
+            '?add-to-cart=deposit&_fhnonce=' . rawurlencode( wp_create_nonce( 'fishotel_deposit_add' ) ) . '&amount=',
+            $output
+        );
     }
 
     public function restore_deposit_cart_item( $cart_item, $values, $key ) {
@@ -590,10 +621,26 @@ trait FisHotel_WooCommerce {
         if ( ! $order instanceof WC_Order ) {
             return '';
         }
-        if ( function_exists( 'fishotel_get_effective_delivery_date' ) ) {
-            return (string) fishotel_get_effective_delivery_date( $order );
+        $date = function_exists( 'fishotel_get_effective_delivery_date' )
+            ? (string) fishotel_get_effective_delivery_date( $order )
+            : (string) $order->get_meta( '_fishotel_shipping_date' );
+
+        // audit core-6 (conservative part): a stale open order (shipped but never
+        // marked, or a lapsed on-hold payment) can carry a delivery date that has
+        // already passed; inheriting it stamped that past date onto the new order
+        // and skipped the picker. Only lock onto dates that are today or later
+        // (site time zone, same calendar as the theme's self-serve picker) and
+        // fall through to the normal picker otherwise. Whether dates inside the
+        // lead-time window should also fall through is Jeff's call — left as-is.
+        if ( '' !== $date ) {
+            $tz    = wp_timezone();
+            $day   = DateTimeImmutable::createFromFormat( '!Y-m-d', $date, $tz );
+            $today = new DateTimeImmutable( 'today', $tz );
+            if ( $day && $day < $today ) {
+                return '';
+            }
         }
-        return (string) $order->get_meta( '_fishotel_shipping_date' );
+        return $date;
     }
 
     public function fishotel_shipping_date_field( $checkout ) {
@@ -669,6 +716,17 @@ trait FisHotel_WooCommerce {
      */
     public function fishotel_shipping_date_validate_backup( $data, $errors ) {
         if ( ! $this->fishotel_cart_contains_fish() ) return;
+
+        // audit core-18: on the classic checkout both hooks fire inside the same
+        // process_checkout() call (woocommerce_checkout_process first, then this
+        // one from validate_checkout) and WC turns $errors into notices too, so the
+        // primary validator's message was listed twice. Skip when it already
+        // flagged the delivery date; this hook still catches anything that bypassed it.
+        if ( function_exists( 'wc_has_notice' )
+            && ( wc_has_notice( 'Please select a delivery date.', 'error' )
+                || wc_has_notice( 'The selected delivery date is not available. Please choose a different date.', 'error' ) ) ) {
+            return;
+        }
 
         $date = sanitize_text_field( $_POST['fishotel_shipping_date'] ?? '' );
 

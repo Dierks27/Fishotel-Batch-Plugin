@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.24 - Repeat-customer fish checkout inherits the delivery date from their open order (re-order date lock, Piece 1).
- * Version:           10.24
+ * Description:       v10.25 - Audit fixes: Settings save no longer wipes delivery days; invoices read the real selling price; invoice login nonce; server-side request validation; deposit refunds use the recorded amount; invoice pre-flight; cron and deposit-link nonces; North Star fetch budget; bingo and chip ledger hardened; past re-order dates fall through to the picker.
+ * Version:           10.25
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */

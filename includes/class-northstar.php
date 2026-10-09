@@ -5,6 +5,23 @@
  */
 trait FisHotel_NorthStar {
 
+    /**
+     * Per-call fetch budget for ajax_northstar_fetch (wall-clock deadline + request cap).
+     * One admin-ajax call used to issue hundreds of sequential HTTP requests with no limit; a
+     * web-server/proxy read timeout then killed the whole run with nothing cached. The budget
+     * makes the call stop early and return partial results with a clear message instead.
+     */
+    private $ns_budget = [ 'deadline' => 0.0, 'max_requests' => 0, 'requests' => 0, 'exhausted' => false, 'truncated' => false ];
+
+    private function northstar_budget_exhausted(): bool {
+        if ( empty( $this->ns_budget['deadline'] ) ) return false; // no budget armed (not inside a fetch)
+        if ( $this->ns_budget['exhausted'] ) return true;
+        if ( microtime( true ) >= $this->ns_budget['deadline'] || $this->ns_budget['requests'] >= $this->ns_budget['max_requests'] ) {
+            $this->ns_budget['exhausted'] = true;
+        }
+        return $this->ns_budget['exhausted'];
+    }
+
     private function get_northstar_categories(): array {
         return [
             '4422867000000439035' => 'All Marine Fish',
@@ -52,8 +69,13 @@ trait FisHotel_NorthStar {
                 $url = add_query_arg( 'page_number', $page, $url );
             }
 
+            // Stop paging once the per-call budget is used up (returns what was fetched so far) and
+            // flag it, so the caller reports this category as incomplete instead of complete.
+            if ( $this->northstar_budget_exhausted() ) { $this->ns_budget['truncated'] = true; break; }
+            $this->ns_budget['requests']++;
+
             $response = wp_remote_get( $url, [
-                'timeout' => 30,
+                'timeout' => 15, // was 30: a list page answers in a few seconds; a stuck one must not eat the whole budget
                 'headers' => [
                     'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                     'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -148,7 +170,14 @@ trait FisHotel_NorthStar {
         return $products;
     }
 
-    private function northstar_fetch_stock_quantities( array &$products ): void {
+    /**
+     * Fills $products[i]['qty'] for in-stock items (one product page each).
+     * Returns the number of in-stock items left WITHOUT a qty because the per-call budget ran out.
+     * Those get qty = null plus qty_missing = true (never 0): a fetched-zero item and a not-fetched
+     * item must stay distinguishable, because the import stores qty as the batch _stock and a 0
+     * there renders the fish as "Void" on the gate page.
+     */
+    private function northstar_fetch_stock_quantities( array &$products ): int {
         $in_stock_indices = [];
         foreach ( $products as $i => $p ) {
             if ( $p['stock'] === 'in_stock' ) {
@@ -159,15 +188,27 @@ trait FisHotel_NorthStar {
         }
 
         $total = count( $in_stock_indices );
-        if ( $total === 0 ) return;
+        if ( $total === 0 ) return 0;
 
-        $done = 0;
+        $done    = 0;
+        $skipped = 0;
         foreach ( $in_stock_indices as $i ) {
+            // Budget check before every request: leave remaining items without a qty rather than
+            // run past the web-server timeout and lose everything. Mark them explicitly so the
+            // table, the cache and the import can tell "not fetched" from "fetched, 0 in stock".
+            if ( $this->northstar_budget_exhausted() ) {
+                $products[ $i ]['qty']         = null;
+                $products[ $i ]['qty_missing'] = true;
+                $skipped++;
+                continue;
+            }
+            $this->ns_budget['requests']++;
+
             $href = $products[ $i ]['href'];
             $url  = 'https://www.northstaraquatics.com' . $href;
 
             $response = wp_remote_get( $url, [
-                'timeout' => 15,
+                'timeout' => 10, // was 15: one product page; keep a slow one from eating the budget
                 'headers' => [
                     'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                     'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -200,6 +241,8 @@ trait FisHotel_NorthStar {
 
             usleep( 300000 ); // 0.3s delay
         }
+
+        return $skipped;
     }
 
     // ─── Master fish lookup with size-variant stripping ────────────────
@@ -302,13 +345,41 @@ trait FisHotel_NorthStar {
             $cat_ids = array_values( $cat_ids );
         }
 
+        // Arm the per-call budget. PHP's max_execution_time does not count time blocked in curl
+        // on Linux, so the real killer is the web-server/proxy read timeout (commonly 60s): stay
+        // under it and return partial results instead of dying with nothing cached.
+        if ( function_exists( 'wc_set_time_limit' ) ) {
+            wc_set_time_limit( 0 );
+        } elseif ( function_exists( 'set_time_limit' ) ) {
+            @set_time_limit( 0 );
+        }
+        $budget_seconds = max( 5, (int) apply_filters( 'fishotel_northstar_fetch_budget_seconds', 40 ) );
+        $max_requests   = max( 1, (int) apply_filters( 'fishotel_northstar_fetch_max_requests', 200 ) );
+        $this->ns_budget = [
+            'deadline'     => microtime( true ) + $budget_seconds,
+            'max_requests' => $max_requests,
+            'requests'     => 0,
+            'exhausted'    => false,
+            'truncated'    => false,
+        ];
+
         $all_products = [];
         $seen = [];
         $errors = [];
+        $skipped_categories = [];
 
         foreach ( $cat_ids as $cid ) {
             $label = $categories[ $cid ] ?? $cid;
+
+            if ( $this->northstar_budget_exhausted() ) {
+                $skipped_categories[] = $label;
+                continue;
+            }
+
             $fetched = $this->northstar_fetch_category( $cid );
+
+            // Paging stopped early for this category: list it as incomplete, not as fully fetched.
+            if ( ! empty( $this->ns_budget['truncated'] ) ) { $skipped_categories[] = $label . ' (incomplete)'; $this->ns_budget['truncated'] = false; }
 
             if ( empty( $fetched ) ) {
                 $errors[] = $label;
@@ -326,17 +397,58 @@ trait FisHotel_NorthStar {
             if ( count( $cat_ids ) > 1 ) usleep( 500000 ); // 0.5s between categories
         }
 
-        // Second pass: fetch stock quantities for in-stock items only
-        $this->northstar_fetch_stock_quantities( $all_products );
-
+        // Cache the category pass right away so a timeout during the (much longer) per-product
+        // quantity pass still leaves the product list available on reload. This interim cache is
+        // marked partial: whoever reads it (a reload after a timeout) must be told that no in-stock
+        // item has a quantity yet, otherwise the table shows "—" with no explanation and an import
+        // would store every fish with _stock = 0. The final write below replaces these markers.
         $fetched_at = current_time( 'mysql' );
-        $cache = [ 'products' => $all_products, 'fetched_at' => $fetched_at ];
+        $in_stock_total = count( array_filter( $all_products, function( $p ) { return ( $p['stock'] ?? '' ) === 'in_stock'; } ) );
+        set_transient( 'fishotel_northstar_cache', [
+            'products'           => $all_products,
+            'fetched_at'         => $fetched_at,
+            'partial'            => true,
+            'partial_message'    => 'The quantity pass did not finish (the fetch was cut off): ' . $in_stock_total . ' in-stock item(s) have no quantity yet. Re-fetch (fewer categories at a time) before importing them.',
+            'skipped_categories' => $skipped_categories,
+            'qty_skipped'        => $in_stock_total,
+        ], HOUR_IN_SECONDS );
+
+        // Second pass: fetch stock quantities for in-stock items only
+        $qty_skipped = $this->northstar_fetch_stock_quantities( $all_products );
+
+        $partial_notes = [];
+        if ( ! empty( $skipped_categories ) ) {
+            $partial_notes[] = count( $skipped_categories ) . ' categor' . ( count( $skipped_categories ) === 1 ? 'y' : 'ies' ) . ' not fetched or incomplete (' . implode( ', ', $skipped_categories ) . ')';
+        }
+        if ( $qty_skipped > 0 ) {
+            $partial_notes[] = $qty_skipped . ' in-stock item(s) without a quantity (shown as "?", skipped by Import)';
+        }
+        $partial = $this->ns_budget['exhausted'];
+        $partial_message = $partial
+            ? 'Time budget reached (' . $budget_seconds . 's): ' . ( $partial_notes ? implode( '; ', $partial_notes ) : 'results may be incomplete' ) . '. Fetch fewer categories at a time for complete results.'
+            : '';
+
+        // Persist the partial markers with the products so a reload (or another admin) still sees
+        // the warning; the status line of this one response is otherwise the only place it appears.
+        $fetched_at = current_time( 'mysql' );
+        $cache = [
+            'products'           => $all_products,
+            'fetched_at'         => $fetched_at,
+            'partial'            => $partial,
+            'partial_message'    => $partial_message,
+            'skipped_categories' => $skipped_categories,
+            'qty_skipped'        => $qty_skipped,
+        ];
         set_transient( 'fishotel_northstar_cache', $cache, HOUR_IN_SECONDS );
 
         wp_send_json_success( [
-            'products'   => $all_products,
-            'fetched_at' => $fetched_at,
-            'errors'     => $errors,
+            'products'        => $all_products,
+            'fetched_at'      => $fetched_at,
+            'errors'          => $errors,
+            'partial'         => $partial,
+            'partial_message' => $partial_message,
+            'skipped_categories' => $skipped_categories,
+            'qty_skipped'     => $qty_skipped,
         ] );
     }
 
@@ -406,11 +518,13 @@ trait FisHotel_NorthStar {
         $imported = 0;
         $skipped = 0;
         $skipped_names = [];
+        $qty_missing = 0;
+        $qty_missing_names = [];
 
         foreach ( $items as $item ) {
-            $name  = sanitize_text_field( $item['name'] ?? '' );
-            $price = sanitize_text_field( $item['price'] ?? '' );
-            $qty   = intval( $item['qty'] ?? 0 );
+            $name    = sanitize_text_field( $item['name'] ?? '' );
+            $price   = sanitize_text_field( $item['price'] ?? '' );
+            $qty_raw = isset( $item['qty'] ) ? trim( (string) $item['qty'] ) : '';
 
             if ( empty( $name ) ) continue;
 
@@ -419,6 +533,16 @@ trait FisHotel_NorthStar {
                 $skipped_names[] = $name;
                 continue;
             }
+
+            // A non-numeric qty ('', 'null', ...) means the quantity was never fetched (budget ran
+            // out), not that the fish is out of stock. Storing it as _stock = 0 would make the fish
+            // "Void" on the gate page, so skip it and tell the admin to re-fetch instead.
+            if ( ! is_numeric( $qty_raw ) ) {
+                $qty_missing++;
+                $qty_missing_names[] = $name;
+                continue;
+            }
+            $qty = max( 0, intval( $qty_raw ) );
 
             // Find fish_master: exact match first, then try stripping size suffixes
             $master_id = $this->northstar_find_or_create_master( $name );
@@ -442,11 +566,13 @@ trait FisHotel_NorthStar {
         }
 
         wp_send_json_success( [
-            'imported'      => $imported,
-            'skipped'       => $skipped,
-            'skipped_names' => $skipped_names,
-            'titles_fixed'  => $fixed,
-            'meta_fixed'    => $meta_fixed,
+            'imported'          => $imported,
+            'skipped'           => $skipped,
+            'skipped_names'     => $skipped_names,
+            'qty_missing'       => $qty_missing,
+            'qty_missing_names' => $qty_missing_names,
+            'titles_fixed'      => $fixed,
+            'meta_fixed'        => $meta_fixed,
         ] );
     }
 
@@ -500,6 +626,9 @@ trait FisHotel_NorthStar {
         $cache = get_transient( 'fishotel_northstar_cache' );
         $cached_products = $cache ? $cache['products'] : [];
         $fetched_at = $cache ? $cache['fetched_at'] : '';
+        // Partial-fetch markers saved with the cache (see ajax_northstar_fetch) so the warning
+        // survives a reload instead of living only in one fetch response's status line.
+        $cached_partial_message = ( $cache && ! empty( $cache['partial'] ) ) ? (string) ( $cache['partial_message'] ?? 'The last fetch was cut short; some quantities are missing. Re-fetch before importing.' ) : '';
 
         $batches_str = get_option( 'fishotel_batches', '' );
         $batches_array = array_filter( array_map( 'trim', explode( "\n", $batches_str ) ) );
@@ -544,6 +673,8 @@ trait FisHotel_NorthStar {
                 <span id="ns-fetched-at" style="color:#888;font-size:13px;"><?php echo $fetched_at ? 'Last fetched: ' . esc_html( $fetched_at ) : ''; ?></span>
                 <button type="button" id="ns-refresh-btn" style="background:#2a2a2a;color:#2986cc;border:1px solid #555;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:13px;margin-left:auto;">Refresh</button>
             </div>
+            <!-- Persistent partial-fetch warning (filled from the cache on load, updated after each fetch) -->
+            <div id="ns-partial-banner" style="background:#2a2a2a;border:1px solid #e67e22;border-radius:6px;padding:10px 14px;margin-bottom:14px;color:#e67e22;font-size:13px;<?php echo $cached_partial_message === '' ? 'display:none;' : ''; ?>"><strong>Incomplete fetch:</strong> <span id="ns-partial-text"><?php echo esc_html( $cached_partial_message ); ?></span></div>
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:14px;">
                 <input type="text" id="ns-search" placeholder="Search by name..." style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:8px 12px;border-radius:4px;width:260px;font-size:14px;">
                 <label style="color:#ddd;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;">
@@ -597,6 +728,21 @@ trait FisHotel_NorthStar {
                 document.querySelectorAll('.ns-cat-cb').forEach(function(cb){ cb.checked = false; });
             });
 
+            // In-stock item whose quantity was never fetched (budget ran out, or the quantity pass
+            // was cut off before it got there). Distinct from "fetched, 0 in stock" (qty === 0).
+            function qtyMissing(p){
+                return p.stock === 'in_stock' && ( p.qty_missing || p.qty === null || typeof p.qty === 'undefined' );
+            }
+
+            // Show/hide the persistent partial-fetch banner.
+            function setPartialBanner(msg){
+                var banner = document.getElementById('ns-partial-banner');
+                var text   = document.getElementById('ns-partial-text');
+                if ( ! banner || ! text ) return;
+                text.textContent = msg || '';
+                banner.style.display = msg ? '' : 'none';
+            }
+
             // ─── Render table ───────────────────────────────
             function renderTable(){
                 var tbody = document.getElementById('ns-tbody');
@@ -604,12 +750,15 @@ trait FisHotel_NorthStar {
                 var inStockOnly = document.getElementById('ns-instock-filter').checked;
                 var html = '';
                 var shown = 0;
-                var hasQtyData = products.some(function(p){ return typeof p.qty !== 'undefined'; });
+                var missingCount = products.filter(qtyMissing).length;
 
-                // Show hint on Qty header if cached data lacks qty
+                // Qty header hint: the old "any product has a qty" test never fired after a cut-short
+                // fetch (out-of-stock rows always carry qty 0), so count the rows actually missing one.
                 var qtyHeader = document.getElementById('ns-qty-header');
                 if ( qtyHeader ) {
-                    qtyHeader.innerHTML = hasQtyData ? 'Qty' : 'Qty <span style="display:block;font-size:10px;font-weight:400;color:#888;">(re-fetch to update)</span>';
+                    qtyHeader.innerHTML = missingCount
+                        ? 'Qty <span style="display:block;font-size:10px;font-weight:400;color:#e67e22;">(' + missingCount + ' not fetched — re-fetch)</span>'
+                        : 'Qty';
                 }
 
                 for ( var i = 0; i < products.length; i++ ) {
@@ -623,7 +772,10 @@ trait FisHotel_NorthStar {
                         : '<span style="background:#c0392b;color:#fff;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:600;">Out of Stock</span>';
 
                     var qtyDisplay = '—';
-                    if ( typeof p.qty !== 'undefined' ) {
+                    if ( qtyMissing(p) ) {
+                        // "?" not "—": this row has no quantity yet and Import will skip it.
+                        qtyDisplay = '<span title="Quantity not fetched (fetch stopped early). Re-fetch before importing." style="color:#e67e22;font-weight:700;cursor:help;">?</span>';
+                    } else if ( typeof p.qty !== 'undefined' && p.qty !== null ) {
                         qtyDisplay = p.stock === 'in_stock' ? (p.qty > 0 ? p.qty : '—') : '0';
                     }
 
@@ -692,6 +844,12 @@ trait FisHotel_NorthStar {
                             if ( res.data.errors && res.data.errors.length ) {
                                 msg += ' Failed: ' + res.data.errors.join(', ');
                             }
+                            // Server stops early once its per-call time budget is used up; say so,
+                            // both in the status line and in the persistent banner above the table.
+                            if ( res.data.partial && res.data.partial_message ) {
+                                msg += ' ' + res.data.partial_message;
+                            }
+                            setPartialBanner( res.data.partial ? res.data.partial_message : '' );
                             status.textContent = msg;
                         } else {
                             status.textContent = 'Error: ' + (res.data || 'Unknown error');
@@ -712,13 +870,24 @@ trait FisHotel_NorthStar {
                 var checked = document.querySelectorAll('.ns-row-cb:checked');
                 if ( ! checked.length ) { alert('Select at least one fish to import.'); return; }
 
-                var items = [];
+                // Rows whose quantity was never fetched are left out: importing them would store
+                // _stock = 0 and show the fish as "Void" on the gate page even though North Star has
+                // it in stock. The admin re-fetches and imports them afterwards (duplicates are skipped).
+                var items = [], missing = [];
                 checked.forEach(function(cb){
                     var p = products[ parseInt(cb.dataset.idx) ];
+                    if ( qtyMissing(p) ) { missing.push(p.name); return; }
                     items.push({ name: p.name, price: p.price, qty: p.qty || 0 });
                 });
 
-                if ( ! confirm('Import ' + items.length + ' items into "' + batch + '"?') ) return;
+                if ( missing.length && ! items.length ) {
+                    alert('None of the selected fish have a quantity yet (the fetch stopped early). Re-fetch fewer categories at a time, then import.');
+                    return;
+                }
+                var question = missing.length
+                    ? missing.length + ' of the selected fish have no quantity yet (the fetch stopped early) and will be SKIPPED — re-fetch to get their quantities, then import them.\n\nImport the other ' + items.length + ' into "' + batch + '" now?'
+                    : 'Import ' + items.length + ' items into "' + batch + '"?';
+                if ( ! confirm(question) ) return;
 
                 var btn = document.getElementById('ns-import-btn');
                 var status = document.getElementById('ns-import-status');
@@ -748,6 +917,9 @@ trait FisHotel_NorthStar {
                                 if ( res.data.skipped_names && res.data.skipped_names.length ) {
                                     msg += ' (' + res.data.skipped_names.join(', ') + ')';
                                 }
+                            }
+                            if ( res.data.qty_missing ) {
+                                msg += ', skipped ' + res.data.qty_missing + ' without a quantity (re-fetch first)';
                             }
                             if ( res.data.titles_fixed ) {
                                 msg += ', fixed ' + res.data.titles_fixed + ' titles';
