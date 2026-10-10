@@ -429,6 +429,56 @@ trait FisHotel_Admin {
                     </div>
                 </form>
             </div>
+
+            <?php
+            // Read-only preview of what the checkout offers right now. Same rules
+            // instance as the checkout (rebuilt above if the save changed an option);
+            // nothing here is saved. No orders-list filter by delivery date exists
+            // yet (ShipTracker only adds a sortable column), so counts are plain text.
+            $rules        = fishotel_delivery_rules();
+            $preview      = $rules->calendar( null, 30 );
+            $status_label = [
+                FisHotel_Delivery_Rules::CODE_OK          => [ 'Open',                           '#2ecc71' ],
+                FisHotel_Delivery_Rules::CODE_FULL        => [ 'Full',                           '#f39c12' ],
+                FisHotel_Delivery_Rules::CODE_CLOSED_DAY  => [ 'Closed — not a delivery day',    '#888'    ],
+                FisHotel_Delivery_Rules::CODE_BLACKLISTED => [ 'Closed — blocked date',          '#c0392b' ],
+                FisHotel_Delivery_Rules::CODE_TOO_SOON    => [ 'Closed — inside lead time',      '#888'    ],
+                FisHotel_Delivery_Rules::CODE_TOO_FAR     => [ 'Closed — beyond max days ahead', '#888'    ],
+            ];
+            ?>
+            <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;max-width:700px;margin-top:20px;">
+                <h3 style="color:#2986cc;margin:0 0 6px;font-size:1em;text-transform:uppercase;letter-spacing:1px;">&#128197; Next 30 Days</h3>
+                <p style="color:#aaa;font-size:12px;margin:0 0 14px;">
+                    What the checkout offers right now, computed in <?php echo esc_html( $rules->timezone()->getName() ); ?>
+                    (now: <?php echo esc_html( $rules->now()->format( 'D, M j, Y g:i a' ) ); ?>).
+                    Booked = processing, on-hold and fulfillment orders for that delivery date; combined boxes count once; unpaid (pending) orders do not count.
+                </p>
+                <table style="width:100%;border-collapse:collapse;font-size:13px;color:#ddd;">
+                    <thead>
+                        <tr style="border-bottom:1px solid #444;">
+                            <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Date</th>
+                            <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Status</th>
+                            <th style="text-align:right;padding:6px 8px;color:#aaa;font-weight:600;">Booked / Capacity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ( $preview as $row ) :
+                        $meta  = $status_label[ $row['code'] ] ?? [ 'Closed', '#888' ];
+                        $cap   = $row['capacity'] > 0 ? (string) $row['capacity'] : '∞';
+                        $over  = $row['capacity'] > 0 && $row['booked'] > $row['capacity'];
+                        $dim   = $row['open'] ? '' : 'opacity:.75;';
+                    ?>
+                        <tr style="border-bottom:1px solid #2e2e2e;<?php echo esc_attr( $dim ); ?>">
+                            <td style="padding:6px 8px;white-space:nowrap;"><?php echo esc_html( $row['long_label'] ); ?></td>
+                            <td style="padding:6px 8px;color:<?php echo esc_attr( $meta[1] ); ?>;" title="<?php echo esc_attr( $row['message'] ); ?>"><?php echo esc_html( $meta[0] ); ?></td>
+                            <td style="padding:6px 8px;text-align:right;white-space:nowrap;<?php echo $over ? 'color:#e74c3c;font-weight:700;' : ''; ?>">
+                                <?php echo esc_html( $row['booked'] . ' / ' . $cap ); ?><?php if ( $over ) : ?> <span style="font-size:11px;">(over)</span><?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <script>
