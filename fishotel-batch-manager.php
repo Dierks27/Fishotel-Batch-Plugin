@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.25 - Audit fixes: Settings save no longer wipes delivery days; invoices read the real selling price; invoice login nonce; server-side request validation; deposit refunds use the recorded amount; invoice pre-flight; cron and deposit-link nonces; North Star fetch budget; bingo and chip ledger hardened; past re-order dates fall through to the picker.
- * Version:           10.25
+ * Description:       v10.26 - Single delivery-rules module (FisHotel_Delivery_Rules): checkout dropdown, validators, safety net and admin date field all share one timezone-correct rule set; pending orders no longer hold capacity; combined boxes count once; Delivery page gets a read-only "Next 30 days" preview; fishotel_delivery_rules() for the theme to delegate to.
+ * Version:           10.26
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,11 +11,12 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.24' );
+define( 'FISHOTEL_VERSION', '10.26' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-helpers.php';
+require_once FISHOTEL_PLUGIN_DIR . 'includes/class-delivery-rules.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ajax.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-woocommerce.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-shortcodes.php';
@@ -1076,6 +1077,7 @@ $fishotel_instance = new FisHotel_Batch_Manager();
 new FisHotel_Casino();
 new FisHotel_Arcade();
 new FisHotel_GitHub_Updater( __FILE__ );
+FisHotel_Delivery_Rules::register_hooks(); // rebuild the memoised rules when a fishotel_shipping_* option changes
 
 register_activation_hook( __FILE__, function() {
     if ( ! wp_next_scheduled( 'fishotel_verification_cron' ) ) {
