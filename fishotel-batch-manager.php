@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.26 - Single delivery-rules module (FisHotel_Delivery_Rules): checkout dropdown, validators, safety net and admin date field all share one timezone-correct rule set; pending orders no longer hold capacity; combined boxes count once; Delivery page gets a read-only "Next 30 days" preview; fishotel_delivery_rules() for the theme to delegate to.
- * Version:           10.26
+ * Description:       v10.27 - Ship Day tab: Step 8 pick list + weather overview built server-side (fulfillment wrappers, Invoice products expanded, Weather section meta)
+ * Version:           10.27
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,12 +11,13 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.26' );
+define( 'FISHOTEL_VERSION', '10.27' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-helpers.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-delivery-rules.php';
+require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ship-day.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ajax.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-woocommerce.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-shortcodes.php';
@@ -282,7 +283,8 @@ class FisHotel_Batch_Manager {
         // Invoicing AJAX
         add_action( 'wp_ajax_fishotel_generate_invoices',      [$this, 'ajax_generate_invoices'] );
         add_action( 'wp_ajax_fishotel_get_unpaid_invoices',    [$this, 'ajax_get_unpaid_invoices'] );
-        add_action( 'wp_ajax_fishotel_get_packing_list',       [$this, 'ajax_get_packing_list'] );
+        add_action( 'wp_ajax_fishotel_get_packing_list',       [$this, 'ajax_get_packing_list'] ); // legacy Packing Lists (kept for back-compat)
+        add_action( 'wp_ajax_fishotel_get_ship_day',           [$this, 'ajax_get_ship_day'] );
 
         add_action( 'woocommerce_after_checkout_form', [$this, 'add_return_to_fish_button'] );
         add_action( 'woocommerce_thankyou', [$this, 'add_return_to_fish_button'] );

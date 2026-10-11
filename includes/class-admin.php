@@ -5163,6 +5163,9 @@ trait FisHotel_Admin {
         }
 
         $tab      = sanitize_key( $_GET['tab'] ?? 'unpaid' );
+        if ( $tab === 'packing' ) {
+            $tab = 'ship-day'; // old bookmark alias
+        }
         $ajax_url = admin_url( 'admin-ajax.php' );
 
         // Batches in invoicing stage
@@ -5170,14 +5173,23 @@ trait FisHotel_Admin {
         $invoicing_batches = array_keys( array_filter( $statuses, fn( $s ) => $s === 'invoicing' ) );
 
         $unpaid_nonce   = wp_create_nonce( 'fishotel_unpaid_invoices' );
-        $packing_nonce  = wp_create_nonce( 'fishotel_packing_list' );
+        $ship_day_nonce = wp_create_nonce( FisHotel_Ship_Day::NONCE_ACTION );
+
+        // Ship Day: upcoming delivery dates with open orders (one query), default = the next one.
+        $sd_upcoming = [];
+        $sd_default  = '';
+        if ( $tab === 'ship-day' && class_exists( 'FisHotel_Ship_Day' ) && function_exists( 'wc_get_orders' ) ) {
+            $sd_upcoming = FisHotel_Ship_Day::upcoming_dates();
+            $sd_default  = FisHotel_Ship_Day::default_date( $sd_upcoming );
+        }
+        $sd_rules = function_exists( 'fishotel_delivery_rules' ) ? fishotel_delivery_rules() : null;
         ?>
         <div class="wrap">
         <h1>Invoicing</h1>
 
         <nav class="nav-tab-wrapper" style="margin-bottom:20px;">
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-invoicing&tab=unpaid' ) ); ?>" class="nav-tab<?php echo $tab === 'unpaid' ? ' nav-tab-active' : ''; ?>">Unpaid Invoices</a>
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-invoicing&tab=packing' ) ); ?>" class="nav-tab<?php echo $tab === 'packing' ? ' nav-tab-active' : ''; ?>">Packing Lists</a>
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-invoicing&tab=ship-day' ) ); ?>" class="nav-tab<?php echo $tab === 'ship-day' ? ' nav-tab-active' : ''; ?>">Ship Day</a>
         </nav>
 
         <?php if ( $tab === 'unpaid' ) : ?>
@@ -5225,32 +5237,100 @@ trait FisHotel_Admin {
             </div>
         </div>
 
-        <?php elseif ( $tab === 'packing' ) : ?>
+        <?php elseif ( $tab === 'ship-day' ) : ?>
 
-        <!-- ═══ TAB: Packing Lists ═══ -->
-        <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;max-width:900px;" class="fh-no-print">
-            <h2 style="color:#2986cc;margin-top:0;font-size:1.1em;">Packing Lists</h2>
-            <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Generate a print-ready packing list for all paid orders with a given delivery date.</p>
+        <!-- ═══ TAB: Ship Day ═══ -->
+        <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;max-width:960px;" class="fh-no-print">
+            <h2 style="color:#2986cc;margin-top:0;font-size:1.1em;">Ship Day</h2>
+            <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Step 8 of the order routine, built here: the pick list (one row per fish, Invoice products expanded, combined boxes as one destination) and the weather overview from the Weather section's notes. Pick a delivery date — the box ships the day before.</p>
 
-            <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:20px;">
-                <div>
-                    <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Delivery Date</label>
-                    <input type="date" id="fh-pack-date" style="padding:7px 10px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">
-                </div>
-                <button id="fh-pack-generate" style="background:#1e6fa5;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Generate Packing List</button>
-                <button id="fh-pack-print" style="display:none;background:#1a3a5c;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">&#128438; Print</button>
-                <span id="fh-pack-spinner" style="display:none;color:#aaa;font-size:13px;">&#8987; Loading&hellip;</span>
+            <?php if ( ! function_exists( 'wc_get_orders' ) ) : ?>
+                <p style="color:#e74c3c;font-size:13px;">WooCommerce is not active — nothing to list.</p>
+            <?php endif; ?>
+
+            <?php if ( $sd_upcoming ) : ?>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;" id="fh-sd-chips">
+                <?php foreach ( $sd_upcoming as $sd_date => $sd_count ) :
+                    $sd_label = $sd_rules ? $sd_rules->format_label( $sd_date, FisHotel_Delivery_Rules::LABEL_SHORT ) : FisHotel_Ship_Day::label( $sd_date, 'D, M j' );
+                ?>
+                <button type="button" class="fh-sd-datechip<?php echo $sd_date === $sd_default ? ' is-active' : ''; ?>" data-date="<?php echo esc_attr( $sd_date ); ?>"><?php echo esc_html( $sd_label ); ?> &middot; <?php echo (int) $sd_count; ?></button>
+                <?php endforeach; ?>
             </div>
-            <div id="fh-pack-error" style="display:none;color:#e74c3c;font-size:13px;margin-bottom:10px;"></div>
+            <?php else : ?>
+                <p style="color:#aaa;font-size:13px;margin-bottom:14px;">No open orders deliver in the next <?php echo (int) FisHotel_Ship_Day::LOOKAHEAD; ?> days.</p>
+            <?php endif; ?>
+
+            <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px;">
+                <div>
+                    <label for="fh-sd-date" style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Delivery Date</label>
+                    <input type="date" id="fh-sd-date" value="<?php echo esc_attr( $sd_default ); ?>" style="padding:7px 10px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">
+                </div>
+                <label style="color:#ddd;font-size:13px;display:flex;align-items:center;gap:6px;padding-bottom:8px;">
+                    <input type="checkbox" id="fh-sd-slips" value="1"> Also print per-order packing slips
+                </label>
+                <button id="fh-sd-generate" style="background:#1e6fa5;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Build Ship Day</button>
+                <span id="fh-sd-spinner" style="display:none;color:#aaa;font-size:13px;">&#8987; Loading&hellip;</span>
+            </div>
+            <div id="fh-sd-error" style="display:none;color:#e74c3c;font-size:13px;margin-bottom:10px;"></div>
         </div>
 
-        <div id="fh-pack-output" style="margin-top:16px;"></div>
+        <div id="fh-sd-output" style="margin-top:16px;"></div>
 
         <?php endif; ?>
         </div><!-- .wrap -->
 
         <style>
-        /* Packing list print styles */
+        /* Ship Day — screen block (dark) */
+        .fh-sd-datechip { background:#2a2a2a; color:#ddd; border:1px solid #555; border-radius:16px; padding:5px 12px; font-size:12px; cursor:pointer; }
+        .fh-sd-datechip.is-active { background:#1e6fa5; border-color:#1e6fa5; color:#fff; }
+        .fh-sd-screen { background:#1e1e1e; border:1px solid #444; border-radius:8px; padding:20px 24px; max-width:960px; color:#ddd; margin-bottom:16px; }
+        .fh-sd-screen h3 { color:#2986cc; margin:0; font-size:1.05em; }
+        .fh-sd-screen h4 { color:#2986cc; margin:16px 0 6px; font-size:0.95em; }
+        .fh-sd-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+        .fh-sd-print-btn { background:#1e6fa5; color:#fff; font-weight:700; border:none; border-radius:6px; padding:8px 24px; font-size:13px; cursor:pointer; }
+        .fh-sd-chips { display:flex; gap:8px; flex-wrap:wrap; }
+        .fh-sd-chip { background:#2a2a2a; border:1px solid #555; border-radius:16px; padding:4px 12px; font-size:12px; color:#ddd; }
+        .fh-sd-chip strong { color:#fff; font-size:13px; }
+        .fh-sd-chip--blue { border-color:#4a90c8; } .fh-sd-chip--orange { border-color:#d98a3a; } .fh-sd-chip--red { border-color:#c0392b; } .fh-sd-chip--amber { border-color:#d4a72c; } .fh-sd-chip--grey { border-color:#777; }
+        .fh-sd-warn { color:#f0c060; font-size:13px; margin:12px 0 0; }
+        .fh-sd-warn a { color:#2986cc; }
+        .fh-sd-empty { color:#aaa; font-size:13px; margin:8px 0 0; }
+        .fh-sd-attention { margin:0; padding-left:18px; font-size:13px; color:#ddd; }
+        .fh-sd-attention li { margin:3px 0; }
+        .fh-sd-attention a { color:#2986cc; }
+
+        /* Ship Day — print pages (white, letter portrait) */
+        .fh-sd-print { background:#fff; color:#000; padding:16px; border-radius:6px; max-width:8.5in; font-family:Arial, Helvetica, sans-serif; font-size:12px; }
+        .fh-sd-page { padding:0 0 24px; }
+        .fh-sd-page + .fh-sd-page, .fh-sd-slips { page-break-before:always; break-before:page; border-top:2px dashed #bbb; padding-top:20px; }
+        .fh-sd-page h1 { margin:0 0 4px; font-size:20px; color:#000; }
+        .fh-sd-sub { margin:0 0 12px; font-size:13px; color:#333; }
+        .fh-sd-table { width:100%; border-collapse:collapse; }
+        .fh-sd-table th { background:#333; color:#fff; padding:6px 8px; text-align:left; font-size:11px; }
+        .fh-sd-table td { padding:6px 8px; border-bottom:1px solid #ddd; vertical-align:top; font-size:12px; }
+        .fh-sd-table tr.fh-sd-row-first td { border-top:2px solid #999; }
+        .fh-sd-col-pick { width:34px; text-align:center; }
+        .fh-sd-col-qty { width:40px; text-align:center; }
+        .fh-sd-col-num { width:52px; text-align:right; }
+        .fh-sd-col-order { width:170px; }
+        .fh-sd-col-dest { width:190px; }
+        .fh-sd-box { display:inline-block; width:14px; height:14px; border:1.2px solid #000; background:#fff; }
+        .fh-sd-tag { color:#555; font-size:11px; }
+        .fh-sd-tag--warn { color:#a40000; font-weight:700; }
+        .fh-sd-sublabel { color:#666; font-size:10px; font-style:italic; }
+        .fh-sd-flag { color:#a40000; }
+        .fh-sd-foot { margin:10px 0 4px; font-size:12px; }
+        .fh-sd-legend { margin:0; font-size:10px; color:#444; }
+        .fh-sd-notes { margin:12px 0 0 18px; padding:0; font-size:11px; }
+        .fh-sd-notes li { margin:3px 0; }
+        .fh-sd-tone-green td { background:#dff5e1; }
+        .fh-sd-tone-blue td { background:#dbeeff; }
+        .fh-sd-tone-orange td { background:#ffe6cc; }
+        .fh-sd-tone-amber td { background:#ffe9a8; }
+        .fh-sd-tone-red td { background:#f8d0d0; }
+        .fh-sd-tone-grey td { background:#e6e6e6; }
+
+        /* Packing slip card styles (shared with the legacy packing list) */
         .fh-packing-list { font-family: Arial, sans-serif; font-size: 13px; color: #000; }
         .fh-packing-list-header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #000; padding-bottom: 12px; }
         .fh-packing-list-header h1 { margin: 0 0 6px; font-size: 22px; }
@@ -5268,12 +5348,19 @@ trait FisHotel_Admin {
         .fh-packing-notes p { margin: 4px 0; font-size: 13px; color: #555; }
         .fh-packing-signature { margin-top: 20px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 12px; color: #555; }
         .fh-packing-page-break { height: 0; }
-        #fh-pack-output { background: #fff; padding: 16px; border-radius: 6px; }
 
         @media print {
-            .fh-no-print, #adminmenumain, #wpadminbar, #wpfooter, .nav-tab-wrapper, h1 { display: none !important; }
-            body, #wpcontent, #wpbody, #wpbody-content { margin: 0 !important; padding: 0 !important; background: #fff !important; }
-            #fh-pack-output { padding: 0; }
+            @page { size: letter portrait; margin: 0.5in; }
+            .fh-no-print, #adminmenumain, #wpadminbar, #wpfooter, .nav-tab-wrapper, .wrap > h1, #screen-meta, #screen-meta-links, .notice, .update-nag { display: none !important; }
+            html, body, #wpcontent, #wpbody, #wpbody-content, .wrap { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+            #wpcontent { margin-left: 0 !important; }
+            #fh-sd-output { margin: 0; }
+            .fh-sd-print { padding: 0; max-width: none; border-radius: 0; }
+            .fh-sd-page + .fh-sd-page, .fh-sd-slips { border-top: none; padding-top: 0; }
+            .fh-sd-table { page-break-inside: auto; }
+            .fh-sd-table tr { page-break-inside: avoid; }
+            .fh-sd-table thead { display: table-header-group; }
+            .fh-sd-tone-green td, .fh-sd-tone-blue td, .fh-sd-tone-orange td, .fh-sd-tone-amber td, .fh-sd-tone-red td, .fh-sd-tone-grey td, .fh-sd-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .fh-packing-page-break { page-break-after: always; }
             .fh-packing-list-order { border: 1px solid #999; break-inside: avoid; }
         }
@@ -5336,42 +5423,68 @@ trait FisHotel_Admin {
                 });
             }
 
-            // ── Packing List ──
-            var packBtn = document.getElementById('fh-pack-generate');
-            if (packBtn) {
-                packBtn.addEventListener('click', function(){
-                    var date = document.getElementById('fh-pack-date').value;
+            // ── Ship Day ──
+            var sdBtn = document.getElementById('fh-sd-generate');
+            if (sdBtn) {
+                var sdDate   = document.getElementById('fh-sd-date');
+                var sdSlips  = document.getElementById('fh-sd-slips');
+                var sdOut    = document.getElementById('fh-sd-output');
+                var sdErr    = document.getElementById('fh-sd-error');
+                var sdSpin   = document.getElementById('fh-sd-spinner');
+                var sdChips  = document.querySelectorAll('.fh-sd-datechip');
+
+                function sdMarkChip(date) {
+                    for (var i = 0; i < sdChips.length; i++) {
+                        sdChips[i].classList.toggle('is-active', sdChips[i].getAttribute('data-date') === date);
+                    }
+                }
+
+                function sdLoad() {
+                    var date = sdDate.value;
                     if (!date) { alert('Please select a delivery date.'); return; }
-                    packBtn.disabled = true;
-                    document.getElementById('fh-pack-spinner').style.display = 'inline';
-                    document.getElementById('fh-pack-error').style.display = 'none';
-                    document.getElementById('fh-pack-print').style.display = 'none';
-                    document.getElementById('fh-pack-output').innerHTML = '';
+                    sdMarkChip(date);
+                    sdBtn.disabled = true;
+                    sdSpin.style.display = 'inline';
+                    sdErr.style.display = 'none';
+                    sdOut.innerHTML = '';
 
                     var fd = new FormData();
-                    fd.append('action', 'fishotel_get_packing_list');
-                    fd.append('nonce', '<?php echo esc_js( $packing_nonce ); ?>');
-                    fd.append('shipping_date', date);
+                    fd.append('action', 'fishotel_get_ship_day');
+                    fd.append('nonce', '<?php echo esc_js( $ship_day_nonce ); ?>');
+                    fd.append('delivery_date', date);
+                    fd.append('include_slips', sdSlips && sdSlips.checked ? '1' : '0');
                     fetch('<?php echo esc_js( $ajax_url ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
                         .then(function(r){ return r.json(); })
                         .then(function(resp){
-                            packBtn.disabled = false;
-                            document.getElementById('fh-pack-spinner').style.display = 'none';
+                            sdBtn.disabled = false;
+                            sdSpin.style.display = 'none';
                             if (!resp.success) {
-                                var errEl = document.getElementById('fh-pack-error');
-                                errEl.textContent = resp.data && resp.data.message ? resp.data.message : 'Error.';
-                                errEl.style.display = 'block';
+                                sdErr.textContent = resp.data && resp.data.message ? resp.data.message : 'Error.';
+                                sdErr.style.display = 'block';
                                 return;
                             }
-                            document.getElementById('fh-pack-output').innerHTML = resp.data.html;
-                            document.getElementById('fh-pack-print').style.display = 'inline-block';
+                            sdOut.innerHTML = resp.data.html;
+                            var printBtn = document.getElementById('fh-sd-print');
+                            if (printBtn) {
+                                printBtn.addEventListener('click', function(){ window.print(); });
+                            }
                         })
-                        .catch(function(){ packBtn.disabled = false; document.getElementById('fh-pack-spinner').style.display = 'none'; alert('Request failed.'); });
-                });
+                        .catch(function(){ sdBtn.disabled = false; sdSpin.style.display = 'none'; alert('Request failed.'); });
+                }
 
-                document.getElementById('fh-pack-print').addEventListener('click', function(){
-                    window.print();
-                });
+                sdBtn.addEventListener('click', sdLoad);
+                for (var c = 0; c < sdChips.length; c++) {
+                    sdChips[c].addEventListener('click', function(){
+                        sdDate.value = this.getAttribute('data-date');
+                        sdLoad();
+                    });
+                }
+                if (sdSlips) {
+                    sdSlips.addEventListener('change', function(){ if (sdOut.innerHTML !== '') { sdLoad(); } });
+                }
+                if (sdDate.value) {
+                    sdLoad(); // the next delivery date with open orders is pre-selected
+                }
             }
         })();
         </script>

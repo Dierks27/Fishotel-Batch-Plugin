@@ -68,6 +68,8 @@ class My_GitHub_Updater {
   - `class-hotel-program.php` — Hotel program features
   - `class-casino.php` / `class-arcade.php` — Gamification
   - `class-helpers.php` — Utility functions
+  - `class-delivery-rules.php` — Delivery-date rules (standalone class, `fishotel_delivery_rules()`)
+  - `class-ship-day.php` — Ship Day tab (pick list + weather overview)
   - `class-updater.php` — GitHub auto-updater (standalone class, not a trait)
 
 ## Versioning
