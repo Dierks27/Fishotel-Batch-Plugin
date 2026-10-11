@@ -1758,4 +1758,30 @@ trait FisHotel_Ajax {
         wp_send_json_success( [ 'html' => ob_get_clean() ] );
     }
 
+    /* ─────────────────────────────────────────────
+     *  Stage 7: Ship Day (pick list + weather overview)
+     * ───────────────────────────────────────────── */
+
+    /**
+     * Thin wrapper: nonce + capability, then FisHotel_Ship_Day::render() does the work.
+     * POST: delivery_date (Y-m-d), include_slips (0|1).
+     */
+    public function ajax_get_ship_day() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( (string) ( $_POST['nonce'] ?? '' ), FisHotel_Ship_Day::NONCE_ACTION ) ) {
+            wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
+        }
+        if ( ! class_exists( 'FisHotel_Ship_Day' ) ) {
+            wp_send_json_error( [ 'message' => 'Ship Day module not loaded.' ] );
+        }
+
+        $date  = sanitize_text_field( wp_unslash( (string) ( $_POST['delivery_date'] ?? '' ) ) );
+        $slips = '1' === (string) ( $_POST['include_slips'] ?? '0' );
+
+        $result = FisHotel_Ship_Day::render( $date, $slips );
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( [ 'message' => $result->get_error_message() ] );
+        }
+        wp_send_json_success( $result );
+    }
+
 }
