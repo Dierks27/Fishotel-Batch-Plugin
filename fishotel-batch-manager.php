@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.27 - Ship Day tab: Step 8 pick list + weather overview built server-side (fulfillment wrappers, Invoice products expanded, Weather section meta)
- * Version:           10.27
+ * Description:       v10.28 - HPOS-safe order meta (FisHotel_Order_Meta), store-agnostic order queries everywhere, WooCommerce feature compatibility declarations
+ * Version:           10.28
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,12 +11,13 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.27' );
+define( 'FISHOTEL_VERSION', '10.28' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-helpers.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-delivery-rules.php';
+require_once FISHOTEL_PLUGIN_DIR . 'includes/class-order-meta.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ship-day.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ajax.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-woocommerce.php';
@@ -27,6 +28,31 @@ require_once FISHOTEL_PLUGIN_DIR . 'includes/class-hotel-program.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-updater.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-casino.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-arcade.php';
+
+/**
+ * WooCommerce feature compatibility (docs/HPOS.md).
+ *
+ * - custom_order_tables (HPOS): COMPATIBLE. Every order meta read/write goes
+ *   through the WC_Order CRUD API via FisHotel_Order_Meta and every order query
+ *   is store-agnostic, so the delivery date and the other _fishotel_* order keys
+ *   survive whichever store is authoritative (and the sync).
+ * - cart_checkout_blocks: INCOMPATIBLE. The delivery-date field, its validators
+ *   and the livestock checks hook the classic checkout only
+ *   (woocommerce_after_order_notes / woocommerce_checkout_process /
+ *   woocommerce_checkout_create_order); the block checkout has no such field, so
+ *   WooCommerce now warns before enabling it. Keep it off until a blocks
+ *   integration exists.
+ * - product_block_editor: deliberately NOT declared. The FisHotel Selling Price
+ *   field hooks woocommerce_product_options_general_product_data and is saved on
+ *   woocommerce_process_product_meta — classic product editor hooks the block
+ *   product editor never fires — so declaring compatibility would be untrue.
+ */
+add_action( 'before_woocommerce_init', function () {
+    if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', FISHOTEL_PLUGIN_FILE, true );
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', FISHOTEL_PLUGIN_FILE, false );
+    }
+} );
 
 
 // Stage-aware title helpers — shared by all title/heading filters
@@ -293,9 +319,13 @@ class FisHotel_Batch_Manager {
         add_action( 'woocommerce_after_order_notes',                 [$this, 'fishotel_shipping_date_field'] );
         add_action( 'woocommerce_checkout_process',                  [$this, 'fishotel_shipping_date_validate'] );
         add_action( 'woocommerce_after_checkout_validation',         [$this, 'fishotel_shipping_date_validate_backup'], 10, 2 );
+        // HPOS-safe (docs/HPOS.md): the date is set on the order object before WC saves it,
+        // the post-save hook is only a fallback, and the admin save reads the WC_Order that the
+        // wc-orders screen passes as its 2nd argument (a WP_Post on the legacy screen).
+        add_action( 'woocommerce_checkout_create_order',             [$this, 'fishotel_shipping_date_create_order'], 10, 2 );
         add_action( 'woocommerce_checkout_update_order_meta',        [$this, 'fishotel_shipping_date_save'] );
         add_action( 'woocommerce_admin_order_data_after_billing_address', [$this, 'fishotel_shipping_date_display'] );
-        add_action( 'woocommerce_process_shop_order_meta',           [$this, 'fishotel_shipping_date_admin_save'] );
+        add_action( 'woocommerce_process_shop_order_meta',           [$this, 'fishotel_shipping_date_admin_save'], 10, 2 );
 
         // Safety net: catch fish orders that bypass checkout validation (bundle plugins, block checkout, etc.)
         add_action( 'woocommerce_checkout_order_processed',          [$this, 'fishotel_shipping_date_safety_net'] );
@@ -1107,36 +1137,13 @@ function fishotel_maybe_run_delivery_date_migration() {
     if ( get_option( 'fishotel_delivery_date_migration_done' ) ) {
         return;
     }
-    if ( ! function_exists( 'wc_get_orders' ) ) {
+    if ( ! function_exists( 'wc_get_orders' ) || ! class_exists( 'FisHotel_Order_Meta' ) ) {
         return;
     }
 
-    $orders = wc_get_orders( [
-        'status'   => 'processing',
-        'limit'    => -1,
-        'meta_key' => '_fishotel_shipping_date',
-        'return'   => 'objects',
-    ] );
-
-    $migrated = 0;
-    foreach ( $orders as $order ) {
-        $old_date = $order->get_meta( '_fishotel_shipping_date' );
-        if ( empty( $old_date ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $old_date ) ) {
-            continue;
-        }
-        try {
-            $dt = new DateTime( $old_date, new DateTimeZone( 'America/Chicago' ) );
-            $dt->modify( '+1 day' );
-            $new_date = $dt->format( 'Y-m-d' );
-        } catch ( Exception $e ) {
-            error_log( sprintf( '[FisHotel migration] Order #%d — skipped (date parse failed: %s)', $order->get_id(), $old_date ) );
-            continue;
-        }
-        $order->update_meta_data( '_fishotel_shipping_date', $new_date );
-        $order->save_meta_data();
-        error_log( sprintf( '[FisHotel migration] Order #%d — %s → %s', $order->get_id(), $old_date, $new_date ) );
-        $migrated++;
-    }
+    // Store-agnostic query + read/write through the order object (HPOS-safe):
+    // the old 'meta_key' arg was honoured by one store only.
+    $migrated = FisHotel_Order_Meta::migrate_delivery_dates( 1, 'America/Chicago' );
 
     error_log( sprintf( '[FisHotel migration] Delivery-date migration complete. %d processing orders shifted by +1 day.', $migrated ) );
     update_option( 'fishotel_delivery_date_migration_done', 1, false );
