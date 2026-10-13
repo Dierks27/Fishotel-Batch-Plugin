@@ -300,9 +300,11 @@ trait FisHotel_WooCommerce {
     }
 
     public function credit_wallet_on_payment( $order_id ) {
-        if ( get_post_meta( $order_id, '_fishotel_wallet_credited', true ) ) return;
-        $order = wc_get_order( $order_id );
+        // Order meta through the CRUD API (HPOS-safe): the marker must live in
+        // whichever store is authoritative or a sync could credit the wallet twice.
+        $order = FisHotel_Order_Meta::order( $order_id );
         if ( ! $order ) return;
+        if ( $order->get_meta( '_fishotel_wallet_credited' ) ) return;
         $user_id = $order->get_user_id();
         if ( ! $user_id ) return;
         $amount = 0;
@@ -311,7 +313,7 @@ trait FisHotel_WooCommerce {
             if ( $item->get_product_id() === $deposit_product_id || stripos( $item->get_name(), 'Wallet Refill' ) !== false ) $amount += (float) $item->get_total();
         }
         if ( $amount > 0 ) {
-            update_post_meta( $order_id, '_fishotel_wallet_credited', 1 );
+            FisHotel_Order_Meta::update( $order, '_fishotel_wallet_credited', 1 );
             $this->update_user_deposit_balance( $user_id, $amount );
             $batch_name = $order->get_meta( '_deposit_batch_name' ) ?: 'Unknown Batch';
             $this->mark_deposit_paid( $user_id, $batch_name, $amount, $order_id, false );
@@ -738,10 +740,31 @@ trait FisHotel_WooCommerce {
         $errors->add( 'shipping_date', $problem );
     }
 
-    public function fishotel_shipping_date_save( $order_id ) {
+    /**
+     * Classic checkout: stamp the chosen delivery date on the order object BEFORE
+     * WooCommerce saves it (woocommerce_checkout_create_order), so the meta lands
+     * in whichever order store is authoritative (HPOS or posts) in the same save.
+     */
+    public function fishotel_shipping_date_create_order( $order, $data = [] ) {
         $date = sanitize_text_field( $_POST['fishotel_shipping_date'] ?? '' );
         if ( $date ) {
-            update_post_meta( $order_id, '_fishotel_shipping_date', $date );
+            FisHotel_Order_Meta::update( $order, '_fishotel_shipping_date', $date, false ); // WC saves right after
+        }
+    }
+
+    /**
+     * Fallback for the same posted field after the order is saved
+     * (woocommerce_checkout_update_order_meta). Normally a no-op: the value is
+     * already there from fishotel_shipping_date_create_order().
+     */
+    public function fishotel_shipping_date_save( $order_id ) {
+        $date = sanitize_text_field( $_POST['fishotel_shipping_date'] ?? '' );
+        if ( ! $date ) {
+            return;
+        }
+        $order = FisHotel_Order_Meta::order( $order_id );
+        if ( $order && (string) $order->get_meta( '_fishotel_shipping_date' ) !== $date ) {
+            FisHotel_Order_Meta::update( $order, '_fishotel_shipping_date', $date );
         }
     }
 
@@ -786,7 +809,7 @@ trait FisHotel_WooCommerce {
             . "Customer: {$order->get_billing_first_name()} {$order->get_billing_last_name()} ({$order->get_billing_email()})\n"
             . "Order total: {$order->get_formatted_order_total()}\n\n"
             . "The order has been placed on-hold. Please set a delivery date and release the order.\n\n"
-            . admin_url( 'post.php?post=' . $order_id . '&action=edit' )
+            . FisHotel_Order_Meta::edit_url( $order ) // wc-orders on HPOS, post.php on the CPT store
         );
     }
 
@@ -826,7 +849,7 @@ trait FisHotel_WooCommerce {
             '[FisHotel] Order #' . $order_id . ' held — missing delivery date',
             "Order #{$order_id} was transitioning to processing/completed but has no delivery date.\n"
             . "It has been placed on-hold.\n\n"
-            . admin_url( 'post.php?post=' . $order_id . '&action=edit' )
+            . FisHotel_Order_Meta::edit_url( $order )
         );
     }
 
@@ -874,7 +897,13 @@ trait FisHotel_WooCommerce {
      * Any Y-m-d is accepted (admin override); a date that breaks a delivery rule
      * is still saved but gets an order note saying which rule it breaks.
      */
-    public function fishotel_shipping_date_admin_save( $order_id ) {
+    /**
+     * Hooked to woocommerce_process_shop_order_meta with 2 args. On the HPOS
+     * screen (admin.php?page=wc-orders) the second argument is the WC_Order
+     * WooCommerce is about to save; on the legacy post screen it is the WP_Post.
+     * Either way the date is read and written through the order object.
+     */
+    public function fishotel_shipping_date_admin_save( $order_id, $order_or_post = null ) {
         if ( ! isset( $_POST['fishotel_shipping_date_nonce'] ) ) return;
         if ( ! wp_verify_nonce( $_POST['fishotel_shipping_date_nonce'], 'fishotel_save_shipping_date' ) ) return;
         if ( ! current_user_can( 'edit_shop_orders' ) ) return;
@@ -883,24 +912,26 @@ trait FisHotel_WooCommerce {
         if ( '' !== $date && ! FisHotel_Delivery_Rules::is_ymd( $date ) ) {
             return; // not a real Y-m-d (the date input always posts one) — keep what is stored
         }
-        $previous = (string) get_post_meta( $order_id, '_fishotel_shipping_date', true );
+        $order = FisHotel_Order_Meta::order( $order_or_post );
+        if ( ! $order ) {
+            $order = FisHotel_Order_Meta::order( $order_id );
+        }
+        if ( ! $order ) return;
+        $previous = (string) $order->get_meta( '_fishotel_shipping_date' );
 
         if ( $date ) {
-            update_post_meta( $order_id, '_fishotel_shipping_date', $date );
             if ( $date !== $previous ) {
+                FisHotel_Order_Meta::update( $order, '_fishotel_shipping_date', $date ); // one save
                 $why = fishotel_delivery_rules()->why_not( $date, null, false );
                 if ( FisHotel_Delivery_Rules::CODE_OK !== $why['code'] ) {
-                    $order = wc_get_order( $order_id );
-                    if ( $order ) {
-                        $order->add_order_note(
-                            'FISHOTEL NOTICE (admin override): delivery date set to ' . $date . ', which breaks a delivery rule — '
-                            . $why['message'] . ' Saved as entered.'
-                        );
-                    }
+                    $order->add_order_note(
+                        'FISHOTEL NOTICE (admin override): delivery date set to ' . $date . ', which breaks a delivery rule — '
+                        . $why['message'] . ' Saved as entered.'
+                    );
                 }
             }
-        } else {
-            delete_post_meta( $order_id, '_fishotel_shipping_date' );
+        } elseif ( '' !== $previous || FisHotel_Order_Meta::has( $order, '_fishotel_shipping_date' ) ) {
+            FisHotel_Order_Meta::delete( $order, '_fishotel_shipping_date' );
         }
     }
 
@@ -928,14 +959,15 @@ trait FisHotel_WooCommerce {
         $categories = wp_get_post_terms( $post_id, 'product_cat', [ 'fields' => 'slugs' ] );
         if ( ! in_array( 'quarantined-fish', $categories ) ) return;
 
-        $product = wc_get_product( $post_id );
+        $product = function_exists( 'wc_get_product' ) ? wc_get_product( $post_id ) : false;
+        if ( ! $product ) return;
 
         $sci_name = wp_strip_all_tags( $product->get_short_description() );
         if ( empty( $sci_name ) ) $sci_name = wp_strip_all_tags( $product->get_description() );
         $sci_name = ucwords( strtolower( $sci_name ) );
 
         $common_name = ucwords( strtolower( $product->get_name() ) );
-        $price = get_post_meta( $post_id, '_fishotel_selling_price', true ) ?: $product->get_price();
+        $price = $product->get_meta( '_fishotel_selling_price' ) ?: $product->get_price(); // product CRUD: the WC_Product is already in hand
 
         $master = get_posts( [
             'post_type'   => 'fish_master',

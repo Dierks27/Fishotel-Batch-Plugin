@@ -69,8 +69,21 @@ class My_GitHub_Updater {
   - `class-casino.php` / `class-arcade.php` — Gamification
   - `class-helpers.php` — Utility functions
   - `class-delivery-rules.php` — Delivery-date rules (standalone class, `fishotel_delivery_rules()`)
+  - `class-order-meta.php` — `FisHotel_Order_Meta` (standalone static class): the ONE way to read/write/query WooCommerce **order** meta — HPOS-safe CRUD (`get/update/delete/has/order`), store-agnostic `query()`, `count_by_meta()`, `edit_url()`, the delivery-date migration body
   - `class-ship-day.php` — Ship Day tab (pick list + weather overview)
   - `class-updater.php` — GitHub auto-updater (standalone class, not a trait)
+- **Docs:** `docs/HPOS.md` — order-meta inventory, the compatibility declarations and the staging test plan
+- **Tests:** `tests/*.php` — plain PHP, no PHPUnit (`php tests/<name>.php`, exit 1 on failure); CI runs them all on 8.3 and `php -l` on 7.4 + 8.3
+
+## HPOS (WooCommerce High-Performance Order Storage)
+
+The plugin declares `custom_order_tables` **compatible** and `cart_checkout_blocks` **incompatible** (`before_woocommerce_init` in the main file); `product_block_editor` is deliberately undeclared (the Selling Price field uses classic product-editor hooks). Rules, enforced by `tests/order-meta-test.php` (it scans the source and fails the build):
+
+- Never `get_post_meta` / `update_post_meta` / `delete_post_meta` / `add_post_meta` on an order id, and never with an order meta key (`_fishotel_shipping_date`, `_fishotel_batch`, `_fishotel_order_type`, `_fishotel_wallet_credited`, ...). Use `FisHotel_Order_Meta::get/update/delete/has( $order_or_id, $key, ... )`, or `$order->get_meta()` / `update_meta_data()` / `save()` when the `WC_Order` is in hand. Batch several keys with `$save = false` and save once.
+- Never `WP_Query` / `get_posts` over `shop_order`, and never pass `meta_query` straight to `wc_get_orders()` (the CPT store drops it and WC 9.2+ flags it). Use `FisHotel_Order_Meta::query( $args, $clauses )` — it sends the clauses the right way for the active store and re-checks every result with `get_meta()`.
+- `woocommerce_process_shop_order_meta` handlers take 2 args and use the second one (a `WC_Order` on the wc-orders screen). Admin edit links come from `FisHotel_Order_Meta::edit_url()`.
+- Plugin CPTs (fish_master, fish_request, fish_batch, notifications, stickers), products and users keep ordinary post/user meta — HPOS only moves orders.
+- Full inventory + staging test plan: `docs/HPOS.md`.
 
 ## Versioning
 

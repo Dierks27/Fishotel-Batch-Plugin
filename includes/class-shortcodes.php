@@ -4941,14 +4941,15 @@ trait FisHotel_Shortcodes {
     }
 
     private function get_user_invoice_order( $user_id, $batch_name ) {
-        $orders = wc_get_orders( [
-            'customer_id' => $user_id,
-            'limit'       => 1,
-            'meta_query'  => [
+        // Store-agnostic (HPOS honours meta_query, the CPT store drops it and would hand back the
+        // customer's latest order of ANY kind — see FisHotel_Order_Meta::query).
+        $orders = FisHotel_Order_Meta::query(
+            [ 'customer_id' => $user_id, 'limit' => 1 ],
+            [
                 [ 'key' => '_fishotel_batch',      'value' => $batch_name,    'compare' => '=' ],
                 [ 'key' => '_fishotel_order_type', 'value' => 'batch_invoice', 'compare' => '=' ],
-            ],
-        ] );
+            ]
+        );
         if ( empty( $orders ) ) return null;
         $order = $orders[0];
         $order_batch = $order->get_meta( '_fishotel_batch' );

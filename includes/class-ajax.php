@@ -1346,41 +1346,23 @@ trait FisHotel_Ajax {
         // zero-fish customers again. Refuse and name the existing orders; whether to skip, update
         // or void them instead is a policy decision and is deliberately not implemented here.
         //
-        // Store-agnostic lookup: on the post-based (CPT) order store WooCommerce silently DROPS a
-        // caller-supplied 'meta_query' (WC_Data_Store_WP::get_wp_query_args() skips the key and the
-        // CPT order store never re-adds it), so the plain query below would return every order on
-        // the site and this guard would block every run. The CPT store does expose its final
-        // WP_Query args through a filter, so the batch filter is passed as a private query var that
-        // the filter maps back into a meta_query; HPOS honours 'meta_query' directly and ignores
-        // the private var. The returned ids are then re-checked one by one as a safety net, so the
-        // guard can never fire on an unrelated order whatever the storage backend does.
-        $cpt_meta_passthrough = function( $query, $query_vars ) {
-            if ( ! empty( $query_vars['fishotel_batch_invoice'] ) ) {
-                $query['meta_query'][] = [ 'key' => '_fishotel_batch',      'value' => $query_vars['fishotel_batch_invoice'], 'compare' => '=' ];
-                $query['meta_query'][] = [ 'key' => '_fishotel_order_type', 'value' => 'batch_invoice',                       'compare' => '=' ];
-            }
-            return $query;
-        };
-        add_filter( 'woocommerce_order_data_store_cpt_get_orders_query', $cpt_meta_passthrough, 10, 2 );
-        $existing_ids = wc_get_orders( [
-            'limit'                  => -1,
-            'return'                 => 'ids',
-            'status'                 => array_keys( wc_get_order_statuses() ), // every non-trashed status
-            'fishotel_batch_invoice' => $batch_name, // consumed by the CPT pass-through filter above
-            'meta_query'             => [
+        // Store-agnostic lookup (FisHotel_Order_Meta::query): on the post-based (CPT) order store
+        // WooCommerce silently DROPS a caller-supplied 'meta_query', so a plain query would return
+        // every order on the site and this guard would block every run; on HPOS 'meta_query' is
+        // honoured. The helper sends the clauses the right way for the active store and re-checks
+        // every returned order through get_meta() (case-insensitive, like the MySQL '=' it asks
+        // for), so the guard can never fire on an unrelated order whatever the backend does.
+        $existing_ids = FisHotel_Order_Meta::query(
+            [
+                'limit'  => -1,
+                'return' => 'ids',
+                'status' => array_keys( wc_get_order_statuses() ), // every non-trashed status
+            ],
+            [
                 [ 'key' => '_fishotel_batch',      'value' => $batch_name,     'compare' => '=' ],
                 [ 'key' => '_fishotel_order_type', 'value' => 'batch_invoice', 'compare' => '=' ],
-            ],
-        ] );
-        remove_filter( 'woocommerce_order_data_store_cpt_get_orders_query', $cpt_meta_passthrough, 10 );
-        // Safety net: keep only orders that really carry this batch's invoice meta (case-insensitive,
-        // like the MySQL '=' match the query asks for).
-        $existing_ids = array_values( array_filter( array_map( 'intval', (array) $existing_ids ), function( $id ) use ( $batch_name ) {
-            $o = $id ? wc_get_order( $id ) : null;
-            return $o
-                && strcasecmp( trim( (string) $o->get_meta( '_fishotel_batch' ) ), trim( $batch_name ) ) === 0
-                && (string) $o->get_meta( '_fishotel_order_type' ) === 'batch_invoice';
-        } ) );
+            ]
+        );
         if ( ! empty( $existing_ids ) ) {
             $existing_ids = array_map( 'intval', (array) $existing_ids );
             sort( $existing_ids );
@@ -1607,14 +1589,14 @@ trait FisHotel_Ajax {
             wp_send_json_error( [ 'message' => 'No batch specified.' ] );
         }
 
-        $orders = wc_get_orders( [
-            'limit'      => -1,
-            'status'     => [ 'pending', 'on-hold' ],
-            'meta_query' => [
+        // Store-agnostic (HPOS honours meta_query, the CPT store drops it — see FisHotel_Order_Meta::query).
+        $orders = FisHotel_Order_Meta::query(
+            [ 'limit' => -1, 'status' => [ 'pending', 'on-hold' ] ],
+            [
                 [ 'key' => '_fishotel_batch',      'value' => $batch_name,     'compare' => '=' ],
                 [ 'key' => '_fishotel_order_type', 'value' => 'batch_invoice', 'compare' => '=' ],
-            ],
-        ] );
+            ]
+        );
 
         $invoices    = [];
         $forum_lines = [];
@@ -1667,13 +1649,11 @@ trait FisHotel_Ajax {
             wp_send_json_error( [ 'message' => 'Invalid date.' ] );
         }
 
-        $orders = wc_get_orders( [
-            'limit'      => -1,
-            'status'     => [ 'processing', 'completed' ],
-            'meta_query' => [
-                [ 'key' => '_fishotel_shipping_date', 'value' => $shipping_date, 'compare' => '=' ],
-            ],
-        ] );
+        // Store-agnostic (HPOS honours meta_query, the CPT store drops it — see FisHotel_Order_Meta::query).
+        $orders = FisHotel_Order_Meta::query(
+            [ 'limit' => -1, 'status' => [ 'processing', 'completed' ] ],
+            [ [ 'key' => '_fishotel_shipping_date', 'value' => $shipping_date, 'compare' => '=' ] ]
+        );
 
         if ( empty( $orders ) ) {
             wp_send_json_error( [ 'message' => 'No paid orders found for this delivery date.' ] );
