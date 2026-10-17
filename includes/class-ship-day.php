@@ -7,8 +7,9 @@
  *
  *   1. loads every open order delivering that day (store-agnostic query, bounded),
  *   2. turns each order — or each fulfillment wrapper, which is ONE destination made
- *      of several source orders — into pick rows (fish / dry goods), expanding
- *      "Invoice" products into the fish listed in their description,
+ *      of several source orders — into pick rows (fish / dry goods), reading the
+ *      fish of an "Invoice" product from whichever of the three shapes the order
+ *      carries (see INVOICE LINES below),
  *   3. reads the weather note the Misc plugin's Weather section wrote on the order
  *      (_fh_weather_* meta) and turns it into the inline packing flag,
  *   4. renders the on-screen summary and the two print pages (pick list, weather
@@ -35,6 +36,27 @@
  * line is skipped too. 'backordered' lines are listed and flagged (BACKORDERED).
  * Fully refunded lines (quantity minus |qty refunded| <= 0) are skipped.
  *
+ * INVOICE LINES. An "Invoice" product (category slug 'invoices', or a name with
+ * the word Invoice) is a customer's custom bill: its fish are listed in its
+ * description as "Name xN — $price" lines. Since theme 1.25 checkout turns such a
+ * product into real order lines, so three shapes reach the pick list and
+ * rows_for_order() reads all three:
+ *
+ *   A. itemised fish lines — ordinary line items with NO product (product_id 0)
+ *      and the hidden item meta _fh_invoice_fish = 1, _fh_invoice_product_id (the
+ *      invoice product) and _fh_invoice_title (its name). Each is one fish row,
+ *      qty = the item quantity, sub-label "from <invoice title>". The invoice's
+ *      credits are FEE items carrying _fh_invoice_credit = 1 — fees are never
+ *      read, so they never make a row. row_kind_for_item() reads the meta BEFORE
+ *      classify(), which would otherwise call a product-less line dry goods.
+ *   B. the Invoice product kept as ONE line that carries _fh_invoice_lines, a
+ *      JSON array of {name, qty, price, kind} (kind fish | credit | note): the
+ *      rows come from that snapshot (lines_from_item_meta()) — fish → fish rows,
+ *      credit → skipped, note → a CHECK row — and the description is not read.
+ *   C. orders placed before theme 1.25 (no meta at all): the description is
+ *      parsed by parse_invoice_lines() exactly as before. Unreadable meta
+ *      (malformed JSON) is treated as absent and falls back here too.
+ *
  * This file has no side effects at load time. The parsing / classification /
  * flag / date / sort / totals helpers are pure static methods with no WordPress
  * dependency, so tests/ship-day-test.php can run them with plain php.
@@ -56,6 +78,26 @@ class FisHotel_Ship_Day {
     const META_IS_FULFILLMENT = '_fishotel_is_fulfillment';
     const META_SOURCES        = '_fishotel_fulfillment_sources';
     const META_LINE_STATUS    = '_fishotel_line_status';
+    /** Item meta of this plugin's batch-invoice fish lines (ajax_generate_invoices: no product). */
+    const META_FISH_ID        = '_fishotel_fish_id';
+
+    /** Item meta the theme (1.25+) writes when an Invoice product is itemised at checkout. */
+    const META_INV_FISH       = '_fh_invoice_fish';       // '1' on a product-less line item that is one fish of an invoice (shape A)
+    const META_INV_PRODUCT_ID = '_fh_invoice_product_id'; // ... the invoice product's id
+    const META_INV_TITLE      = '_fh_invoice_title';      // ... the invoice product's name
+    const META_INV_LINES      = '_fh_invoice_lines';      // JSON [{name,qty,price,kind}] on an Invoice line kept as one line (shape B)
+    const META_INV_CREDIT     = '_fh_invoice_credit';     // '1' on a FEE item that is an invoice credit — never a row
+
+    /** Every item meta key rows_for_order() reads, gathered once per line by item_meta(). */
+    const ITEM_META_KEYS = [
+        self::META_LINE_STATUS,
+        self::META_FISH_ID,
+        self::META_INV_FISH,
+        self::META_INV_PRODUCT_ID,
+        self::META_INV_TITLE,
+        self::META_INV_LINES,
+        self::META_INV_CREDIT,
+    ];
 
     /** Order meta written by the Misc plugin's Weather section (class-checker.php). */
     const META_W_CHECKED_FOR     = '_fh_weather_checked_for';
@@ -94,6 +136,8 @@ class FisHotel_Ship_Day {
     const CLASS_FISH    = 'fish';
     const CLASS_INVOICE = 'invoice';
     const CLASS_DRY     = 'dry';
+    /** An invoice credit (_fh_invoice_credit): money, never a pick row. */
+    const CLASS_CREDIT  = 'credit';
 
     const CHART_SUBTITLE = 'by delivery-day high: <30 hold · 30–40 UPS Store · 40–70 heat pack · 70–80 nothing · 80–90 cooling · 90–95 UPS Store · >95 hold';
 
@@ -191,7 +235,9 @@ class FisHotel_Ship_Day {
     }
 
     /**
-     * Expand an Invoice product's description into fish lines.
+     * Expand an Invoice product's description into fish lines (shape C: orders
+     * placed before theme 1.25, and any Invoice line without readable
+     * _fh_invoice_lines meta — see lines_from_item_meta()).
      *
      * Each <li> is one line (when there is no list, every non-empty text line is
      * one). Entities are decoded and tags stripped, so nested markup, &#8212; and
@@ -264,6 +310,85 @@ class FisHotel_Ship_Day {
         return $out;
     }
 
+    /**
+     * Expand the theme's _fh_invoice_lines item meta (theme 1.25+, shape B): the
+     * JSON array of {name, qty, price, kind} written at checkout on an Invoice
+     * product kept as one order line, kind = 'fish' | 'credit' | 'note'. Same row
+     * shape as parse_invoice_lines(): fish → fish / qty / price, credit → dropped
+     * (money, not a fish), note — or any kind that is not fish — → the name kept
+     * whole, qty 1, flag 'check', exactly like the parser's unparsable lines.
+     * Entries with no name are skipped; a bare string entry reads as a note. An
+     * already-unserialised array (WC hands one back when the theme stored an array
+     * rather than a JSON string) is read as is.
+     *
+     * @return array<int,array{fish:string,qty:int,price:float|null,flag:string}>|null
+     *         The lines (possibly empty), or null when the meta is absent or
+     *         unreadable (not JSON, not a list) — the caller then falls back to
+     *         parsing the product description, as for orders without the meta.
+     */
+    public static function lines_from_item_meta( $json ) {
+        if ( is_array( $json ) ) {
+            $data = $json;
+        } else {
+            if ( ! is_string( $json ) || '' === trim( $json ) ) {
+                return null;
+            }
+            $data = json_decode( trim( $json ), true );
+            if ( ! is_array( $data ) ) {
+                return null;
+            }
+        }
+        if ( isset( $data['name'] ) || isset( $data['kind'] ) ) {
+            $data = [ $data ]; // one object where a list was expected
+        }
+
+        $out = [];
+        foreach ( $data as $entry ) {
+            if ( is_string( $entry ) ) {
+                $entry = [ 'name' => $entry, 'kind' => 'note' ];
+            }
+            if ( ! is_array( $entry ) ) {
+                continue;
+            }
+            $name = self::clean_text( self::scalar_meta( $entry['name'] ?? '' ) );
+            if ( '' === $name ) {
+                continue;
+            }
+            $kind = strtolower( self::scalar_meta( $entry['kind'] ?? '' ) );
+            if ( 'credit' === $kind ) {
+                continue;
+            }
+            $price = ( isset( $entry['price'] ) && is_numeric( $entry['price'] ) ) ? (float) $entry['price'] : null;
+            if ( 'fish' === $kind ) {
+                $qty   = (int) self::scalar_meta( $entry['qty'] ?? 1 );
+                $out[] = [
+                    'fish'  => $name,
+                    'qty'   => max( 1, $qty ),
+                    'price' => $price,
+                    'flag'  => '',
+                ];
+                continue;
+            }
+            $out[] = [
+                'fish'  => $name,
+                'qty'   => 1,
+                'price' => $price,
+                'flag'  => 'check',
+            ];
+        }
+        return $out;
+    }
+
+    /** A meta value as a trimmed string ('' for arrays, objects and null). */
+    public static function scalar_meta( $value ) {
+        return is_scalar( $value ) ? trim( (string) $value ) : '';
+    }
+
+    /** True for the ways a "1" flag reaches us from item meta: 1, '1', true, 'yes', 'true', 'on'. */
+    public static function is_truthy_meta( $value ) {
+        return in_array( strtolower( self::scalar_meta( $value ) ), [ '1', 'yes', 'true', 'on' ], true );
+    }
+
     /** Strip tags, decode entities, normalise whitespace (incl. nbsp). */
     public static function clean_text( $html ) {
         $text = strip_tags( (string) $html );
@@ -294,6 +419,50 @@ class FisHotel_Ship_Day {
             }
         }
         return self::CLASS_DRY;
+    }
+
+    /**
+     * How one order line is listed, from its item meta (keyed by meta name, ''
+     * when absent), its product's category slugs, its name and whether it still
+     * has a product. Pure, so the shapes the theme writes are testable without
+     * WooCommerce. The meta is read BEFORE classify(), in this order:
+     *
+     *   credit  _fh_invoice_credit = 1 — an invoice credit is money, never a row.
+     *           The theme stores credits as FEE items, which rows_for_order()
+     *           never reads; this also drops one that arrives as a line item.
+     *   fish    _fh_invoice_fish = 1 (theme 1.25+, shape A) — one fish of an
+     *           itemised invoice. It has no product and so no categories, which
+     *           classify() would read as dry goods. sub = the invoice title
+     *           (_fh_invoice_title, else "Invoice #<_fh_invoice_product_id>").
+     *           Trusted: not flagged CHECK for lacking a product.
+     *   fish    _fishotel_fish_id on a product-less line — this plugin's own
+     *           batch-invoice fish (ajax_generate_invoices). Trusted too.
+     *   other   classify() on the categories + name: an 'invoice' line is expanded
+     *           by the caller (lines_from_item_meta() first, the description when
+     *           that meta is absent); a product-less line is flagged CHECK since
+     *           nothing says what it is.
+     *
+     * @return array{class:string,sub:string,check:bool} class = CLASS_*; sub = the
+     *         "from …" sub-label; check = flag the row CHECK (unless another flag
+     *         already applies).
+     */
+    public static function row_kind_for_item( array $meta, array $category_slugs, $item_name, $has_product = true, $fish_categories = null ) {
+        if ( self::is_truthy_meta( $meta[ self::META_INV_CREDIT ] ?? '' ) ) {
+            return [ 'class' => self::CLASS_CREDIT, 'sub' => '', 'check' => false ];
+        }
+        if ( self::is_truthy_meta( $meta[ self::META_INV_FISH ] ?? '' ) ) {
+            $title = self::clean_text( self::scalar_meta( $meta[ self::META_INV_TITLE ] ?? '' ) );
+            if ( '' === $title ) {
+                $pid   = (int) self::scalar_meta( $meta[ self::META_INV_PRODUCT_ID ] ?? '' );
+                $title = $pid > 0 ? 'Invoice #' . $pid : 'Invoice';
+            }
+            return [ 'class' => self::CLASS_FISH, 'sub' => $title, 'check' => false ];
+        }
+        $class = self::classify( $category_slugs, $item_name, $fish_categories );
+        if ( ! $has_product && self::CLASS_INVOICE !== $class && '' !== self::scalar_meta( $meta[ self::META_FISH_ID ] ?? '' ) ) {
+            return [ 'class' => self::CLASS_FISH, 'sub' => '', 'check' => false ];
+        }
+        return [ 'class' => $class, 'sub' => '', 'check' => ! $has_product ];
     }
 
     /** "Alerts: Flood Watch, Wind Advisory." → ['FLOOD WATCH', 'WIND ADVISORY']. */
@@ -864,8 +1033,22 @@ class FisHotel_Ship_Day {
         return $desc;
     }
 
+    /** ITEM_META_KEYS of one line item, keyed by meta name ('' when absent or unreadable). */
+    private static function item_meta( $item ) {
+        $meta = [];
+        $can  = is_object( $item ) && method_exists( $item, 'get_meta' );
+        foreach ( self::ITEM_META_KEYS as $key ) {
+            $v            = $can ? $item->get_meta( $key ) : '';
+            $meta[ $key ] = ( is_scalar( $v ) || is_array( $v ) ) ? $v : '';
+        }
+        return $meta;
+    }
+
     /**
-     * Pick rows for one order's still-to-ship product lines.
+     * Pick rows for one order's still-to-ship product lines — see INVOICE LINES
+     * in the file header for the three shapes an Invoice product can arrive in.
+     * Only 'line_item' items are read: fees (where the theme puts invoice
+     * credits), shipping and the rest never make a row.
      *
      * @return array<int,array{kind:string,qty:int,name:string,sub:string,flag:string}>
      */
@@ -874,11 +1057,27 @@ class FisHotel_Ship_Day {
         if ( ! is_object( $order ) || ! method_exists( $order, 'get_items' ) ) {
             return $rows;
         }
-        foreach ( (array) $order->get_items( 'line_item' ) as $item_id => $item ) {
+        $items = (array) $order->get_items( 'line_item' );
+
+        // Shape A: the invoice products whose fish are itemised on this order. Should
+        // the order ALSO still carry such an Invoice product line, it is not expanded
+        // again — its fish are already listed, one row each.
+        $itemised = [];
+        foreach ( $items as $item ) {
+            if ( is_object( $item ) && method_exists( $item, 'get_meta' ) && self::is_truthy_meta( $item->get_meta( self::META_INV_FISH ) ) ) {
+                $pid = (int) self::scalar_meta( $item->get_meta( self::META_INV_PRODUCT_ID ) );
+                if ( $pid > 0 ) {
+                    $itemised[ $pid ] = true;
+                }
+            }
+        }
+
+        foreach ( $items as $item_id => $item ) {
             if ( ! is_object( $item ) || ! method_exists( $item, 'get_quantity' ) ) {
                 continue;
             }
-            $status = method_exists( $item, 'get_meta' ) ? (string) $item->get_meta( self::META_LINE_STATUS ) : '';
+            $meta   = self::item_meta( $item );
+            $status = self::scalar_meta( $meta[ self::META_LINE_STATUS ] );
             if ( 'shipped' === $status ) {
                 continue; // already left through EA
             }
@@ -896,17 +1095,15 @@ class FisHotel_Ship_Day {
             $flag = 'backordered' === $status ? 'backordered' : '';
             $name = method_exists( $item, 'get_name' ) ? trim( (string) $item->get_name() ) : '';
 
+            // A product-less line (shape A fish, batch-invoice fish, a deleted product)
+            // is normal here: nothing below assumes a product object exists.
             $product = method_exists( $item, 'get_product' ) ? $item->get_product() : null;
             $product = is_object( $product ) ? $product : null;
-            $class   = self::classify( self::product_category_slugs( $product ), $name );
+            $spec    = self::row_kind_for_item( $meta, self::product_category_slugs( $product ), $name, null !== $product );
+            $class   = $spec['class'];
 
-            // This plugin's batch-invoice orders (ajax_generate_invoices) add each fish
-            // as a product-less line named after the fish, carrying _fishotel_fish_id.
-            // No product means no categories, so classify() cannot see it is a fish.
-            $fish_id = method_exists( $item, 'get_meta' ) ? trim( (string) $item->get_meta( '_fishotel_fish_id' ) ) : '';
-            $is_batch_fish = ( null === $product && '' !== $fish_id && self::CLASS_INVOICE !== $class );
-            if ( $is_batch_fish ) {
-                $class = self::CLASS_FISH;
+            if ( self::CLASS_CREDIT === $class ) {
+                continue; // an invoice credit is money, not a fish
             }
 
             // Lines drop-shipped by EverythingAquatic (theme medication store) are
@@ -919,13 +1116,28 @@ class FisHotel_Ship_Day {
             }
 
             if ( self::CLASS_INVOICE === $class ) {
-                if ( ! $product ) {
-                    $rows[] = [ 'kind' => self::KIND_FISH, 'qty' => $qty, 'name' => 'Invoice — product missing', 'sub' => $name, 'flag' => 'check' ];
-                    continue;
+                if ( $itemised ) {
+                    $pid = method_exists( $item, 'get_product_id' ) ? (int) $item->get_product_id() : 0;
+                    $vid = method_exists( $item, 'get_variation_id' ) ? (int) $item->get_variation_id() : 0;
+                    if ( ( $pid > 0 && isset( $itemised[ $pid ] ) ) || ( $vid > 0 && isset( $itemised[ $vid ] ) ) ) {
+                        continue; // shape A already lists this invoice's fish
+                    }
                 }
-                $lines = self::parse_invoice_lines( self::product_description( $product ) );
+                // Shape B: the snapshot the theme wrote at checkout is read first and,
+                // when readable, is the whole story. Shape C (no meta, or meta that is
+                // not JSON): the description, as before.
+                $lines     = self::lines_from_item_meta( $meta[ self::META_INV_LINES ] );
+                $from_meta = null !== $lines;
+                if ( ! $from_meta ) {
+                    if ( ! $product ) {
+                        $rows[] = [ 'kind' => self::KIND_FISH, 'qty' => $qty, 'name' => 'Invoice — product missing', 'sub' => $name, 'flag' => 'check' ];
+                        continue;
+                    }
+                    $lines = self::parse_invoice_lines( self::product_description( $product ) );
+                }
                 if ( empty( $lines ) ) {
-                    $rows[] = [ 'kind' => self::KIND_FISH, 'qty' => $qty, 'name' => $name . ' — no fish lines in description', 'sub' => $name, 'flag' => 'check' ];
+                    $where  = $from_meta ? 'no fish lines on the order line' : 'no fish lines in description';
+                    $rows[] = [ 'kind' => self::KIND_FISH, 'qty' => $qty, 'name' => $name . ' — ' . $where, 'sub' => $name, 'flag' => 'check' ];
                     continue;
                 }
                 foreach ( $lines as $line ) {
@@ -949,8 +1161,8 @@ class FisHotel_Ship_Day {
                 'kind' => $kind,
                 'qty'  => $qty,
                 'name' => '' !== $name ? $name : '(unnamed item)',
-                'sub'  => '',
-                'flag' => ( '' === $flag && ! $product && ! $is_batch_fish ) ? 'check' : $flag,
+                'sub'  => $spec['sub'],
+                'flag' => ( '' === $flag && $spec['check'] ) ? 'check' : $flag,
             ];
         }
         return $rows;

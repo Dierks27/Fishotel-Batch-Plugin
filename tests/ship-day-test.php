@@ -175,6 +175,51 @@ if ( $fh_stubbed ) {
     check( 'statuses() strips wc- and de-duplicates', [ 'processing', 'on-hold', 'fulfillment', 'shipped' ] === FisHotel_Ship_Day::statuses() );
 }
 
+/* ───────────────────────────── lines_from_item_meta (theme 1.25+, shape B) ───────────────────────────── */
+section( 'lines_from_item_meta(): the _fh_invoice_lines snapshot an Invoice line carries' );
+$json = json_encode( [
+    [ 'name' => 'Hectors Goby', 'qty' => 1, 'price' => 39, 'kind' => 'fish' ],
+    [ 'name' => 'Yellow Tang', 'qty' => '2', 'price' => '120.50', 'kind' => 'fish' ],
+    [ 'name' => 'Credit: lost Cleaner Wrasse', 'qty' => 1, 'price' => -82, 'kind' => 'credit' ],
+    [ 'name' => 'Pair of Clownfish (bonded)', 'qty' => 1, 'price' => null, 'kind' => 'note' ],
+] );
+$got = FisHotel_Ship_Day::lines_from_item_meta( $json );
+check( 'fish → fish/qty/price in the parser\'s shape, credit dropped, note → qty 1 + flag check', [ line( 'Hectors Goby', 1, 39.0 ), line( 'Yellow Tang', 2, 120.5 ), line( 'Pair of Clownfish (bonded)', 1, null, 'check' ) ] === $got, json_encode( $got ) );
+check( 'price is a float, qty an int', is_float( $got[0]['price'] ) && is_int( $got[1]['qty'] ) );
+check( 'malformed JSON → null (the caller parses the description instead)', null === FisHotel_Ship_Day::lines_from_item_meta( '[{"name":"Goby","qty":1,' ) && null === FisHotel_Ship_Day::lines_from_item_meta( '{not json' ) );
+check( 'absent meta → null', null === FisHotel_Ship_Day::lines_from_item_meta( '' ) && null === FisHotel_Ship_Day::lines_from_item_meta( null ) && null === FisHotel_Ship_Day::lines_from_item_meta( '   ' ) );
+check( 'JSON that is not a list → null', null === FisHotel_Ship_Day::lines_from_item_meta( 'null' ) && null === FisHotel_Ship_Day::lines_from_item_meta( '"Goby x1"' ) && null === FisHotel_Ship_Day::lines_from_item_meta( '42' ) && null === FisHotel_Ship_Day::lines_from_item_meta( 7 ) && null === FisHotel_Ship_Day::lines_from_item_meta( true ) );
+check( 'an empty list is present but names nothing → [] (not null)', [] === FisHotel_Ship_Day::lines_from_item_meta( '[]' ) );
+check( 'only credits → []', [] === FisHotel_Ship_Day::lines_from_item_meta( '[{"name":"Credit: DOA","qty":1,"price":-20,"kind":"credit"}]' ) );
+$got = FisHotel_Ship_Day::lines_from_item_meta( '[{"name":"Mystery Wrasse","qty":3,"price":50,"kind":"thing"},{"name":"Goby","qty":2}]' );
+check( 'unknown or missing kind is kept whole for a hand check (qty 1, flag check), never dropped', [ line( 'Mystery Wrasse', 1, 50.0, 'check' ), line( 'Goby', 1, null, 'check' ) ] === $got, json_encode( $got ) );
+check( 'kind compares case-insensitively', [ line( 'Goby', 2, null ) ] === FisHotel_Ship_Day::lines_from_item_meta( '[{"name":"Goby","qty":2,"kind":"Fish"},{"name":"Credit","kind":"CREDIT"}]' ) );
+$got = FisHotel_Ship_Day::lines_from_item_meta( '[{"qty":2,"kind":"fish"},{"name":"","kind":"fish"},"see order note",7,null]' );
+check( 'entries without a name are skipped; a bare string entry reads as a note; other scalars are ignored', [ line( 'see order note', 1, null, 'check' ) ] === $got, json_encode( $got ) );
+check( 'qty 0 / negative / non-numeric → 1; a non-numeric price → null', [ line( 'A', 1, null ), line( 'B', 1, null ), line( 'C', 1, null ) ] === FisHotel_Ship_Day::lines_from_item_meta( '[{"name":"A","qty":0,"price":"$39","kind":"fish"},{"name":"B","qty":-2,"kind":"fish"},{"name":"C","qty":"two","kind":"fish"}]' ) );
+check( 'names are cleaned like description lines (tags, entities, nbsp)', [ line( 'Hectors Goby', 1, null ) ] === FisHotel_Ship_Day::lines_from_item_meta( '[{"name":"<b>Hectors&nbsp;Goby</b> ","qty":1,"kind":"fish"}]' ) );
+check( 'an already-unserialised array (WC returns one when the theme stored an array) is read as is', [ line( 'Goby', 2, 78.0 ) ] === FisHotel_Ship_Day::lines_from_item_meta( [ [ 'name' => 'Goby', 'qty' => 2, 'price' => 78, 'kind' => 'fish' ] ] ) );
+check( 'one object where a list was expected is read as one line', [ line( 'Goby', 1, 39.0 ) ] === FisHotel_Ship_Day::lines_from_item_meta( '{"name":"Goby","qty":1,"price":39,"kind":"fish"}' ) );
+check( 'is_truthy_meta(): 1 / "1" / true / yes; not "0" / "" / no / null / array', FisHotel_Ship_Day::is_truthy_meta( '1' ) && FisHotel_Ship_Day::is_truthy_meta( 1 ) && FisHotel_Ship_Day::is_truthy_meta( true ) && FisHotel_Ship_Day::is_truthy_meta( 'yes' ) && ! FisHotel_Ship_Day::is_truthy_meta( '0' ) && ! FisHotel_Ship_Day::is_truthy_meta( '' ) && ! FisHotel_Ship_Day::is_truthy_meta( 'no' ) && ! FisHotel_Ship_Day::is_truthy_meta( null ) && ! FisHotel_Ship_Day::is_truthy_meta( [ '1' ] ) );
+
+/* ───────────────────────────── row_kind_for_item (item meta before the categories) ───────────────────────────── */
+section( 'row_kind_for_item(): the item meta is read before classify()' );
+$a_meta = [ '_fh_invoice_fish' => '1', '_fh_invoice_product_id' => '11', '_fh_invoice_title' => 'JPReef Invoice (7/3/26)' ];
+$got    = FisHotel_Ship_Day::row_kind_for_item( $a_meta, [], 'Hectors Goby', false );
+check( 'shape A: _fh_invoice_fish line (no product, no categories) → fish, sub = the invoice title, no CHECK', [ 'class' => 'fish', 'sub' => 'JPReef Invoice (7/3/26)', 'check' => false ] === $got, json_encode( $got ) );
+check( 'shape A: the meta beats a name with the word Invoice and beats the categories', 'fish' === FisHotel_Ship_Day::row_kind_for_item( $a_meta, [ 'medications' ], 'Invoice Goby', true )['class'] );
+check( 'shape A: title missing → "Invoice #<product id>"; both missing → "Invoice"', 'Invoice #11' === FisHotel_Ship_Day::row_kind_for_item( [ '_fh_invoice_fish' => 1, '_fh_invoice_product_id' => 11 ], [], 'Goby', false )['sub'] && 'Invoice' === FisHotel_Ship_Day::row_kind_for_item( [ '_fh_invoice_fish' => true ], [], 'Goby', false )['sub'] );
+check( 'shape A: the flag must be truthy — "0" / "" fall through to classify()', 'dry' === FisHotel_Ship_Day::row_kind_for_item( [ '_fh_invoice_fish' => '0', '_fh_invoice_title' => 'X' ], [], 'Goby', false )['class'] && 'dry' === FisHotel_Ship_Day::row_kind_for_item( [ '_fh_invoice_fish' => '' ], [], 'Goby', false )['class'] );
+check( 'credit meta → class credit, whatever else the line says', 'credit' === FisHotel_Ship_Day::row_kind_for_item( [ '_fh_invoice_credit' => '1', '_fh_invoice_fish' => '1' ], [ 'quarantined-fish' ], 'Credit: lost wrasse', false )['class'] );
+check( 'no meta: an Invoice product line → invoice (expanded by the caller)', [ 'class' => 'invoice', 'sub' => '', 'check' => false ] === FisHotel_Ship_Day::row_kind_for_item( [], [ 'invoices' ], 'JPReef Invoice (7/3/26)', true ) );
+check( 'no meta: an Invoice line whose product is gone → still invoice (the caller reports it)', 'invoice' === FisHotel_Ship_Day::row_kind_for_item( [], [], 'Old Invoice (1/1/25)', false )['class'] );
+check( 'no meta: fish category + product → fish, no CHECK', [ 'class' => 'fish', 'sub' => '', 'check' => false ] === FisHotel_Ship_Day::row_kind_for_item( [], [ 'quarantined-fish' ], 'Hectors Goby', true ) );
+check( 'no meta: product-less plain line → dry + CHECK (nothing says what it is)', [ 'class' => 'dry', 'sub' => '', 'check' => true ] === FisHotel_Ship_Day::row_kind_for_item( [ '_fh_sticker' => 'free' ], [], 'FisHotel Sticker', false ) );
+check( 'no meta: product-less batch-invoice fish (_fishotel_fish_id) → fish, no CHECK', [ 'class' => 'fish', 'sub' => '', 'check' => false ] === FisHotel_Ship_Day::row_kind_for_item( [ '_fishotel_fish_id' => 123 ], [], 'Hectors Goby', false ) );
+check( '_fishotel_fish_id on a line WITH a product does not override its categories', 'dry' === FisHotel_Ship_Day::row_kind_for_item( [ '_fishotel_fish_id' => 123 ], [ 'medications' ], 'PraziPro', true )['class'] );
+check( 'explicit fish category list reaches classify()', 'dry' === FisHotel_Ship_Day::row_kind_for_item( [], [ 'inverts' ], 'Cleaner Shrimp', true, [ 'quarantined-fish' ] )['class'] && 'fish' === FisHotel_Ship_Day::row_kind_for_item( [], [ 'inverts' ], 'Cleaner Shrimp', true )['class'] );
+check( 'array-valued meta is tolerated (reads as unset)', [ 'class' => 'dry', 'sub' => '', 'check' => true ] === FisHotel_Ship_Day::row_kind_for_item( [ '_fh_invoice_fish' => [ '1' ], '_fh_invoice_credit' => [ 1 ] ], [], 'Thing', false ) );
+
 /* ───────────────────────────── weather_flag ───────────────────────────── */
 section( 'weather_flag(): every action' );
 function wmeta( $action, $extra = [] ) {
@@ -329,15 +374,21 @@ if ( $fh_stubbed ) {
         private $qty;
         private $product;
         private $meta;
-        public function __construct( $id, $name, $qty, $product = null, $meta = [] ) {
+        private $type;
+        public function __construct( $id, $name, $qty, $product = null, $meta = [], $type = 'line_item' ) {
             $this->id      = $id;
             $this->name    = $name;
             $this->qty     = $qty;
             $this->product = $product;
             $this->meta    = $meta;
+            $this->type    = $type;
         }
         public function get_id() {
             return $this->id;
+        }
+        /** WC item type: 'line_item', 'fee', 'shipping', ... */
+        public function get_type() {
+            return $this->type;
         }
         public function get_name() {
             return $this->name;
@@ -393,8 +444,15 @@ if ( $fh_stubbed ) {
         public function get_meta( $key ) {
             return $this->meta[ $key ] ?? '';
         }
-        public function get_items( $type = 'line_item' ) {
-            return $this->items;
+        /** WC semantics: only the items of the asked type(s), keyed by item id. */
+        public function get_items( $types = 'line_item' ) {
+            $out = [];
+            foreach ( $this->items as $key => $item ) {
+                if ( in_array( $item->get_type(), (array) $types, true ) ) {
+                    $out[ $key ] = $item;
+                }
+            }
+            return $out;
         }
         public function get_qty_refunded_for_item( $item_id ) {
             return $this->refunded[ $item_id ] ?? 0;
@@ -620,6 +678,76 @@ if ( $fh_stubbed ) {
     check( 'no orders → empty notice, no print block', 0 === $r4['orders'] && false !== strpos( $r4['html'], 'No open orders deliver on' ) && false === strpos( $r4['html'], 'fh-sd-print' ) );
     check( 'invalid date → WP_Error', is_wp_error( FisHotel_Ship_Day::render( '2026-02-30' ) ) );
     check( 'weather_overview_url()', 'https://example.test/wp-admin/admin.php?page=fishotel-misc-weather&date=2026-10-13' === FisHotel_Ship_Day::weather_overview_url( '2026-10-13' ) );
+
+    section( 'rows_for_order(): the three invoice shapes — A itemised lines (theme 1.25+), B _fh_invoice_lines snapshot, C description' );
+    // Any PHP notice/warning while listing and rendering product-less lines is a failure.
+    $GLOBALS['fh_sd_notices'] = [];
+    set_error_handler( function ( $errno, $errstr, $errfile = '', $errline = 0 ) {
+        $GLOBALS['fh_sd_notices'][] = basename( (string) $errfile ) . ':' . $errline . ' ' . $errstr;
+        return true;
+    } );
+    $GLOBALS['fh_sd_terms'][16] = [ 'invoices' ];
+    $GLOBALS['fh_sd_terms'][17] = [ 'invoices' ];
+    $GLOBALS['fh_sd_terms'][18] = [ 'invoices' ];
+    $itemised_inv = new FH_SD_Product( 16, 0, '<ul><li>Hectors Goby x1 — $39</li><li>Blue Tang x2 — $200</li></ul>' ); // theme 1.25 itemised it at checkout
+    $meta_inv     = new FH_SD_Product( 17, 0, '<ul><li>Description Goby x9 — $1</li></ul>' ); // differs from the snapshot on purpose
+    $broken_inv   = new FH_SD_Product( 18, 0, '<ul><li>Fallback Goby x1 — $39</li></ul>' );
+    $snapshot     = json_encode( [
+        [ 'name' => 'Snapshot Goby', 'qty' => 3, 'price' => 117, 'kind' => 'fish' ],
+        [ 'name' => 'Credit: DOA wrasse', 'qty' => 1, 'price' => -40, 'kind' => 'credit' ],
+        [ 'name' => 'Pair of Clownfish (bonded)', 'qty' => 1, 'price' => 80, 'kind' => 'note' ],
+    ] );
+    $a_meta    = [ '_fh_invoice_fish' => '1', '_fh_invoice_product_id' => '16', '_fh_invoice_title' => 'Itemised Invoice (9/9/26)' ];
+    $inv_order = new FH_SD_Order( 101, 'processing', [ '_fishotel_shipping_date' => '2026-10-15' ], [
+        // A: itemised fish lines, product_id 0; the invoice's credit is a FEE item
+        1  => new FH_SD_Item( 1, 'Hectors Goby', 1, null, $a_meta ),
+        2  => new FH_SD_Item( 2, 'Blue Tang', 2, null, $a_meta ),
+        3  => new FH_SD_Item( 3, 'Backordered Wrasse', 1, null, $a_meta + [ '_fishotel_line_status' => 'backordered' ] ),
+        4  => new FH_SD_Item( 4, 'Shipped Goby', 1, null, $a_meta + [ '_fishotel_line_status' => 'shipped' ] ),
+        5  => new FH_SD_Item( 5, 'Credit: DOA wrasse', 1, null, [ '_fh_invoice_credit' => '1' ], 'fee' ),
+        6  => new FH_SD_Item( 6, 'Credit sneaked in as a line', 1, null, [ '_fh_invoice_credit' => '1' ] ),
+        // the Invoice product line itself still on the order (its fish are lines 1-4) → must not be expanded again
+        7  => new FH_SD_Item( 7, 'Itemised Invoice (9/9/26)', 1, $itemised_inv ),
+        // B: kept as one line (x2) with the snapshot meta — the description is NOT read
+        8  => new FH_SD_Item( 8, 'Meta Invoice (8/8/26)', 2, $meta_inv, [ '_fh_invoice_lines' => $snapshot ] ),
+        // B whose product was deleted since: the snapshot still lists it
+        9  => new FH_SD_Item( 9, 'Gone Invoice (5/5/26)', 1, null, [ '_fh_invoice_lines' => '[{"name":"Orphan Goby","qty":1,"price":39,"kind":"fish"}]' ] ),
+        // B with an empty snapshot: present, so the description is not read either
+        10 => new FH_SD_Item( 10, 'Empty Meta Invoice (4/4/26)', 1, $meta_inv, [ '_fh_invoice_lines' => '[]' ] ),
+        // malformed snapshot → C: the description
+        11 => new FH_SD_Item( 11, 'Broken Invoice (6/6/26)', 1, $broken_inv, [ '_fh_invoice_lines' => '{not json' ] ),
+        // C: an old order's invoice line, no meta at all
+        12 => new FH_SD_Item( 12, 'JPReef Invoice (7/3/26)', 1, $invoice ),
+    ] );
+    $rows = FisHotel_Ship_Day::rows_for_order( $inv_order );
+    $by   = function ( $name ) use ( $rows ) {
+        return array_values( array_filter( $rows, function ( $r ) use ( $name ) { return $name === $r['name']; } ) );
+    };
+    $from = function ( $sub ) use ( $rows ) {
+        return array_values( array_filter( $rows, function ( $r ) use ( $sub ) { return $sub === $r['sub']; } ) );
+    };
+    check( 'A: itemised fish line → one fish row, qty = item qty, sub = invoice title, no flag (the old order\'s same-named fish stays its own row)', [ [ 'kind' => 'fish', 'qty' => 1, 'name' => 'Hectors Goby', 'sub' => 'Itemised Invoice (9/9/26)', 'flag' => '' ], [ 'kind' => 'fish', 'qty' => 1, 'name' => 'Hectors Goby', 'sub' => 'JPReef Invoice (7/3/26)', 'flag' => '' ] ] === $by( 'Hectors Goby' ), json_encode( $by( 'Hectors Goby' ) ) );
+    check( 'A: qty 2 line → qty 2', 1 === count( $by( 'Blue Tang' ) ) && 2 === $by( 'Blue Tang' )[0]['qty'] && 'fish' === $by( 'Blue Tang' )[0]['kind'] );
+    check( 'A: line status still applies (backordered flagged, shipped skipped)', 'backordered' === $by( 'Backordered Wrasse' )[0]['flag'] && [] === $by( 'Shipped Goby' ) );
+    check( 'A: the credit fee never makes a row; a credit-marked line item is dropped too', [] === $by( 'Credit: DOA wrasse' ) && [] === $by( 'Credit sneaked in as a line' ) );
+    check( 'A: the Invoice product line whose fish are itemised is not expanded again (no double count)', [ 'Hectors Goby', 'Blue Tang', 'Backordered Wrasse' ] === array_column( $from( 'Itemised Invoice (9/9/26)' ), 'name' ) && [ 1, 2, 1 ] === array_column( $from( 'Itemised Invoice (9/9/26)' ), 'qty' ), json_encode( $from( 'Itemised Invoice (9/9/26)' ) ) );
+    check( 'B: rows come from the snapshot (fish x line qty, credit dropped, note → CHECK); the description is not read', [ [ 'kind' => 'fish', 'qty' => 6, 'name' => 'Snapshot Goby', 'sub' => 'Meta Invoice (8/8/26)', 'flag' => '' ], [ 'kind' => 'fish', 'qty' => 2, 'name' => 'Pair of Clownfish (bonded)', 'sub' => 'Meta Invoice (8/8/26)', 'flag' => 'check' ] ] === $from( 'Meta Invoice (8/8/26)' ) && [] === $by( 'Description Goby' ), json_encode( $from( 'Meta Invoice (8/8/26)' ) ) );
+    check( 'B: product deleted but the snapshot present → listed from the snapshot, no "product missing" row', [ [ 'kind' => 'fish', 'qty' => 1, 'name' => 'Orphan Goby', 'sub' => 'Gone Invoice (5/5/26)', 'flag' => '' ] ] === $from( 'Gone Invoice (5/5/26)' ) && [] === $by( 'Invoice — product missing' ), json_encode( $from( 'Gone Invoice (5/5/26)' ) ) );
+    check( 'B: an empty snapshot is still the snapshot → one CHECK row, the description is not read', [ [ 'kind' => 'fish', 'qty' => 1, 'name' => 'Empty Meta Invoice (4/4/26) — no fish lines on the order line', 'sub' => 'Empty Meta Invoice (4/4/26)', 'flag' => 'check' ] ] === $from( 'Empty Meta Invoice (4/4/26)' ), json_encode( $from( 'Empty Meta Invoice (4/4/26)' ) ) );
+    check( 'malformed snapshot → the description (shape C), as before', [ [ 'kind' => 'fish', 'qty' => 1, 'name' => 'Fallback Goby', 'sub' => 'Broken Invoice (6/6/26)', 'flag' => '' ] ] === $from( 'Broken Invoice (6/6/26)' ), json_encode( $from( 'Broken Invoice (6/6/26)' ) ) );
+    check( 'C: an old order\'s invoice line (no meta) is parsed from the description exactly as before', [ 'Hectors Goby', 'Yellow Tang' ] === array_column( $from( 'JPReef Invoice (7/3/26)' ), 'name' ) && [ 1, 2 ] === array_column( $from( 'JPReef Invoice (7/3/26)' ), 'qty' ), json_encode( $from( 'JPReef Invoice (7/3/26)' ) ) );
+    check( 'nothing else leaked in (10 rows: A 3, B 2 + 1 + 1, C 1, old 2)', 10 === count( $rows ), json_encode( array_column( $rows, 'name' ) ) );
+    $t = FisHotel_Ship_Day::totals( [ [ 'rows' => $rows, 'weather' => [] ] ] );
+    check( 'totals(): every shape counts as fish (A 1+2+1, B 6+2 +1 +1, C 1, old 1+2 = 18), nothing as dry goods', 18 === $t['fish'] && 0 === $t['dry'], json_encode( $t ) );
+
+    $GLOBALS['fh_sd_orders'][101] = $inv_order;
+    $r5 = FisHotel_Ship_Day::render( '2026-10-15', true );
+    restore_error_handler();
+    check( 'render(): the itemised rows reach the pick list with the "from <invoice>" sub-label; fish count from totals()', is_array( $r5 ) && 1 === $r5['orders'] && 18 === $r5['fish'] && false !== strpos( $r5['html'], '1 orders / 18 fish' ) && false !== strpos( $r5['html'], '<span class="fh-sd-sublabel">from Itemised Invoice (9/9/26)</span>' ) && false !== strpos( $r5['html'], '<span class="fh-sd-sublabel">from Gone Invoice (5/5/26)</span>' ) );
+    check( 'render(): the packing slip lists the product-less rows the same way', false !== strpos( $r5['html'], 'Hectors Goby <em>— from Itemised Invoice (9/9/26)</em>' ) && 1 === substr_count( $r5['html'], 'class="fh-packing-list-order"' ) );
+    check( 'render(): no credit and no description-only fish on either page', false === strpos( $r5['html'], 'Credit: DOA wrasse' ) && false === strpos( $r5['html'], 'Credit sneaked' ) && false === strpos( $r5['html'], 'Description Goby' ) );
+    check( 'no PHP notices or warnings while listing and rendering product-less lines', [] === $GLOBALS['fh_sd_notices'], implode( ' | ', $GLOBALS['fh_sd_notices'] ) );
+    unset( $GLOBALS['fh_sd_orders'][101] );
 }
 
 echo "\n{$passes} passed, {$failures} failed.\n";
