@@ -70,7 +70,7 @@ class My_GitHub_Updater {
   - `class-helpers.php` — Utility functions
   - `class-delivery-rules.php` — Delivery-date rules (standalone class, `fishotel_delivery_rules()`)
   - `class-order-meta.php` — `FisHotel_Order_Meta` (standalone static class): the ONE way to read/write/query WooCommerce **order** meta — HPOS-safe CRUD (`get/update/delete/has/order`), store-agnostic `query()`, `count_by_meta()`, `edit_url()`, the delivery-date migration body
-  - `class-ship-day.php` — Ship Day tab (pick list + weather overview)
+  - `class-ship-day.php` — Ship Day tab (pick list + weather overview). Invoice fish are read from whichever shape the order carries: the theme's (1.25+) itemised product-less lines (`_fh_invoice_fish` / `_fh_invoice_title` item meta; credits are fee items, never rows), the `_fh_invoice_lines` JSON snapshot on an Invoice line kept whole, or — old orders / unreadable meta — the Invoice product's description (`parse_invoice_lines()`). Pure helpers: `row_kind_for_item()`, `lines_from_item_meta()`
   - `class-updater.php` — GitHub auto-updater (standalone class, not a trait)
 - **Docs:** `docs/HPOS.md` — order-meta inventory, the compatibility declarations and the staging test plan
 - **Tests:** `tests/*.php` — plain PHP, no PHPUnit (`php tests/<name>.php`, exit 1 on failure); CI runs them all on 8.3 and `php -l` on 7.4 + 8.3

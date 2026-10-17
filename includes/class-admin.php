@@ -5242,7 +5242,7 @@ trait FisHotel_Admin {
         <!-- ═══ TAB: Ship Day ═══ -->
         <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;max-width:960px;" class="fh-no-print">
             <h2 style="color:#2986cc;margin-top:0;font-size:1.1em;">Ship Day</h2>
-            <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Step 8 of the order routine, built here: the pick list (one row per fish, Invoice products expanded, combined boxes as one destination) and the weather overview from the Weather section's notes. Pick a delivery date — the box ships the day before.</p>
+            <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Step 8 of the order routine, built here: the pick list (one row per fish, Invoice products expanded from their itemised checkout lines or, for older orders, their description; combined boxes as one destination) and the weather overview from the Weather section's notes. Pick a delivery date — the box ships the day before.</p>
 
             <?php if ( ! function_exists( 'wc_get_orders' ) ) : ?>
                 <p style="color:#e74c3c;font-size:13px;">WooCommerce is not active — nothing to list.</p>
