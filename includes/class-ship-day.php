@@ -57,6 +57,17 @@
  *      parsed by parse_invoice_lines() exactly as before. Unreadable meta
  *      (malformed JSON) is treated as absent and falls back here too.
  *
+ * PACKING. When the Misc plugin's Packing section is installed, each product line's
+ * row carries the bag it is packed in ('bag', from fishotel_packing_bag_for_item())
+ * and each destination the box confirmed for it ('box', the name from
+ * fishotel_packing_confirmed_box()); the pick list prints "Bag: <name>" beside the
+ * fish and "Box: <name>" once under the order. Both are read through
+ * function_exists() inside a try: without the section, while it is switched off,
+ * or for a line that is not packed in a bag, the row has no 'bag' key and the list
+ * is exactly as before. The fish of an Invoice product kept as one line (shapes B
+ * and C) have no order line of their own, so they show no bag. Staff-only: the
+ * packing slip that goes in the box never shows either.
+ *
  * This file has no side effects at load time. The parsing / classification /
  * flag / date / sort / totals helpers are pure static methods with no WordPress
  * dependency, so tests/ship-day-test.php can run them with plain php.
@@ -124,6 +135,17 @@ class FisHotel_Ship_Day {
 
     /** The Weather section's overview page (FisHotel Tools → Weather). */
     const WEATHER_PAGE_SLUG = 'fishotel-misc-weather';
+
+    /** The Misc plugin's list of switched-on sections, and the Weather section in it. */
+    const MISC_SECTIONS_OPTION = 'fishotel_misc_enabled_sections';
+    const WEATHER_SECTION_SLUG = 'weather';
+
+    /** The Weather section's entry class; the Misc plugin loads it on every request, on or off. */
+    const WEATHER_SECTION_CLASS = 'FisHotel\\Misc\\Sections\\Weather\\Weather';
+
+    /** The Weather section's settings (nightly job on/off and its run time). */
+    const WEATHER_SETTINGS_OPTION = 'fishotel_weather_settings';
+    const WEATHER_DEFAULT_RUN     = '21:00';
 
     /** Source-order statuses that never ship. */
     const DEAD_STATUSES = [ 'cancelled', 'refunded', 'failed', 'trash' ];
@@ -430,6 +452,10 @@ class FisHotel_Ship_Day {
      *   credit  _fh_invoice_credit = 1 — an invoice credit is money, never a row.
      *           The theme stores credits as FEE items, which rows_for_order()
      *           never reads; this also drops one that arrives as a line item.
+     *   credit  _fh_invoice_fish = 1 on a product-less line named "Adjustment" —
+     *           the Misc plugin's Invoices section writes the amount that brings an
+     *           invoice up to its stated total as a fish line, and the name is its
+     *           only marker (is_invoice_adjustment()). Money, never a row.
      *   fish    _fh_invoice_fish = 1 (theme 1.25+, shape A) — one fish of an
      *           itemised invoice. It has no product and so no categories, which
      *           classify() would read as dry goods. sub = the invoice title
@@ -446,11 +472,36 @@ class FisHotel_Ship_Day {
      *         "from …" sub-label; check = flag the row CHECK (unless another flag
      *         already applies).
      */
+    /**
+     * Whether a name is the "Adjustment" line of an invoice built by the Misc
+     * plugin's Invoices section: the amount that brings the invoice up to its
+     * stated total, which reaches the order as a fish line (the theme knows fish,
+     * credit and note only). That section owns the rule and answers it through
+     * fishotel_invoices_is_adjustment(), also while it is switched off. False
+     * when the function is absent or throws — lines are then listed as before.
+     *
+     * @param mixed $name The order line's (or invoice line's) name.
+     * @return bool
+     */
+    public static function is_invoice_adjustment( $name ) {
+        if ( ! function_exists( 'fishotel_invoices_is_adjustment' ) ) {
+            return false;
+        }
+        try {
+            return true === fishotel_invoices_is_adjustment( $name );
+        } catch ( \Throwable $e ) {
+            return false;
+        }
+    }
+
     public static function row_kind_for_item( array $meta, array $category_slugs, $item_name, $has_product = true, $fish_categories = null ) {
         if ( self::is_truthy_meta( $meta[ self::META_INV_CREDIT ] ?? '' ) ) {
             return [ 'class' => self::CLASS_CREDIT, 'sub' => '', 'check' => false ];
         }
         if ( self::is_truthy_meta( $meta[ self::META_INV_FISH ] ?? '' ) ) {
+            if ( ! $has_product && self::is_invoice_adjustment( $item_name ) ) {
+                return [ 'class' => self::CLASS_CREDIT, 'sub' => '', 'check' => false ]; // money that brings the invoice up to its stated total
+            }
             $title = self::clean_text( self::scalar_meta( $meta[ self::META_INV_TITLE ] ?? '' ) );
             if ( '' === $title ) {
                 $pid   = (int) self::scalar_meta( $meta[ self::META_INV_PRODUCT_ID ] ?? '' );
@@ -1135,6 +1186,10 @@ class FisHotel_Ship_Day {
                     }
                     $lines = self::parse_invoice_lines( self::product_description( $product ) );
                 }
+                // The invoice's "Adjustment" is money, not a fish to pick.
+                $lines = array_values( array_filter( $lines, function ( $line ) {
+                    return ! ( 1 === (int) $line['qty'] && self::is_invoice_adjustment( $line['fish'] ) );
+                } ) );
                 if ( empty( $lines ) ) {
                     $where  = $from_meta ? 'no fish lines on the order line' : 'no fish lines in description';
                     $rows[] = [ 'kind' => self::KIND_FISH, 'qty' => $qty, 'name' => $name . ' — ' . $where, 'sub' => $name, 'flag' => 'check' ];
@@ -1157,15 +1212,77 @@ class FisHotel_Ship_Day {
             } else {
                 $kind = $is_ea ? self::KIND_EA : self::KIND_DRY;
             }
-            $rows[] = [
+            $row = [
                 'kind' => $kind,
                 'qty'  => $qty,
                 'name' => '' !== $name ? $name : '(unnamed item)',
                 'sub'  => $spec['sub'],
                 'flag' => ( '' === $flag && $spec['check'] ) ? 'check' : $flag,
             ];
+            if ( self::KIND_EA !== $kind ) {
+                $bag = self::bag_name_for_item( $item );
+                if ( '' !== $bag ) {
+                    $row['bag'] = $bag; // only when the Packing section names one — rows are unchanged otherwise
+                }
+            }
+            $rows[] = $row;
         }
         return $rows;
+    }
+
+    /**
+     * The name of the bag one order line is packed in, from the Misc plugin's
+     * Packing section (fishotel_packing_bag_for_item(): null while the section is
+     * off, or for a line that is not packed in a bag / has no bag size). '' when
+     * there is none, the contract is absent, or it throws. Staff-only: read for
+     * the pick list, never for the packing slip that goes in the box.
+     *
+     * @param object $item A WC_Order_Item_Product.
+     * @return string
+     */
+    public static function bag_name_for_item( $item ) {
+        if ( ! is_object( $item ) || ! function_exists( 'fishotel_packing_bag_for_item' ) ) {
+            return '';
+        }
+        try {
+            $bag = fishotel_packing_bag_for_item( $item );
+        } catch ( \Throwable $e ) {
+            return '';
+        }
+        if ( ! is_array( $bag ) ) {
+            return '';
+        }
+        foreach ( [ 'name', 'label' ] as $key ) {
+            if ( isset( $bag[ $key ] ) && is_scalar( $bag[ $key ] ) && '' !== trim( (string) $bag[ $key ] ) ) {
+                return trim( (string) $bag[ $key ] );
+            }
+        }
+        return '';
+    }
+
+    /**
+     * The name of the box confirmed on an order in the Packing section
+     * (fishotel_packing_confirmed_box(): "Medium box", "Large box + Small box"),
+     * or '' when none is confirmed, the contract is absent, or it throws. For a
+     * fulfillment wrapper this is the combined box's own confirmation.
+     *
+     * @param int $order_id Order ID.
+     * @return string
+     */
+    public static function confirmed_box_name( $order_id ) {
+        $order_id = (int) $order_id;
+        if ( $order_id <= 0 || ! function_exists( 'fishotel_packing_confirmed_box' ) ) {
+            return '';
+        }
+        try {
+            $box = fishotel_packing_confirmed_box( $order_id );
+        } catch ( \Throwable $e ) {
+            return '';
+        }
+        if ( ! is_array( $box ) || ! isset( $box['name'] ) || ! is_scalar( $box['name'] ) ) {
+            return '';
+        }
+        return trim( (string) $box['name'] );
     }
 
     /**
@@ -1224,6 +1341,7 @@ class FisHotel_Ship_Day {
             'weather'        => $weather,
             'flag'           => self::flag_for_state( $weather ),
             'high'           => $weather['high'],
+            'box'            => self::confirmed_box_name( $order->get_id() ),
         ];
     }
 
@@ -1271,6 +1389,57 @@ class FisHotel_Ship_Day {
             'fish'      => $totals['fish'],
             'truncated' => $loaded['truncated'],
         ];
+    }
+
+    /**
+     * Whether the Misc plugin's Weather section is switched on: the Misc
+     * plugin is active (its Weather class is loaded on every request, on or
+     * off) and 'weather' is in its list of switched-on sections. Not the
+     * admin menu: Ship Day's content is built in an AJAX request, where no
+     * menu is registered.
+     */
+    public static function weather_section_on() {
+        if ( ! class_exists( self::WEATHER_SECTION_CLASS, false ) || ! function_exists( 'get_option' ) ) {
+            return false;
+        }
+        $on = get_option( self::MISC_SECTIONS_OPTION, [] );
+        return is_array( $on ) && in_array( self::WEATHER_SECTION_SLUG, $on, true );
+    }
+
+    /**
+     * When the Weather section's nightly check runs, as "9:00 pm" (site
+     * time), or '' when its nightly job is switched off.
+     */
+    public static function weather_nightly_time() {
+        $s = function_exists( 'get_option' ) ? get_option( self::WEATHER_SETTINGS_OPTION, [] ) : [];
+        $s = is_array( $s ) ? $s : [];
+        if ( array_key_exists( 'enabled', $s ) && empty( $s['enabled'] ) ) {
+            return '';
+        }
+        $time = isset( $s['run_time'] ) && is_scalar( $s['run_time'] ) ? trim( (string) $s['run_time'] ) : '';
+        if ( 1 !== preg_match( '/^(\d{1,2}):(\d{1,2})(?::\d{2})?$/', $time, $m ) || (int) $m[1] > 23 || (int) $m[2] > 59 ) {
+            $time = self::WEATHER_DEFAULT_RUN;
+            preg_match( '/^(\d{1,2}):(\d{1,2})$/', $time, $m );
+        }
+        $h = (int) $m[1];
+        return sprintf( '%d:%02d %s', 0 === $h % 12 ? 12 : $h % 12, (int) $m[2], $h < 12 ? 'am' : 'pm' );
+    }
+
+    /**
+     * The line shown when no order of the date has a weather note yet. With
+     * the Weather section on it only means the check has not run for these
+     * orders yet: it says when it runs ($nightly_at, '' = nightly job off)
+     * and links to the Weather page to check now. With it off, it says where
+     * to switch it on.
+     */
+    public static function weather_missing_note( $ymd, $weather_on, $nightly_at = '' ) {
+        if ( $weather_on ) {
+            $when = '' !== (string) $nightly_at
+                ? ' The Weather section checks every night at ' . esc_html( $nightly_at ) . ', for deliveries up to three days out.'
+                : ' The nightly check is switched off (FisHotel Tools &rarr; Weather &rarr; Settings).';
+            return '<p class="fh-sd-warn">These orders have not been checked for weather yet.' . $when . ' <a href="' . esc_url( self::weather_overview_url( $ymd ) ) . '">Check them now on the Weather page for ' . esc_html( self::label( $ymd, 'D, M j' ) ) . ' &rarr;</a></p>';
+        }
+        return '<p class="fh-sd-warn">Weather is not checked: switch on the Weather section under FisHotel Tools &rarr; Dashboard.</p>';
     }
 
     /** Link to the Weather section's overview for a date. */
@@ -1324,7 +1493,8 @@ class FisHotel_Ship_Day {
             }
         }
         if ( ! $any_meta ) {
-            $h .= '<p class="fh-sd-warn">Weather not checked — enable the Weather section in FisHotel Tools and run the nightly scan. <a href="' . esc_url( self::weather_overview_url( $ymd ) ) . '">Open the Weather overview for ' . esc_html( self::label( $ymd, 'D, M j' ) ) . '</a>.</p>';
+            $wx_on = self::weather_section_on();
+            $h    .= self::weather_missing_note( $ymd, $wx_on, $wx_on ? self::weather_nightly_time() : '' );
         }
 
         $attention = [];
@@ -1366,6 +1536,7 @@ class FisHotel_Ship_Day {
         $h   .= '<p class="fh-sd-sub">Ship ' . esc_html( self::label( $ship ) ) . ' &bull; Deliver ' . esc_html( self::label( $ymd ) ) . ' &bull; ' . (int) $totals['orders'] . ' orders / ' . (int) $totals['fish'] . ' fish</p>';
         $h   .= '<table class="fh-sd-table fh-sd-table--pick"><thead><tr><th class="fh-sd-col-pick">Pick</th><th class="fh-sd-col-qty">Qty</th><th>Fish</th><th class="fh-sd-col-order">Order</th><th class="fh-sd-col-dest">Destination</th></tr></thead><tbody>';
 
+        $packing = false; // a bag or a confirmed box from the Packing section is on the list
         foreach ( $dests as $d ) {
             $first = true;
             $rows  = $d['rows'];
@@ -1384,6 +1555,10 @@ class FisHotel_Ship_Day {
                 } elseif ( 'check' === $row['flag'] ) {
                     $name .= ' <span class="fh-sd-tag fh-sd-tag--warn">(CHECK)</span>';
                 }
+                if ( isset( $row['bag'] ) && '' !== $row['bag'] ) {
+                    $packing = true;
+                    $name   .= ' <span class="fh-sd-bag">Bag: ' . esc_html( $row['bag'] ) . '</span>';
+                }
                 if ( '' !== $row['sub'] ) {
                     $name .= '<br><span class="fh-sd-sublabel">from ' . esc_html( $row['sub'] ) . '</span>';
                 }
@@ -1392,7 +1567,9 @@ class FisHotel_Ship_Day {
                 $h .= '<td class="fh-sd-col-qty">' . (int) $row['qty'] . '</td>';
                 $h .= '<td>' . $name . '</td>';
                 if ( $first ) {
-                    $h .= '<td class="fh-sd-col-order"><strong>' . esc_html( $d['label'] ) . '</strong><br>' . esc_html( $d['customer'] ) . '</td>';
+                    $box     = isset( $d['box'] ) ? (string) $d['box'] : '';
+                    $packing = $packing || '' !== $box;
+                    $h  .= '<td class="fh-sd-col-order"><strong>' . esc_html( $d['label'] ) . '</strong><br>' . esc_html( $d['customer'] ) . ( '' !== $box ? '<br><span class="fh-sd-boxname">Box: ' . esc_html( $box ) . '</span>' : '' ) . '</td>';
                     $h .= '<td class="fh-sd-col-dest">' . esc_html( $d['place'] ) . ( '' !== $d['flag'] ? '<br><strong class="fh-sd-flag">' . esc_html( $d['flag'] ) . '</strong>' : '' ) . '</td>';
                 } else {
                     $h .= '<td class="fh-sd-col-order"></td><td class="fh-sd-col-dest"></td>';
@@ -1403,7 +1580,7 @@ class FisHotel_Ship_Day {
         }
         $h .= '</tbody></table>';
         $h .= '<p class="fh-sd-foot"><strong>' . (int) $totals['fish'] . ' fish &middot; ' . (int) $totals['dry'] . ' dry goods &middot; ' . (int) $totals['orders'] . ' orders</strong></p>';
-        $h .= '<p class="fh-sd-legend">Legend: (HEAT PACK) heat pack in the box &middot; (COOLING PACKS) cooling packs &middot; (UPS STORE) ship to a UPS Store, email draft in the order\'s Weather box &middot; (HOLD) do not ship &middot; (AT THE LINE — Jeff\'s call) high exactly on a band line &middot; (NOT CHECKED) no weather note for this date &middot; (dry goods) box it, not a fish &middot; (EA SHIPS) drop-shipped by EverythingAquatic, not in this box &middot; (BACKORDERED) not in stock &middot; (CHECK) verify by hand</p>';
+        $h .= '<p class="fh-sd-legend">Legend: (HEAT PACK) heat pack in the box &middot; (COOLING PACKS) cooling packs &middot; (UPS STORE) ship to a UPS Store, email draft in the order\'s Weather box &middot; (HOLD) do not ship &middot; (AT THE LINE — Jeff\'s call) high exactly on a band line &middot; (NOT CHECKED) no weather note for this date &middot; (dry goods) box it, not a fish &middot; (EA SHIPS) drop-shipped by EverythingAquatic, not in this box &middot; (BACKORDERED) not in stock &middot; (CHECK) verify by hand' . ( $packing ? ' &middot; Bag: the bag to pack that fish in &middot; Box: the box confirmed for the order (Packing)' : '' ) . '</p>';
         $h .= '</section>';
         return $h;
     }

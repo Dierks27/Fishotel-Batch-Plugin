@@ -673,7 +673,7 @@ if ( $fh_stubbed ) {
     check( 'slips appended: one card per destination, with the combined label', 2 === substr_count( $r2['html'], 'class="fh-packing-list-order"' ) && false !== strpos( $r2['html'], 'Order #300 (combined: #201, #203) &mdash; Pat Reefer' ) );
     check( 'output is escaped', false === strpos( $r2['html'], '<script' ) );
     $r3 = FisHotel_Ship_Day::render( '2026-10-14', false );
-    check( 'a date whose only order has no weather meta → global notice with the Weather overview link', false !== strpos( $r3['html'], 'enable the Weather section in FisHotel Tools and run the nightly scan' ) && false !== strpos( $r3['html'], 'page=fishotel-misc-weather' ) && false !== strpos( $r3['html'], 'date=2026-10-14' ) );
+    check( 'a date whose only order has no weather note, Weather section not in the menu → the notice says where to switch it on', false !== strpos( $r3['html'], 'Weather is not checked: switch on the Weather section under FisHotel Tools' ) );
     $r4 = FisHotel_Ship_Day::render( '2026-10-20', false );
     check( 'no orders → empty notice, no print block', 0 === $r4['orders'] && false !== strpos( $r4['html'], 'No open orders deliver on' ) && false === strpos( $r4['html'], 'fh-sd-print' ) );
     check( 'invalid date → WP_Error', is_wp_error( FisHotel_Ship_Day::render( '2026-02-30' ) ) );
@@ -748,6 +748,209 @@ if ( $fh_stubbed ) {
     check( 'render(): no credit and no description-only fish on either page', false === strpos( $r5['html'], 'Credit: DOA wrasse' ) && false === strpos( $r5['html'], 'Credit sneaked' ) && false === strpos( $r5['html'], 'Description Goby' ) );
     check( 'no PHP notices or warnings while listing and rendering product-less lines', [] === $GLOBALS['fh_sd_notices'], implode( ' | ', $GLOBALS['fh_sd_notices'] ) );
     unset( $GLOBALS['fh_sd_orders'][101] );
+
+    section( 'Packing section: the bag beside each fish, the confirmed box once per order' );
+    // Everything above ran without the Packing contracts — that is the "not installed"
+    // case, and its exact row shapes and HTML are already checked. From here on the
+    // two contracts exist, answering from these globals (null = section off / no bag).
+    $GLOBALS['fh_sd_orders'] = [ 100 => $order ];
+    $rows_before_packing     = FisHotel_Ship_Day::rows_for_order( $order );
+    $before                  = FisHotel_Ship_Day::render( '2026-10-13', true );
+    $html_before_packing     = is_array( $before ) ? $before['html'] : '';
+    check( 'without the contracts: no bag key, no Bag/Box on the page', [] === array_filter( $rows_before_packing, function ( $r ) { return array_key_exists( 'bag', $r ); } ) && false === strpos( $html_before_packing, 'fh-sd-bag' ) && false === strpos( $html_before_packing, 'fh-sd-boxname' ) );
+    $GLOBALS['fh_pk_bags']  = []; // item id => bag array | null | 'throw'
+    $GLOBALS['fh_pk_boxes'] = []; // order id => box array | null | 'throw'
+    function fishotel_packing_bag_for_item( $order_item ): ?array {
+        $v = $GLOBALS['fh_pk_bags'][ (int) $order_item->get_id() ] ?? null;
+        if ( 'throw' === $v ) {
+            throw new RuntimeException( 'packing broke' );
+        }
+        return $v;
+    }
+    function fishotel_packing_confirmed_box( $order_id ): ?array {
+        $v = $GLOBALS['fh_pk_boxes'][ (int) $order_id ] ?? null;
+        if ( 'throw' === $v ) {
+            throw new RuntimeException( 'packing broke' );
+        }
+        return $v;
+    }
+    $pk_bag = function ( $name ) {
+        return [ 'id' => 2, 'name' => $name, 'width' => '6', 'length' => '14', 'label' => $name . ' (6 × 14 in)', 'sort' => 2, 'source' => 'map', 'size' => 'medium', 'size_label' => 'Medium' ];
+    };
+    $pk_box = function ( $name ) {
+        return [ 'order_id' => 0, 'boxes' => [], 'count' => 1, 'name' => $name, 'length' => 12, 'width' => 10, 'height' => 10, 'dims' => '12x10x10', 'fill' => 0.5, 'suggested' => true, 'complete' => true, 'by' => 1, 'by_name' => 'Staff', 'at' => '2026-10-14 15:00:00' ];
+    };
+
+    // Section off: both contracts answer null → rows and page exactly as before.
+    $off = FisHotel_Ship_Day::rows_for_order( $order );
+    check( 'section off (null everywhere) → rows identical to the run without the contracts', $off === $rows_before_packing, json_encode( $off ) );
+    $r_off = FisHotel_Ship_Day::render( '2026-10-13', true );
+    check( 'section off → the page is byte-for-byte the page without the contracts', is_array( $r_off ) && $r_off['html'] === $html_before_packing );
+
+    // Section on.
+    $GLOBALS['fh_pk_bags'] = [
+        1  => $pk_bag( 'Medium' ),     // Hectors Goby (product)
+        8  => $pk_bag( 'Large <XL>' ), // Yellow Tang variation — escaped on the page
+        12 => $pk_bag( 'Small' ),      // batch-invoice fish line (no product)
+        4  => null,                    // PraziPro: not packed in a bag
+        5  => $pk_bag( 'Wrong' ),      // the Invoice line itself: never asked (its fish come from the description)
+        13 => $pk_bag( 'Wrong' ),      // EA drop-ship: never asked
+        7  => 'throw',                 // a broken contract never breaks the list
+    ];
+    $GLOBALS['fh_pk_boxes'] = [ 100 => $pk_box( 'Medium box + Small box' ) ];
+    $on    = FisHotel_Ship_Day::rows_for_order( $order );
+    $named = function ( $n ) use ( $on ) {
+        return array_values( array_filter( $on, function ( $r ) use ( $n ) { return $n === $r['name']; } ) );
+    };
+    check( 'a fish line with a bag gets its name in the row', 'Medium' === ( $named( 'Hectors Goby' )[0]['bag'] ?? '' ) && 'Large <XL>' === ( $named( 'Yellow Tang - Medium' )[0]['bag'] ?? '' ), json_encode( $named( 'Hectors Goby' ) ) );
+    check( 'a product-less fish line is asked too (the contract reads the line\'s own size)', [ 'Medium', 'Small' ] === array_values( array_filter( array_map( function ( $r ) { return $r['bag'] ?? ''; }, $named( 'Hectors Goby' ) ) ) ) );
+    check( 'null bag → no bag key; a throwing contract → no bag key', ! array_key_exists( 'bag', $named( 'PraziPro' )[0] ) && ! array_key_exists( 'bag', $named( 'Partly Refunded Goby' )[0] ) );
+    check( 'expanded invoice fish and EA drop-ships carry no bag', [] === array_filter( $on, function ( $r ) { return isset( $r['bag'] ) && 'Wrong' === $r['bag']; } ) );
+    $strip = array_map( function ( $r ) { unset( $r['bag'] ); return $r; }, $on );
+    check( 'nothing else in the rows changes', $strip === $rows_before_packing );
+
+    $r_on = FisHotel_Ship_Day::render( '2026-10-13', true );
+    $pick = is_array( $r_on ) ? substr( $r_on['html'], strpos( $r_on['html'], 'fh-sd-page--pick' ) ) : '';
+    $pick = substr( $pick, 0, (int) strpos( $pick, '</section>' ) );
+    check( 'pick list: "Bag: <name>" beside the fish, escaped', false !== strpos( $pick, 'Hectors Goby <span class="fh-sd-bag">Bag: Medium</span>' ) && false !== strpos( $pick, '<span class="fh-sd-bag">Bag: Large &lt;XL&gt;</span>' ) && 3 === substr_count( $pick, 'class="fh-sd-bag"' ), $pick );
+    check( 'pick list: the confirmed box once, under the order', 1 === substr_count( $pick, 'class="fh-sd-boxname"' ) && false !== strpos( $pick, 'Pat Reefer<br><span class="fh-sd-boxname">Box: Medium box + Small box</span>' ) );
+    check( 'pick list: the legend explains Bag / Box only now', false !== strpos( $pick, 'Bag: the bag to pack that fish in' ) && false === strpos( $html_before_packing, 'Bag: the bag to pack' ) );
+    $after_pick = substr( $r_on['html'], strpos( $r_on['html'], 'fh-sd-page--pick' ) + strlen( $pick ) );
+    check( 'the packing slip (goes in the box, customer-facing) and the weather page show neither', false === strpos( $after_pick, 'fh-sd-bag' ) && false === strpos( $after_pick, 'Bag:' ) && false === strpos( $after_pick, 'Box: Medium box' ) );
+    check( 'fish / order counts unchanged', $r_on['fish'] === $r_off['fish'] && $r_on['orders'] === $r_off['orders'] );
+
+    // A box but no bags; a throwing box contract.
+    $GLOBALS['fh_pk_bags'] = [];
+    $r_box = FisHotel_Ship_Day::render( '2026-10-13', false );
+    check( 'a confirmed box alone still shows (and the legend with it); no bag spans', false !== strpos( $r_box['html'], 'Box: Medium box + Small box' ) && false === strpos( $r_box['html'], 'class="fh-sd-bag"' ) && false !== strpos( $r_box['html'], 'Bag: the bag to pack' ) );
+    $GLOBALS['fh_pk_boxes'] = [ 100 => 'throw' ];
+    check( 'a throwing box contract → no box, no error', '' === FisHotel_Ship_Day::confirmed_box_name( 100 ) && false === strpos( FisHotel_Ship_Day::render( '2026-10-13', false )['html'], 'fh-sd-boxname' ) );
+    $GLOBALS['fh_pk_boxes'] = [ 100 => [ 'name' => '' ] ];
+    check( 'a box with an empty name → nothing shown', '' === FisHotel_Ship_Day::confirmed_box_name( 100 ) );
+    $GLOBALS['fh_pk_bags'] = [ 98 => [ 'name' => '', 'label' => 'Tall (4 × 16 in)' ] ];
+    check( 'bag_name_for_item(): empty name → label', 'Tall (4 × 16 in)' === FisHotel_Ship_Day::bag_name_for_item( new FH_SD_Item( 98, 'x', 1 ) ) );
+    check( 'bag_name_for_item(): not an object → ""', '' === FisHotel_Ship_Day::bag_name_for_item( null ) );
+
+    // Fulfillment wrapper: the box is the combined box's own; bags come from the source lines.
+    $src = new FH_SD_Order( 301, 'processing', [ '_fishotel_fulfilled_by_order' => '300' ], [ 31 => new FH_SD_Item( 31, 'Source Goby', 1, $goby ) ] );
+    $ff  = new FH_SD_Order( 300, 'fulfillment', [ '_fishotel_shipping_date' => '2026-10-15', '_fishotel_is_fulfillment' => '1', '_fishotel_fulfillment_sources' => '301' ], [] );
+    $GLOBALS['fh_sd_orders'] = [ 300 => $ff, 301 => $src ];
+    $GLOBALS['fh_pk_bags']   = [ 31 => $pk_bag( 'Medium' ) ];
+    $GLOBALS['fh_pk_boxes']  = [ 300 => $pk_box( 'Large box' ), 301 => $pk_box( 'Should not show' ) ];
+    $dest = FisHotel_Ship_Day::build_destination( $ff, '2026-10-15' );
+    check( 'fulfillment: the box is the wrapper\'s, the bag the source line\'s', 'Large box' === $dest['box'] && 'Medium' === ( $dest['rows'][0]['bag'] ?? '' ), json_encode( $dest['rows'] ) );
+    $GLOBALS['fh_pk_boxes'] = [];
+    $GLOBALS['fh_pk_bags']  = [];
+    $GLOBALS['fh_sd_orders'] = [];
+
+    section( 'An invoice\'s "Adjustment": money that brings it up to its stated total, never a fish to pick' );
+    // The Misc plugin's Invoices section writes the amount as a fish line named
+    // "Adjustment" (the theme knows fish / credit / note only) and owns the rule:
+    // fishotel_invoices_is_adjustment(). Invented figures throughout.
+    $GLOBALS['fh_sd_terms'][40] = [ 'invoices' ];
+    $GLOBALS['fh_sd_terms'][41] = [ 'invoices' ];
+    $GLOBALS['fh_sd_terms'][42] = [ 'quarantined-fish' ];
+    $adj_inv   = new FH_SD_Product( 40 );
+    $adj_desc  = new FH_SD_Product( 41, 0, '<ul><li>Described Goby x1 — $20</li><li>Adjustment x1 — $4</li></ul>' );
+    $adj_fish  = new FH_SD_Product( 42 );
+    $adj_meta  = [ '_fh_invoice_fish' => '1', '_fh_invoice_product_id' => '49', '_fh_invoice_title' => 'Flat Total Invoice (11/2/26)' ];
+    $adj_snap  = json_encode( [
+        [ 'name' => 'Kept Tang', 'qty' => 2, 'price' => 60, 'kind' => 'fish' ],
+        [ 'name' => 'Adjustment', 'qty' => 1, 'price' => 11, 'kind' => 'fish' ],
+        [ 'name' => 'Adjustment', 'qty' => 2, 'price' => 5, 'kind' => 'fish' ], // two of them is not the invoice's own line
+    ] );
+    $adj_order = new FH_SD_Order( 400, 'processing', [ '_fishotel_shipping_date' => '2026-10-20' ], [
+        1 => new FH_SD_Item( 1, 'Itemised Goby', 2, null, $adj_meta ),
+        2 => new FH_SD_Item( 2, 'Adjustment', 1, null, $adj_meta ),                                // shape A
+        3 => new FH_SD_Item( 3, 'Kept Invoice (11/3/26)', 1, $adj_inv, [ '_fh_invoice_lines' => $adj_snap ] ), // shape B
+        4 => new FH_SD_Item( 4, 'Described Invoice (11/4/26)', 1, $adj_desc ),                    // shape C
+        5 => new FH_SD_Item( 5, 'Adjustment', 1, $adj_fish ),                                     // a real product that happens to carry the name
+    ] );
+    $adj_names = function () use ( $adj_order ) {
+        return array_map( function ( $r ) { return $r['qty'] . ' x ' . $r['name']; }, FisHotel_Ship_Day::rows_for_order( $adj_order ) );
+    };
+    $adj_all = [ '2 x Itemised Goby', '1 x Adjustment', '2 x Kept Tang', '1 x Adjustment', '2 x Adjustment', '1 x Described Goby', '1 x Adjustment', '1 x Adjustment' ];
+    check( 'without the Invoices section\'s function: every line listed as before', ! function_exists( 'fishotel_invoices_is_adjustment' ) && $adj_all === $adj_names() && false === FisHotel_Ship_Day::is_invoice_adjustment( 'Adjustment' ), json_encode( $adj_names() ) );
+
+    $GLOBALS['fh_adj_mode'] = 'on';
+    function fishotel_invoices_is_adjustment( $name ) {
+        if ( 'throw' === $GLOBALS['fh_adj_mode'] ) {
+            throw new RuntimeException( 'invoices broke' );
+        }
+        return is_scalar( $name ) && ! is_bool( $name ) && 0 === strcasecmp( 'Adjustment', trim( (string) $name ) );
+    }
+    check( 'is_invoice_adjustment(): the name, any case, trimmed; nothing else', FisHotel_Ship_Day::is_invoice_adjustment( 'Adjustment' ) && FisHotel_Ship_Day::is_invoice_adjustment( ' adjustment ' ) && ! FisHotel_Ship_Day::is_invoice_adjustment( 'Adjustment Goby' ) && ! FisHotel_Ship_Day::is_invoice_adjustment( '' ) && ! FisHotel_Ship_Day::is_invoice_adjustment( null ) );
+    check( 'row_kind_for_item(): an itemised product-less "Adjustment" is a credit, not a fish', 'credit' === FisHotel_Ship_Day::row_kind_for_item( $adj_meta, [], 'Adjustment', false )['class'] );
+    check( 'row_kind_for_item(): the same name on a line that has a product, or without the invoice flag, is unchanged', 'fish' === FisHotel_Ship_Day::row_kind_for_item( $adj_meta, [], 'Adjustment', true )['class'] && [ 'class' => 'dry', 'sub' => '', 'check' => true ] === FisHotel_Ship_Day::row_kind_for_item( [], [], 'Adjustment', false ) );
+    check( 'rows_for_order(): shape A, B and C drop it; two of them and a real product stay', [ '2 x Itemised Goby', '2 x Kept Tang', '2 x Adjustment', '1 x Described Goby', '1 x Adjustment' ] === $adj_names(), json_encode( $adj_names() ) );
+    $adj_dest = FisHotel_Ship_Day::build_destination( $adj_order, '2026-10-20' );
+    $adj_tot  = FisHotel_Ship_Day::totals( [ $adj_dest ] );
+    check( 'totals(): the fish count no longer includes it (2 + 2 + 2 + 1 + 1 = 8, was 11)', 8 === $adj_tot['fish'], json_encode( $adj_tot ) );
+    $GLOBALS['fh_sd_orders'] = [ 400 => $adj_order ];
+    $adj_page = FisHotel_Ship_Day::render( '2026-10-20', true );
+    check( 'render(): pick list and packing slip show it only for the two lines that stay', is_array( $adj_page ) && 8 === $adj_page['fish'] && 4 === substr_count( $adj_page['html'], 'Adjustment' ), is_array( $adj_page ) ? (string) substr_count( $adj_page['html'], 'Adjustment' ) : 'no page' );
+    $only_adj = new FH_SD_Order( 401, 'processing', [], [ 1 => new FH_SD_Item( 1, 'Bare Invoice (11/5/26)', 1, $adj_inv, [ '_fh_invoice_lines' => json_encode( [ [ 'name' => 'Adjustment', 'qty' => 1, 'price' => 9, 'kind' => 'fish' ] ] ) ] ) ] );
+    $only     = FisHotel_Ship_Day::rows_for_order( $only_adj );
+    check( 'a kept invoice holding nothing but the Adjustment → the one CHECK row, as for any invoice without fish', 1 === count( $only ) && 'check' === $only[0]['flag'] && 'Bare Invoice (11/5/26) — no fish lines on the order line' === $only[0]['name'], json_encode( $only ) );
+    $GLOBALS['fh_adj_mode'] = 'throw';
+    check( 'a throwing function → listed as before, no error', $adj_all === $adj_names() && false === FisHotel_Ship_Day::is_invoice_adjustment( 'Adjustment' ) );
+    $GLOBALS['fh_adj_mode']  = 'on';
+    $GLOBALS['fh_sd_orders'] = [];
+}
+
+// The line shown when no order of the date has a weather note yet.
+$wx_on  = FisHotel_Ship_Day::weather_missing_note( '2026-10-20', true, '9:00 pm' );
+$wx_man = FisHotel_Ship_Day::weather_missing_note( '2026-10-20', true, '' );
+$wx_off = FisHotel_Ship_Day::weather_missing_note( '2026-10-20', false );
+check( 'weather_missing_note(): with Weather on, it never says to switch Weather on, says when the nightly check runs, and links to the Weather page for the date', false === stripos( $wx_on, 'enable' ) && false === stripos( $wx_on, 'switch on' ) && false !== strpos( $wx_on, 'These orders have not been checked for weather yet. The Weather section checks every night at 9:00 pm, for deliveries up to three days out.' ) && false !== strpos( $wx_on, 'Check them now on the Weather page for Tue, Oct 20' ) && false !== strpos( $wx_on, 'page=fishotel-misc-weather' ) && false !== strpos( $wx_on, 'date=2026-10-20' ), $wx_on );
+check( 'weather_missing_note(): with Weather on and its nightly job off, it says so and still links to check now', false !== strpos( $wx_man, 'These orders have not been checked for weather yet. The nightly check is switched off' ) && false === strpos( $wx_man, 'every night' ) && false !== strpos( $wx_man, 'date=2026-10-20' ), $wx_man );
+check( 'weather_missing_note(): with Weather off, it says where to switch it on and links nowhere', false !== strpos( $wx_off, 'switch on the Weather section under FisHotel Tools' ) && false === strpos( $wx_off, '<a ' ), $wx_off );
+
+if ( $fh_stubbed && ! function_exists( 'get_option' ) ) {
+    section( 'weather_section_on(): the Misc plugin\'s section list, not the admin menu (Ship Day renders over AJAX)' );
+    $GLOBALS['fh_options'] = [];
+    function get_option( $key, $default = false ) {
+        return array_key_exists( $key, $GLOBALS['fh_options'] ) ? $GLOBALS['fh_options'][ $key ] : $default;
+    }
+    $GLOBALS['fh_options']['fishotel_misc_enabled_sections'] = [ 'weather' ];
+    check( 'Misc plugin absent (no Weather class) → off, even with the option left behind', false === FisHotel_Ship_Day::weather_section_on() );
+    class FH_SD_Weather_Section {}
+    class_alias( 'FH_SD_Weather_Section', 'FisHotel\\Misc\\Sections\\Weather\\Weather' );
+    check( 'Misc plugin active, weather in the section list → on (no menu needed)', ! function_exists( 'menu_page_url' ) && true === FisHotel_Ship_Day::weather_section_on() );
+    $GLOBALS['fh_options']['fishotel_misc_enabled_sections'] = [ 'foam-cuts', 'today' ];
+    check( 'Misc plugin active, weather not in the list → off', false === FisHotel_Ship_Day::weather_section_on() );
+    $GLOBALS['fh_options']['fishotel_misc_enabled_sections'] = 'weather';
+    check( 'a non-array option → off', false === FisHotel_Ship_Day::weather_section_on() );
+
+    section( 'weather_nightly_time(): from the Weather section\'s settings' );
+    unset( $GLOBALS['fh_options']['fishotel_weather_settings'] );
+    check( 'no settings saved → the default 9:00 pm', '9:00 pm' === FisHotel_Ship_Day::weather_nightly_time() );
+    $GLOBALS['fh_options']['fishotel_weather_settings'] = [ 'enabled' => true, 'run_time' => '06:30' ];
+    check( 'a saved morning time', '6:30 am' === FisHotel_Ship_Day::weather_nightly_time() );
+    $GLOBALS['fh_options']['fishotel_weather_settings'] = [ 'enabled' => true, 'run_time' => 'nonsense' ];
+    check( 'an unreadable time → the default', '9:00 pm' === FisHotel_Ship_Day::weather_nightly_time() );
+    $GLOBALS['fh_options']['fishotel_weather_settings'] = [ 'enabled' => false, 'run_time' => '21:00' ];
+    check( 'nightly job switched off → empty', '' === FisHotel_Ship_Day::weather_nightly_time() );
+
+    section( 'render(): the weather line in all three cases' );
+    $wx_plain   = new FH_SD_Order( 500, 'processing', [ '_fishotel_shipping_date' => '2026-10-21' ], [ 1 => new FH_SD_Item( 1, 'Plain Goby', 1, null ) ] );
+    $wx_checked = new FH_SD_Order( 501, 'processing', array_merge( [ '_fishotel_shipping_date' => '2026-10-21' ], wmeta( 'heat_pack', [ '_fh_weather_checked_for' => '2026-10-21' ] ) ), [ 1 => new FH_SD_Item( 1, 'Checked Goby', 1, null ) ] );
+    $GLOBALS['fh_sd_orders'] = [ 500 => $wx_plain ];
+    $GLOBALS['fh_options']['fishotel_misc_enabled_sections'] = [ 'today' ];
+    $page = FisHotel_Ship_Day::render( '2026-10-21', false );
+    check( 'Weather off → says how to switch it on', false !== strpos( $page['html'], 'Weather is not checked: switch on the Weather section under FisHotel Tools &rarr; Dashboard.' ) && false === strpos( $page['html'], 'not been checked for weather yet' ), $page['html'] );
+    $GLOBALS['fh_options']['fishotel_misc_enabled_sections'] = [ 'today', 'weather' ];
+    $GLOBALS['fh_options']['fishotel_weather_settings']     = [ 'enabled' => true, 'run_time' => '21:00' ];
+    $page = FisHotel_Ship_Day::render( '2026-10-21', false );
+    check( 'Weather on, orders not checked yet → not checked yet, nightly at 9:00 pm, check-now link; never "switch on"', false !== strpos( $page['html'], 'These orders have not been checked for weather yet. The Weather section checks every night at 9:00 pm' ) && false !== strpos( $page['html'], 'date=2026-10-21' ) && false === strpos( $page['html'], 'switch on the Weather section' ), $page['html'] );
+    $GLOBALS['fh_options']['fishotel_weather_settings'] = [ 'enabled' => false ];
+    $page = FisHotel_Ship_Day::render( '2026-10-21', false );
+    check( 'Weather on, nightly job off → says the nightly check is off', false !== strpos( $page['html'], 'The nightly check is switched off' ) );
+    $GLOBALS['fh_sd_orders'] = [ 500 => $wx_plain, 501 => $wx_checked ];
+    $page = FisHotel_Ship_Day::render( '2026-10-21', false );
+    check( 'an order of the day is checked → no weather line at all, the flag shows', false === strpos( $page['html'], 'not been checked for weather yet' ) && false === strpos( $page['html'], 'Weather is not checked' ) && false !== strpos( $page['html'], '(HEAT PACK)' ), $page['html'] );
+    $GLOBALS['fh_sd_orders'] = [];
+    $GLOBALS['fh_options']   = [];
 }
 
 echo "\n{$passes} passed, {$failures} failed.\n";
