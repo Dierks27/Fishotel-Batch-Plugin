@@ -899,19 +899,58 @@ if ( $fh_stubbed ) {
 }
 
 // The line shown when no order of the date has a weather note yet.
-$wx_on  = FisHotel_Ship_Day::weather_missing_note( '2026-10-20', true );
+$wx_on  = FisHotel_Ship_Day::weather_missing_note( '2026-10-20', true, '9:00 pm' );
+$wx_man = FisHotel_Ship_Day::weather_missing_note( '2026-10-20', true, '' );
 $wx_off = FisHotel_Ship_Day::weather_missing_note( '2026-10-20', false );
-check( 'weather_missing_note(): with Weather on, it never says to switch Weather on, and links to the Weather page for the date', false === stripos( $wx_on, 'enable' ) && false === stripos( $wx_on, 'switch on' ) && false !== strpos( $wx_on, 'No weather note yet for these orders.' ) && false !== strpos( $wx_on, 'page=fishotel-misc-weather' ) && false !== strpos( $wx_on, 'date=2026-10-20' ), $wx_on );
+check( 'weather_missing_note(): with Weather on, it never says to switch Weather on, says when the nightly check runs, and links to the Weather page for the date', false === stripos( $wx_on, 'enable' ) && false === stripos( $wx_on, 'switch on' ) && false !== strpos( $wx_on, 'These orders have not been checked for weather yet. The Weather section checks every night at 9:00 pm, for deliveries up to three days out.' ) && false !== strpos( $wx_on, 'Check them now on the Weather page for Tue, Oct 20' ) && false !== strpos( $wx_on, 'page=fishotel-misc-weather' ) && false !== strpos( $wx_on, 'date=2026-10-20' ), $wx_on );
+check( 'weather_missing_note(): with Weather on and its nightly job off, it says so and still links to check now', false !== strpos( $wx_man, 'These orders have not been checked for weather yet. The nightly check is switched off' ) && false === strpos( $wx_man, 'every night' ) && false !== strpos( $wx_man, 'date=2026-10-20' ), $wx_man );
 check( 'weather_missing_note(): with Weather off, it says where to switch it on and links nowhere', false !== strpos( $wx_off, 'switch on the Weather section under FisHotel Tools' ) && false === strpos( $wx_off, '<a ' ), $wx_off );
-if ( ! function_exists( 'menu_page_url' ) ) {
-    check( 'weather_section_on(): without a WordPress menu, off', false === FisHotel_Ship_Day::weather_section_on() );
-    $GLOBALS['fh_sd_menu'] = [];
-    function menu_page_url( $slug, $echo = true ) {
-        return isset( $GLOBALS['fh_sd_menu'][ $slug ] ) ? 'https://example.test/wp-admin/admin.php?page=' . $slug : '';
+
+if ( $fh_stubbed && ! function_exists( 'get_option' ) ) {
+    section( 'weather_section_on(): the Misc plugin\'s section list, not the admin menu (Ship Day renders over AJAX)' );
+    $GLOBALS['fh_options'] = [];
+    function get_option( $key, $default = false ) {
+        return array_key_exists( $key, $GLOBALS['fh_options'] ) ? $GLOBALS['fh_options'][ $key ] : $default;
     }
-    check( 'weather_section_on(): the Weather page is not in the menu (section off) → off', false === FisHotel_Ship_Day::weather_section_on() );
-    $GLOBALS['fh_sd_menu']['fishotel-misc-weather'] = true;
-    check( 'weather_section_on(): the Weather page is in the menu (section on) → on', true === FisHotel_Ship_Day::weather_section_on() );
+    $GLOBALS['fh_options']['fishotel_misc_enabled_sections'] = [ 'weather' ];
+    check( 'Misc plugin absent (no Weather class) → off, even with the option left behind', false === FisHotel_Ship_Day::weather_section_on() );
+    class FH_SD_Weather_Section {}
+    class_alias( 'FH_SD_Weather_Section', 'FisHotel\\Misc\\Sections\\Weather\\Weather' );
+    check( 'Misc plugin active, weather in the section list → on (no menu needed)', ! function_exists( 'menu_page_url' ) && true === FisHotel_Ship_Day::weather_section_on() );
+    $GLOBALS['fh_options']['fishotel_misc_enabled_sections'] = [ 'foam-cuts', 'today' ];
+    check( 'Misc plugin active, weather not in the list → off', false === FisHotel_Ship_Day::weather_section_on() );
+    $GLOBALS['fh_options']['fishotel_misc_enabled_sections'] = 'weather';
+    check( 'a non-array option → off', false === FisHotel_Ship_Day::weather_section_on() );
+
+    section( 'weather_nightly_time(): from the Weather section\'s settings' );
+    unset( $GLOBALS['fh_options']['fishotel_weather_settings'] );
+    check( 'no settings saved → the default 9:00 pm', '9:00 pm' === FisHotel_Ship_Day::weather_nightly_time() );
+    $GLOBALS['fh_options']['fishotel_weather_settings'] = [ 'enabled' => true, 'run_time' => '06:30' ];
+    check( 'a saved morning time', '6:30 am' === FisHotel_Ship_Day::weather_nightly_time() );
+    $GLOBALS['fh_options']['fishotel_weather_settings'] = [ 'enabled' => true, 'run_time' => 'nonsense' ];
+    check( 'an unreadable time → the default', '9:00 pm' === FisHotel_Ship_Day::weather_nightly_time() );
+    $GLOBALS['fh_options']['fishotel_weather_settings'] = [ 'enabled' => false, 'run_time' => '21:00' ];
+    check( 'nightly job switched off → empty', '' === FisHotel_Ship_Day::weather_nightly_time() );
+
+    section( 'render(): the weather line in all three cases' );
+    $wx_plain   = new FH_SD_Order( 500, 'processing', [ '_fishotel_shipping_date' => '2026-10-21' ], [ 1 => new FH_SD_Item( 1, 'Plain Goby', 1, null ) ] );
+    $wx_checked = new FH_SD_Order( 501, 'processing', array_merge( [ '_fishotel_shipping_date' => '2026-10-21' ], wmeta( 'heat_pack', [ '_fh_weather_checked_for' => '2026-10-21' ] ) ), [ 1 => new FH_SD_Item( 1, 'Checked Goby', 1, null ) ] );
+    $GLOBALS['fh_sd_orders'] = [ 500 => $wx_plain ];
+    $GLOBALS['fh_options']['fishotel_misc_enabled_sections'] = [ 'today' ];
+    $page = FisHotel_Ship_Day::render( '2026-10-21', false );
+    check( 'Weather off → says how to switch it on', false !== strpos( $page['html'], 'Weather is not checked: switch on the Weather section under FisHotel Tools &rarr; Dashboard.' ) && false === strpos( $page['html'], 'not been checked for weather yet' ), $page['html'] );
+    $GLOBALS['fh_options']['fishotel_misc_enabled_sections'] = [ 'today', 'weather' ];
+    $GLOBALS['fh_options']['fishotel_weather_settings']     = [ 'enabled' => true, 'run_time' => '21:00' ];
+    $page = FisHotel_Ship_Day::render( '2026-10-21', false );
+    check( 'Weather on, orders not checked yet → not checked yet, nightly at 9:00 pm, check-now link; never "switch on"', false !== strpos( $page['html'], 'These orders have not been checked for weather yet. The Weather section checks every night at 9:00 pm' ) && false !== strpos( $page['html'], 'date=2026-10-21' ) && false === strpos( $page['html'], 'switch on the Weather section' ), $page['html'] );
+    $GLOBALS['fh_options']['fishotel_weather_settings'] = [ 'enabled' => false ];
+    $page = FisHotel_Ship_Day::render( '2026-10-21', false );
+    check( 'Weather on, nightly job off → says the nightly check is off', false !== strpos( $page['html'], 'The nightly check is switched off' ) );
+    $GLOBALS['fh_sd_orders'] = [ 500 => $wx_plain, 501 => $wx_checked ];
+    $page = FisHotel_Ship_Day::render( '2026-10-21', false );
+    check( 'an order of the day is checked → no weather line at all, the flag shows', false === strpos( $page['html'], 'not been checked for weather yet' ) && false === strpos( $page['html'], 'Weather is not checked' ) && false !== strpos( $page['html'], '(HEAT PACK)' ), $page['html'] );
+    $GLOBALS['fh_sd_orders'] = [];
+    $GLOBALS['fh_options']   = [];
 }
 
 echo "\n{$passes} passed, {$failures} failed.\n";
