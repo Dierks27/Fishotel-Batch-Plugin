@@ -73,7 +73,7 @@ class My_GitHub_Updater {
   - `class-ship-day.php` — Ship Day tab (pick list + weather overview). Invoice fish are read from whichever shape the order carries: the theme's (1.25+) itemised product-less lines (`_fh_invoice_fish` / `_fh_invoice_title` item meta; credits are fee items, never rows), the `_fh_invoice_lines` JSON snapshot on an Invoice line kept whole, or — old orders / unreadable meta — the Invoice product's description (`parse_invoice_lines()`). Pure helpers: `row_kind_for_item()`, `lines_from_item_meta()`
   - `class-updater.php` — GitHub auto-updater (standalone class, not a trait)
 - **Docs:** `docs/HPOS.md` — order-meta inventory, the compatibility declarations and the staging test plan
-- **Tests:** `tests/*.php` — plain PHP, no PHPUnit (`php tests/<name>.php`, exit 1 on failure); CI runs them all on 8.3 and `php -l` on 7.4 + 8.3
+- **Tests:** `tests/*.php` — plain PHP, no PHPUnit (`php tests/<name>.php`, exit 1 on failure); CI runs them all on 8.3 and `php -l` on 7.4 + 8.3; `tests/README.md` lists what each covers. `tests/hook-callbacks-test.php` fails the build when any hook or menu callback names a method the plugin (main class + its traits) does not define
 
 ## HPOS (WooCommerce High-Performance Order Storage)
 

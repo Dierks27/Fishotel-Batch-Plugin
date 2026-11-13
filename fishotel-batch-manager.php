@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.30 - Pick list shows each fish's bag and the order's confirmed box from the Misc Packing section (staff only; unchanged without it)
- * Version:           10.30
+ * Description:       v10.31 - Test only: every hook callback must name a method the plugin defines (no change on the site)
+ * Version:           10.31
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.30' );
+define( 'FISHOTEL_VERSION', '10.31' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
