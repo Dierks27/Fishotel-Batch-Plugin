@@ -842,6 +842,60 @@ if ( $fh_stubbed ) {
     $GLOBALS['fh_pk_boxes'] = [];
     $GLOBALS['fh_pk_bags']  = [];
     $GLOBALS['fh_sd_orders'] = [];
+
+    section( 'An invoice\'s "Adjustment": money that brings it up to its stated total, never a fish to pick' );
+    // The Misc plugin's Invoices section writes the amount as a fish line named
+    // "Adjustment" (the theme knows fish / credit / note only) and owns the rule:
+    // fishotel_invoices_is_adjustment(). Invented figures throughout.
+    $GLOBALS['fh_sd_terms'][40] = [ 'invoices' ];
+    $GLOBALS['fh_sd_terms'][41] = [ 'invoices' ];
+    $GLOBALS['fh_sd_terms'][42] = [ 'quarantined-fish' ];
+    $adj_inv   = new FH_SD_Product( 40 );
+    $adj_desc  = new FH_SD_Product( 41, 0, '<ul><li>Described Goby x1 — $20</li><li>Adjustment x1 — $4</li></ul>' );
+    $adj_fish  = new FH_SD_Product( 42 );
+    $adj_meta  = [ '_fh_invoice_fish' => '1', '_fh_invoice_product_id' => '49', '_fh_invoice_title' => 'Flat Total Invoice (11/2/26)' ];
+    $adj_snap  = json_encode( [
+        [ 'name' => 'Kept Tang', 'qty' => 2, 'price' => 60, 'kind' => 'fish' ],
+        [ 'name' => 'Adjustment', 'qty' => 1, 'price' => 11, 'kind' => 'fish' ],
+        [ 'name' => 'Adjustment', 'qty' => 2, 'price' => 5, 'kind' => 'fish' ], // two of them is not the invoice's own line
+    ] );
+    $adj_order = new FH_SD_Order( 400, 'processing', [ '_fishotel_shipping_date' => '2026-10-20' ], [
+        1 => new FH_SD_Item( 1, 'Itemised Goby', 2, null, $adj_meta ),
+        2 => new FH_SD_Item( 2, 'Adjustment', 1, null, $adj_meta ),                                // shape A
+        3 => new FH_SD_Item( 3, 'Kept Invoice (11/3/26)', 1, $adj_inv, [ '_fh_invoice_lines' => $adj_snap ] ), // shape B
+        4 => new FH_SD_Item( 4, 'Described Invoice (11/4/26)', 1, $adj_desc ),                    // shape C
+        5 => new FH_SD_Item( 5, 'Adjustment', 1, $adj_fish ),                                     // a real product that happens to carry the name
+    ] );
+    $adj_names = function () use ( $adj_order ) {
+        return array_map( function ( $r ) { return $r['qty'] . ' x ' . $r['name']; }, FisHotel_Ship_Day::rows_for_order( $adj_order ) );
+    };
+    $adj_all = [ '2 x Itemised Goby', '1 x Adjustment', '2 x Kept Tang', '1 x Adjustment', '2 x Adjustment', '1 x Described Goby', '1 x Adjustment', '1 x Adjustment' ];
+    check( 'without the Invoices section\'s function: every line listed as before', ! function_exists( 'fishotel_invoices_is_adjustment' ) && $adj_all === $adj_names() && false === FisHotel_Ship_Day::is_invoice_adjustment( 'Adjustment' ), json_encode( $adj_names() ) );
+
+    $GLOBALS['fh_adj_mode'] = 'on';
+    function fishotel_invoices_is_adjustment( $name ) {
+        if ( 'throw' === $GLOBALS['fh_adj_mode'] ) {
+            throw new RuntimeException( 'invoices broke' );
+        }
+        return is_scalar( $name ) && ! is_bool( $name ) && 0 === strcasecmp( 'Adjustment', trim( (string) $name ) );
+    }
+    check( 'is_invoice_adjustment(): the name, any case, trimmed; nothing else', FisHotel_Ship_Day::is_invoice_adjustment( 'Adjustment' ) && FisHotel_Ship_Day::is_invoice_adjustment( ' adjustment ' ) && ! FisHotel_Ship_Day::is_invoice_adjustment( 'Adjustment Goby' ) && ! FisHotel_Ship_Day::is_invoice_adjustment( '' ) && ! FisHotel_Ship_Day::is_invoice_adjustment( null ) );
+    check( 'row_kind_for_item(): an itemised product-less "Adjustment" is a credit, not a fish', 'credit' === FisHotel_Ship_Day::row_kind_for_item( $adj_meta, [], 'Adjustment', false )['class'] );
+    check( 'row_kind_for_item(): the same name on a line that has a product, or without the invoice flag, is unchanged', 'fish' === FisHotel_Ship_Day::row_kind_for_item( $adj_meta, [], 'Adjustment', true )['class'] && [ 'class' => 'dry', 'sub' => '', 'check' => true ] === FisHotel_Ship_Day::row_kind_for_item( [], [], 'Adjustment', false ) );
+    check( 'rows_for_order(): shape A, B and C drop it; two of them and a real product stay', [ '2 x Itemised Goby', '2 x Kept Tang', '2 x Adjustment', '1 x Described Goby', '1 x Adjustment' ] === $adj_names(), json_encode( $adj_names() ) );
+    $adj_dest = FisHotel_Ship_Day::build_destination( $adj_order, '2026-10-20' );
+    $adj_tot  = FisHotel_Ship_Day::totals( [ $adj_dest ] );
+    check( 'totals(): the fish count no longer includes it (2 + 2 + 2 + 1 + 1 = 8, was 11)', 8 === $adj_tot['fish'], json_encode( $adj_tot ) );
+    $GLOBALS['fh_sd_orders'] = [ 400 => $adj_order ];
+    $adj_page = FisHotel_Ship_Day::render( '2026-10-20', true );
+    check( 'render(): pick list and packing slip show it only for the two lines that stay', is_array( $adj_page ) && 8 === $adj_page['fish'] && 4 === substr_count( $adj_page['html'], 'Adjustment' ), is_array( $adj_page ) ? (string) substr_count( $adj_page['html'], 'Adjustment' ) : 'no page' );
+    $only_adj = new FH_SD_Order( 401, 'processing', [], [ 1 => new FH_SD_Item( 1, 'Bare Invoice (11/5/26)', 1, $adj_inv, [ '_fh_invoice_lines' => json_encode( [ [ 'name' => 'Adjustment', 'qty' => 1, 'price' => 9, 'kind' => 'fish' ] ] ) ] ) ] );
+    $only     = FisHotel_Ship_Day::rows_for_order( $only_adj );
+    check( 'a kept invoice holding nothing but the Adjustment → the one CHECK row, as for any invoice without fish', 1 === count( $only ) && 'check' === $only[0]['flag'] && 'Bare Invoice (11/5/26) — no fish lines on the order line' === $only[0]['name'], json_encode( $only ) );
+    $GLOBALS['fh_adj_mode'] = 'throw';
+    check( 'a throwing function → listed as before, no error', $adj_all === $adj_names() && false === FisHotel_Ship_Day::is_invoice_adjustment( 'Adjustment' ) );
+    $GLOBALS['fh_adj_mode']  = 'on';
+    $GLOBALS['fh_sd_orders'] = [];
 }
 
 echo "\n{$passes} passed, {$failures} failed.\n";

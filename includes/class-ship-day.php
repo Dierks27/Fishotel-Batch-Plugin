@@ -441,6 +441,10 @@ class FisHotel_Ship_Day {
      *   credit  _fh_invoice_credit = 1 — an invoice credit is money, never a row.
      *           The theme stores credits as FEE items, which rows_for_order()
      *           never reads; this also drops one that arrives as a line item.
+     *   credit  _fh_invoice_fish = 1 on a product-less line named "Adjustment" —
+     *           the Misc plugin's Invoices section writes the amount that brings an
+     *           invoice up to its stated total as a fish line, and the name is its
+     *           only marker (is_invoice_adjustment()). Money, never a row.
      *   fish    _fh_invoice_fish = 1 (theme 1.25+, shape A) — one fish of an
      *           itemised invoice. It has no product and so no categories, which
      *           classify() would read as dry goods. sub = the invoice title
@@ -457,11 +461,36 @@ class FisHotel_Ship_Day {
      *         "from …" sub-label; check = flag the row CHECK (unless another flag
      *         already applies).
      */
+    /**
+     * Whether a name is the "Adjustment" line of an invoice built by the Misc
+     * plugin's Invoices section: the amount that brings the invoice up to its
+     * stated total, which reaches the order as a fish line (the theme knows fish,
+     * credit and note only). That section owns the rule and answers it through
+     * fishotel_invoices_is_adjustment(), also while it is switched off. False
+     * when the function is absent or throws — lines are then listed as before.
+     *
+     * @param mixed $name The order line's (or invoice line's) name.
+     * @return bool
+     */
+    public static function is_invoice_adjustment( $name ) {
+        if ( ! function_exists( 'fishotel_invoices_is_adjustment' ) ) {
+            return false;
+        }
+        try {
+            return true === fishotel_invoices_is_adjustment( $name );
+        } catch ( \Throwable $e ) {
+            return false;
+        }
+    }
+
     public static function row_kind_for_item( array $meta, array $category_slugs, $item_name, $has_product = true, $fish_categories = null ) {
         if ( self::is_truthy_meta( $meta[ self::META_INV_CREDIT ] ?? '' ) ) {
             return [ 'class' => self::CLASS_CREDIT, 'sub' => '', 'check' => false ];
         }
         if ( self::is_truthy_meta( $meta[ self::META_INV_FISH ] ?? '' ) ) {
+            if ( ! $has_product && self::is_invoice_adjustment( $item_name ) ) {
+                return [ 'class' => self::CLASS_CREDIT, 'sub' => '', 'check' => false ]; // money that brings the invoice up to its stated total
+            }
             $title = self::clean_text( self::scalar_meta( $meta[ self::META_INV_TITLE ] ?? '' ) );
             if ( '' === $title ) {
                 $pid   = (int) self::scalar_meta( $meta[ self::META_INV_PRODUCT_ID ] ?? '' );
@@ -1146,6 +1175,10 @@ class FisHotel_Ship_Day {
                     }
                     $lines = self::parse_invoice_lines( self::product_description( $product ) );
                 }
+                // The invoice's "Adjustment" is money, not a fish to pick.
+                $lines = array_values( array_filter( $lines, function ( $line ) {
+                    return ! ( 1 === (int) $line['qty'] && self::is_invoice_adjustment( $line['fish'] ) );
+                } ) );
                 if ( empty( $lines ) ) {
                     $where  = $from_meta ? 'no fish lines on the order line' : 'no fish lines in description';
                     $rows[] = [ 'kind' => self::KIND_FISH, 'qty' => $qty, 'name' => $name . ' — ' . $where, 'sub' => $name, 'flag' => 'check' ];
