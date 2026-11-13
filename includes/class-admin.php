@@ -26,10 +26,10 @@ trait FisHotel_Admin {
     public function add_admin_menu() {
         $fish_icon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgNjAiPjxwYXRoIGZpbGw9IiMyOTg2Y2MiIGQ9Ik02NSAzMEMxMCAzMCAwIDU1IDAgNTVzMzAtMTUgMzUtMzBDMTAgMjUgMCAxMCAwIDVjMCAwIDMwIDIwIDM1IDE1IDAtMTAgMjAtMjAgNDAtMjAgMjAgMCAzNSAxNSAzNSAzMCAwIDE1LTE1IDMwLTM1IDMwLTIwIDAtNDAtMTAtNDAtMjB6Ii8+PGVsbGlwc2UgZmlsbD0iIzFhMWExYSIgY3g9Ijc4IiBjeT0iMjciIHJ4PSIzIiByeT0iMyIvPjwvc3ZnPg==';
         // 3 visible menu items
-        add_menu_page( 'FisHotel Batch Manager', 'FisHotel', 'manage_options', 'fishotel-batch-hq', [$this, 'batch_hq_html'], $fish_icon, 56 );
+        add_menu_page( 'FisHotel Batch Manager', 'Group Orders', 'manage_options', 'fishotel-batch-hq', [$this, 'batch_hq_html'], $fish_icon, 56 );
         add_submenu_page( 'fishotel-batch-hq', 'Batches', 'Batches', 'manage_options', 'fishotel-batch-hq' );
-        add_submenu_page( 'fishotel-batch-hq', 'Fish Care', 'Fish Care', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
-        add_submenu_page( 'fishotel-batch-hq', 'Invoicing',     'Invoicing',     'manage_options', 'fishotel-invoicing',      [$this, 'render_invoicing_page'] );
+        add_submenu_page( 'fishotel-batch-hq', 'Group-order fish care', 'Group-order fish care', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
+        add_submenu_page( 'fishotel-batch-hq', 'Group-order invoices', 'Group-order invoices',     'manage_options', 'fishotel-invoicing',      [$this, 'render_invoicing_page'] );
         add_submenu_page( 'fishotel-batch-hq', 'Supplier Stock', 'Supplier Stock', 'manage_options', 'fishotel-sourcing', [$this, 'sourcing_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Postcards', 'Postcards', 'manage_options', 'fishotel-hotel-program', [$this, 'hotel_program_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Casino', 'Casino', 'manage_options', 'fishotel-casino', [$this, 'casino_standalone_html'] );
@@ -104,7 +104,7 @@ trait FisHotel_Admin {
         $tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'settings';
         $tabs = [
             'settings' => 'Settings',
-            'requests' => 'Requests',
+            'requests' => 'Deposits',
             'summary'  => 'Order Summary',
             'wallets'  => 'Wallets',
         ];
@@ -171,13 +171,13 @@ trait FisHotel_Admin {
                         <tr><th>#</th><th>Stage</th><th>What Happens</th><th>Admin Action</th><th>Prerequisite</th></tr>
                         <tr><td>1</td><td>Open Ordering</td><td>Fish list is live. Customers browse and request fish.</td><td>Import CSV, assign page, set deposit.</td><td>Batch created + CSV imported</td></tr>
                         <tr><td>2</td><td>Orders Closed</td><td>Order window closed. Page shows countdown to arrival.</td><td>Wait for shipment.</td><td>At least 1 customer request</td></tr>
-                        <tr><td>3</td><td>Arrived</td><td>Fish have arrived. Time to count.</td><td>Go to <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care</a> &rarr; Counting tab. Enter received qty for each species.</td><td>&mdash;</td></tr>
-                        <tr><td>4</td><td>In Quarantine</td><td>Fish in QT. Postcards sent to customers.</td><td>Log survival counts in <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care</a> &rarr; Quarantine.</td><td>Arrival quantities entered</td></tr>
-                        <tr><td>5</td><td>Graduation Day</td><td>QT complete. Final counts needed.</td><td>Enter graduation quantities in <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care</a> &rarr; Graduation tab, then Save.</td><td>&mdash;</td></tr>
-                        <tr><td>6</td><td>Accept or Pass</td><td>Guest Folio is live. Customers accept or pass on their fish.</td><td>Monitor. Cron auto-advances when all resolved.</td><td>Graduation quantities entered (builds the verification queue)</td></tr>
+                        <tr><td>3</td><td>Arrived</td><td>Fish have arrived. Time to count.</td><td>Go to <a href="<?php echo esc_url( $qt_url ); ?>">Group-order fish care</a> &rarr; Counting tab. Enter received qty for each species.</td><td>&mdash;</td></tr>
+                        <tr><td>4</td><td>In Quarantine</td><td>Fish in QT. Postcards sent to customers.</td><td>Log survival counts in <a href="<?php echo esc_url( $qt_url ); ?>">Group-order fish care</a> &rarr; Quarantine.</td><td>Arrival quantities entered</td></tr>
+                        <tr><td>5</td><td>Graduation Day</td><td>QT complete. Final counts needed.</td><td>Enter graduation quantities in <a href="<?php echo esc_url( $qt_url ); ?>">Group-order fish care</a> &rarr; Graduation tab, then Save.</td><td>&mdash;</td></tr>
+                        <tr><td>6</td><td>Accept or Pass</td><td>Guest Folio is live. Customers accept or pass on their fish.</td><td>Watch. Moves on by itself once everyone has answered.</td><td>Graduation quantities entered (builds the verification queue)</td></tr>
                         <tr><td>7</td><td>Draft Pool</td><td>Unclaimed fish available for last-call picks.</td><td>Monitor draft picks.</td><td>All verification decisions made</td></tr>
                         <tr><td>8</td><td>Casino Night</td><td>Casino arcade is live with Draft Room.</td><td>Monitor casino activity.</td><td>&mdash;</td></tr>
-                        <tr><td>9</td><td>Invoicing</td><td>Generate WooCommerce orders for each customer.</td><td>Go to <a href="<?php echo esc_url( $inv_url ); ?>">Invoicing</a> and generate invoices.</td><td>&mdash;</td></tr>
+                        <tr><td>9</td><td>Invoicing</td><td>Generate WooCommerce orders for each customer.</td><td>Go to <a href="<?php echo esc_url( $inv_url ); ?>">Group-order invoices</a> and generate invoices.</td><td>&mdash;</td></tr>
                     </table>
                 </div>
             </div>
@@ -191,12 +191,12 @@ trait FisHotel_Admin {
                     <div class="fhg-step"><span class="fhg-num">3</span><p><strong>Open ordering</strong> &mdash; The batch starts in "Open Ordering." The assigned page shows the fish list. Share the page with customers.</p></div>
                     <div class="fhg-step"><span class="fhg-num">4</span><p><strong>Close ordering</strong> &mdash; Click the <strong>Close Ordering</strong> button on the batch row. This locks the order window.</p></div>
                     <div class="fhg-step"><span class="fhg-num">5</span><p><strong>Mark as arrived</strong> &mdash; When the shipment arrives, click <strong>Mark as Arrived</strong>.</p></div>
-                    <div class="fhg-step"><span class="fhg-num">6</span><p><strong>Enter arrival quantities</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care &rarr; Counting</a>. Enter received qty and DOA for each species. Then click <strong>Begin Quarantine</strong>.</p></div>
-                    <div class="fhg-step"><span class="fhg-num">7</span><p><strong>Track quarantine survival</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care &rarr; Quarantine</a>. Log survival counts periodically. Postcards auto-send to customers.</p></div>
-                    <div class="fhg-step"><span class="fhg-num">8</span><p><strong>Graduate the batch</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care &rarr; Graduation</a>. Enter final graduation quantities for each species. Click <strong>Save Graduation Data</strong> &mdash; this builds the verification queue and opens the Guest Folio.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">6</span><p><strong>Enter arrival quantities</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Group-order fish care &rarr; Counting</a>. Enter received qty and DOA for each species. Then click <strong>Begin Quarantine</strong>.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">7</span><p><strong>Track quarantine survival</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Group-order fish care &rarr; Quarantine</a>. Log survival counts periodically. Postcards auto-send to customers.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">8</span><p><strong>Graduate the batch</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Group-order fish care &rarr; Graduation</a>. Enter final graduation quantities for each species. Click <strong>Save Graduation Data</strong> &mdash; this builds the verification queue and opens the Guest Folio.</p></div>
                     <div class="fhg-step"><span class="fhg-num">9</span><p><strong>Customers accept or pass</strong> &mdash; The Guest Folio page goes live. Customers see their requests and accept or pass. A cron job auto-passes customers who don't respond within the window.</p></div>
                     <div class="fhg-step"><span class="fhg-num">10</span><p><strong>Draft &amp; Casino</strong> &mdash; After verification completes, unclaimed fish go to the Draft Pool, then Casino Night. Advance using the action buttons.</p></div>
-                    <div class="fhg-step"><span class="fhg-num">11</span><p><strong>Generate invoices</strong> &mdash; Go to <a href="<?php echo esc_url( $inv_url ); ?>">Invoicing</a> and generate WooCommerce orders for each customer.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">11</span><p><strong>Generate invoices</strong> &mdash; Go to <a href="<?php echo esc_url( $inv_url ); ?>">Group-order invoices</a> and generate WooCommerce orders for each customer.</p></div>
                 </div>
             </div>
 
@@ -209,7 +209,7 @@ trait FisHotel_Admin {
                         <tr>
                             <td><strong>Guest Folio shows "No requests on file"</strong></td>
                             <td>Graduation quantities were never entered. The verification queue needs graduation data to know how many fish are available.</td>
-                            <td>Go back to Graduation Day stage. Enter graduation quantities in Fish Care &rarr; Graduation, then Save. This builds the queue.</td>
+                            <td>Go back to Graduation Day stage. Enter graduation quantities in Group-order fish care &rarr; Graduation, then Save. This builds the queue.</td>
                         </tr>
                         <tr>
                             <td><strong>Can't advance to next stage (dropdown locked)</strong></td>
@@ -250,7 +250,7 @@ trait FisHotel_Admin {
                         <tr><td><strong>Casino Night</strong></td><td>The arcade experience with Draft Room, roulette, blackjack, and sticker shop.</td></tr>
                         <tr><td><strong>_stock</strong></td><td>Available-to-order quantity on a fish_batch post. Decremented when customers order. Set during CSV import.</td></tr>
                         <tr><td><strong>_current_qty</strong></td><td>Actual physical quantity after QT/graduation. Set during survival tracking or graduation. Used for verification queue.</td></tr>
-                        <tr><td><strong>_arrival_qty_received</strong></td><td>Number of fish received on arrival day. Set in Fish Care &rarr; Counting tab.</td></tr>
+                        <tr><td><strong>_arrival_qty_received</strong></td><td>Number of fish received on arrival day. Set in Group-order fish care &rarr; Counting tab.</td></tr>
                     </table>
                 </div>
             </div>
@@ -1689,9 +1689,9 @@ trait FisHotel_Admin {
 
         ?>
         <div class="wrap fishotel-admin">
-            <h1>FisHotel Batch Requests</h1>
+            <h1>Group-order deposits</h1>
 
-            <p class="page-description">Stock is reserved. Empty-cart requests show as ghost rows ($0.00) with only Mark Unpaid + Permanent Delete.</p>
+            <p class="page-description">Stock is held for each request. A request whose cart is empty shows at $0.00 with only Mark unpaid and Delete.</p>
 
             <input type="text" id="batch-search" placeholder="Search requests..." style="width:300px;margin-bottom:15px;">
 
@@ -1733,10 +1733,10 @@ trait FisHotel_Admin {
                                 <td><?php echo esc_html( $req->post_date ); ?></td>
                                 <td><?php echo $paid_html; ?></td>
                                 <td style="white-space:nowrap;">
-                                    <a href="<?php echo admin_url( 'post.php?post=' . $req->ID . '&action=edit' ); ?>" class="button button-small" style="background:#3498db;color:#fff;" title="View Fish">V</a>
-                                    <a href="<?php echo esc_url( $cancel_url ); ?>" class="button button-small" style="background:#2986cc;color:#fff;" title="Cancel & Restore Stock" onclick="return confirm('Cancel and restore stock?');">C</a>
-                                    <a href="<?php echo esc_url( $mark_unpaid_url ); ?>" class="button button-small" style="background:#27ae60;color:#000;" title="Mark Unpaid" onclick="return confirm('Mark UNPAID?');">M</a>
-                                    <a href="<?php echo esc_url( $full_delete_url ); ?>" class="button button-small" style="background:#e74c3c;color:#fff;" title="Permanently Delete" onclick="return confirm('PERMANENTLY DELETE?');">D</a>
+                                    <a href="<?php echo admin_url( 'post.php?post=' . $req->ID . '&action=edit' ); ?>" class="button button-small" style="background:#3498db;color:#fff;" title="View Fish">View</a>
+                                    <a href="<?php echo esc_url( $cancel_url ); ?>" class="button button-small" style="background:#2986cc;color:#fff;" title="Cancel & Restore Stock" onclick="return confirm('Cancel and restore stock?');">Cancel</a>
+                                    <a href="<?php echo esc_url( $mark_unpaid_url ); ?>" class="button button-small" style="background:#27ae60;color:#000;" title="Mark Unpaid" onclick="return confirm('Mark UNPAID?');">Mark unpaid</a>
+                                    <a href="<?php echo esc_url( $full_delete_url ); ?>" class="button button-small" style="background:#e74c3c;color:#fff;" title="Permanently Delete" onclick="return confirm('PERMANENTLY DELETE?');">Delete</a>
                                 </td>
                             </tr>
                             <?php
@@ -1757,8 +1757,8 @@ trait FisHotel_Admin {
                                 <td>—</td>
                                 <td><span style="color:#27ae60;font-weight:700;">YES (Ghost)</span></td>
                                 <td style="white-space:nowrap;">
-                                    <a href="<?php echo esc_url( $mark_unpaid_url ); ?>" class="button button-small" style="background:#27ae60;color:#000;" title="Mark Unpaid" onclick="return confirm('Mark UNPAID?');">M</a>
-                                    <a href="<?php echo esc_url( $full_delete_url ); ?>" class="button button-small" style="background:#e74c3c;color:#fff;" title="Permanently Delete" onclick="return confirm('PERMANENTLY DELETE forever?');">D</a>
+                                    <a href="<?php echo esc_url( $mark_unpaid_url ); ?>" class="button button-small" style="background:#27ae60;color:#000;" title="Mark Unpaid" onclick="return confirm('Mark UNPAID?');">Mark unpaid</a>
+                                    <a href="<?php echo esc_url( $full_delete_url ); ?>" class="button button-small" style="background:#e74c3c;color:#fff;" title="Permanently Delete" onclick="return confirm('PERMANENTLY DELETE forever?');">Delete</a>
                                 </td>
                             </tr>
                             <?php
@@ -3032,7 +3032,7 @@ trait FisHotel_Admin {
                 foreach ( $fish as $f ) {
                     if ( intval( get_post_meta( $f->ID, '_arrival_qty_received', true ) ) > 0 ) return true;
                 }
-                return 'No arrival quantities entered. Go to Fish Care → Counting tab and enter received quantities first.';
+                return 'No arrival quantities entered. Go to Group-order fish care → Counting tab and enter received quantities first.';
 
             case 'verification':
                 $fish = get_posts( [
@@ -3046,7 +3046,7 @@ trait FisHotel_Admin {
                     $aq = get_post_meta( $f->ID, '_arrival_qty_received', true );
                     if ( $aq !== '' && $aq !== false && intval( $aq ) > 0 ) return true;
                 }
-                return 'No graduation or arrival quantities found. Go to Fish Care → Graduation tab and enter quantities first.';
+                return 'No graduation or arrival quantities found. Go to Group-order fish care → Graduation tab and enter quantities first.';
 
             default:
                 return true; // no data prerequisite
@@ -3061,9 +3061,9 @@ trait FisHotel_Admin {
         switch ( $stage ) {
             case 'open_ordering':   return 'Customers are ordering. Close ordering when the window ends.';
             case 'orders_closed':   return 'Waiting for shipment to arrive.';
-            case 'arrived':         return 'Enter received quantities in <a href="' . esc_url( $qt_url . '&tab=counting' ) . '">Fish Care → Counting</a>.';
-            case 'in_quarantine':   return 'Track survival in <a href="' . esc_url( $qt_url . '&tab=tracker' ) . '">Fish Care → Quarantine</a>.';
-            case 'graduation':      return 'Enter final quantities in <a href="' . esc_url( $qt_url . '&tab=graduation' ) . '">Fish Care → Graduation</a>, then save to open the Folio.';
+            case 'arrived':         return 'Enter received quantities in <a href="' . esc_url( $qt_url . '&tab=counting' ) . '">Group-order fish care → Counting</a>.';
+            case 'in_quarantine':   return 'Track survival in <a href="' . esc_url( $qt_url . '&tab=tracker' ) . '">Group-order fish care → Quarantine</a>.';
+            case 'graduation':      return 'Enter final quantities in <a href="' . esc_url( $qt_url . '&tab=graduation' ) . '">Group-order fish care → Graduation</a>, then save to open the Folio.';
             case 'verification':    return 'Guest Folio is live — customers are accepting or passing.';
             case 'draft':           return 'Draft Pool is open for last-call picks.';
             case 'casino':          return 'Casino Night is active.';
@@ -3666,7 +3666,7 @@ trait FisHotel_Admin {
             : ( ! empty( $eligible ) ? reset( $eligible ) : '' );
 
         echo '<div class="wrap fishotel-admin">';
-        echo '<h1>Fish Care</h1>';
+        echo '<h1>Group-order fish care</h1>';
         echo '<p style="color:#aaa;">Manage arrivals, track quarantine survival, and confirm graduation counts.</p>';
 
         // Batch selector
@@ -5185,7 +5185,7 @@ trait FisHotel_Admin {
         $sd_rules = function_exists( 'fishotel_delivery_rules' ) ? fishotel_delivery_rules() : null;
         ?>
         <div class="wrap">
-        <h1>Invoicing</h1>
+        <h1>Group-order invoices</h1>
 
         <nav class="nav-tab-wrapper" style="margin-bottom:20px;">
             <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-invoicing&tab=unpaid' ) ); ?>" class="nav-tab<?php echo $tab === 'unpaid' ? ' nav-tab-active' : ''; ?>">Unpaid Invoices</a>
@@ -5241,8 +5241,12 @@ trait FisHotel_Admin {
 
         <!-- ═══ TAB: Ship Day ═══ -->
         <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;max-width:960px;" class="fh-no-print">
+            <?php $sd_today_url = function_exists( 'menu_page_url' ) ? (string) menu_page_url( 'fishotel-misc-today', false ) : ''; ?>
+            <?php if ( '' !== $sd_today_url ) : ?>
+                <p style="margin:0 0 8px;font-size:13px;"><a href="<?php echo esc_url( $sd_today_url ); ?>" style="color:#2986cc;">&larr; Today</a></p>
+            <?php endif; ?>
             <h2 style="color:#2986cc;margin-top:0;font-size:1.1em;">Ship Day</h2>
-            <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Step 8 of the order routine, built here: the pick list (one row per fish, Invoice products expanded from their itemised checkout lines or, for older orders, their description; combined boxes as one destination) and the weather overview from the Weather section's notes. Pick a delivery date — the box ships the day before.</p>
+            <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Pick the delivery day, print the pick list. The box ships the day before.</p>
 
             <?php if ( ! function_exists( 'wc_get_orders' ) ) : ?>
                 <p style="color:#e74c3c;font-size:13px;">WooCommerce is not active — nothing to list.</p>

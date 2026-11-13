@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.31 - Test only: every hook callback must name a method the plugin defines (no change on the site)
- * Version:           10.31
+ * Description:       v10.32 - Plain screen words: Ship Day's weather line tells the truth, one-line intro and a link back to Today; menus say Group Orders, Group-order fish care, Group-order invoices, Deposits; spelled-out request buttons
+ * Version:           10.32
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.31' );
+define( 'FISHOTEL_VERSION', '10.32' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

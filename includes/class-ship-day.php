@@ -1381,6 +1381,26 @@ class FisHotel_Ship_Day {
     }
 
     /** Link to the Weather section's overview for a date. */
+    /**
+     * Whether the Misc plugin's Weather section is switched on: its page is
+     * only in the menu then (the menu is built before this screen renders).
+     */
+    public static function weather_section_on() {
+        return function_exists( 'menu_page_url' ) && '' !== (string) menu_page_url( self::WEATHER_PAGE_SLUG, false );
+    }
+
+    /**
+     * The line shown when no order of the date has a weather note yet. With
+     * the Weather section on it only means the check has not run for these
+     * orders yet; with it off, it says where to switch it on.
+     */
+    public static function weather_missing_note( $ymd, $weather_on ) {
+        if ( $weather_on ) {
+            return '<p class="fh-sd-warn">No weather note yet for these orders. <a href="' . esc_url( self::weather_overview_url( $ymd ) ) . '">Check now on the Weather page for ' . esc_html( self::label( $ymd, 'D, M j' ) ) . ' &rarr;</a></p>';
+        }
+        return '<p class="fh-sd-warn">Weather is not checked: switch on the Weather section under FisHotel Tools &rarr; Dashboard.</p>';
+    }
+
     public static function weather_overview_url( $ymd ) {
         if ( ! function_exists( 'admin_url' ) ) {
             return '';
@@ -1431,7 +1451,7 @@ class FisHotel_Ship_Day {
             }
         }
         if ( ! $any_meta ) {
-            $h .= '<p class="fh-sd-warn">Weather not checked — enable the Weather section in FisHotel Tools and run the nightly scan. <a href="' . esc_url( self::weather_overview_url( $ymd ) ) . '">Open the Weather overview for ' . esc_html( self::label( $ymd, 'D, M j' ) ) . '</a>.</p>';
+            $h .= self::weather_missing_note( $ymd, self::weather_section_on() );
         }
 
         $attention = [];

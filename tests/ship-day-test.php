@@ -673,7 +673,7 @@ if ( $fh_stubbed ) {
     check( 'slips appended: one card per destination, with the combined label', 2 === substr_count( $r2['html'], 'class="fh-packing-list-order"' ) && false !== strpos( $r2['html'], 'Order #300 (combined: #201, #203) &mdash; Pat Reefer' ) );
     check( 'output is escaped', false === strpos( $r2['html'], '<script' ) );
     $r3 = FisHotel_Ship_Day::render( '2026-10-14', false );
-    check( 'a date whose only order has no weather meta → global notice with the Weather overview link', false !== strpos( $r3['html'], 'enable the Weather section in FisHotel Tools and run the nightly scan' ) && false !== strpos( $r3['html'], 'page=fishotel-misc-weather' ) && false !== strpos( $r3['html'], 'date=2026-10-14' ) );
+    check( 'a date whose only order has no weather note, Weather section not in the menu → the notice says where to switch it on', false !== strpos( $r3['html'], 'Weather is not checked: switch on the Weather section under FisHotel Tools' ) );
     $r4 = FisHotel_Ship_Day::render( '2026-10-20', false );
     check( 'no orders → empty notice, no print block', 0 === $r4['orders'] && false !== strpos( $r4['html'], 'No open orders deliver on' ) && false === strpos( $r4['html'], 'fh-sd-print' ) );
     check( 'invalid date → WP_Error', is_wp_error( FisHotel_Ship_Day::render( '2026-02-30' ) ) );
@@ -896,6 +896,22 @@ if ( $fh_stubbed ) {
     check( 'a throwing function → listed as before, no error', $adj_all === $adj_names() && false === FisHotel_Ship_Day::is_invoice_adjustment( 'Adjustment' ) );
     $GLOBALS['fh_adj_mode']  = 'on';
     $GLOBALS['fh_sd_orders'] = [];
+}
+
+// The line shown when no order of the date has a weather note yet.
+$wx_on  = FisHotel_Ship_Day::weather_missing_note( '2026-10-20', true );
+$wx_off = FisHotel_Ship_Day::weather_missing_note( '2026-10-20', false );
+check( 'weather_missing_note(): with Weather on, it never says to switch Weather on, and links to the Weather page for the date', false === stripos( $wx_on, 'enable' ) && false === stripos( $wx_on, 'switch on' ) && false !== strpos( $wx_on, 'No weather note yet for these orders.' ) && false !== strpos( $wx_on, 'page=fishotel-misc-weather' ) && false !== strpos( $wx_on, 'date=2026-10-20' ), $wx_on );
+check( 'weather_missing_note(): with Weather off, it says where to switch it on and links nowhere', false !== strpos( $wx_off, 'switch on the Weather section under FisHotel Tools' ) && false === strpos( $wx_off, '<a ' ), $wx_off );
+if ( ! function_exists( 'menu_page_url' ) ) {
+    check( 'weather_section_on(): without a WordPress menu, off', false === FisHotel_Ship_Day::weather_section_on() );
+    $GLOBALS['fh_sd_menu'] = [];
+    function menu_page_url( $slug, $echo = true ) {
+        return isset( $GLOBALS['fh_sd_menu'][ $slug ] ) ? 'https://example.test/wp-admin/admin.php?page=' . $slug : '';
+    }
+    check( 'weather_section_on(): the Weather page is not in the menu (section off) → off', false === FisHotel_Ship_Day::weather_section_on() );
+    $GLOBALS['fh_sd_menu']['fishotel-misc-weather'] = true;
+    check( 'weather_section_on(): the Weather page is in the menu (section on) → on', true === FisHotel_Ship_Day::weather_section_on() );
 }
 
 echo "\n{$passes} passed, {$failures} failed.\n";
