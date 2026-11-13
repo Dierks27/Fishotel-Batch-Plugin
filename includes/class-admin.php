@@ -5319,6 +5319,8 @@ trait FisHotel_Admin {
         .fh-sd-tag--warn { color:#a40000; font-weight:700; }
         .fh-sd-sublabel { color:#666; font-size:10px; font-style:italic; }
         .fh-sd-flag { color:#a40000; }
+        .fh-sd-bag { display:inline-block; margin-left:4px; padding:0 5px; border:1px solid #777; border-radius:3px; font-size:11px; font-weight:700; color:#000; white-space:nowrap; }
+        .fh-sd-boxname { font-size:11px; font-weight:700; }
         .fh-sd-foot { margin:10px 0 4px; font-size:12px; }
         .fh-sd-legend { margin:0; font-size:10px; color:#444; }
         .fh-sd-notes { margin:12px 0 0 18px; padding:0; font-size:11px; }

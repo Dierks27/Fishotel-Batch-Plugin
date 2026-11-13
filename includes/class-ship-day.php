@@ -57,6 +57,17 @@
  *      parsed by parse_invoice_lines() exactly as before. Unreadable meta
  *      (malformed JSON) is treated as absent and falls back here too.
  *
+ * PACKING. When the Misc plugin's Packing section is installed, each product line's
+ * row carries the bag it is packed in ('bag', from fishotel_packing_bag_for_item())
+ * and each destination the box confirmed for it ('box', the name from
+ * fishotel_packing_confirmed_box()); the pick list prints "Bag: <name>" beside the
+ * fish and "Box: <name>" once under the order. Both are read through
+ * function_exists() inside a try: without the section, while it is switched off,
+ * or for a line that is not packed in a bag, the row has no 'bag' key and the list
+ * is exactly as before. The fish of an Invoice product kept as one line (shapes B
+ * and C) have no order line of their own, so they show no bag. Staff-only: the
+ * packing slip that goes in the box never shows either.
+ *
  * This file has no side effects at load time. The parsing / classification /
  * flag / date / sort / totals helpers are pure static methods with no WordPress
  * dependency, so tests/ship-day-test.php can run them with plain php.
@@ -1157,15 +1168,77 @@ class FisHotel_Ship_Day {
             } else {
                 $kind = $is_ea ? self::KIND_EA : self::KIND_DRY;
             }
-            $rows[] = [
+            $row = [
                 'kind' => $kind,
                 'qty'  => $qty,
                 'name' => '' !== $name ? $name : '(unnamed item)',
                 'sub'  => $spec['sub'],
                 'flag' => ( '' === $flag && $spec['check'] ) ? 'check' : $flag,
             ];
+            if ( self::KIND_EA !== $kind ) {
+                $bag = self::bag_name_for_item( $item );
+                if ( '' !== $bag ) {
+                    $row['bag'] = $bag; // only when the Packing section names one — rows are unchanged otherwise
+                }
+            }
+            $rows[] = $row;
         }
         return $rows;
+    }
+
+    /**
+     * The name of the bag one order line is packed in, from the Misc plugin's
+     * Packing section (fishotel_packing_bag_for_item(): null while the section is
+     * off, or for a line that is not packed in a bag / has no bag size). '' when
+     * there is none, the contract is absent, or it throws. Staff-only: read for
+     * the pick list, never for the packing slip that goes in the box.
+     *
+     * @param object $item A WC_Order_Item_Product.
+     * @return string
+     */
+    public static function bag_name_for_item( $item ) {
+        if ( ! is_object( $item ) || ! function_exists( 'fishotel_packing_bag_for_item' ) ) {
+            return '';
+        }
+        try {
+            $bag = fishotel_packing_bag_for_item( $item );
+        } catch ( \Throwable $e ) {
+            return '';
+        }
+        if ( ! is_array( $bag ) ) {
+            return '';
+        }
+        foreach ( [ 'name', 'label' ] as $key ) {
+            if ( isset( $bag[ $key ] ) && is_scalar( $bag[ $key ] ) && '' !== trim( (string) $bag[ $key ] ) ) {
+                return trim( (string) $bag[ $key ] );
+            }
+        }
+        return '';
+    }
+
+    /**
+     * The name of the box confirmed on an order in the Packing section
+     * (fishotel_packing_confirmed_box(): "Medium box", "Large box + Small box"),
+     * or '' when none is confirmed, the contract is absent, or it throws. For a
+     * fulfillment wrapper this is the combined box's own confirmation.
+     *
+     * @param int $order_id Order ID.
+     * @return string
+     */
+    public static function confirmed_box_name( $order_id ) {
+        $order_id = (int) $order_id;
+        if ( $order_id <= 0 || ! function_exists( 'fishotel_packing_confirmed_box' ) ) {
+            return '';
+        }
+        try {
+            $box = fishotel_packing_confirmed_box( $order_id );
+        } catch ( \Throwable $e ) {
+            return '';
+        }
+        if ( ! is_array( $box ) || ! isset( $box['name'] ) || ! is_scalar( $box['name'] ) ) {
+            return '';
+        }
+        return trim( (string) $box['name'] );
     }
 
     /**
@@ -1224,6 +1297,7 @@ class FisHotel_Ship_Day {
             'weather'        => $weather,
             'flag'           => self::flag_for_state( $weather ),
             'high'           => $weather['high'],
+            'box'            => self::confirmed_box_name( $order->get_id() ),
         ];
     }
 
@@ -1366,6 +1440,7 @@ class FisHotel_Ship_Day {
         $h   .= '<p class="fh-sd-sub">Ship ' . esc_html( self::label( $ship ) ) . ' &bull; Deliver ' . esc_html( self::label( $ymd ) ) . ' &bull; ' . (int) $totals['orders'] . ' orders / ' . (int) $totals['fish'] . ' fish</p>';
         $h   .= '<table class="fh-sd-table fh-sd-table--pick"><thead><tr><th class="fh-sd-col-pick">Pick</th><th class="fh-sd-col-qty">Qty</th><th>Fish</th><th class="fh-sd-col-order">Order</th><th class="fh-sd-col-dest">Destination</th></tr></thead><tbody>';
 
+        $packing = false; // a bag or a confirmed box from the Packing section is on the list
         foreach ( $dests as $d ) {
             $first = true;
             $rows  = $d['rows'];
@@ -1384,6 +1459,10 @@ class FisHotel_Ship_Day {
                 } elseif ( 'check' === $row['flag'] ) {
                     $name .= ' <span class="fh-sd-tag fh-sd-tag--warn">(CHECK)</span>';
                 }
+                if ( isset( $row['bag'] ) && '' !== $row['bag'] ) {
+                    $packing = true;
+                    $name   .= ' <span class="fh-sd-bag">Bag: ' . esc_html( $row['bag'] ) . '</span>';
+                }
                 if ( '' !== $row['sub'] ) {
                     $name .= '<br><span class="fh-sd-sublabel">from ' . esc_html( $row['sub'] ) . '</span>';
                 }
@@ -1392,7 +1471,9 @@ class FisHotel_Ship_Day {
                 $h .= '<td class="fh-sd-col-qty">' . (int) $row['qty'] . '</td>';
                 $h .= '<td>' . $name . '</td>';
                 if ( $first ) {
-                    $h .= '<td class="fh-sd-col-order"><strong>' . esc_html( $d['label'] ) . '</strong><br>' . esc_html( $d['customer'] ) . '</td>';
+                    $box     = isset( $d['box'] ) ? (string) $d['box'] : '';
+                    $packing = $packing || '' !== $box;
+                    $h  .= '<td class="fh-sd-col-order"><strong>' . esc_html( $d['label'] ) . '</strong><br>' . esc_html( $d['customer'] ) . ( '' !== $box ? '<br><span class="fh-sd-boxname">Box: ' . esc_html( $box ) . '</span>' : '' ) . '</td>';
                     $h .= '<td class="fh-sd-col-dest">' . esc_html( $d['place'] ) . ( '' !== $d['flag'] ? '<br><strong class="fh-sd-flag">' . esc_html( $d['flag'] ) . '</strong>' : '' ) . '</td>';
                 } else {
                     $h .= '<td class="fh-sd-col-order"></td><td class="fh-sd-col-dest"></td>';
@@ -1403,7 +1484,7 @@ class FisHotel_Ship_Day {
         }
         $h .= '</tbody></table>';
         $h .= '<p class="fh-sd-foot"><strong>' . (int) $totals['fish'] . ' fish &middot; ' . (int) $totals['dry'] . ' dry goods &middot; ' . (int) $totals['orders'] . ' orders</strong></p>';
-        $h .= '<p class="fh-sd-legend">Legend: (HEAT PACK) heat pack in the box &middot; (COOLING PACKS) cooling packs &middot; (UPS STORE) ship to a UPS Store, email draft in the order\'s Weather box &middot; (HOLD) do not ship &middot; (AT THE LINE — Jeff\'s call) high exactly on a band line &middot; (NOT CHECKED) no weather note for this date &middot; (dry goods) box it, not a fish &middot; (EA SHIPS) drop-shipped by EverythingAquatic, not in this box &middot; (BACKORDERED) not in stock &middot; (CHECK) verify by hand</p>';
+        $h .= '<p class="fh-sd-legend">Legend: (HEAT PACK) heat pack in the box &middot; (COOLING PACKS) cooling packs &middot; (UPS STORE) ship to a UPS Store, email draft in the order\'s Weather box &middot; (HOLD) do not ship &middot; (AT THE LINE — Jeff\'s call) high exactly on a band line &middot; (NOT CHECKED) no weather note for this date &middot; (dry goods) box it, not a fish &middot; (EA SHIPS) drop-shipped by EverythingAquatic, not in this box &middot; (BACKORDERED) not in stock &middot; (CHECK) verify by hand' . ( $packing ? ' &middot; Bag: the bag to pack that fish in &middot; Box: the box confirmed for the order (Packing)' : '' ) . '</p>';
         $h .= '</section>';
         return $h;
     }

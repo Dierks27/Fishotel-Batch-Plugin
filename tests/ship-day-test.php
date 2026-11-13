@@ -748,6 +748,100 @@ if ( $fh_stubbed ) {
     check( 'render(): no credit and no description-only fish on either page', false === strpos( $r5['html'], 'Credit: DOA wrasse' ) && false === strpos( $r5['html'], 'Credit sneaked' ) && false === strpos( $r5['html'], 'Description Goby' ) );
     check( 'no PHP notices or warnings while listing and rendering product-less lines', [] === $GLOBALS['fh_sd_notices'], implode( ' | ', $GLOBALS['fh_sd_notices'] ) );
     unset( $GLOBALS['fh_sd_orders'][101] );
+
+    section( 'Packing section: the bag beside each fish, the confirmed box once per order' );
+    // Everything above ran without the Packing contracts — that is the "not installed"
+    // case, and its exact row shapes and HTML are already checked. From here on the
+    // two contracts exist, answering from these globals (null = section off / no bag).
+    $GLOBALS['fh_sd_orders'] = [ 100 => $order ];
+    $rows_before_packing     = FisHotel_Ship_Day::rows_for_order( $order );
+    $before                  = FisHotel_Ship_Day::render( '2026-10-13', true );
+    $html_before_packing     = is_array( $before ) ? $before['html'] : '';
+    check( 'without the contracts: no bag key, no Bag/Box on the page', [] === array_filter( $rows_before_packing, function ( $r ) { return array_key_exists( 'bag', $r ); } ) && false === strpos( $html_before_packing, 'fh-sd-bag' ) && false === strpos( $html_before_packing, 'fh-sd-boxname' ) );
+    $GLOBALS['fh_pk_bags']  = []; // item id => bag array | null | 'throw'
+    $GLOBALS['fh_pk_boxes'] = []; // order id => box array | null | 'throw'
+    function fishotel_packing_bag_for_item( $order_item ): ?array {
+        $v = $GLOBALS['fh_pk_bags'][ (int) $order_item->get_id() ] ?? null;
+        if ( 'throw' === $v ) {
+            throw new RuntimeException( 'packing broke' );
+        }
+        return $v;
+    }
+    function fishotel_packing_confirmed_box( $order_id ): ?array {
+        $v = $GLOBALS['fh_pk_boxes'][ (int) $order_id ] ?? null;
+        if ( 'throw' === $v ) {
+            throw new RuntimeException( 'packing broke' );
+        }
+        return $v;
+    }
+    $pk_bag = function ( $name ) {
+        return [ 'id' => 2, 'name' => $name, 'width' => '6', 'length' => '14', 'label' => $name . ' (6 × 14 in)', 'sort' => 2, 'source' => 'map', 'size' => 'medium', 'size_label' => 'Medium' ];
+    };
+    $pk_box = function ( $name ) {
+        return [ 'order_id' => 0, 'boxes' => [], 'count' => 1, 'name' => $name, 'length' => 12, 'width' => 10, 'height' => 10, 'dims' => '12x10x10', 'fill' => 0.5, 'suggested' => true, 'complete' => true, 'by' => 1, 'by_name' => 'Staff', 'at' => '2026-10-14 15:00:00' ];
+    };
+
+    // Section off: both contracts answer null → rows and page exactly as before.
+    $off = FisHotel_Ship_Day::rows_for_order( $order );
+    check( 'section off (null everywhere) → rows identical to the run without the contracts', $off === $rows_before_packing, json_encode( $off ) );
+    $r_off = FisHotel_Ship_Day::render( '2026-10-13', true );
+    check( 'section off → the page is byte-for-byte the page without the contracts', is_array( $r_off ) && $r_off['html'] === $html_before_packing );
+
+    // Section on.
+    $GLOBALS['fh_pk_bags'] = [
+        1  => $pk_bag( 'Medium' ),     // Hectors Goby (product)
+        8  => $pk_bag( 'Large <XL>' ), // Yellow Tang variation — escaped on the page
+        12 => $pk_bag( 'Small' ),      // batch-invoice fish line (no product)
+        4  => null,                    // PraziPro: not packed in a bag
+        5  => $pk_bag( 'Wrong' ),      // the Invoice line itself: never asked (its fish come from the description)
+        13 => $pk_bag( 'Wrong' ),      // EA drop-ship: never asked
+        7  => 'throw',                 // a broken contract never breaks the list
+    ];
+    $GLOBALS['fh_pk_boxes'] = [ 100 => $pk_box( 'Medium box + Small box' ) ];
+    $on    = FisHotel_Ship_Day::rows_for_order( $order );
+    $named = function ( $n ) use ( $on ) {
+        return array_values( array_filter( $on, function ( $r ) use ( $n ) { return $n === $r['name']; } ) );
+    };
+    check( 'a fish line with a bag gets its name in the row', 'Medium' === ( $named( 'Hectors Goby' )[0]['bag'] ?? '' ) && 'Large <XL>' === ( $named( 'Yellow Tang - Medium' )[0]['bag'] ?? '' ), json_encode( $named( 'Hectors Goby' ) ) );
+    check( 'a product-less fish line is asked too (the contract reads the line\'s own size)', [ 'Medium', 'Small' ] === array_values( array_filter( array_map( function ( $r ) { return $r['bag'] ?? ''; }, $named( 'Hectors Goby' ) ) ) ) );
+    check( 'null bag → no bag key; a throwing contract → no bag key', ! array_key_exists( 'bag', $named( 'PraziPro' )[0] ) && ! array_key_exists( 'bag', $named( 'Partly Refunded Goby' )[0] ) );
+    check( 'expanded invoice fish and EA drop-ships carry no bag', [] === array_filter( $on, function ( $r ) { return isset( $r['bag'] ) && 'Wrong' === $r['bag']; } ) );
+    $strip = array_map( function ( $r ) { unset( $r['bag'] ); return $r; }, $on );
+    check( 'nothing else in the rows changes', $strip === $rows_before_packing );
+
+    $r_on = FisHotel_Ship_Day::render( '2026-10-13', true );
+    $pick = is_array( $r_on ) ? substr( $r_on['html'], strpos( $r_on['html'], 'fh-sd-page--pick' ) ) : '';
+    $pick = substr( $pick, 0, (int) strpos( $pick, '</section>' ) );
+    check( 'pick list: "Bag: <name>" beside the fish, escaped', false !== strpos( $pick, 'Hectors Goby <span class="fh-sd-bag">Bag: Medium</span>' ) && false !== strpos( $pick, '<span class="fh-sd-bag">Bag: Large &lt;XL&gt;</span>' ) && 3 === substr_count( $pick, 'class="fh-sd-bag"' ), $pick );
+    check( 'pick list: the confirmed box once, under the order', 1 === substr_count( $pick, 'class="fh-sd-boxname"' ) && false !== strpos( $pick, 'Pat Reefer<br><span class="fh-sd-boxname">Box: Medium box + Small box</span>' ) );
+    check( 'pick list: the legend explains Bag / Box only now', false !== strpos( $pick, 'Bag: the bag to pack that fish in' ) && false === strpos( $html_before_packing, 'Bag: the bag to pack' ) );
+    $after_pick = substr( $r_on['html'], strpos( $r_on['html'], 'fh-sd-page--pick' ) + strlen( $pick ) );
+    check( 'the packing slip (goes in the box, customer-facing) and the weather page show neither', false === strpos( $after_pick, 'fh-sd-bag' ) && false === strpos( $after_pick, 'Bag:' ) && false === strpos( $after_pick, 'Box: Medium box' ) );
+    check( 'fish / order counts unchanged', $r_on['fish'] === $r_off['fish'] && $r_on['orders'] === $r_off['orders'] );
+
+    // A box but no bags; a throwing box contract.
+    $GLOBALS['fh_pk_bags'] = [];
+    $r_box = FisHotel_Ship_Day::render( '2026-10-13', false );
+    check( 'a confirmed box alone still shows (and the legend with it); no bag spans', false !== strpos( $r_box['html'], 'Box: Medium box + Small box' ) && false === strpos( $r_box['html'], 'class="fh-sd-bag"' ) && false !== strpos( $r_box['html'], 'Bag: the bag to pack' ) );
+    $GLOBALS['fh_pk_boxes'] = [ 100 => 'throw' ];
+    check( 'a throwing box contract → no box, no error', '' === FisHotel_Ship_Day::confirmed_box_name( 100 ) && false === strpos( FisHotel_Ship_Day::render( '2026-10-13', false )['html'], 'fh-sd-boxname' ) );
+    $GLOBALS['fh_pk_boxes'] = [ 100 => [ 'name' => '' ] ];
+    check( 'a box with an empty name → nothing shown', '' === FisHotel_Ship_Day::confirmed_box_name( 100 ) );
+    $GLOBALS['fh_pk_bags'] = [ 98 => [ 'name' => '', 'label' => 'Tall (4 × 16 in)' ] ];
+    check( 'bag_name_for_item(): empty name → label', 'Tall (4 × 16 in)' === FisHotel_Ship_Day::bag_name_for_item( new FH_SD_Item( 98, 'x', 1 ) ) );
+    check( 'bag_name_for_item(): not an object → ""', '' === FisHotel_Ship_Day::bag_name_for_item( null ) );
+
+    // Fulfillment wrapper: the box is the combined box's own; bags come from the source lines.
+    $src = new FH_SD_Order( 301, 'processing', [ '_fishotel_fulfilled_by_order' => '300' ], [ 31 => new FH_SD_Item( 31, 'Source Goby', 1, $goby ) ] );
+    $ff  = new FH_SD_Order( 300, 'fulfillment', [ '_fishotel_shipping_date' => '2026-10-15', '_fishotel_is_fulfillment' => '1', '_fishotel_fulfillment_sources' => '301' ], [] );
+    $GLOBALS['fh_sd_orders'] = [ 300 => $ff, 301 => $src ];
+    $GLOBALS['fh_pk_bags']   = [ 31 => $pk_bag( 'Medium' ) ];
+    $GLOBALS['fh_pk_boxes']  = [ 300 => $pk_box( 'Large box' ), 301 => $pk_box( 'Should not show' ) ];
+    $dest = FisHotel_Ship_Day::build_destination( $ff, '2026-10-15' );
+    check( 'fulfillment: the box is the wrapper\'s, the bag the source line\'s', 'Large box' === $dest['box'] && 'Medium' === ( $dest['rows'][0]['bag'] ?? '' ), json_encode( $dest['rows'] ) );
+    $GLOBALS['fh_pk_boxes'] = [];
+    $GLOBALS['fh_pk_bags']  = [];
+    $GLOBALS['fh_sd_orders'] = [];
 }
 
 echo "\n{$passes} passed, {$failures} failed.\n";
