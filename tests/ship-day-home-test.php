@@ -356,6 +356,12 @@ section( 'menu: without the Misc plugin, the page sits where Ship Day always was
 fh_no_misc_menu();
 $host->add_ship_day_menu();
 check( 'a hidden page (no parent) with the same slug and capability', [ [ null, '', 'manage_options', 'fishotel-ship-day' ] ] === $GLOBALS['fh_submenu_calls'], json_encode( $GLOBALS['fh_submenu_calls'] ) );
+$GLOBALS['title'] = null;
+foreach ( $GLOBALS['fh_actions']['load-hook_fishotel-ship-day'] ?? [] as $cb ) {
+    call_user_func( $cb );
+}
+check( 'its load- hook gives the hidden page a title before admin-header.php (no strip_tags(null) deprecation)', 'Ship Day' === $GLOBALS['title'] );
+unset( $GLOBALS['title'] );
 check( 'parent_file / submenu_file filters registered', in_array( [ 'FisHotel_Ship_Day', 'highlight_parent_file' ], $GLOBALS['fh_filters']['parent_file'] ?? [], true ) && in_array( [ 'FisHotel_Ship_Day', 'highlight_submenu_file' ], $GLOBALS['fh_filters']['submenu_file'] ?? [], true ) );
 $GLOBALS['plugin_page'] = 'fishotel-ship-day';
 $GLOBALS['submenu']['']  = [ [ 'Batch Requests', 'manage_options', 'fishotel-batch-orders' ], [ 'Ship Day', 'manage_options', 'fishotel-ship-day' ] ];

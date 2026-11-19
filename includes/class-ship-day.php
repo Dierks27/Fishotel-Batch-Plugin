@@ -1826,10 +1826,25 @@ class FisHotel_Ship_Day {
             }
             return 'misc';
         }
-        add_submenu_page( null, 'Ship Day', '', self::CAPABILITY, self::PAGE_SLUG, $render );
+        $hook = add_submenu_page( null, 'Ship Day', '', self::CAPABILITY, self::PAGE_SLUG, $render );
+        if ( is_string( $hook ) && '' !== $hook ) {
+            add_action( 'load-' . $hook, [ __CLASS__, 'set_hidden_page_title' ] );
+        }
         add_filter( 'parent_file', [ __CLASS__, 'highlight_parent_file' ] );
         add_filter( 'submenu_file', [ __CLASS__, 'highlight_submenu_file' ] );
         return 'group-orders';
+    }
+
+    /**
+     * load-{hook} of the hidden page (Misc absent): WordPress finds no title
+     * for a page with no parent and hands null to strip_tags() in
+     * admin-header.php (a PHP 8.1+ deprecation in debug.log), so the title
+     * is set before the header is printed.
+     */
+    public static function set_hidden_page_title() {
+        if ( empty( $GLOBALS['title'] ) ) {
+            $GLOBALS['title'] = 'Ship Day'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+        }
     }
 
     /** Whether the current admin request is Ship Day's page. */
