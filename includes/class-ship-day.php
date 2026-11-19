@@ -163,6 +163,33 @@ class FisHotel_Ship_Day {
 
     const CHART_SUBTITLE = 'by delivery-day high: <30 hold · 30–40 UPS Store · 40–70 heat pack · 70–80 nothing · 80–90 cooling · 90–95 UPS Store · >95 hold';
 
+    /**
+     * Ship Day's own page (10.34). It is listed under FisHotel Tools right
+     * after Today when the Misc plugin's menu is there, and otherwise sits
+     * where it always was: a hidden page that highlights Group Orders →
+     * Group-order invoices and shows that page's tabs. Same slug either way.
+     */
+    const PAGE_SLUG  = 'fishotel-ship-day';
+    const CAPABILITY = 'manage_options';
+    /** Optional query var of the page: the delivery date to open on (Y-m-d). */
+    const DATE_VAR   = 'date';
+
+    /** The Misc plugin's top-level menu (FisHotel Tools), its Dashboard entry and Today. */
+    const MISC_MENU_SLUG  = 'fishotel-misc';
+    const MISC_TODAY_SLUG = 'fishotel-misc-today';
+
+    /** Where Ship Day lived until 10.33: a tab of Group Orders → Group-order invoices. */
+    const INVOICES_PAGE_SLUG = 'fishotel-invoicing';
+    const OLD_TAB            = 'ship-day';
+
+    /**
+     * "Built for <ship date> at <time>": ship Y-m-d => {delivery, at (site-local
+     * Y-m-d H:i:s), orders, fish}, the newest BUILT_KEEP ship dates. Written when a
+     * pick list with orders is built; read by the Today line. Never an order.
+     */
+    const BUILT_OPTION = 'fishotel_ship_day_built';
+    const BUILT_KEEP   = 14;
+
     /* ─────────────────────────────────────────────
      *  Settings (filterable)
      * ───────────────────────────────────────────── */
@@ -248,6 +275,31 @@ class FisHotel_Ship_Day {
         }
         $ship = $d->modify( '-1 day' );
         return $ship ? $ship->format( 'Y-m-d' ) : '';
+    }
+
+    /** Delivery date for a ship date: the ship date plus one calendar day (inverse of ship_date_for()). */
+    public static function delivery_date_for( $ship_ymd, $tz = null ) {
+        $d = self::parse_ymd( $ship_ymd, $tz );
+        if ( ! $d ) {
+            return '';
+        }
+        $delivery = $d->modify( '+1 day' );
+        return $delivery ? $delivery->format( 'Y-m-d' ) : '';
+    }
+
+    /** Today's Y-m-d in the site zone (the delivery rules' today() when the rules are loaded). */
+    public static function today_ymd( $now = null ) {
+        if ( function_exists( 'fishotel_delivery_rules' ) ) {
+            $rules = fishotel_delivery_rules();
+            if ( is_object( $rules ) && method_exists( $rules, 'today' ) ) {
+                return $rules->today( $now )->format( 'Y-m-d' );
+            }
+        }
+        $tz = self::timezone();
+        if ( $now instanceof DateTimeInterface ) {
+            return ( new DateTimeImmutable( '@' . $now->getTimestamp() ) )->setTimezone( $tz )->format( 'Y-m-d' );
+        }
+        return ( new DateTimeImmutable( 'now', $tz ) )->format( 'Y-m-d' );
     }
 
     /** Pretty label for a Y-m-d ('' when invalid). */
@@ -1669,6 +1721,245 @@ class FisHotel_Ship_Day {
         } catch ( Exception $e ) {
             return $mysql;
         }
+    }
+
+    /* ─────────────────────────────────────────────
+     *  The page's home: FisHotel Tools → Ship Day (10.34)
+     * ───────────────────────────────────────────── */
+
+    /** Ship Day's page, optionally opened on a delivery date (?date=Y-m-d). */
+    public static function page_url( $delivery_ymd = '' ) {
+        $url = function_exists( 'admin_url' ) ? admin_url( 'admin.php?page=' . self::PAGE_SLUG ) : 'admin.php?page=' . self::PAGE_SLUG;
+        if ( self::is_ymd( $delivery_ymd ) ) {
+            $url = function_exists( 'add_query_arg' ) ? add_query_arg( self::DATE_VAR, $delivery_ymd, $url ) : $url . '&' . self::DATE_VAR . '=' . rawurlencode( $delivery_ymd );
+        }
+        return $url;
+    }
+
+    /** The address Ship Day had until 10.33 (Group-order invoices → Ship Day tab); it now shows a pointer. */
+    public static function old_tab_url() {
+        $path = 'admin.php?page=' . self::INVOICES_PAGE_SLUG . '&tab=' . self::OLD_TAB;
+        return function_exists( 'admin_url' ) ? admin_url( $path ) : $path;
+    }
+
+    /**
+     * Whether the Misc plugin's FisHotel Tools menu is registered in this
+     * request. add_menu_page() files every top-level slug in
+     * $admin_page_hooks whatever the user's capabilities, so this is "the
+     * Misc plugin is active", read at admin_menu time.
+     *
+     * @param array|null $admin_page_hooks The global, or a stand-in.
+     */
+    public static function misc_menu_present( $admin_page_hooks = null ) {
+        if ( null === $admin_page_hooks ) {
+            $admin_page_hooks = isset( $GLOBALS['admin_page_hooks'] ) ? $GLOBALS['admin_page_hooks'] : [];
+        }
+        return is_array( $admin_page_hooks ) && isset( $admin_page_hooks[ self::MISC_MENU_SLUG ] );
+    }
+
+    /** True for a menu slug that is the old tab's address (the Misc plugin's own "Ship Day" entry up to 0.46.4). */
+    public static function is_old_tab_entry( $slug ) {
+        $slug = (string) $slug;
+        if ( false === strpos( $slug, 'page=' . self::INVOICES_PAGE_SLUG ) ) {
+            return false;
+        }
+        return false !== strpos( $slug, 'tab=' . self::OLD_TAB ) || false !== strpos( $slug, 'tab=packing' );
+    }
+
+    /**
+     * FisHotel Tools' submenu with Ship Day placed right after Today (after
+     * the Dashboard entry when Today is switched off), and without the Misc
+     * plugin's own "Ship Day" entry that pointed at the old tab — one Ship
+     * Day in the menu, not two. Every other entry keeps its order. Pure.
+     *
+     * @param array $entries $submenu['fishotel-misc'] (each [ title, cap, slug, page title ]).
+     * @return array
+     */
+    public static function place_menu_entry( array $entries ) {
+        $mine = null;
+        $rest = [];
+        foreach ( $entries as $entry ) {
+            $slug = is_array( $entry ) && isset( $entry[2] ) ? (string) $entry[2] : '';
+            if ( self::PAGE_SLUG === $slug ) {
+                if ( null === $mine ) {
+                    $mine = $entry;
+                }
+                continue;
+            }
+            if ( self::is_old_tab_entry( $slug ) ) {
+                continue;
+            }
+            $rest[] = $entry;
+        }
+        if ( null === $mine ) {
+            return $rest;
+        }
+        $at = null;
+        foreach ( [ self::MISC_TODAY_SLUG, self::MISC_MENU_SLUG ] as $anchor ) {
+            foreach ( $rest as $i => $entry ) {
+                if ( is_array( $entry ) && isset( $entry[2] ) && $anchor === (string) $entry[2] ) {
+                    $at = $i + 1;
+                    break 2;
+                }
+            }
+        }
+        array_splice( $rest, null === $at ? 0 : $at, 0, [ $mine ] );
+        return $rest;
+    }
+
+    /**
+     * Register the page (admin_menu, after the Misc plugin's menus).
+     * With FisHotel Tools there: a submenu entry right after Today, so
+     * WordPress highlights FisHotel Tools → Ship Day by itself. Without it:
+     * a hidden page that highlights Group Orders → Group-order invoices,
+     * where Ship Day has always been.
+     *
+     * @param callable $render The page callback.
+     * @return string 'misc' | 'group-orders'
+     */
+    public static function register_menu( $render ) {
+        if ( self::misc_menu_present() ) {
+            add_submenu_page( self::MISC_MENU_SLUG, 'Ship Day', 'Ship Day', self::CAPABILITY, self::PAGE_SLUG, $render );
+            global $submenu;
+            if ( isset( $submenu[ self::MISC_MENU_SLUG ] ) && is_array( $submenu[ self::MISC_MENU_SLUG ] ) ) {
+                $submenu[ self::MISC_MENU_SLUG ] = self::place_menu_entry( $submenu[ self::MISC_MENU_SLUG ] ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+            }
+            return 'misc';
+        }
+        add_submenu_page( null, 'Ship Day', '', self::CAPABILITY, self::PAGE_SLUG, $render );
+        add_filter( 'parent_file', [ __CLASS__, 'highlight_parent_file' ] );
+        add_filter( 'submenu_file', [ __CLASS__, 'highlight_submenu_file' ] );
+        return 'group-orders';
+    }
+
+    /** Whether the current admin request is Ship Day's page. */
+    public static function is_page_request() {
+        $page = isset( $GLOBALS['plugin_page'] ) && is_string( $GLOBALS['plugin_page'] ) ? $GLOBALS['plugin_page'] : (string) ( $_GET['page'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        return self::PAGE_SLUG === $page;
+    }
+
+    /** parent_file filter (Misc absent): Ship Day's page opens Group Orders. */
+    public static function highlight_parent_file( $parent_file ) {
+        return self::is_page_request() ? 'fishotel-batch-hq' : $parent_file;
+    }
+
+    /** submenu_file filter (Misc absent): ... and highlights Group-order invoices. */
+    public static function highlight_submenu_file( $submenu_file ) {
+        return self::is_page_request() ? self::INVOICES_PAGE_SLUG : $submenu_file;
+    }
+
+    /** The one line the old Group-order invoices → Ship Day tab shows now. */
+    public static function old_tab_pointer_html( $misc_menu = null ) {
+        $misc_menu = null === $misc_menu ? self::misc_menu_present() : (bool) $misc_menu;
+        $where     = $misc_menu ? 'FisHotel Tools &rarr; Ship Day' : 'its own page';
+        return '<p class="fh-sd-moved" style="font-size:14px;">Ship Day has moved to ' . $where . '. <a href="' . esc_url( self::page_url() ) . '" style="color:#2986cc;font-weight:600;">Open Ship Day &rarr;</a></p>';
+    }
+
+    /* ─────────────────────────────────────────────
+     *  "Built for <ship date> at <time>"
+     * ───────────────────────────────────────────── */
+
+    /**
+     * The built-record map with one build added (pure). Only a delivery date
+     * that yields a ship date counts; the newest BUILT_KEEP ship dates are kept.
+     *
+     * @return array<string,array{delivery:string,at:string,orders:int,fish:int}>
+     */
+    public static function built_map_with( $map, $delivery_ymd, $at, $orders, $fish, $keep = self::BUILT_KEEP ) {
+        $out = [];
+        foreach ( is_array( $map ) ? $map : [] as $ship => $entry ) {
+            if ( self::is_ymd( (string) $ship ) && null !== self::built_entry( [ $ship => $entry ], (string) $ship ) ) {
+                $out[ (string) $ship ] = $entry;
+            }
+        }
+        $ship = self::ship_date_for( $delivery_ymd );
+        if ( '' === $ship || ! is_string( $at ) || '' === trim( $at ) ) {
+            return $out;
+        }
+        $out[ $ship ] = [
+            'delivery' => (string) $delivery_ymd,
+            'at'       => trim( $at ),
+            'orders'   => max( 0, (int) $orders ),
+            'fish'     => max( 0, (int) $fish ),
+        ];
+        ksort( $out );
+        return array_slice( $out, -max( 1, (int) $keep ), null, true );
+    }
+
+    /** One ship date's build from the map, or null (pure). */
+    public static function built_entry( $map, $ship_ymd ) {
+        if ( ! is_array( $map ) || ! isset( $map[ $ship_ymd ] ) || ! is_array( $map[ $ship_ymd ] ) ) {
+            return null;
+        }
+        $e  = $map[ $ship_ymd ];
+        $at = isset( $e['at'] ) && is_string( $e['at'] ) ? trim( $e['at'] ) : '';
+        if ( '' === $at ) {
+            return null;
+        }
+        return [
+            'delivery' => isset( $e['delivery'] ) && is_string( $e['delivery'] ) ? $e['delivery'] : self::delivery_date_for( $ship_ymd ),
+            'at'       => $at,
+            'orders'   => max( 0, (int) ( $e['orders'] ?? 0 ) ),
+            'fish'     => max( 0, (int) ( $e['fish'] ?? 0 ) ),
+        ];
+    }
+
+    /** The recorded build for a ship date, or null. */
+    public static function built_for( $ship_ymd ) {
+        if ( ! function_exists( 'get_option' ) ) {
+            return null;
+        }
+        return self::built_entry( get_option( self::BUILT_OPTION, [] ), (string) $ship_ymd );
+    }
+
+    /**
+     * Record that the pick list for a delivery date was built (the AJAX build
+     * succeeded with at least one order). A small option, not autoloaded; no
+     * order is written.
+     *
+     * @return bool Whether a record was written.
+     */
+    public static function record_built( $delivery_ymd, $orders, $fish, $at = null ) {
+        if ( (int) $orders <= 0 || '' === self::ship_date_for( $delivery_ymd ) || ! function_exists( 'update_option' ) ) {
+            return false;
+        }
+        if ( null === $at ) {
+            $at = function_exists( 'current_time' ) ? (string) current_time( 'mysql' ) : ( new DateTimeImmutable( 'now', self::timezone() ) )->format( 'Y-m-d H:i:s' );
+        }
+        $map = self::built_map_with( get_option( self::BUILT_OPTION, [] ), $delivery_ymd, $at, $orders, $fish );
+        update_option( self::BUILT_OPTION, $map, false );
+        return true;
+    }
+
+    /** 'Y-m-d H:i:s' (site-local) → '9:12 am' ('' when unreadable). */
+    public static function time_label( $mysql ) {
+        $mysql = trim( (string) $mysql );
+        if ( 1 !== preg_match( '/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/', $mysql ) ) {
+            return '';
+        }
+        try {
+            return ( new DateTimeImmutable( $mysql, self::timezone() ) )->format( 'g:i a' );
+        } catch ( Exception $e ) {
+            return '';
+        }
+    }
+
+    /**
+     * Orders and fish for a delivery date, counted exactly as the pick list
+     * counts them (load_orders() + build_destination() + totals()).
+     *
+     * @return array{orders:int,fish:int}
+     */
+    public static function day_totals( $delivery_ymd ) {
+        if ( ! self::is_ymd( $delivery_ymd ) || ! function_exists( 'wc_get_orders' ) ) {
+            return [ 'orders' => 0, 'fish' => 0 ];
+        }
+        $dests = [];
+        foreach ( self::load_orders( $delivery_ymd )['orders'] as $order ) {
+            $dests[] = self::build_destination( $order, $delivery_ymd );
+        }
+        $t = self::totals( $dests );
+        return [ 'orders' => (int) $t['orders'], 'fish' => (int) $t['fish'] ];
     }
 
     /** Per-destination packing slips — the old Packing Lists card markup, one card per box. */

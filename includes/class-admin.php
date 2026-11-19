@@ -2035,6 +2035,7 @@ trait FisHotel_Admin {
             'fishotel-arrival-entry',
             'fishotel-arcade',
             'fishotel-invoicing',
+            'fishotel-ship-day',
             'fishotel-hotel-program',
             'fishotel-guide',
             'fishotel-casino',
@@ -5172,25 +5173,12 @@ trait FisHotel_Admin {
         $statuses         = get_option( 'fishotel_batch_statuses', [] );
         $invoicing_batches = array_keys( array_filter( $statuses, fn( $s ) => $s === 'invoicing' ) );
 
-        $unpaid_nonce   = wp_create_nonce( 'fishotel_unpaid_invoices' );
-        $ship_day_nonce = wp_create_nonce( FisHotel_Ship_Day::NONCE_ACTION );
-
-        // Ship Day: upcoming delivery dates with open orders (one query), default = the next one.
-        $sd_upcoming = [];
-        $sd_default  = '';
-        if ( $tab === 'ship-day' && class_exists( 'FisHotel_Ship_Day' ) && function_exists( 'wc_get_orders' ) ) {
-            $sd_upcoming = FisHotel_Ship_Day::upcoming_dates();
-            $sd_default  = FisHotel_Ship_Day::default_date( $sd_upcoming );
-        }
-        $sd_rules = function_exists( 'fishotel_delivery_rules' ) ? fishotel_delivery_rules() : null;
+        $unpaid_nonce = wp_create_nonce( 'fishotel_unpaid_invoices' );
         ?>
         <div class="wrap">
         <h1>Group-order invoices</h1>
 
-        <nav class="nav-tab-wrapper" style="margin-bottom:20px;">
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-invoicing&tab=unpaid' ) ); ?>" class="nav-tab<?php echo $tab === 'unpaid' ? ' nav-tab-active' : ''; ?>">Unpaid Invoices</a>
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-invoicing&tab=ship-day' ) ); ?>" class="nav-tab<?php echo $tab === 'ship-day' ? ' nav-tab-active' : ''; ?>">Ship Day</a>
-        </nav>
+        <?php $this->render_invoicing_tabs( $tab ); ?>
 
         <?php if ( $tab === 'unpaid' ) : ?>
 
@@ -5239,7 +5227,133 @@ trait FisHotel_Admin {
 
         <?php elseif ( $tab === 'ship-day' ) : ?>
 
-        <!-- ═══ TAB: Ship Day ═══ -->
+        <!-- ═══ TAB: Ship Day — moved to its own page (10.34); old links land here ═══ -->
+        <?php echo FisHotel_Ship_Day::old_tab_pointer_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside ?>
+
+        <?php endif; ?>
+        </div><!-- .wrap -->
+
+        <script>
+        (function(){
+            // ── Unpaid Invoices ──
+            var genBtn = document.getElementById('fh-inv-generate');
+            if (genBtn) {
+                genBtn.addEventListener('click', function(){
+                    var batch = document.getElementById('fh-inv-batch').value;
+                    if (!batch) { alert('Please select a batch.'); return; }
+                    genBtn.disabled = true;
+                    document.getElementById('fh-inv-spinner').style.display = 'inline';
+                    document.getElementById('fh-inv-output').style.display = 'none';
+
+                    var fd = new FormData();
+                    fd.append('action', 'fishotel_get_unpaid_invoices');
+                    fd.append('nonce', '<?php echo esc_js( $unpaid_nonce ); ?>');
+                    fd.append('batch_name', batch);
+                    fetch('<?php echo esc_js( $ajax_url ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
+                        .then(function(r){ return r.json(); })
+                        .then(function(resp){
+                            genBtn.disabled = false;
+                            document.getElementById('fh-inv-spinner').style.display = 'none';
+                            if (!resp.success) { alert(resp.data && resp.data.message ? resp.data.message : 'Error.'); return; }
+                            document.getElementById('fh-inv-forum-text').value = resp.data.forum_text;
+                            var tbody = document.getElementById('fh-inv-tbody');
+                            tbody.innerHTML = '';
+                            var invoices = resp.data.invoices;
+                            if (invoices.length === 0) {
+                                document.getElementById('fh-inv-empty').style.display = 'block';
+                            } else {
+                                document.getElementById('fh-inv-empty').style.display = 'none';
+                                invoices.forEach(function(inv){
+                                    var tr = document.createElement('tr');
+                                    tr.style.borderBottom = '1px solid #333';
+                                    tr.innerHTML = '<td style="padding:8px 10px;color:#ddd;">' + inv.customer_name + '</td>'
+                                        + '<td style="padding:8px 10px;color:#aaa;">' + (inv.hf_username ? '@' + inv.hf_username : '—') + '</td>'
+                                        + '<td style="padding:8px 10px;text-align:right;color:#ddd;">$' + parseFloat(inv.total).toFixed(2) + '</td>'
+                                        + '<td style="padding:8px 10px;"><a href="' + inv.payment_link + '" target="_blank" style="color:#1e6fa5;font-size:12px;">Payment Link &#8599;</a></td>';
+                                    tbody.appendChild(tr);
+                                });
+                            }
+                            document.getElementById('fh-inv-output').style.display = 'block';
+                        })
+                        .catch(function(){ genBtn.disabled = false; document.getElementById('fh-inv-spinner').style.display = 'none'; alert('Request failed.'); });
+                });
+
+                // Copy to clipboard
+                document.getElementById('fh-inv-copy').addEventListener('click', function(){
+                    var ta = document.getElementById('fh-inv-forum-text');
+                    ta.select();
+                    document.execCommand('copy');
+                    var msg = document.getElementById('fh-inv-copy-msg');
+                    msg.textContent = '✓ Copied to clipboard!';
+                    msg.style.display = 'inline';
+                    setTimeout(function(){ msg.style.display = 'none'; }, 2500);
+                });
+            }
+        })();
+        </script>
+        <?php
+    }
+
+    /**
+     * The Group-order invoices tabs. Ship Day's tab opens Ship Day's own page
+     * (FisHotel_Ship_Day::PAGE_SLUG) — the old tab only says where it went.
+     */
+    private function render_invoicing_tabs( $active ) {
+        ?>
+        <nav class="nav-tab-wrapper" style="margin-bottom:20px;">
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-invoicing&tab=unpaid' ) ); ?>" class="nav-tab<?php echo $active === 'unpaid' ? ' nav-tab-active' : ''; ?>">Unpaid Invoices</a>
+            <a href="<?php echo esc_url( FisHotel_Ship_Day::page_url() ); ?>" class="nav-tab<?php echo $active === 'ship-day' ? ' nav-tab-active' : ''; ?>">Ship Day</a>
+        </nav>
+        <?php
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     *  Ship Day page (FisHotel Tools → Ship Day, 10.34)
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    /** admin_menu (priority 20, after the Misc plugin): Ship Day's own page — see FisHotel_Ship_Day::register_menu(). */
+    public function add_ship_day_menu() {
+        FisHotel_Ship_Day::register_menu( [ $this, 'render_ship_day_page' ] );
+    }
+
+    /**
+     * Ship Day: pick the delivery day, print the pick list. Under FisHotel
+     * Tools it is a page of its own; without the Misc plugin it shows the
+     * Group-order invoices tabs, as it always did. ?date=Y-m-d opens a day.
+     * The pick list itself is built by ajax_get_ship_day() → FisHotel_Ship_Day::render().
+     */
+    public function render_ship_day_page() {
+        if ( ! current_user_can( FisHotel_Ship_Day::CAPABILITY ) ) {
+            wp_die( 'Unauthorized.' );
+        }
+
+        $ajax_url       = admin_url( 'admin-ajax.php' );
+        $ship_day_nonce = wp_create_nonce( FisHotel_Ship_Day::NONCE_ACTION );
+        $sd_misc        = FisHotel_Ship_Day::misc_menu_present();
+
+        // Upcoming delivery dates with open orders (one query), default = the next one.
+        $sd_upcoming = [];
+        $sd_default  = '';
+        if ( function_exists( 'wc_get_orders' ) ) {
+            $sd_upcoming = FisHotel_Ship_Day::upcoming_dates();
+            $sd_default  = FisHotel_Ship_Day::default_date( $sd_upcoming );
+        }
+        $sd_asked = sanitize_text_field( wp_unslash( (string) ( $_GET[ FisHotel_Ship_Day::DATE_VAR ] ?? '' ) ) );
+        if ( FisHotel_Ship_Day::is_ymd( $sd_asked ) ) {
+            $sd_default = $sd_asked; // the Today line opens tomorrow's delivery date
+        }
+        $sd_rules = function_exists( 'fishotel_delivery_rules' ) ? fishotel_delivery_rules() : null;
+        ?>
+        <div class="wrap">
+        <?php if ( $sd_misc ) : ?>
+        <h1>Ship Day</h1>
+        <?php else : ?>
+        <h1>Group-order invoices</h1>
+
+        <?php $this->render_invoicing_tabs( 'ship-day' ); ?>
+        <?php endif; ?>
+
+        <!-- ═══ Ship Day ═══ -->
         <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;max-width:960px;" class="fh-no-print">
             <?php $sd_today_url = function_exists( 'menu_page_url' ) ? (string) menu_page_url( 'fishotel-misc-today', false ) : ''; ?>
             <?php if ( '' !== $sd_today_url ) : ?>
@@ -5279,8 +5393,6 @@ trait FisHotel_Admin {
         </div>
 
         <div id="fh-sd-output" style="margin-top:16px;"></div>
-
-        <?php endif; ?>
         </div><!-- .wrap -->
 
         <style>
@@ -5374,61 +5486,6 @@ trait FisHotel_Admin {
 
         <script>
         (function(){
-            // ── Unpaid Invoices ──
-            var genBtn = document.getElementById('fh-inv-generate');
-            if (genBtn) {
-                genBtn.addEventListener('click', function(){
-                    var batch = document.getElementById('fh-inv-batch').value;
-                    if (!batch) { alert('Please select a batch.'); return; }
-                    genBtn.disabled = true;
-                    document.getElementById('fh-inv-spinner').style.display = 'inline';
-                    document.getElementById('fh-inv-output').style.display = 'none';
-
-                    var fd = new FormData();
-                    fd.append('action', 'fishotel_get_unpaid_invoices');
-                    fd.append('nonce', '<?php echo esc_js( $unpaid_nonce ); ?>');
-                    fd.append('batch_name', batch);
-                    fetch('<?php echo esc_js( $ajax_url ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
-                        .then(function(r){ return r.json(); })
-                        .then(function(resp){
-                            genBtn.disabled = false;
-                            document.getElementById('fh-inv-spinner').style.display = 'none';
-                            if (!resp.success) { alert(resp.data && resp.data.message ? resp.data.message : 'Error.'); return; }
-                            document.getElementById('fh-inv-forum-text').value = resp.data.forum_text;
-                            var tbody = document.getElementById('fh-inv-tbody');
-                            tbody.innerHTML = '';
-                            var invoices = resp.data.invoices;
-                            if (invoices.length === 0) {
-                                document.getElementById('fh-inv-empty').style.display = 'block';
-                            } else {
-                                document.getElementById('fh-inv-empty').style.display = 'none';
-                                invoices.forEach(function(inv){
-                                    var tr = document.createElement('tr');
-                                    tr.style.borderBottom = '1px solid #333';
-                                    tr.innerHTML = '<td style="padding:8px 10px;color:#ddd;">' + inv.customer_name + '</td>'
-                                        + '<td style="padding:8px 10px;color:#aaa;">' + (inv.hf_username ? '@' + inv.hf_username : '—') + '</td>'
-                                        + '<td style="padding:8px 10px;text-align:right;color:#ddd;">$' + parseFloat(inv.total).toFixed(2) + '</td>'
-                                        + '<td style="padding:8px 10px;"><a href="' + inv.payment_link + '" target="_blank" style="color:#1e6fa5;font-size:12px;">Payment Link &#8599;</a></td>';
-                                    tbody.appendChild(tr);
-                                });
-                            }
-                            document.getElementById('fh-inv-output').style.display = 'block';
-                        })
-                        .catch(function(){ genBtn.disabled = false; document.getElementById('fh-inv-spinner').style.display = 'none'; alert('Request failed.'); });
-                });
-
-                // Copy to clipboard
-                document.getElementById('fh-inv-copy').addEventListener('click', function(){
-                    var ta = document.getElementById('fh-inv-forum-text');
-                    ta.select();
-                    document.execCommand('copy');
-                    var msg = document.getElementById('fh-inv-copy-msg');
-                    msg.textContent = '✓ Copied to clipboard!';
-                    msg.style.display = 'inline';
-                    setTimeout(function(){ msg.style.display = 'none'; }, 2500);
-                });
-            }
-
             // ── Ship Day ──
             var sdBtn = document.getElementById('fh-sd-generate');
             if (sdBtn) {

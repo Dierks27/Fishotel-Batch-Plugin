@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.33 - Ship Day's weather line knows the Weather section is on (reads the Misc plugin's section list, not the admin menu, which AJAX never builds) and says when the nightly check runs
- * Version:           10.33
+ * Description:       v10.34 - Ship Day under FisHotel Tools
+ * Version:           10.34
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.33' );
+define( 'FISHOTEL_VERSION', '10.34' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -19,6 +19,7 @@ require_once FISHOTEL_PLUGIN_DIR . 'includes/class-helpers.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-delivery-rules.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-order-meta.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ship-day.php';
+require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ship-day-today-line.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ajax.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-woocommerce.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-shortcodes.php';
@@ -172,6 +173,10 @@ class FisHotel_Batch_Manager {
         add_action( 'fishotel_verification_cron', [$this, 'run_verification_cron'] );
         add_action( 'fishotel_lastcall_cron',     [$this, 'run_lastcall_cron'] );
         add_action( 'admin_menu', [$this, 'add_admin_menu'] );
+        add_action( 'admin_menu', [$this, 'add_ship_day_menu'], 20 ); // after the Misc plugin's FisHotel Tools menu (priority 10)
+        if ( is_admin() ) {
+            FisHotel_Ship_Day_Today_Line::register(); // the Ship Day line on the Misc plugin's Today page
+        }
         add_action( 'admin_init', [$this, 'register_settings'] );
         add_action( 'rest_api_init', [$this, 'register_rest_routes'] );
         add_filter( 'query_vars', [$this, 'add_embed_query_var'] );

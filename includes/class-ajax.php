@@ -1744,6 +1744,7 @@ trait FisHotel_Ajax {
 
     /**
      * Thin wrapper: nonce + capability, then FisHotel_Ship_Day::render() does the work.
+     * A build with orders is recorded (FisHotel_Ship_Day::record_built()) for the Today line.
      * POST: delivery_date (Y-m-d), include_slips (0|1).
      */
     public function ajax_get_ship_day() {
@@ -1761,6 +1762,8 @@ trait FisHotel_Ajax {
         if ( is_wp_error( $result ) ) {
             wp_send_json_error( [ 'message' => $result->get_error_message() ] );
         }
+        // "Built for <ship date> at <time>" — the Today line turns calm (a small option; no order is written).
+        FisHotel_Ship_Day::record_built( $date, $result['orders'] ?? 0, $result['fish'] ?? 0 );
         wp_send_json_success( $result );
     }
 
