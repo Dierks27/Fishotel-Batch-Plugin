@@ -1852,7 +1852,7 @@ class FisHotel_Ship_Day {
     public static function old_tab_pointer_html( $misc_menu = null ) {
         $misc_menu = null === $misc_menu ? self::misc_menu_present() : (bool) $misc_menu;
         $where     = $misc_menu ? 'FisHotel Tools &rarr; Ship Day' : 'its own page';
-        return '<p class="fh-sd-moved" style="font-size:14px;">Ship Day has moved to ' . $where . '. <a href="' . esc_url( self::page_url() ) . '" style="color:#2986cc;font-weight:600;">Open Ship Day &rarr;</a></p>';
+        return '<p class="fh-sd-moved" style="font-size:14px;color:#ddd;">Ship Day has moved to ' . $where . '. <a href="' . esc_url( self::page_url() ) . '" style="color:#2986cc;font-weight:600;">Open Ship Day &rarr;</a></p>';
     }
 
     /* ─────────────────────────────────────────────
@@ -1904,18 +1904,28 @@ class FisHotel_Ship_Day {
         ];
     }
 
-    /** The recorded build for a ship date, or null. */
+    /**
+     * The recorded build for a ship date, or null. Only a build made ON that
+     * ship date counts: opening Ship Day days ahead (the page builds the next
+     * delivery date as it opens) must not silence that day's reminder.
+     */
     public static function built_for( $ship_ymd ) {
         if ( ! function_exists( 'get_option' ) ) {
             return null;
         }
-        return self::built_entry( get_option( self::BUILT_OPTION, [] ), (string) $ship_ymd );
+        $entry = self::built_entry( get_option( self::BUILT_OPTION, [] ), (string) $ship_ymd );
+        return null !== $entry && self::built_on_ship_day( $entry['at'], $ship_ymd ) ? $entry : null;
+    }
+
+    /** Whether a build time ('Y-m-d H:i:s', site-local) falls on the ship date (pure). */
+    public static function built_on_ship_day( $at, $ship_ymd ) {
+        return self::is_ymd( (string) $ship_ymd ) && substr( trim( (string) $at ), 0, 10 ) === (string) $ship_ymd;
     }
 
     /**
      * Record that the pick list for a delivery date was built (the AJAX build
-     * succeeded with at least one order). A small option, not autoloaded; no
-     * order is written.
+     * succeeded with at least one order) on its ship date. A small option, not
+     * autoloaded; no order is written.
      *
      * @return bool Whether a record was written.
      */
@@ -1925,6 +1935,9 @@ class FisHotel_Ship_Day {
         }
         if ( null === $at ) {
             $at = function_exists( 'current_time' ) ? (string) current_time( 'mysql' ) : ( new DateTimeImmutable( 'now', self::timezone() ) )->format( 'Y-m-d H:i:s' );
+        }
+        if ( ! self::built_on_ship_day( $at, self::ship_date_for( $delivery_ymd ) ) ) {
+            return false; // built ahead of (or after) its ship date: not that day's build
         }
         $map = self::built_map_with( get_option( self::BUILT_OPTION, [] ), $delivery_ymd, $at, $orders, $fish );
         update_option( self::BUILT_OPTION, $map, false );

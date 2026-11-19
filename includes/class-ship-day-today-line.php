@@ -11,7 +11,7 @@
  * A ship day is a day whose next calendar day has open orders delivering
  * (FisHotel_Ship_Day::ship_date_for(): ship = delivery − 1 day), counted the
  * way the pick list counts them. "Built" is the record the Ship Day AJAX build
- * writes (FisHotel_Ship_Day::record_built()) for today's ship date. The line
+ * writes (FisHotel_Ship_Day::record_built()) for today's ship date, made today. The line
  * links to Ship Day opened on tomorrow's delivery date; on the Today page and
  * the widget that link carries an "Open Ship Day" button (print_button_style()).
  *
