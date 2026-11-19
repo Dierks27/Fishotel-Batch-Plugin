@@ -358,9 +358,13 @@ $host->add_ship_day_menu();
 check( 'a hidden page (no parent) with the same slug and capability', [ [ null, '', 'manage_options', 'fishotel-ship-day' ] ] === $GLOBALS['fh_submenu_calls'], json_encode( $GLOBALS['fh_submenu_calls'] ) );
 check( 'parent_file / submenu_file filters registered', in_array( [ 'FisHotel_Ship_Day', 'highlight_parent_file' ], $GLOBALS['fh_filters']['parent_file'] ?? [], true ) && in_array( [ 'FisHotel_Ship_Day', 'highlight_submenu_file' ], $GLOBALS['fh_filters']['submenu_file'] ?? [], true ) );
 $GLOBALS['plugin_page'] = 'fishotel-ship-day';
+$GLOBALS['submenu']['']  = [ [ 'Batch Requests', 'manage_options', 'fishotel-batch-orders' ], [ 'Ship Day', 'manage_options', 'fishotel-ship-day' ] ];
 check( 'on the page: Group Orders → Group-order invoices is highlighted', 'fishotel-batch-hq' === apply_filters( 'parent_file', 'admin.php' ) && 'fishotel-invoicing' === apply_filters( 'submenu_file', null ) );
+check( '... and its hidden entry is dropped first, so get_admin_page_parent() cannot reset the parent to \'\' (other hidden pages kept)', [ 'fishotel-batch-orders' ] === array_values( array_map( function ( $e ) { return $e[2]; }, $GLOBALS['submenu'][''] ) ) );
+$GLOBALS['submenu']['']  = [ [ 'Ship Day', 'manage_options', 'fishotel-ship-day' ] ];
 $GLOBALS['plugin_page'] = 'fishotel-sourcing';
-check( 'on any other page the filters change nothing', 'admin.php' === apply_filters( 'parent_file', 'admin.php' ) && 'x' === apply_filters( 'submenu_file', 'x' ) );
+check( 'on any other page the filters change nothing', 'admin.php' === apply_filters( 'parent_file', 'admin.php' ) && 'x' === apply_filters( 'submenu_file', 'x' ) && 1 === count( $GLOBALS['submenu'][''] ) );
+unset( $GLOBALS['submenu'][''] );
 unset( $GLOBALS['plugin_page'] );
 
 /* ── Old tab ──────────────────────────────────────────────────────── */

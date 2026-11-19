@@ -1838,9 +1838,26 @@ class FisHotel_Ship_Day {
         return self::PAGE_SLUG === $page;
     }
 
-    /** parent_file filter (Misc absent): Ship Day's page opens Group Orders. */
+    /**
+     * parent_file filter (Misc absent): Ship Day's page opens Group Orders.
+     * Right after this filter WordPress calls get_admin_page_parent(), which
+     * finds a hidden page under the '' parent and resets $parent_file to ''
+     * (the menu then stays shut). So on Ship Day's request its hidden entry is
+     * dropped first: the access checks have already run by then, and the
+     * page is never listed anyway.
+     */
     public static function highlight_parent_file( $parent_file ) {
-        return self::is_page_request() ? 'fishotel-batch-hq' : $parent_file;
+        if ( ! self::is_page_request() ) {
+            return $parent_file;
+        }
+        if ( isset( $GLOBALS['submenu'][''] ) && is_array( $GLOBALS['submenu'][''] ) ) {
+            foreach ( $GLOBALS['submenu'][''] as $i => $entry ) {
+                if ( is_array( $entry ) && isset( $entry[2] ) && self::PAGE_SLUG === $entry[2] ) {
+                    unset( $GLOBALS['submenu'][''][ $i ] );
+                }
+            }
+        }
+        return 'fishotel-batch-hq';
     }
 
     /** submenu_file filter (Misc absent): ... and highlights Group-order invoices. */
