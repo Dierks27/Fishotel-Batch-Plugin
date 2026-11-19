@@ -182,7 +182,24 @@ trait FisHotel_WooCommerce {
     }
 
     public function handle_deposit_add_to_cart() {
+        // audit core-21: the wallet-refill link is built by wallet_deposit_shortcode()
+        // (class-shortcodes.php). Stamp a nonce onto that link via the shortcode
+        // output filter so the nonce contract lives next to the handler verifying it.
+        add_filter( 'do_shortcode_tag', [ $this, 'deposit_link_add_nonce' ], 10, 2 );
+
         if ( ! isset( $_GET['add-to-cart'] ) || $_GET['add-to-cart'] !== 'deposit' || ! isset( $_GET['amount'] ) ) return;
+        // core-21: outside the front end (wp-admin, REST, cron) WC()->cart is null and
+        // the calls below would fatal; there is nothing to do there anyway.
+        if ( ! function_exists( 'WC' ) || ! WC()->cart ) return;
+        // core-21: this ran on ANY request carrying ?add-to-cart=deposit, so a crafted
+        // link in an email/forum post emptied the victim's cart. Require the nonce the
+        // deposit page put on its own link; never touch the cart without it.
+        $nonce = sanitize_text_field( wp_unslash( $_GET['_fhnonce'] ?? '' ) );
+        if ( ! wp_verify_nonce( $nonce, 'fishotel_deposit_add' ) ) {
+            wc_add_notice( 'Your wallet refill link has expired. Please try again.', 'error' );
+            wp_safe_redirect( home_url( '/wallet-deposit' ) );
+            exit;
+        }
         $amount = floatval( $_GET['amount'] );
         if ( $amount <= 0 ) {
             wc_add_notice( 'Please enter a valid amount.', 'error' );
@@ -198,6 +215,20 @@ trait FisHotel_WooCommerce {
         wc_add_notice( 'Wallet Refill of $' . number_format( $amount, 2 ) . ' added to cart.', 'success' );
         wp_redirect( wc_get_checkout_url() );
         exit;
+    }
+
+    /**
+     * audit core-21: inject the nonce into the [fishotel_wallet_deposit] redirect
+     * URL. Matches the literal built in wallet_deposit_shortcode(); becomes a
+     * no-op once that markup carries `_fhnonce` itself.
+     */
+    public function deposit_link_add_nonce( $output, $tag ) {
+        if ( 'fishotel_wallet_deposit' !== $tag || ! is_string( $output ) ) return $output;
+        return str_replace(
+            '?add-to-cart=deposit&amount=',
+            '?add-to-cart=deposit&_fhnonce=' . rawurlencode( wp_create_nonce( 'fishotel_deposit_add' ) ) . '&amount=',
+            $output
+        );
     }
 
     public function restore_deposit_cart_item( $cart_item, $values, $key ) {
@@ -269,9 +300,11 @@ trait FisHotel_WooCommerce {
     }
 
     public function credit_wallet_on_payment( $order_id ) {
-        if ( get_post_meta( $order_id, '_fishotel_wallet_credited', true ) ) return;
-        $order = wc_get_order( $order_id );
+        // Order meta through the CRUD API (HPOS-safe): the marker must live in
+        // whichever store is authoritative or a sync could credit the wallet twice.
+        $order = FisHotel_Order_Meta::order( $order_id );
         if ( ! $order ) return;
+        if ( $order->get_meta( '_fishotel_wallet_credited' ) ) return;
         $user_id = $order->get_user_id();
         if ( ! $user_id ) return;
         $amount = 0;
@@ -280,7 +313,7 @@ trait FisHotel_WooCommerce {
             if ( $item->get_product_id() === $deposit_product_id || stripos( $item->get_name(), 'Wallet Refill' ) !== false ) $amount += (float) $item->get_total();
         }
         if ( $amount > 0 ) {
-            update_post_meta( $order_id, '_fishotel_wallet_credited', 1 );
+            FisHotel_Order_Meta::update( $order, '_fishotel_wallet_credited', 1 );
             $this->update_user_deposit_balance( $user_id, $amount );
             $batch_name = $order->get_meta( '_deposit_batch_name' ) ?: 'Unknown Batch';
             $this->mark_deposit_paid( $user_id, $batch_name, $amount, $order_id, false );
@@ -492,67 +525,65 @@ trait FisHotel_WooCommerce {
         return false;
     }
 
+    /**
+     * Dates the checkout dropdown offers: [ 'Y-m-d' => 'Monday, October 13, 2026', ... ].
+     * All rules (weekdays, blacklist, lead time, horizon, per-day capacity, site
+     * timezone) live in FisHotel_Delivery_Rules — this only maps allowed_dates()
+     * onto the dropdown's shape and drops full days.
+     */
     private function fishotel_get_available_shipping_dates() {
-        $allowed_days  = get_option( 'fishotel_shipping_days', [ 'Monday', 'Tuesday', 'Wednesday' ] );
-        $min_advance   = intval( get_option( 'fishotel_shipping_min_advance', 1 ) );
-        $max_ahead     = intval( get_option( 'fishotel_shipping_max_ahead', 30 ) );
-        $blacklist     = get_option( 'fishotel_shipping_blacklist', [] );
-        $max_per_day   = intval( get_option( 'fishotel_shipping_max_per_day', 6 ) );
-
-        $dates      = [];
-        $start_date = new DateTime( 'now', new DateTimeZone( 'America/Chicago' ) );
-        $start_date->modify( "+{$min_advance} days" );
-
-        for ( $i = 0; $i < $max_ahead; $i++ ) {
-            $check_date  = clone $start_date;
-            $check_date->modify( "+{$i} days" );
-            $day_name    = $check_date->format( 'l' );
-            $date_string = $check_date->format( 'Y-m-d' );
-
-            if ( ! in_array( $day_name, $allowed_days, true ) ) continue;
-            if ( in_array( $date_string, $blacklist, true ) ) continue;
-
-            $dates[ $date_string ] = $check_date->format( 'l, F j, Y' );
-        }
-
-        // Remove dates that have reached the daily shipment limit.
-        if ( $max_per_day > 0 && ! empty( $dates ) ) {
-            $date_keys = array_keys( $dates );
-            $orders = get_posts( [
-                'post_type'   => 'shop_order',
-                'post_status' => [ 'wc-pending', 'wc-processing', 'wc-on-hold', 'wc-completed', 'wc-fulfillment' ],
-                'meta_query'  => [
-                    'relation' => 'AND',
-                    [
-                        'key'     => '_fishotel_shipping_date',
-                        'value'   => $date_keys,
-                        'compare' => 'IN',
-                    ],
-                    [
-                        'key'     => '_fishotel_fulfilled_by_order',
-                        'compare' => 'NOT EXISTS',
-                    ],
-                ],
-                'fields'         => 'ids',
-                'posts_per_page' => -1,
-            ] );
-
-            $counts = [];
-            foreach ( $orders as $order_id ) {
-                $ship_date = get_post_meta( $order_id, '_fishotel_shipping_date', true );
-                if ( $ship_date ) {
-                    $counts[ $ship_date ] = ( $counts[ $ship_date ] ?? 0 ) + 1;
-                }
+        $dates = [];
+        foreach ( fishotel_delivery_rules()->allowed_dates() as $row ) {
+            if ( ! $row['open'] ) {
+                continue;
             }
-
-            foreach ( $counts as $date => $count ) {
-                if ( $count >= $max_per_day ) {
-                    unset( $dates[ $date ] );
-                }
-            }
+            $dates[ $row['date'] ] = $row['long_label'];
         }
-
         return $dates;
+    }
+
+    /**
+     * Checkout validation message for a posted delivery date, or '' when it is fine.
+     * Both checkout validators use this so they produce (and de-duplicate) the same text.
+     */
+    private function fishotel_shipping_date_problem( $date ) {
+        if ( '' === $date ) {
+            return 'Please select a delivery date.';
+        }
+        $why = fishotel_delivery_rules()->why_not( $date );
+        if ( FisHotel_Delivery_Rules::CODE_OK === $why['code'] ) {
+            return '';
+        }
+        return 'The selected delivery date is not available. ' . $why['message'];
+    }
+
+    /**
+     * Add an order note when a stored delivery date breaks a delivery rule. Never
+     * changes the order (admin overrides and re-order inheritance are legitimate);
+     * it only leaves a visible trail for whoever processes the order.
+     *
+     * @param bool $already_accepted true when the date was accepted earlier and the
+     *             order is now changing status (processing/on-hold → processing or
+     *             completed). Then capacity is skipped (the order is part of its own
+     *             day's booked count, so a day it fills is not "full") and so are the
+     *             lead-time/horizon checks, which describe the checkout window at the
+     *             moment of booking, not the date: a re-order that inherited today's
+     *             date, or an on-hold order confirmed on its delivery day, is not a
+     *             rule break. Only the rules that mean the box cannot go out that day
+     *             (closed weekday, blocked date, invalid) are noted.
+     */
+    private function fishotel_note_shipping_date_rule_break( $order, $date, $context, $already_accepted = false ) {
+        $why    = fishotel_delivery_rules()->why_not( $date, null, ! $already_accepted );
+        $ignore = $already_accepted
+            ? [ FisHotel_Delivery_Rules::CODE_OK, FisHotel_Delivery_Rules::CODE_TOO_SOON, FisHotel_Delivery_Rules::CODE_TOO_FAR ]
+            : [ FisHotel_Delivery_Rules::CODE_OK ];
+        if ( in_array( $why['code'], $ignore, true ) ) {
+            return;
+        }
+        $order->add_order_note(
+            'FISHOTEL NOTICE (' . $context . '): delivery date ' . $date . ' breaks a delivery rule — '
+            . $why['message'] . ' Left as-is; review before packing.'
+        );
     }
 
     /**
@@ -590,10 +621,26 @@ trait FisHotel_WooCommerce {
         if ( ! $order instanceof WC_Order ) {
             return '';
         }
-        if ( function_exists( 'fishotel_get_effective_delivery_date' ) ) {
-            return (string) fishotel_get_effective_delivery_date( $order );
+        $date = function_exists( 'fishotel_get_effective_delivery_date' )
+            ? (string) fishotel_get_effective_delivery_date( $order )
+            : (string) $order->get_meta( '_fishotel_shipping_date' );
+
+        // audit core-6 (conservative part): a stale open order (shipped but never
+        // marked, or a lapsed on-hold payment) can carry a delivery date that has
+        // already passed; inheriting it stamped that past date onto the new order
+        // and skipped the picker. Only lock onto dates that are today or later
+        // (site time zone, same calendar as the theme's self-serve picker) and
+        // fall through to the normal picker otherwise. Whether dates inside the
+        // lead-time window should also fall through is Jeff's call — left as-is.
+        if ( '' !== $date ) {
+            $tz    = wp_timezone();
+            $day   = DateTimeImmutable::createFromFormat( '!Y-m-d', $date, $tz );
+            $today = new DateTimeImmutable( 'today', $tz );
+            if ( $day && $day < $today ) {
+                return '';
+            }
         }
-        return (string) $order->get_meta( '_fishotel_shipping_date' );
+        return $date;
     }
 
     public function fishotel_shipping_date_field( $checkout ) {
@@ -652,13 +699,9 @@ trait FisHotel_WooCommerce {
             return;
         }
 
-        if ( empty( $date ) ) {
-            wc_add_notice( 'Please select a delivery date.', 'error' );
-            return;
-        }
-        $available = $this->fishotel_get_available_shipping_dates();
-        if ( ! isset( $available[ $date ] ) ) {
-            wc_add_notice( 'The selected delivery date is not available. Please choose a different date.', 'error' );
+        $problem = $this->fishotel_shipping_date_problem( $date );
+        if ( '' !== $problem ) {
+            wc_add_notice( $problem, 'error' );
         }
     }
 
@@ -679,20 +722,49 @@ trait FisHotel_WooCommerce {
             return;
         }
 
-        if ( empty( $date ) ) {
-            $errors->add( 'shipping_date', 'Please select a delivery date.' );
+        $problem = $this->fishotel_shipping_date_problem( $date );
+        if ( '' === $problem ) {
             return;
         }
-        $available = $this->fishotel_get_available_shipping_dates();
-        if ( ! isset( $available[ $date ] ) ) {
-            $errors->add( 'shipping_date', 'The selected delivery date is not available. Please choose a different date.' );
+
+        // audit core-18: on the classic checkout both hooks fire inside the same
+        // process_checkout() call (woocommerce_checkout_process first, then this
+        // one from validate_checkout) and WC turns $errors into notices too, so the
+        // primary validator's message was listed twice. Skip when it already
+        // flagged the delivery date with this exact message (both validators build
+        // it from the same rules instance); this hook still catches anything that
+        // bypassed it.
+        if ( function_exists( 'wc_has_notice' ) && wc_has_notice( $problem, 'error' ) ) {
+            return;
+        }
+        $errors->add( 'shipping_date', $problem );
+    }
+
+    /**
+     * Classic checkout: stamp the chosen delivery date on the order object BEFORE
+     * WooCommerce saves it (woocommerce_checkout_create_order), so the meta lands
+     * in whichever order store is authoritative (HPOS or posts) in the same save.
+     */
+    public function fishotel_shipping_date_create_order( $order, $data = [] ) {
+        $date = sanitize_text_field( $_POST['fishotel_shipping_date'] ?? '' );
+        if ( $date ) {
+            FisHotel_Order_Meta::update( $order, '_fishotel_shipping_date', $date, false ); // WC saves right after
         }
     }
 
+    /**
+     * Fallback for the same posted field after the order is saved
+     * (woocommerce_checkout_update_order_meta). Normally a no-op: the value is
+     * already there from fishotel_shipping_date_create_order().
+     */
     public function fishotel_shipping_date_save( $order_id ) {
         $date = sanitize_text_field( $_POST['fishotel_shipping_date'] ?? '' );
-        if ( $date ) {
-            update_post_meta( $order_id, '_fishotel_shipping_date', $date );
+        if ( ! $date ) {
+            return;
+        }
+        $order = FisHotel_Order_Meta::order( $order_id );
+        if ( $order && (string) $order->get_meta( '_fishotel_shipping_date' ) !== $date ) {
+            FisHotel_Order_Meta::update( $order, '_fishotel_shipping_date', $date );
         }
     }
 
@@ -710,7 +782,15 @@ trait FisHotel_WooCommerce {
         if ( $order->get_meta( '_fishotel_order_type' ) === 'batch_invoice' ) return;
 
         $shipping_date = $order->get_meta( '_fishotel_shipping_date' );
-        if ( ! empty( $shipping_date ) ) return;
+        if ( ! empty( $shipping_date ) ) {
+            // A date that slipped past the validators (block checkout, express
+            // payments) or was inherited from an open order may break a rule.
+            // Same rules instance as the validators; note only, never hold.
+            if ( $shipping_date !== $this->fishotel_reorder_inherited_date() ) {
+                $this->fishotel_note_shipping_date_rule_break( $order, $shipping_date, 'checkout' );
+            }
+            return;
+        }
 
         if ( ! $this->fishotel_order_contains_fish( $order ) ) return;
 
@@ -729,7 +809,7 @@ trait FisHotel_WooCommerce {
             . "Customer: {$order->get_billing_first_name()} {$order->get_billing_last_name()} ({$order->get_billing_email()})\n"
             . "Order total: {$order->get_formatted_order_total()}\n\n"
             . "The order has been placed on-hold. Please set a delivery date and release the order.\n\n"
-            . admin_url( 'post.php?post=' . $order_id . '&action=edit' )
+            . FisHotel_Order_Meta::edit_url( $order ) // wc-orders on HPOS, post.php on the CPT store
         );
     }
 
@@ -748,7 +828,13 @@ trait FisHotel_WooCommerce {
         $order->save_meta_data();
 
         $shipping_date = $order->get_meta( '_fishotel_shipping_date' );
-        if ( ! empty( $shipping_date ) ) return;
+        if ( ! empty( $shipping_date ) ) {
+            // Already-accepted date: skip capacity (this order is part of its own
+            // day's booked count) and the lead-time/horizon checks (the window has
+            // moved on since checkout); only note closed/blocked/invalid dates.
+            $this->fishotel_note_shipping_date_rule_break( $order, $shipping_date, 'status change', true );
+            return;
+        }
 
         if ( ! $this->fishotel_order_contains_fish( $order ) ) return;
 
@@ -763,7 +849,7 @@ trait FisHotel_WooCommerce {
             '[FisHotel] Order #' . $order_id . ' held — missing delivery date',
             "Order #{$order_id} was transitioning to processing/completed but has no delivery date.\n"
             . "It has been placed on-hold.\n\n"
-            . admin_url( 'post.php?post=' . $order_id . '&action=edit' )
+            . FisHotel_Order_Meta::edit_url( $order )
         );
     }
 
@@ -778,24 +864,74 @@ trait FisHotel_WooCommerce {
         echo '<label for="fishotel_shipping_date_admin"><strong>FisHotel Delivery Date:</strong></label><br>';
         echo '<input type="date" id="fishotel_shipping_date_admin" name="fishotel_shipping_date_admin" value="' . $value . '" style="width:100%;max-width:220px;">';
         if ( $date ) {
-            echo '<br><span style="color:#999;font-size:12px;">' . esc_html( date( 'l, F j, Y', strtotime( $date ) ) ) . '</span>';
+            $rules  = fishotel_delivery_rules();
+            $pretty = $rules->format_label( $date );
+            echo '<br><span style="color:#999;font-size:12px;">' . esc_html( '' !== $pretty ? $pretty : $date ) . '</span>';
+
+            // Admin override is allowed (any Y-m-d saves), but say when the date
+            // itself is one we cannot deliver on (closed weekday, blocked date, or
+            // not a real date). The lead-time/horizon checks are deliberately NOT
+            // shown here: a stored date is in the past or inside the lead time on
+            // every completed, shipped or same-day order, and that is not a rule
+            // break. Capacity is shown separately: this order is already part of
+            // its own day's booked count.
+            $why = $rules->why_not( $date, null, false );
+            if ( ! in_array( $why['code'], [ FisHotel_Delivery_Rules::CODE_OK, FisHotel_Delivery_Rules::CODE_TOO_SOON, FisHotel_Delivery_Rules::CODE_TOO_FAR ], true ) ) {
+                echo '<br><span style="color:#d63638;font-size:12px;font-weight:600;">&#9888; ' . esc_html( $why['message'] ) . '</span>';
+            }
+            $cap = $rules->capacity_for( $date );
+            if ( $cap['capacity'] > 0 ) {
+                $over = $cap['booked'] > $cap['capacity'];
+                echo '<br><span style="color:' . ( $over ? '#d63638' : '#999' ) . ';font-size:12px;">'
+                    . esc_html( sprintf( '%d of %d deliveries booked for this date', $cap['booked'], $cap['capacity'] ) )
+                    . ( $over ? ' &mdash; over capacity' : '' ) . '</span>';
+            } else {
+                echo '<br><span style="color:#999;font-size:12px;">' . esc_html( sprintf( '%d deliveries booked for this date (no daily cap)', $cap['booked'] ) ) . '</span>';
+            }
         }
         echo '</p>';
     }
 
     /**
      * Save admin-edited shipping date from the Edit Order screen.
+     * Any Y-m-d is accepted (admin override); a date that breaks a delivery rule
+     * is still saved but gets an order note saying which rule it breaks.
      */
-    public function fishotel_shipping_date_admin_save( $order_id ) {
+    /**
+     * Hooked to woocommerce_process_shop_order_meta with 2 args. On the HPOS
+     * screen (admin.php?page=wc-orders) the second argument is the WC_Order
+     * WooCommerce is about to save; on the legacy post screen it is the WP_Post.
+     * Either way the date is read and written through the order object.
+     */
+    public function fishotel_shipping_date_admin_save( $order_id, $order_or_post = null ) {
         if ( ! isset( $_POST['fishotel_shipping_date_nonce'] ) ) return;
         if ( ! wp_verify_nonce( $_POST['fishotel_shipping_date_nonce'], 'fishotel_save_shipping_date' ) ) return;
         if ( ! current_user_can( 'edit_shop_orders' ) ) return;
 
         $date = sanitize_text_field( $_POST['fishotel_shipping_date_admin'] ?? '' );
+        if ( '' !== $date && ! FisHotel_Delivery_Rules::is_ymd( $date ) ) {
+            return; // not a real Y-m-d (the date input always posts one) — keep what is stored
+        }
+        $order = FisHotel_Order_Meta::order( $order_or_post );
+        if ( ! $order ) {
+            $order = FisHotel_Order_Meta::order( $order_id );
+        }
+        if ( ! $order ) return;
+        $previous = (string) $order->get_meta( '_fishotel_shipping_date' );
+
         if ( $date ) {
-            update_post_meta( $order_id, '_fishotel_shipping_date', $date );
-        } else {
-            delete_post_meta( $order_id, '_fishotel_shipping_date' );
+            if ( $date !== $previous ) {
+                FisHotel_Order_Meta::update( $order, '_fishotel_shipping_date', $date ); // one save
+                $why = fishotel_delivery_rules()->why_not( $date, null, false );
+                if ( FisHotel_Delivery_Rules::CODE_OK !== $why['code'] ) {
+                    $order->add_order_note(
+                        'FISHOTEL NOTICE (admin override): delivery date set to ' . $date . ', which breaks a delivery rule — '
+                        . $why['message'] . ' Saved as entered.'
+                    );
+                }
+            }
+        } elseif ( '' !== $previous || FisHotel_Order_Meta::has( $order, '_fishotel_shipping_date' ) ) {
+            FisHotel_Order_Meta::delete( $order, '_fishotel_shipping_date' );
         }
     }
 
@@ -823,14 +959,15 @@ trait FisHotel_WooCommerce {
         $categories = wp_get_post_terms( $post_id, 'product_cat', [ 'fields' => 'slugs' ] );
         if ( ! in_array( 'quarantined-fish', $categories ) ) return;
 
-        $product = wc_get_product( $post_id );
+        $product = function_exists( 'wc_get_product' ) ? wc_get_product( $post_id ) : false;
+        if ( ! $product ) return;
 
         $sci_name = wp_strip_all_tags( $product->get_short_description() );
         if ( empty( $sci_name ) ) $sci_name = wp_strip_all_tags( $product->get_description() );
         $sci_name = ucwords( strtolower( $sci_name ) );
 
         $common_name = ucwords( strtolower( $product->get_name() ) );
-        $price = get_post_meta( $post_id, '_fishotel_selling_price', true ) ?: $product->get_price();
+        $price = $product->get_meta( '_fishotel_selling_price' ) ?: $product->get_price(); // product CRUD: the WC_Product is already in hand
 
         $master = get_posts( [
             'post_type'   => 'fish_master',

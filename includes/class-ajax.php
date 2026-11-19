@@ -7,14 +7,67 @@ trait FisHotel_Ajax {
 
     public function ajax_submit_requests() {
         check_ajax_referer( 'fishotel_batch_ajax', 'nonce' );
-        $cart_items = json_decode( wp_unslash( $_POST['cart_items'] ), true );
-        $total = floatval( $_POST['total'] );
-        $batch_name = sanitize_text_field( $_POST['batch_name'] );
+        $posted_items = json_decode( wp_unslash( $_POST['cart_items'] ?? '' ), true );
+        // Decode entities first: gate pages rendered before the JSON-literal fix (or served from an HTML cache) still post "Cebu &amp; Bali" for "Cebu & Bali".
+        $batch_name   = sanitize_text_field( html_entity_decode( (string) ( $_POST['batch_name'] ?? '' ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
         $deposit_amount = $this->get_deposit_amount( $batch_name );
 
-        if ( empty( $cart_items ) ) wp_send_json_error( [ 'message' => 'No items.' ] );
+        if ( empty( $posted_items ) || ! is_array( $posted_items ) ) wp_send_json_error( [ 'message' => 'No items.' ] );
 
         $user_id = get_current_user_id();
+        if ( ! $user_id ) wp_send_json_error( [ 'message' => 'Please log in to submit a request.' ] );
+
+        // ── Rebuild every line server-side ──────────────────────────────────
+        // The browser used to supply batch_id / qty / price / fish_name / total verbatim and they
+        // were stored as sent: a negative qty *added* stock, an oversized qty silently zeroed it,
+        // a batch_id from another or closed batch reserved fish there, and the posted price/name
+        // flowed into the boarding pass, Order Summary and supplier Excel. Only batch_id and qty
+        // are taken from the client now; everything else comes from the posts.
+        $statuses = get_option( 'fishotel_batch_statuses', [] );
+        $status   = isset( $statuses[ $batch_name ] ) ? $statuses[ $batch_name ] : 'open_ordering'; // same default as the gate page
+        if ( $status !== 'open_ordering' ) {
+            wp_send_json_error( [ 'message' => 'This batch is no longer open for requests.' ] );
+        }
+
+        $qty_by_batch = [];
+        foreach ( $posted_items as $raw ) {
+            if ( ! is_array( $raw ) ) continue;
+            $batch_id = intval( $raw['batch_id'] ?? 0 );
+            if ( $batch_id < 1 ) continue;
+            $qty = max( 1, intval( $raw['qty'] ?? 1 ) );
+            // Merge duplicate lines for the same fish so the stock check below sees the real total.
+            $qty_by_batch[ $batch_id ] = ( $qty_by_batch[ $batch_id ] ?? 0 ) + $qty;
+        }
+        if ( empty( $qty_by_batch ) ) wp_send_json_error( [ 'message' => 'No items.' ] );
+
+        $cart_items = [];
+        $total      = 0.0;
+        foreach ( $qty_by_batch as $batch_id => $qty ) {
+            $bp = get_post( $batch_id );
+            // Case/whitespace-insensitive like the MySQL meta match the gate page uses to list fish.
+            $bp_batch = trim( (string) get_post_meta( $batch_id, '_batch_name', true ) );
+            if ( ! $bp || $bp->post_type !== 'fish_batch' || $bp_batch === '' || strcasecmp( $bp_batch, trim( $batch_name ) ) !== 0 ) {
+                wp_send_json_error( [ 'message' => 'One of the requested fish is not part of this batch. Please reload the page and try again.' ] );
+            }
+            // Same display name the gate page renders (title with the " - size" suffix stripped).
+            $fish_name = trim( preg_replace( '/\s+[\x{2013}\x{2014}-]\s+.+$/u', '', $bp->post_title ) );
+            $stock     = (float) get_post_meta( $batch_id, '_stock', true );
+            if ( $qty > $stock ) {
+                wp_send_json_error( [ 'message' => 'Only ' . intval( $stock ) . ' of "' . $fish_name . '" available (you requested ' . $qty . '). Please reload the page and try again.' ] );
+            }
+            $master_id = (int) get_post_meta( $batch_id, '_master_id', true );
+            $price     = $master_id ? (float) get_post_meta( $master_id, '_selling_price', true ) : 0.0;
+
+            // Same keys the rest of the plugin reads from _cart_items.
+            $cart_items[] = [
+                'batch_id'  => $batch_id,
+                'fish_name' => $fish_name,
+                'qty'       => $qty,
+                'price'     => $price,
+            ];
+            $total += $price * $qty;
+        }
+
         $is_admin_test = get_option( 'fishotel_admin_test_mode', 0 ) && current_user_can( 'manage_options' );
 
         $already_paid = $this->is_deposit_paid_for_batch( $user_id, $batch_name );
@@ -73,7 +126,8 @@ trait FisHotel_Ajax {
     public function ajax_check_balance() {
         check_ajax_referer( 'fishotel_batch_ajax', 'nonce' );
         $user_id = get_current_user_id();
-        $batch_name = isset( $_POST['batch_name'] ) ? sanitize_text_field( $_POST['batch_name'] ) : '';
+        // Same entity decode as ajax_submit_requests: an "&amp;" batch name would key the deposit lookup under the wrong slug.
+        $batch_name = isset( $_POST['batch_name'] ) ? sanitize_text_field( html_entity_decode( (string) $_POST['batch_name'], ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ) : '';
 
         $balance = $this->get_user_deposit_balance( $user_id );
         $deposit_amount = $this->get_deposit_amount( $batch_name );
@@ -187,12 +241,17 @@ trait FisHotel_Ajax {
 
         $deposit_refunded = false;
         if ( empty( $items ) ) {
-            $batch_name     = get_post_meta( $request_id, '_batch_name', true );
-            $deposit_amount = $this->get_deposit_amount( $batch_name );
+            $batch_name = get_post_meta( $request_id, '_batch_name', true );
+            $paid       = $this->get_paid_deposits( $user_id );
+            $key        = sanitize_title( $batch_name );
+            // Refund the amount that was actually deducted (recorded in _fishotel_paid_deposits at
+            // submit time), not the currently configured batch deposit, which may have changed since.
+            // When there is no record or the recorded amount is 0 (manual mark-paid) we fall back to
+            // the configured amount so that existing behaviour for those cases is unchanged.
+            $recorded_amount = isset( $paid[ $key ]['amount'] ) ? (float) $paid[ $key ]['amount'] : 0.0;
+            $deposit_amount  = $recorded_amount > 0 ? $recorded_amount : $this->get_deposit_amount( $batch_name );
             $this->update_user_deposit_balance( $user_id, $deposit_amount );
 
-            $paid = $this->get_paid_deposits( $user_id );
-            $key  = sanitize_title( $batch_name );
             if ( isset( $paid[$key] ) ) unset( $paid[$key] );
             update_user_meta( $user_id, '_fishotel_paid_deposits', $paid );
 
@@ -237,13 +296,16 @@ trait FisHotel_Ajax {
             update_post_meta( $request_id, '_total', $new_total );
 
             if ( empty( $items ) ) {
-                $user_id = get_current_user_id();
+                $user_id    = get_current_user_id();
                 $batch_name = get_post_meta( $request_id, '_batch_name', true );
-                $deposit_amount = $this->get_deposit_amount( $batch_name );
+                $paid       = $this->get_paid_deposits( $user_id );
+                $key        = sanitize_title( $batch_name );
+                // Same rule as ajax_remove_request_item: refund what was recorded as deducted,
+                // fall back to the configured amount only when no positive record exists.
+                $recorded_amount = isset( $paid[ $key ]['amount'] ) ? (float) $paid[ $key ]['amount'] : 0.0;
+                $deposit_amount  = $recorded_amount > 0 ? $recorded_amount : $this->get_deposit_amount( $batch_name );
                 $this->update_user_deposit_balance( $user_id, $deposit_amount );
 
-                $paid = $this->get_paid_deposits( $user_id );
-                $key = sanitize_title( $batch_name );
                 if ( isset( $paid[$key] ) ) unset( $paid[$key] );
                 update_user_meta( $user_id, '_fishotel_paid_deposits', $paid );
 
@@ -975,6 +1037,8 @@ trait FisHotel_Ajax {
     }
 
     public function ajax_run_cron_now() {
+        // Nonce: without it any page an admin visits could fire this via a cross-site GET/POST.
+        check_ajax_referer( 'fishotel_run_cron_now', 'nonce' );
         if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'access_denied' );
         $this->run_verification_cron();
         wp_send_json_success( 'Cron ran' );
@@ -1276,6 +1340,38 @@ trait FisHotel_Ajax {
             wp_send_json_error( [ 'message' => 'No draft results or verification data found.' ] );
         }
 
+        // ── Pre-flight: refuse to run twice for the same batch ──────────────
+        // Backward stage moves are allowed (and documented), so this handler can be reached again
+        // after a run. A second run would create a duplicate pending order per customer and credit
+        // zero-fish customers again. Refuse and name the existing orders; whether to skip, update
+        // or void them instead is a policy decision and is deliberately not implemented here.
+        //
+        // Store-agnostic lookup (FisHotel_Order_Meta::query): on the post-based (CPT) order store
+        // WooCommerce silently DROPS a caller-supplied 'meta_query', so a plain query would return
+        // every order on the site and this guard would block every run; on HPOS 'meta_query' is
+        // honoured. The helper sends the clauses the right way for the active store and re-checks
+        // every returned order through get_meta() (case-insensitive, like the MySQL '=' it asks
+        // for), so the guard can never fire on an unrelated order whatever the backend does.
+        $existing_ids = FisHotel_Order_Meta::query(
+            [
+                'limit'  => -1,
+                'return' => 'ids',
+                'status' => array_keys( wc_get_order_statuses() ), // every non-trashed status
+            ],
+            [
+                [ 'key' => '_fishotel_batch',      'value' => $batch_name,     'compare' => '=' ],
+                [ 'key' => '_fishotel_order_type', 'value' => 'batch_invoice', 'compare' => '=' ],
+            ]
+        );
+        if ( ! empty( $existing_ids ) ) {
+            $existing_ids = array_map( 'intval', (array) $existing_ids );
+            sort( $existing_ids );
+            wp_send_json_error( [
+                'message'            => 'Invoices already exist for this batch (order #' . implode( ', #', $existing_ids ) . '). Not re-run, to avoid duplicate orders and double wallet credits.',
+                'existing_order_ids' => $existing_ids,
+            ] );
+        }
+
         // ── Build customer → fish list ──────────────────────────────────────
         // customer_fish[ user_id ] = [ { fish_id, fish_name, qty, source } ]
 
@@ -1372,7 +1468,10 @@ trait FisHotel_Ajax {
                 $fish_post  = get_post( $item['fish_id'] );
                 $label      = $fish_post ? $fish_post->post_title : $item['fish_name'];
                 $master_id  = (int) get_post_meta( $item['fish_id'], '_master_id', true );
-                $unit_price = $master_id ? (float) get_post_meta( $master_id, '_price', true ) : 0.0;
+                // fish_master prices live in '_selling_price' (meta box, CSV import, WC sync all write
+                // that key); '_price' is only ever written on WC product posts, so reading it here
+                // priced every invoice line at $0 and held every order. Missing-price hold below stays.
+                $unit_price = $master_id ? (float) get_post_meta( $master_id, '_selling_price', true ) : 0.0;
 
                 if ( $unit_price <= 0 ) {
                     $order_missing_labels[] = $label;
@@ -1490,14 +1589,14 @@ trait FisHotel_Ajax {
             wp_send_json_error( [ 'message' => 'No batch specified.' ] );
         }
 
-        $orders = wc_get_orders( [
-            'limit'      => -1,
-            'status'     => [ 'pending', 'on-hold' ],
-            'meta_query' => [
+        // Store-agnostic (HPOS honours meta_query, the CPT store drops it — see FisHotel_Order_Meta::query).
+        $orders = FisHotel_Order_Meta::query(
+            [ 'limit' => -1, 'status' => [ 'pending', 'on-hold' ] ],
+            [
                 [ 'key' => '_fishotel_batch',      'value' => $batch_name,     'compare' => '=' ],
                 [ 'key' => '_fishotel_order_type', 'value' => 'batch_invoice', 'compare' => '=' ],
-            ],
-        ] );
+            ]
+        );
 
         $invoices    = [];
         $forum_lines = [];
@@ -1550,13 +1649,11 @@ trait FisHotel_Ajax {
             wp_send_json_error( [ 'message' => 'Invalid date.' ] );
         }
 
-        $orders = wc_get_orders( [
-            'limit'      => -1,
-            'status'     => [ 'processing', 'completed' ],
-            'meta_query' => [
-                [ 'key' => '_fishotel_shipping_date', 'value' => $shipping_date, 'compare' => '=' ],
-            ],
-        ] );
+        // Store-agnostic (HPOS honours meta_query, the CPT store drops it — see FisHotel_Order_Meta::query).
+        $orders = FisHotel_Order_Meta::query(
+            [ 'limit' => -1, 'status' => [ 'processing', 'completed' ] ],
+            [ [ 'key' => '_fishotel_shipping_date', 'value' => $shipping_date, 'compare' => '=' ] ]
+        );
 
         if ( empty( $orders ) ) {
             wp_send_json_error( [ 'message' => 'No paid orders found for this delivery date.' ] );
@@ -1639,6 +1736,35 @@ trait FisHotel_Ajax {
         </div>
         <?php
         wp_send_json_success( [ 'html' => ob_get_clean() ] );
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Stage 7: Ship Day (pick list + weather overview)
+     * ───────────────────────────────────────────── */
+
+    /**
+     * Thin wrapper: nonce + capability, then FisHotel_Ship_Day::render() does the work.
+     * A build with orders is recorded (FisHotel_Ship_Day::record_built()) for the Today line.
+     * POST: delivery_date (Y-m-d), include_slips (0|1).
+     */
+    public function ajax_get_ship_day() {
+        if ( ! current_user_can( 'manage_options' ) || ! wp_verify_nonce( (string) ( $_POST['nonce'] ?? '' ), FisHotel_Ship_Day::NONCE_ACTION ) ) {
+            wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
+        }
+        if ( ! class_exists( 'FisHotel_Ship_Day' ) ) {
+            wp_send_json_error( [ 'message' => 'Ship Day module not loaded.' ] );
+        }
+
+        $date  = sanitize_text_field( wp_unslash( (string) ( $_POST['delivery_date'] ?? '' ) ) );
+        $slips = '1' === (string) ( $_POST['include_slips'] ?? '0' );
+
+        $result = FisHotel_Ship_Day::render( $date, $slips );
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error( [ 'message' => $result->get_error_message() ] );
+        }
+        // "Built for <ship date> at <time>" — the Today line turns calm (a small option; no order is written).
+        FisHotel_Ship_Day::record_built( $date, $result['orders'] ?? 0, $result['fish'] ?? 0 );
+        wp_send_json_success( $result );
     }
 
 }

@@ -26,10 +26,10 @@ trait FisHotel_Admin {
     public function add_admin_menu() {
         $fish_icon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgNjAiPjxwYXRoIGZpbGw9IiMyOTg2Y2MiIGQ9Ik02NSAzMEMxMCAzMCAwIDU1IDAgNTVzMzAtMTUgMzUtMzBDMTAgMjUgMCAxMCAwIDVjMCAwIDMwIDIwIDM1IDE1IDAtMTAgMjAtMjAgNDAtMjAgMjAgMCAzNSAxNSAzNSAzMCAwIDE1LTE1IDMwLTM1IDMwLTIwIDAtNDAtMTAtNDAtMjB6Ii8+PGVsbGlwc2UgZmlsbD0iIzFhMWExYSIgY3g9Ijc4IiBjeT0iMjciIHJ4PSIzIiByeT0iMyIvPjwvc3ZnPg==';
         // 3 visible menu items
-        add_menu_page( 'FisHotel Batch Manager', 'FisHotel', 'manage_options', 'fishotel-batch-hq', [$this, 'batch_hq_html'], $fish_icon, 56 );
+        add_menu_page( 'FisHotel Batch Manager', 'Group Orders', 'manage_options', 'fishotel-batch-hq', [$this, 'batch_hq_html'], $fish_icon, 56 );
         add_submenu_page( 'fishotel-batch-hq', 'Batches', 'Batches', 'manage_options', 'fishotel-batch-hq' );
-        add_submenu_page( 'fishotel-batch-hq', 'Fish Care', 'Fish Care', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
-        add_submenu_page( 'fishotel-batch-hq', 'Invoicing',     'Invoicing',     'manage_options', 'fishotel-invoicing',      [$this, 'render_invoicing_page'] );
+        add_submenu_page( 'fishotel-batch-hq', 'Group-order fish care', 'Group-order fish care', 'manage_options', 'fishotel-arrival-entry', [$this, 'arrival_entry_html'] );
+        add_submenu_page( 'fishotel-batch-hq', 'Group-order invoices', 'Group-order invoices',     'manage_options', 'fishotel-invoicing',      [$this, 'render_invoicing_page'] );
         add_submenu_page( 'fishotel-batch-hq', 'Supplier Stock', 'Supplier Stock', 'manage_options', 'fishotel-sourcing', [$this, 'sourcing_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Postcards', 'Postcards', 'manage_options', 'fishotel-hotel-program', [$this, 'hotel_program_html'] );
         add_submenu_page( 'fishotel-batch-hq', 'Casino', 'Casino', 'manage_options', 'fishotel-casino', [$this, 'casino_standalone_html'] );
@@ -104,7 +104,7 @@ trait FisHotel_Admin {
         $tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'settings';
         $tabs = [
             'settings' => 'Settings',
-            'requests' => 'Requests',
+            'requests' => 'Deposits',
             'summary'  => 'Order Summary',
             'wallets'  => 'Wallets',
         ];
@@ -171,13 +171,13 @@ trait FisHotel_Admin {
                         <tr><th>#</th><th>Stage</th><th>What Happens</th><th>Admin Action</th><th>Prerequisite</th></tr>
                         <tr><td>1</td><td>Open Ordering</td><td>Fish list is live. Customers browse and request fish.</td><td>Import CSV, assign page, set deposit.</td><td>Batch created + CSV imported</td></tr>
                         <tr><td>2</td><td>Orders Closed</td><td>Order window closed. Page shows countdown to arrival.</td><td>Wait for shipment.</td><td>At least 1 customer request</td></tr>
-                        <tr><td>3</td><td>Arrived</td><td>Fish have arrived. Time to count.</td><td>Go to <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care</a> &rarr; Counting tab. Enter received qty for each species.</td><td>&mdash;</td></tr>
-                        <tr><td>4</td><td>In Quarantine</td><td>Fish in QT. Postcards sent to customers.</td><td>Log survival counts in <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care</a> &rarr; Quarantine.</td><td>Arrival quantities entered</td></tr>
-                        <tr><td>5</td><td>Graduation Day</td><td>QT complete. Final counts needed.</td><td>Enter graduation quantities in <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care</a> &rarr; Graduation tab, then Save.</td><td>&mdash;</td></tr>
-                        <tr><td>6</td><td>Accept or Pass</td><td>Guest Folio is live. Customers accept or pass on their fish.</td><td>Monitor. Cron auto-advances when all resolved.</td><td>Graduation quantities entered (builds the verification queue)</td></tr>
+                        <tr><td>3</td><td>Arrived</td><td>Fish have arrived. Time to count.</td><td>Go to <a href="<?php echo esc_url( $qt_url ); ?>">Group-order fish care</a> &rarr; Counting tab. Enter received qty for each species.</td><td>&mdash;</td></tr>
+                        <tr><td>4</td><td>In Quarantine</td><td>Fish in QT. Postcards sent to customers.</td><td>Log survival counts in <a href="<?php echo esc_url( $qt_url ); ?>">Group-order fish care</a> &rarr; Quarantine.</td><td>Arrival quantities entered</td></tr>
+                        <tr><td>5</td><td>Graduation Day</td><td>QT complete. Final counts needed.</td><td>Enter graduation quantities in <a href="<?php echo esc_url( $qt_url ); ?>">Group-order fish care</a> &rarr; Graduation tab, then Save.</td><td>&mdash;</td></tr>
+                        <tr><td>6</td><td>Accept or Pass</td><td>Guest Folio is live. Customers accept or pass on their fish.</td><td>Watch. Moves on by itself once everyone has answered.</td><td>Graduation quantities entered (builds the verification queue)</td></tr>
                         <tr><td>7</td><td>Draft Pool</td><td>Unclaimed fish available for last-call picks.</td><td>Monitor draft picks.</td><td>All verification decisions made</td></tr>
                         <tr><td>8</td><td>Casino Night</td><td>Casino arcade is live with Draft Room.</td><td>Monitor casino activity.</td><td>&mdash;</td></tr>
-                        <tr><td>9</td><td>Invoicing</td><td>Generate WooCommerce orders for each customer.</td><td>Go to <a href="<?php echo esc_url( $inv_url ); ?>">Invoicing</a> and generate invoices.</td><td>&mdash;</td></tr>
+                        <tr><td>9</td><td>Invoicing</td><td>Generate WooCommerce orders for each customer.</td><td>Go to <a href="<?php echo esc_url( $inv_url ); ?>">Group-order invoices</a> and generate invoices.</td><td>&mdash;</td></tr>
                     </table>
                 </div>
             </div>
@@ -191,12 +191,12 @@ trait FisHotel_Admin {
                     <div class="fhg-step"><span class="fhg-num">3</span><p><strong>Open ordering</strong> &mdash; The batch starts in "Open Ordering." The assigned page shows the fish list. Share the page with customers.</p></div>
                     <div class="fhg-step"><span class="fhg-num">4</span><p><strong>Close ordering</strong> &mdash; Click the <strong>Close Ordering</strong> button on the batch row. This locks the order window.</p></div>
                     <div class="fhg-step"><span class="fhg-num">5</span><p><strong>Mark as arrived</strong> &mdash; When the shipment arrives, click <strong>Mark as Arrived</strong>.</p></div>
-                    <div class="fhg-step"><span class="fhg-num">6</span><p><strong>Enter arrival quantities</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care &rarr; Counting</a>. Enter received qty and DOA for each species. Then click <strong>Begin Quarantine</strong>.</p></div>
-                    <div class="fhg-step"><span class="fhg-num">7</span><p><strong>Track quarantine survival</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care &rarr; Quarantine</a>. Log survival counts periodically. Postcards auto-send to customers.</p></div>
-                    <div class="fhg-step"><span class="fhg-num">8</span><p><strong>Graduate the batch</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Fish Care &rarr; Graduation</a>. Enter final graduation quantities for each species. Click <strong>Save Graduation Data</strong> &mdash; this builds the verification queue and opens the Guest Folio.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">6</span><p><strong>Enter arrival quantities</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Group-order fish care &rarr; Counting</a>. Enter received qty and DOA for each species. Then click <strong>Begin Quarantine</strong>.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">7</span><p><strong>Track quarantine survival</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Group-order fish care &rarr; Quarantine</a>. Log survival counts periodically. Postcards auto-send to customers.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">8</span><p><strong>Graduate the batch</strong> &mdash; Go to <a href="<?php echo esc_url( $qt_url ); ?>">Group-order fish care &rarr; Graduation</a>. Enter final graduation quantities for each species. Click <strong>Save Graduation Data</strong> &mdash; this builds the verification queue and opens the Guest Folio.</p></div>
                     <div class="fhg-step"><span class="fhg-num">9</span><p><strong>Customers accept or pass</strong> &mdash; The Guest Folio page goes live. Customers see their requests and accept or pass. A cron job auto-passes customers who don't respond within the window.</p></div>
                     <div class="fhg-step"><span class="fhg-num">10</span><p><strong>Draft &amp; Casino</strong> &mdash; After verification completes, unclaimed fish go to the Draft Pool, then Casino Night. Advance using the action buttons.</p></div>
-                    <div class="fhg-step"><span class="fhg-num">11</span><p><strong>Generate invoices</strong> &mdash; Go to <a href="<?php echo esc_url( $inv_url ); ?>">Invoicing</a> and generate WooCommerce orders for each customer.</p></div>
+                    <div class="fhg-step"><span class="fhg-num">11</span><p><strong>Generate invoices</strong> &mdash; Go to <a href="<?php echo esc_url( $inv_url ); ?>">Group-order invoices</a> and generate WooCommerce orders for each customer.</p></div>
                 </div>
             </div>
 
@@ -209,7 +209,7 @@ trait FisHotel_Admin {
                         <tr>
                             <td><strong>Guest Folio shows "No requests on file"</strong></td>
                             <td>Graduation quantities were never entered. The verification queue needs graduation data to know how many fish are available.</td>
-                            <td>Go back to Graduation Day stage. Enter graduation quantities in Fish Care &rarr; Graduation, then Save. This builds the queue.</td>
+                            <td>Go back to Graduation Day stage. Enter graduation quantities in Group-order fish care &rarr; Graduation, then Save. This builds the queue.</td>
                         </tr>
                         <tr>
                             <td><strong>Can't advance to next stage (dropdown locked)</strong></td>
@@ -250,7 +250,7 @@ trait FisHotel_Admin {
                         <tr><td><strong>Casino Night</strong></td><td>The arcade experience with Draft Room, roulette, blackjack, and sticker shop.</td></tr>
                         <tr><td><strong>_stock</strong></td><td>Available-to-order quantity on a fish_batch post. Decremented when customers order. Set during CSV import.</td></tr>
                         <tr><td><strong>_current_qty</strong></td><td>Actual physical quantity after QT/graduation. Set during survival tracking or graduation. Used for verification queue.</td></tr>
-                        <tr><td><strong>_arrival_qty_received</strong></td><td>Number of fish received on arrival day. Set in Fish Care &rarr; Counting tab.</td></tr>
+                        <tr><td><strong>_arrival_qty_received</strong></td><td>Number of fish received on arrival day. Set in Group-order fish care &rarr; Counting tab.</td></tr>
                     </table>
                 </div>
             </div>
@@ -429,6 +429,56 @@ trait FisHotel_Admin {
                     </div>
                 </form>
             </div>
+
+            <?php
+            // Read-only preview of what the checkout offers right now. Same rules
+            // instance as the checkout (rebuilt above if the save changed an option);
+            // nothing here is saved. No orders-list filter by delivery date exists
+            // yet (ShipTracker only adds a sortable column), so counts are plain text.
+            $rules        = fishotel_delivery_rules();
+            $preview      = $rules->calendar( null, 30 );
+            $status_label = [
+                FisHotel_Delivery_Rules::CODE_OK          => [ 'Open',                           '#2ecc71' ],
+                FisHotel_Delivery_Rules::CODE_FULL        => [ 'Full',                           '#f39c12' ],
+                FisHotel_Delivery_Rules::CODE_CLOSED_DAY  => [ 'Closed — not a delivery day',    '#888'    ],
+                FisHotel_Delivery_Rules::CODE_BLACKLISTED => [ 'Closed — blocked date',          '#c0392b' ],
+                FisHotel_Delivery_Rules::CODE_TOO_SOON    => [ 'Closed — inside lead time',      '#888'    ],
+                FisHotel_Delivery_Rules::CODE_TOO_FAR     => [ 'Closed — beyond max days ahead', '#888'    ],
+            ];
+            ?>
+            <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;max-width:700px;margin-top:20px;">
+                <h3 style="color:#2986cc;margin:0 0 6px;font-size:1em;text-transform:uppercase;letter-spacing:1px;">&#128197; Next 30 Days</h3>
+                <p style="color:#aaa;font-size:12px;margin:0 0 14px;">
+                    What the checkout offers right now, computed in <?php echo esc_html( $rules->timezone()->getName() ); ?>
+                    (now: <?php echo esc_html( $rules->now()->format( 'D, M j, Y g:i a' ) ); ?>).
+                    Booked = processing, on-hold and fulfillment orders for that delivery date; combined boxes count once; unpaid (pending) orders do not count.
+                </p>
+                <table style="width:100%;border-collapse:collapse;font-size:13px;color:#ddd;">
+                    <thead>
+                        <tr style="border-bottom:1px solid #444;">
+                            <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Date</th>
+                            <th style="text-align:left;padding:6px 8px;color:#aaa;font-weight:600;">Status</th>
+                            <th style="text-align:right;padding:6px 8px;color:#aaa;font-weight:600;">Booked / Capacity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ( $preview as $row ) :
+                        $meta  = $status_label[ $row['code'] ] ?? [ 'Closed', '#888' ];
+                        $cap   = $row['capacity'] > 0 ? (string) $row['capacity'] : '∞';
+                        $over  = $row['capacity'] > 0 && $row['booked'] > $row['capacity'];
+                        $dim   = $row['open'] ? '' : 'opacity:.75;';
+                    ?>
+                        <tr style="border-bottom:1px solid #2e2e2e;<?php echo esc_attr( $dim ); ?>">
+                            <td style="padding:6px 8px;white-space:nowrap;"><?php echo esc_html( $row['long_label'] ); ?></td>
+                            <td style="padding:6px 8px;color:<?php echo esc_attr( $meta[1] ); ?>;" title="<?php echo esc_attr( $row['message'] ); ?>"><?php echo esc_html( $meta[0] ); ?></td>
+                            <td style="padding:6px 8px;text-align:right;white-space:nowrap;<?php echo $over ? 'color:#e74c3c;font-weight:700;' : ''; ?>">
+                                <?php echo esc_html( $row['booked'] . ' / ' . $cap ); ?><?php if ( $over ) : ?> <span style="font-size:11px;">(over)</span><?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <script>
@@ -554,23 +604,11 @@ trait FisHotel_Admin {
                 update_option( 'fishotel_lastcall_rounds', max( 1, min( 10, intval( $_POST['lastcall_rounds'] ) ) ) );
             }
 
-            // Shipping Settings
-            $valid_days = [ 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ];
-            $shipping_days = array_intersect( (array) ( $_POST['shipping_days'] ?? [] ), $valid_days );
-            update_option( 'fishotel_shipping_days', array_values( $shipping_days ) );
-            update_option( 'fishotel_shipping_min_advance', max( 0, intval( $_POST['shipping_min_advance'] ?? 1 ) ) );
-            update_option( 'fishotel_shipping_max_ahead', max( 1, intval( $_POST['shipping_max_ahead'] ?? 30 ) ) );
-
-            // Blacklist: merge existing with any newly added dates, remove any flagged for removal
-            $existing_blacklist = get_option( 'fishotel_shipping_blacklist', [] );
-            $add_date = sanitize_text_field( $_POST['shipping_blacklist_add'] ?? '' );
-            if ( $add_date && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $add_date ) ) {
-                $existing_blacklist[] = $add_date;
-            }
-            $remove_dates = array_map( 'sanitize_text_field', (array) ( $_POST['shipping_blacklist_remove'] ?? [] ) );
-            $existing_blacklist = array_values( array_unique( array_diff( $existing_blacklist, $remove_dates ) ) );
-            sort( $existing_blacklist );
-            update_option( 'fishotel_shipping_blacklist', $existing_blacklist );
+            // NOTE: fishotel_shipping_* options are deliberately NOT written here.
+            // This form has no shipping_days / min_advance / max_ahead / blacklist inputs;
+            // a stale copy of the Delivery-page save block used to run here and wrote
+            // fishotel_shipping_days = [] on every save, emptying the checkout date list.
+            // The Delivery page (shipping_html) is the only writer of those options.
 
             $new_assignments = [];
             $new_statuses = [];
@@ -889,7 +927,7 @@ trait FisHotel_Admin {
                                 <td>
                                     <input type="number" name="verification_response_hours" form="fishotel-save-all-form" value="<?php echo esc_attr( get_option( 'fishotel_verification_response_hours', 24 ) ); ?>" min="1" style="width:80px;padding:5px 8px;border-radius:4px;"> <span style="color:#aaa;">hours</span>
                                     <small style="display:block;margin-top:5px;color:#aaa;">Time customers have to accept or pass before auto-pass kicks in</small>
-                                    <button type="button" id="fh-run-cron-btn" style="margin-top:8px;background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:5px 14px;font-size:12px;cursor:pointer;" onclick="(function(btn){btn.disabled=true;btn.textContent='Running...';fetch('<?php echo admin_url('admin-ajax.php'); ?>',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'action=fishotel_run_cron_now',credentials:'same-origin'}).then(function(r){return r.json()}).then(function(d){btn.textContent=d.success?'Done!':'Error';setTimeout(function(){btn.disabled=false;btn.textContent='Run Verification Cron Now'},2000)}).catch(function(){btn.textContent='Error';btn.disabled=false})})(this)">Run Verification Cron Now</button>
+                                    <button type="button" id="fh-run-cron-btn" style="margin-top:8px;background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:5px 14px;font-size:12px;cursor:pointer;" onclick="(function(btn){btn.disabled=true;btn.textContent='Running...';fetch('<?php echo admin_url('admin-ajax.php'); ?>',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'action=fishotel_run_cron_now&nonce=<?php echo esc_js( rawurlencode( wp_create_nonce( 'fishotel_run_cron_now' ) ) ); ?>',credentials:'same-origin'}).then(function(r){return r.json()}).then(function(d){btn.textContent=d.success?'Done!':'Error';setTimeout(function(){btn.disabled=false;btn.textContent='Run Verification Cron Now'},2000)}).catch(function(){btn.textContent='Error';btn.disabled=false})})(this)">Run Verification Cron Now</button>
                                 </td>
                             </tr>
                             <tr>
@@ -1651,9 +1689,9 @@ trait FisHotel_Admin {
 
         ?>
         <div class="wrap fishotel-admin">
-            <h1>FisHotel Batch Requests</h1>
+            <h1>Group-order deposits</h1>
 
-            <p class="page-description">Stock is reserved. Empty-cart requests show as ghost rows ($0.00) with only Mark Unpaid + Permanent Delete.</p>
+            <p class="page-description">Stock is held for each request. A request whose cart is empty shows at $0.00 with only Mark unpaid and Delete.</p>
 
             <input type="text" id="batch-search" placeholder="Search requests..." style="width:300px;margin-bottom:15px;">
 
@@ -1695,10 +1733,10 @@ trait FisHotel_Admin {
                                 <td><?php echo esc_html( $req->post_date ); ?></td>
                                 <td><?php echo $paid_html; ?></td>
                                 <td style="white-space:nowrap;">
-                                    <a href="<?php echo admin_url( 'post.php?post=' . $req->ID . '&action=edit' ); ?>" class="button button-small" style="background:#3498db;color:#fff;" title="View Fish">V</a>
-                                    <a href="<?php echo esc_url( $cancel_url ); ?>" class="button button-small" style="background:#2986cc;color:#fff;" title="Cancel & Restore Stock" onclick="return confirm('Cancel and restore stock?');">C</a>
-                                    <a href="<?php echo esc_url( $mark_unpaid_url ); ?>" class="button button-small" style="background:#27ae60;color:#000;" title="Mark Unpaid" onclick="return confirm('Mark UNPAID?');">M</a>
-                                    <a href="<?php echo esc_url( $full_delete_url ); ?>" class="button button-small" style="background:#e74c3c;color:#fff;" title="Permanently Delete" onclick="return confirm('PERMANENTLY DELETE?');">D</a>
+                                    <a href="<?php echo admin_url( 'post.php?post=' . $req->ID . '&action=edit' ); ?>" class="button button-small" style="background:#3498db;color:#fff;" title="View Fish">View</a>
+                                    <a href="<?php echo esc_url( $cancel_url ); ?>" class="button button-small" style="background:#2986cc;color:#fff;" title="Cancel & Restore Stock" onclick="return confirm('Cancel and restore stock?');">Cancel</a>
+                                    <a href="<?php echo esc_url( $mark_unpaid_url ); ?>" class="button button-small" style="background:#27ae60;color:#000;" title="Mark Unpaid" onclick="return confirm('Mark UNPAID?');">Mark unpaid</a>
+                                    <a href="<?php echo esc_url( $full_delete_url ); ?>" class="button button-small" style="background:#e74c3c;color:#fff;" title="Permanently Delete" onclick="return confirm('PERMANENTLY DELETE?');">Delete</a>
                                 </td>
                             </tr>
                             <?php
@@ -1719,8 +1757,8 @@ trait FisHotel_Admin {
                                 <td>—</td>
                                 <td><span style="color:#27ae60;font-weight:700;">YES (Ghost)</span></td>
                                 <td style="white-space:nowrap;">
-                                    <a href="<?php echo esc_url( $mark_unpaid_url ); ?>" class="button button-small" style="background:#27ae60;color:#000;" title="Mark Unpaid" onclick="return confirm('Mark UNPAID?');">M</a>
-                                    <a href="<?php echo esc_url( $full_delete_url ); ?>" class="button button-small" style="background:#e74c3c;color:#fff;" title="Permanently Delete" onclick="return confirm('PERMANENTLY DELETE forever?');">D</a>
+                                    <a href="<?php echo esc_url( $mark_unpaid_url ); ?>" class="button button-small" style="background:#27ae60;color:#000;" title="Mark Unpaid" onclick="return confirm('Mark UNPAID?');">Mark unpaid</a>
+                                    <a href="<?php echo esc_url( $full_delete_url ); ?>" class="button button-small" style="background:#e74c3c;color:#fff;" title="Permanently Delete" onclick="return confirm('PERMANENTLY DELETE forever?');">Delete</a>
                                 </td>
                             </tr>
                             <?php
@@ -1997,6 +2035,7 @@ trait FisHotel_Admin {
             'fishotel-arrival-entry',
             'fishotel-arcade',
             'fishotel-invoicing',
+            'fishotel-ship-day',
             'fishotel-hotel-program',
             'fishotel-guide',
             'fishotel-casino',
@@ -2994,7 +3033,7 @@ trait FisHotel_Admin {
                 foreach ( $fish as $f ) {
                     if ( intval( get_post_meta( $f->ID, '_arrival_qty_received', true ) ) > 0 ) return true;
                 }
-                return 'No arrival quantities entered. Go to Fish Care → Counting tab and enter received quantities first.';
+                return 'No arrival quantities entered. Go to Group-order fish care → Counting tab and enter received quantities first.';
 
             case 'verification':
                 $fish = get_posts( [
@@ -3008,7 +3047,7 @@ trait FisHotel_Admin {
                     $aq = get_post_meta( $f->ID, '_arrival_qty_received', true );
                     if ( $aq !== '' && $aq !== false && intval( $aq ) > 0 ) return true;
                 }
-                return 'No graduation or arrival quantities found. Go to Fish Care → Graduation tab and enter quantities first.';
+                return 'No graduation or arrival quantities found. Go to Group-order fish care → Graduation tab and enter quantities first.';
 
             default:
                 return true; // no data prerequisite
@@ -3023,9 +3062,9 @@ trait FisHotel_Admin {
         switch ( $stage ) {
             case 'open_ordering':   return 'Customers are ordering. Close ordering when the window ends.';
             case 'orders_closed':   return 'Waiting for shipment to arrive.';
-            case 'arrived':         return 'Enter received quantities in <a href="' . esc_url( $qt_url . '&tab=counting' ) . '">Fish Care → Counting</a>.';
-            case 'in_quarantine':   return 'Track survival in <a href="' . esc_url( $qt_url . '&tab=tracker' ) . '">Fish Care → Quarantine</a>.';
-            case 'graduation':      return 'Enter final quantities in <a href="' . esc_url( $qt_url . '&tab=graduation' ) . '">Fish Care → Graduation</a>, then save to open the Folio.';
+            case 'arrived':         return 'Enter received quantities in <a href="' . esc_url( $qt_url . '&tab=counting' ) . '">Group-order fish care → Counting</a>.';
+            case 'in_quarantine':   return 'Track survival in <a href="' . esc_url( $qt_url . '&tab=tracker' ) . '">Group-order fish care → Quarantine</a>.';
+            case 'graduation':      return 'Enter final quantities in <a href="' . esc_url( $qt_url . '&tab=graduation' ) . '">Group-order fish care → Graduation</a>, then save to open the Folio.';
             case 'verification':    return 'Guest Folio is live — customers are accepting or passing.';
             case 'draft':           return 'Draft Pool is open for last-call picks.';
             case 'casino':          return 'Casino Night is active.';
@@ -3628,7 +3667,7 @@ trait FisHotel_Admin {
             : ( ! empty( $eligible ) ? reset( $eligible ) : '' );
 
         echo '<div class="wrap fishotel-admin">';
-        echo '<h1>Fish Care</h1>';
+        echo '<h1>Group-order fish care</h1>';
         echo '<p style="color:#aaa;">Manage arrivals, track quarantine survival, and confirm graduation counts.</p>';
 
         // Batch selector
@@ -5125,22 +5164,21 @@ trait FisHotel_Admin {
         }
 
         $tab      = sanitize_key( $_GET['tab'] ?? 'unpaid' );
+        if ( $tab === 'packing' ) {
+            $tab = 'ship-day'; // old bookmark alias
+        }
         $ajax_url = admin_url( 'admin-ajax.php' );
 
         // Batches in invoicing stage
         $statuses         = get_option( 'fishotel_batch_statuses', [] );
         $invoicing_batches = array_keys( array_filter( $statuses, fn( $s ) => $s === 'invoicing' ) );
 
-        $unpaid_nonce   = wp_create_nonce( 'fishotel_unpaid_invoices' );
-        $packing_nonce  = wp_create_nonce( 'fishotel_packing_list' );
+        $unpaid_nonce = wp_create_nonce( 'fishotel_unpaid_invoices' );
         ?>
         <div class="wrap">
-        <h1>Invoicing</h1>
+        <h1>Group-order invoices</h1>
 
-        <nav class="nav-tab-wrapper" style="margin-bottom:20px;">
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-invoicing&tab=unpaid' ) ); ?>" class="nav-tab<?php echo $tab === 'unpaid' ? ' nav-tab-active' : ''; ?>">Unpaid Invoices</a>
-            <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-invoicing&tab=packing' ) ); ?>" class="nav-tab<?php echo $tab === 'packing' ? ' nav-tab-active' : ''; ?>">Packing Lists</a>
-        </nav>
+        <?php $this->render_invoicing_tabs( $tab ); ?>
 
         <?php if ( $tab === 'unpaid' ) : ?>
 
@@ -5187,59 +5225,13 @@ trait FisHotel_Admin {
             </div>
         </div>
 
-        <?php elseif ( $tab === 'packing' ) : ?>
+        <?php elseif ( $tab === 'ship-day' ) : ?>
 
-        <!-- ═══ TAB: Packing Lists ═══ -->
-        <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;max-width:900px;" class="fh-no-print">
-            <h2 style="color:#2986cc;margin-top:0;font-size:1.1em;">Packing Lists</h2>
-            <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Generate a print-ready packing list for all paid orders with a given delivery date.</p>
-
-            <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:20px;">
-                <div>
-                    <label style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Delivery Date</label>
-                    <input type="date" id="fh-pack-date" style="padding:7px 10px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">
-                </div>
-                <button id="fh-pack-generate" style="background:#1e6fa5;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Generate Packing List</button>
-                <button id="fh-pack-print" style="display:none;background:#1a3a5c;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">&#128438; Print</button>
-                <span id="fh-pack-spinner" style="display:none;color:#aaa;font-size:13px;">&#8987; Loading&hellip;</span>
-            </div>
-            <div id="fh-pack-error" style="display:none;color:#e74c3c;font-size:13px;margin-bottom:10px;"></div>
-        </div>
-
-        <div id="fh-pack-output" style="margin-top:16px;"></div>
+        <!-- ═══ TAB: Ship Day — moved to its own page (10.34); old links land here ═══ -->
+        <?php echo FisHotel_Ship_Day::old_tab_pointer_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside ?>
 
         <?php endif; ?>
         </div><!-- .wrap -->
-
-        <style>
-        /* Packing list print styles */
-        .fh-packing-list { font-family: Arial, sans-serif; font-size: 13px; color: #000; }
-        .fh-packing-list-header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #000; padding-bottom: 12px; }
-        .fh-packing-list-header h1 { margin: 0 0 6px; font-size: 22px; }
-        .fh-packing-list-header h2 { margin: 0 0 4px; font-size: 16px; font-weight: normal; }
-        .fh-packing-list-order { border: 1px solid #ccc; border-radius: 6px; padding: 20px; margin-bottom: 16px; background: #fff; }
-        .fh-packing-order-header h3 { margin: 0 0 6px; font-size: 15px; }
-        .fh-packing-order-header p { margin: 2px 0; color: #444; font-size: 12px; }
-        .fh-packing-address { margin: 12px 0; }
-        .fh-packing-address h4, .fh-packing-items h4, .fh-packing-notes h4, .fh-packing-shop-items h4 { margin: 8px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #555; border-bottom: 1px solid #eee; padding-bottom: 3px; }
-        .fh-packing-address p { margin: 0; line-height: 1.7; font-size: 13px; }
-        .fh-packing-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-        .fh-packing-table th { background: #333; color: #fff; padding: 7px 10px; text-align: left; font-size: 12px; }
-        .fh-packing-table td { padding: 7px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
-        .fh-packing-table tbody tr:nth-child(even) { background: #f9f9f9; }
-        .fh-packing-notes p { margin: 4px 0; font-size: 13px; color: #555; }
-        .fh-packing-signature { margin-top: 20px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 12px; color: #555; }
-        .fh-packing-page-break { height: 0; }
-        #fh-pack-output { background: #fff; padding: 16px; border-radius: 6px; }
-
-        @media print {
-            .fh-no-print, #adminmenumain, #wpadminbar, #wpfooter, .nav-tab-wrapper, h1 { display: none !important; }
-            body, #wpcontent, #wpbody, #wpbody-content { margin: 0 !important; padding: 0 !important; background: #fff !important; }
-            #fh-pack-output { padding: 0; }
-            .fh-packing-page-break { page-break-after: always; }
-            .fh-packing-list-order { border: 1px solid #999; break-inside: avoid; }
-        }
-        </style>
 
         <script>
         (function(){
@@ -5297,43 +5289,265 @@ trait FisHotel_Admin {
                     setTimeout(function(){ msg.style.display = 'none'; }, 2500);
                 });
             }
+        })();
+        </script>
+        <?php
+    }
 
-            // ── Packing List ──
-            var packBtn = document.getElementById('fh-pack-generate');
-            if (packBtn) {
-                packBtn.addEventListener('click', function(){
-                    var date = document.getElementById('fh-pack-date').value;
+    /**
+     * The Group-order invoices tabs. Ship Day's tab opens Ship Day's own page
+     * (FisHotel_Ship_Day::PAGE_SLUG) — the old tab only says where it went.
+     */
+    private function render_invoicing_tabs( $active ) {
+        ?>
+        <nav class="nav-tab-wrapper" style="margin-bottom:20px;">
+            <a href="<?php echo esc_url( admin_url( 'admin.php?page=fishotel-invoicing&tab=unpaid' ) ); ?>" class="nav-tab<?php echo $active === 'unpaid' ? ' nav-tab-active' : ''; ?>">Unpaid Invoices</a>
+            <a href="<?php echo esc_url( FisHotel_Ship_Day::page_url() ); ?>" class="nav-tab<?php echo $active === 'ship-day' ? ' nav-tab-active' : ''; ?>">Ship Day</a>
+        </nav>
+        <?php
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     *  Ship Day page (FisHotel Tools → Ship Day, 10.34)
+     * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    /** admin_menu (priority 20, after the Misc plugin): Ship Day's own page — see FisHotel_Ship_Day::register_menu(). */
+    public function add_ship_day_menu() {
+        FisHotel_Ship_Day::register_menu( [ $this, 'render_ship_day_page' ] );
+    }
+
+    /**
+     * Ship Day: pick the delivery day, print the pick list. Under FisHotel
+     * Tools it is a page of its own; without the Misc plugin it shows the
+     * Group-order invoices tabs, as it always did. ?date=Y-m-d opens a day.
+     * The pick list itself is built by ajax_get_ship_day() → FisHotel_Ship_Day::render().
+     */
+    public function render_ship_day_page() {
+        if ( ! current_user_can( FisHotel_Ship_Day::CAPABILITY ) ) {
+            wp_die( 'Unauthorized.' );
+        }
+
+        $ajax_url       = admin_url( 'admin-ajax.php' );
+        $ship_day_nonce = wp_create_nonce( FisHotel_Ship_Day::NONCE_ACTION );
+        $sd_misc        = FisHotel_Ship_Day::misc_menu_present();
+
+        // Upcoming delivery dates with open orders (one query), default = the next one.
+        $sd_upcoming = [];
+        $sd_default  = '';
+        if ( function_exists( 'wc_get_orders' ) ) {
+            $sd_upcoming = FisHotel_Ship_Day::upcoming_dates();
+            $sd_default  = FisHotel_Ship_Day::default_date( $sd_upcoming );
+        }
+        $sd_asked = sanitize_text_field( wp_unslash( (string) ( $_GET[ FisHotel_Ship_Day::DATE_VAR ] ?? '' ) ) );
+        if ( FisHotel_Ship_Day::is_ymd( $sd_asked ) ) {
+            $sd_default = $sd_asked; // the Today line opens tomorrow's delivery date
+        }
+        $sd_rules = function_exists( 'fishotel_delivery_rules' ) ? fishotel_delivery_rules() : null;
+        ?>
+        <div class="wrap">
+        <?php if ( $sd_misc ) : ?>
+        <h1>Ship Day</h1>
+        <?php else : ?>
+        <h1>Group-order invoices</h1>
+
+        <?php $this->render_invoicing_tabs( 'ship-day' ); ?>
+        <?php endif; ?>
+
+        <!-- ═══ Ship Day ═══ -->
+        <div style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:24px;max-width:960px;" class="fh-no-print">
+            <?php $sd_today_url = function_exists( 'menu_page_url' ) ? (string) menu_page_url( 'fishotel-misc-today', false ) : ''; ?>
+            <?php if ( '' !== $sd_today_url ) : ?>
+                <p style="margin:0 0 8px;font-size:13px;"><a href="<?php echo esc_url( $sd_today_url ); ?>" style="color:#2986cc;">&larr; Today</a></p>
+            <?php endif; ?>
+            <h2 style="color:#2986cc;margin-top:0;font-size:1.1em;">Ship Day</h2>
+            <p style="color:#aaa;font-size:13px;margin-bottom:16px;">Pick the delivery day, print the pick list. The box ships the day before.</p>
+
+            <?php if ( ! function_exists( 'wc_get_orders' ) ) : ?>
+                <p style="color:#e74c3c;font-size:13px;">WooCommerce is not active — nothing to list.</p>
+            <?php endif; ?>
+
+            <?php if ( $sd_upcoming ) : ?>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;" id="fh-sd-chips">
+                <?php foreach ( $sd_upcoming as $sd_date => $sd_count ) :
+                    $sd_label = $sd_rules ? $sd_rules->format_label( $sd_date, FisHotel_Delivery_Rules::LABEL_SHORT ) : FisHotel_Ship_Day::label( $sd_date, 'D, M j' );
+                ?>
+                <button type="button" class="fh-sd-datechip<?php echo $sd_date === $sd_default ? ' is-active' : ''; ?>" data-date="<?php echo esc_attr( $sd_date ); ?>"><?php echo esc_html( $sd_label ); ?> &middot; <?php echo (int) $sd_count; ?></button>
+                <?php endforeach; ?>
+            </div>
+            <?php else : ?>
+                <p style="color:#aaa;font-size:13px;margin-bottom:14px;">No open orders deliver in the next <?php echo (int) FisHotel_Ship_Day::LOOKAHEAD; ?> days.</p>
+            <?php endif; ?>
+
+            <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px;">
+                <div>
+                    <label for="fh-sd-date" style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Delivery Date</label>
+                    <input type="date" id="fh-sd-date" value="<?php echo esc_attr( $sd_default ); ?>" style="padding:7px 10px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">
+                </div>
+                <label style="color:#ddd;font-size:13px;display:flex;align-items:center;gap:6px;padding-bottom:8px;">
+                    <input type="checkbox" id="fh-sd-slips" value="1"> Also print per-order packing slips
+                </label>
+                <button id="fh-sd-generate" style="background:#1e6fa5;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Build Ship Day</button>
+                <span id="fh-sd-spinner" style="display:none;color:#aaa;font-size:13px;">&#8987; Loading&hellip;</span>
+            </div>
+            <div id="fh-sd-error" style="display:none;color:#e74c3c;font-size:13px;margin-bottom:10px;"></div>
+        </div>
+
+        <div id="fh-sd-output" style="margin-top:16px;"></div>
+        </div><!-- .wrap -->
+
+        <style>
+        /* Ship Day — screen block (dark) */
+        .fh-sd-datechip { background:#2a2a2a; color:#ddd; border:1px solid #555; border-radius:16px; padding:5px 12px; font-size:12px; cursor:pointer; }
+        .fh-sd-datechip.is-active { background:#1e6fa5; border-color:#1e6fa5; color:#fff; }
+        .fh-sd-screen { background:#1e1e1e; border:1px solid #444; border-radius:8px; padding:20px 24px; max-width:960px; color:#ddd; margin-bottom:16px; }
+        .fh-sd-screen h3 { color:#2986cc; margin:0; font-size:1.05em; }
+        .fh-sd-screen h4 { color:#2986cc; margin:16px 0 6px; font-size:0.95em; }
+        .fh-sd-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+        .fh-sd-print-btn { background:#1e6fa5; color:#fff; font-weight:700; border:none; border-radius:6px; padding:8px 24px; font-size:13px; cursor:pointer; }
+        .fh-sd-chips { display:flex; gap:8px; flex-wrap:wrap; }
+        .fh-sd-chip { background:#2a2a2a; border:1px solid #555; border-radius:16px; padding:4px 12px; font-size:12px; color:#ddd; }
+        .fh-sd-chip strong { color:#fff; font-size:13px; }
+        .fh-sd-chip--blue { border-color:#4a90c8; } .fh-sd-chip--orange { border-color:#d98a3a; } .fh-sd-chip--red { border-color:#c0392b; } .fh-sd-chip--amber { border-color:#d4a72c; } .fh-sd-chip--grey { border-color:#777; }
+        .fh-sd-warn { color:#f0c060; font-size:13px; margin:12px 0 0; }
+        .fh-sd-warn a { color:#2986cc; }
+        .fh-sd-empty { color:#aaa; font-size:13px; margin:8px 0 0; }
+        .fh-sd-attention { margin:0; padding-left:18px; font-size:13px; color:#ddd; }
+        .fh-sd-attention li { margin:3px 0; }
+        .fh-sd-attention a { color:#2986cc; }
+
+        /* Ship Day — print pages (white, letter portrait) */
+        .fh-sd-print { background:#fff; color:#000; padding:16px; border-radius:6px; max-width:8.5in; font-family:Arial, Helvetica, sans-serif; font-size:12px; }
+        .fh-sd-page { padding:0 0 24px; }
+        .fh-sd-page + .fh-sd-page, .fh-sd-slips { page-break-before:always; break-before:page; border-top:2px dashed #bbb; padding-top:20px; }
+        .fh-sd-page h1 { margin:0 0 4px; font-size:20px; color:#000; }
+        .fh-sd-sub { margin:0 0 12px; font-size:13px; color:#333; }
+        .fh-sd-table { width:100%; border-collapse:collapse; }
+        .fh-sd-table th { background:#333; color:#fff; padding:6px 8px; text-align:left; font-size:11px; }
+        .fh-sd-table td { padding:6px 8px; border-bottom:1px solid #ddd; vertical-align:top; font-size:12px; }
+        .fh-sd-table tr.fh-sd-row-first td { border-top:2px solid #999; }
+        .fh-sd-col-pick { width:34px; text-align:center; }
+        .fh-sd-col-qty { width:40px; text-align:center; }
+        .fh-sd-col-num { width:52px; text-align:right; }
+        .fh-sd-col-order { width:170px; }
+        .fh-sd-col-dest { width:190px; }
+        .fh-sd-box { display:inline-block; width:14px; height:14px; border:1.2px solid #000; background:#fff; }
+        .fh-sd-tag { color:#555; font-size:11px; }
+        .fh-sd-tag--warn { color:#a40000; font-weight:700; }
+        .fh-sd-sublabel { color:#666; font-size:10px; font-style:italic; }
+        .fh-sd-flag { color:#a40000; }
+        .fh-sd-bag { display:inline-block; margin-left:4px; padding:0 5px; border:1px solid #777; border-radius:3px; font-size:11px; font-weight:700; color:#000; white-space:nowrap; }
+        .fh-sd-boxname { font-size:11px; font-weight:700; }
+        .fh-sd-foot { margin:10px 0 4px; font-size:12px; }
+        .fh-sd-legend { margin:0; font-size:10px; color:#444; }
+        .fh-sd-notes { margin:12px 0 0 18px; padding:0; font-size:11px; }
+        .fh-sd-notes li { margin:3px 0; }
+        .fh-sd-tone-green td { background:#dff5e1; }
+        .fh-sd-tone-blue td { background:#dbeeff; }
+        .fh-sd-tone-orange td { background:#ffe6cc; }
+        .fh-sd-tone-amber td { background:#ffe9a8; }
+        .fh-sd-tone-red td { background:#f8d0d0; }
+        .fh-sd-tone-grey td { background:#e6e6e6; }
+
+        /* Packing slip card styles (shared with the legacy packing list) */
+        .fh-packing-list { font-family: Arial, sans-serif; font-size: 13px; color: #000; }
+        .fh-packing-list-header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #000; padding-bottom: 12px; }
+        .fh-packing-list-header h1 { margin: 0 0 6px; font-size: 22px; }
+        .fh-packing-list-header h2 { margin: 0 0 4px; font-size: 16px; font-weight: normal; }
+        .fh-packing-list-order { border: 1px solid #ccc; border-radius: 6px; padding: 20px; margin-bottom: 16px; background: #fff; }
+        .fh-packing-order-header h3 { margin: 0 0 6px; font-size: 15px; }
+        .fh-packing-order-header p { margin: 2px 0; color: #444; font-size: 12px; }
+        .fh-packing-address { margin: 12px 0; }
+        .fh-packing-address h4, .fh-packing-items h4, .fh-packing-notes h4, .fh-packing-shop-items h4 { margin: 8px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #555; border-bottom: 1px solid #eee; padding-bottom: 3px; }
+        .fh-packing-address p { margin: 0; line-height: 1.7; font-size: 13px; }
+        .fh-packing-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+        .fh-packing-table th { background: #333; color: #fff; padding: 7px 10px; text-align: left; font-size: 12px; }
+        .fh-packing-table td { padding: 7px 10px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .fh-packing-table tbody tr:nth-child(even) { background: #f9f9f9; }
+        .fh-packing-notes p { margin: 4px 0; font-size: 13px; color: #555; }
+        .fh-packing-signature { margin-top: 20px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 12px; color: #555; }
+        .fh-packing-page-break { height: 0; }
+
+        @media print {
+            @page { size: letter portrait; margin: 0.5in; }
+            .fh-no-print, #adminmenumain, #wpadminbar, #wpfooter, .nav-tab-wrapper, .wrap > h1, #screen-meta, #screen-meta-links, .notice, .update-nag { display: none !important; }
+            html, body, #wpcontent, #wpbody, #wpbody-content, .wrap { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+            #wpcontent { margin-left: 0 !important; }
+            #fh-sd-output { margin: 0; }
+            .fh-sd-print { padding: 0; max-width: none; border-radius: 0; }
+            .fh-sd-page + .fh-sd-page, .fh-sd-slips { border-top: none; padding-top: 0; }
+            .fh-sd-table { page-break-inside: auto; }
+            .fh-sd-table tr { page-break-inside: avoid; }
+            .fh-sd-table thead { display: table-header-group; }
+            .fh-sd-tone-green td, .fh-sd-tone-blue td, .fh-sd-tone-orange td, .fh-sd-tone-amber td, .fh-sd-tone-red td, .fh-sd-tone-grey td, .fh-sd-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .fh-packing-page-break { page-break-after: always; }
+            .fh-packing-list-order { border: 1px solid #999; break-inside: avoid; }
+        }
+        </style>
+
+        <script>
+        (function(){
+            // ── Ship Day ──
+            var sdBtn = document.getElementById('fh-sd-generate');
+            if (sdBtn) {
+                var sdDate   = document.getElementById('fh-sd-date');
+                var sdSlips  = document.getElementById('fh-sd-slips');
+                var sdOut    = document.getElementById('fh-sd-output');
+                var sdErr    = document.getElementById('fh-sd-error');
+                var sdSpin   = document.getElementById('fh-sd-spinner');
+                var sdChips  = document.querySelectorAll('.fh-sd-datechip');
+
+                function sdMarkChip(date) {
+                    for (var i = 0; i < sdChips.length; i++) {
+                        sdChips[i].classList.toggle('is-active', sdChips[i].getAttribute('data-date') === date);
+                    }
+                }
+
+                function sdLoad() {
+                    var date = sdDate.value;
                     if (!date) { alert('Please select a delivery date.'); return; }
-                    packBtn.disabled = true;
-                    document.getElementById('fh-pack-spinner').style.display = 'inline';
-                    document.getElementById('fh-pack-error').style.display = 'none';
-                    document.getElementById('fh-pack-print').style.display = 'none';
-                    document.getElementById('fh-pack-output').innerHTML = '';
+                    sdMarkChip(date);
+                    sdBtn.disabled = true;
+                    sdSpin.style.display = 'inline';
+                    sdErr.style.display = 'none';
+                    sdOut.innerHTML = '';
 
                     var fd = new FormData();
-                    fd.append('action', 'fishotel_get_packing_list');
-                    fd.append('nonce', '<?php echo esc_js( $packing_nonce ); ?>');
-                    fd.append('shipping_date', date);
+                    fd.append('action', 'fishotel_get_ship_day');
+                    fd.append('nonce', '<?php echo esc_js( $ship_day_nonce ); ?>');
+                    fd.append('delivery_date', date);
+                    fd.append('include_slips', sdSlips && sdSlips.checked ? '1' : '0');
                     fetch('<?php echo esc_js( $ajax_url ); ?>', { method:'POST', body:fd, credentials:'same-origin' })
                         .then(function(r){ return r.json(); })
                         .then(function(resp){
-                            packBtn.disabled = false;
-                            document.getElementById('fh-pack-spinner').style.display = 'none';
+                            sdBtn.disabled = false;
+                            sdSpin.style.display = 'none';
                             if (!resp.success) {
-                                var errEl = document.getElementById('fh-pack-error');
-                                errEl.textContent = resp.data && resp.data.message ? resp.data.message : 'Error.';
-                                errEl.style.display = 'block';
+                                sdErr.textContent = resp.data && resp.data.message ? resp.data.message : 'Error.';
+                                sdErr.style.display = 'block';
                                 return;
                             }
-                            document.getElementById('fh-pack-output').innerHTML = resp.data.html;
-                            document.getElementById('fh-pack-print').style.display = 'inline-block';
+                            sdOut.innerHTML = resp.data.html;
+                            var printBtn = document.getElementById('fh-sd-print');
+                            if (printBtn) {
+                                printBtn.addEventListener('click', function(){ window.print(); });
+                            }
                         })
-                        .catch(function(){ packBtn.disabled = false; document.getElementById('fh-pack-spinner').style.display = 'none'; alert('Request failed.'); });
-                });
+                        .catch(function(){ sdBtn.disabled = false; sdSpin.style.display = 'none'; alert('Request failed.'); });
+                }
 
-                document.getElementById('fh-pack-print').addEventListener('click', function(){
-                    window.print();
-                });
+                sdBtn.addEventListener('click', sdLoad);
+                for (var c = 0; c < sdChips.length; c++) {
+                    sdChips[c].addEventListener('click', function(){
+                        sdDate.value = this.getAttribute('data-date');
+                        sdLoad();
+                    });
+                }
+                if (sdSlips) {
+                    sdSlips.addEventListener('change', function(){ if (sdOut.innerHTML !== '') { sdLoad(); } });
+                }
+                if (sdDate.value) {
+                    sdLoad(); // the next delivery date with open orders is pre-selected
+                }
             }
         })();
         </script>

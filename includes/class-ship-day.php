@@ -1,0 +1,2049 @@
+<?php
+/**
+ * FisHotel Ship Day — the Step 8 pick list + weather overview, built on the server.
+ *
+ * Replaces the browser-skill PDF the daily order routine used to produce. For one
+ * delivery date it:
+ *
+ *   1. loads every open order delivering that day (store-agnostic query, bounded),
+ *   2. turns each order — or each fulfillment wrapper, which is ONE destination made
+ *      of several source orders — into pick rows (fish / dry goods), reading the
+ *      fish of an "Invoice" product from whichever of the three shapes the order
+ *      carries (see INVOICE LINES below),
+ *   3. reads the weather note the Misc plugin's Weather section wrote on the order
+ *      (_fh_weather_* meta) and turns it into the inline packing flag,
+ *   4. renders the on-screen summary and the two print pages (pick list, weather
+ *      overview), optionally followed by the per-order packing slips.
+ *
+ * FULFILLMENTS. The theme (FisHotel-Theme/inc/order-fulfillment/class-fishotel-
+ * fulfillment.php) builds a wrapper order with _fishotel_is_fulfillment = '1',
+ * status wc-fulfillment and _fishotel_fulfillment_sources = 'id,id'. The wrapper
+ * DOES carry copied line items (copy_line_items() duplicates every source product
+ * line with _fishotel_source_order / _fishotel_source_line_item_id meta), so the
+ * pick rows are read from the LIVE source orders only — never from the wrapper's
+ * copies as well, which would double count. The copies are used only as a fallback
+ * when the sources meta names no loadable order. Sources whose status is cancelled,
+ * refunded, failed or trash never ship and are skipped (the theme leaves them
+ * listed in the wrapper's meta — same rule the Weather section's live_sources()
+ * applies). Orders folded into a wrapper (_fishotel_fulfilled_by_order non-empty)
+ * are excluded from the date's list because the wrapper carries them.
+ *
+ * LINE STATUS. _fishotel_line_status (item meta, theme Phase 1) is one of
+ * pending | shipped | backordered | na. 'shipped' lines already left through
+ * EverythingAquatic and are skipped. 'na' means "not applicable — this line never
+ * ships": the theme's all_lines_shipped_or_na() counts an 'na' line as done when
+ * deciding whether an order auto-completes, so there is nothing to pack and the
+ * line is skipped too. 'backordered' lines are listed and flagged (BACKORDERED).
+ * Fully refunded lines (quantity minus |qty refunded| <= 0) are skipped.
+ *
+ * INVOICE LINES. An "Invoice" product (category slug 'invoices', or a name with
+ * the word Invoice) is a customer's custom bill: its fish are listed in its
+ * description as "Name xN — $price" lines. Since theme 1.25 checkout turns such a
+ * product into real order lines, so three shapes reach the pick list and
+ * rows_for_order() reads all three:
+ *
+ *   A. itemised fish lines — ordinary line items with NO product (product_id 0)
+ *      and the hidden item meta _fh_invoice_fish = 1, _fh_invoice_product_id (the
+ *      invoice product) and _fh_invoice_title (its name). Each is one fish row,
+ *      qty = the item quantity, sub-label "from <invoice title>". The invoice's
+ *      credits are FEE items carrying _fh_invoice_credit = 1 — fees are never
+ *      read, so they never make a row. row_kind_for_item() reads the meta BEFORE
+ *      classify(), which would otherwise call a product-less line dry goods.
+ *   B. the Invoice product kept as ONE line that carries _fh_invoice_lines, a
+ *      JSON array of {name, qty, price, kind} (kind fish | credit | note): the
+ *      rows come from that snapshot (lines_from_item_meta()) — fish → fish rows,
+ *      credit → skipped, note → a CHECK row — and the description is not read.
+ *   C. orders placed before theme 1.25 (no meta at all): the description is
+ *      parsed by parse_invoice_lines() exactly as before. Unreadable meta
+ *      (malformed JSON) is treated as absent and falls back here too.
+ *
+ * PACKING. When the Misc plugin's Packing section is installed, each product line's
+ * row carries the bag it is packed in ('bag', from fishotel_packing_bag_for_item())
+ * and each destination the box confirmed for it ('box', the name from
+ * fishotel_packing_confirmed_box()); the pick list prints "Bag: <name>" beside the
+ * fish and "Box: <name>" once under the order. Both are read through
+ * function_exists() inside a try: without the section, while it is switched off,
+ * or for a line that is not packed in a bag, the row has no 'bag' key and the list
+ * is exactly as before. The fish of an Invoice product kept as one line (shapes B
+ * and C) have no order line of their own, so they show no bag. Staff-only: the
+ * packing slip that goes in the box never shows either.
+ *
+ * This file has no side effects at load time. The parsing / classification /
+ * flag / date / sort / totals helpers are pure static methods with no WordPress
+ * dependency, so tests/ship-day-test.php can run them with plain php.
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+class FisHotel_Ship_Day {
+
+    const NONCE_ACTION = 'fishotel_ship_day';
+    const LIMIT        = 200;
+    const LOOKAHEAD    = 21;
+
+    /** Order meta read from other FisHotel code. */
+    const META_DELIVERY_DATE  = '_fishotel_shipping_date';
+    const META_FULFILLED_BY   = '_fishotel_fulfilled_by_order';
+    const META_IS_FULFILLMENT = '_fishotel_is_fulfillment';
+    const META_SOURCES        = '_fishotel_fulfillment_sources';
+    const META_LINE_STATUS    = '_fishotel_line_status';
+    /** Item meta of this plugin's batch-invoice fish lines (ajax_generate_invoices: no product). */
+    const META_FISH_ID        = '_fishotel_fish_id';
+
+    /** Item meta the theme (1.25+) writes when an Invoice product is itemised at checkout. */
+    const META_INV_FISH       = '_fh_invoice_fish';       // '1' on a product-less line item that is one fish of an invoice (shape A)
+    const META_INV_PRODUCT_ID = '_fh_invoice_product_id'; // ... the invoice product's id
+    const META_INV_TITLE      = '_fh_invoice_title';      // ... the invoice product's name
+    const META_INV_LINES      = '_fh_invoice_lines';      // JSON [{name,qty,price,kind}] on an Invoice line kept as one line (shape B)
+    const META_INV_CREDIT     = '_fh_invoice_credit';     // '1' on a FEE item that is an invoice credit — never a row
+
+    /** Every item meta key rows_for_order() reads, gathered once per line by item_meta(). */
+    const ITEM_META_KEYS = [
+        self::META_LINE_STATUS,
+        self::META_FISH_ID,
+        self::META_INV_FISH,
+        self::META_INV_PRODUCT_ID,
+        self::META_INV_TITLE,
+        self::META_INV_LINES,
+        self::META_INV_CREDIT,
+    ];
+
+    /** Order meta written by the Misc plugin's Weather section (class-checker.php). */
+    const META_W_CHECKED_FOR     = '_fh_weather_checked_for';
+    const META_W_CHECKED_AT      = '_fh_weather_checked_at';
+    const META_W_HIGH            = '_fh_weather_high';
+    const META_W_LOW             = '_fh_weather_low';
+    const META_W_ACTION          = '_fh_weather_action';
+    const META_W_AT_LINE         = '_fh_weather_at_line';
+    const META_W_SUMMARY         = '_fh_weather_summary';
+    const META_W_NOTE            = '_fh_weather_note';
+    const META_W_UNAVAILABLE_FOR = '_fh_weather_unavailable_for';
+
+    const WEATHER_META_KEYS = [
+        self::META_W_CHECKED_FOR,
+        self::META_W_CHECKED_AT,
+        self::META_W_HIGH,
+        self::META_W_LOW,
+        self::META_W_ACTION,
+        self::META_W_AT_LINE,
+        self::META_W_SUMMARY,
+        self::META_W_NOTE,
+        self::META_W_UNAVAILABLE_FOR,
+    ];
+
+    /** The Weather section's overview page (FisHotel Tools → Weather). */
+    const WEATHER_PAGE_SLUG = 'fishotel-misc-weather';
+
+    /** The Misc plugin's list of switched-on sections, and the Weather section in it. */
+    const MISC_SECTIONS_OPTION = 'fishotel_misc_enabled_sections';
+    const WEATHER_SECTION_SLUG = 'weather';
+
+    /** The Weather section's entry class; the Misc plugin loads it on every request, on or off. */
+    const WEATHER_SECTION_CLASS = 'FisHotel\\Misc\\Sections\\Weather\\Weather';
+
+    /** The Weather section's settings (nightly job on/off and its run time). */
+    const WEATHER_SETTINGS_OPTION = 'fishotel_weather_settings';
+    const WEATHER_DEFAULT_RUN     = '21:00';
+
+    /** Source-order statuses that never ship. */
+    const DEAD_STATUSES = [ 'cancelled', 'refunded', 'failed', 'trash' ];
+
+    const KIND_FISH = 'fish';
+    const KIND_DRY  = 'dry';
+    /** Drop-shipped by EverythingAquatic (theme fishotel_is_ea_fulfilled_product()) — listed, never boxed. */
+    const KIND_EA   = 'ea';
+
+    const CLASS_FISH    = 'fish';
+    const CLASS_INVOICE = 'invoice';
+    const CLASS_DRY     = 'dry';
+    /** An invoice credit (_fh_invoice_credit): money, never a pick row. */
+    const CLASS_CREDIT  = 'credit';
+
+    const CHART_SUBTITLE = 'by delivery-day high: <30 hold · 30–40 UPS Store · 40–70 heat pack · 70–80 nothing · 80–90 cooling · 90–95 UPS Store · >95 hold';
+
+    /**
+     * Ship Day's own page (10.34). It is listed under FisHotel Tools right
+     * after Today when the Misc plugin's menu is there, and otherwise sits
+     * where it always was: a hidden page that highlights Group Orders →
+     * Group-order invoices and shows that page's tabs. Same slug either way.
+     */
+    const PAGE_SLUG  = 'fishotel-ship-day';
+    const CAPABILITY = 'manage_options';
+    /** Optional query var of the page: the delivery date to open on (Y-m-d). */
+    const DATE_VAR   = 'date';
+
+    /** The Misc plugin's top-level menu (FisHotel Tools), its Dashboard entry and Today. */
+    const MISC_MENU_SLUG  = 'fishotel-misc';
+    const MISC_TODAY_SLUG = 'fishotel-misc-today';
+
+    /** Where Ship Day lived until 10.33: a tab of Group Orders → Group-order invoices. */
+    const INVOICES_PAGE_SLUG = 'fishotel-invoicing';
+    const OLD_TAB            = 'ship-day';
+
+    /**
+     * "Built for <ship date> at <time>": ship Y-m-d => {delivery, at (site-local
+     * Y-m-d H:i:s), orders, fish}, the newest BUILT_KEEP ship dates. Written when a
+     * pick list with orders is built; read by the Today line. Never an order.
+     */
+    const BUILT_OPTION = 'fishotel_ship_day_built';
+    const BUILT_KEEP   = 14;
+
+    /* ─────────────────────────────────────────────
+     *  Settings (filterable)
+     * ───────────────────────────────────────────── */
+
+    /** Order statuses (unprefixed) that appear on the pick list. */
+    public static function statuses() {
+        $default  = [ 'processing', 'on-hold', 'fulfillment' ];
+        $statuses = function_exists( 'apply_filters' ) ? apply_filters( 'fishotel_ship_day_statuses', $default ) : $default;
+        $out      = [];
+        foreach ( (array) $statuses as $s ) {
+            $s = trim( (string) $s );
+            if ( 0 === strpos( $s, 'wc-' ) ) {
+                $s = substr( $s, 3 );
+            }
+            if ( '' !== $s && ! in_array( $s, $out, true ) ) {
+                $out[] = $s;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Product category slugs whose items count as fish (livestock). Matches the
+     * list the checkout delivery-date gates in class-woocommerce.php use.
+     */
+    public static function fish_categories() {
+        $default = [ 'quarantined-fish', 'inverts' ];
+        $cats    = function_exists( 'apply_filters' ) ? apply_filters( 'fishotel_ship_day_fish_categories', $default ) : $default;
+        $out     = [];
+        foreach ( (array) $cats as $c ) {
+            $c = trim( (string) $c );
+            if ( '' !== $c && ! in_array( $c, $out, true ) ) {
+                $out[] = $c;
+            }
+        }
+        return $out;
+    }
+
+    /** The site zone every date computation happens in. */
+    public static function timezone() {
+        if ( function_exists( 'fishotel_delivery_rules' ) ) {
+            $tz = fishotel_delivery_rules()->timezone();
+            if ( $tz instanceof DateTimeZone ) {
+                return $tz;
+            }
+        }
+        if ( function_exists( 'wp_timezone' ) ) {
+            return wp_timezone();
+        }
+        return new DateTimeZone( 'America/Chicago' );
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Pure helpers (no WordPress)
+     * ───────────────────────────────────────────── */
+
+    /** Strict Y-m-d shape + real calendar date. */
+    public static function is_ymd( $ymd ) {
+        if ( ! is_string( $ymd ) || ! preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $ymd, $m ) ) {
+            return false;
+        }
+        return checkdate( (int) $m[2], (int) $m[3], (int) $m[1] );
+    }
+
+    /** Y-m-d → local midnight DateTimeImmutable in $tz (or the site zone), or null. */
+    public static function parse_ymd( $ymd, $tz = null ) {
+        if ( ! self::is_ymd( $ymd ) ) {
+            return null;
+        }
+        $tz = $tz instanceof DateTimeZone ? $tz : self::timezone();
+        $d  = DateTimeImmutable::createFromFormat( '!Y-m-d', $ymd, $tz );
+        return ( $d && $d->format( 'Y-m-d' ) === $ymd ) ? $d : null;
+    }
+
+    /**
+     * Ship date = delivery date minus one calendar day, computed in the site zone
+     * with DateTimeImmutable (so the day after a DST change is still one day).
+     */
+    public static function ship_date_for( $delivery_ymd, $tz = null ) {
+        $d = self::parse_ymd( $delivery_ymd, $tz );
+        if ( ! $d ) {
+            return '';
+        }
+        $ship = $d->modify( '-1 day' );
+        return $ship ? $ship->format( 'Y-m-d' ) : '';
+    }
+
+    /** Delivery date for a ship date: the ship date plus one calendar day (inverse of ship_date_for()). */
+    public static function delivery_date_for( $ship_ymd, $tz = null ) {
+        $d = self::parse_ymd( $ship_ymd, $tz );
+        if ( ! $d ) {
+            return '';
+        }
+        $delivery = $d->modify( '+1 day' );
+        return $delivery ? $delivery->format( 'Y-m-d' ) : '';
+    }
+
+    /** Today's Y-m-d in the site zone (the delivery rules' today() when the rules are loaded). */
+    public static function today_ymd( $now = null ) {
+        if ( function_exists( 'fishotel_delivery_rules' ) ) {
+            $rules = fishotel_delivery_rules();
+            if ( is_object( $rules ) && method_exists( $rules, 'today' ) ) {
+                return $rules->today( $now )->format( 'Y-m-d' );
+            }
+        }
+        $tz = self::timezone();
+        if ( $now instanceof DateTimeInterface ) {
+            return ( new DateTimeImmutable( '@' . $now->getTimestamp() ) )->setTimezone( $tz )->format( 'Y-m-d' );
+        }
+        return ( new DateTimeImmutable( 'now', $tz ) )->format( 'Y-m-d' );
+    }
+
+    /** Pretty label for a Y-m-d ('' when invalid). */
+    public static function label( $ymd, $format = 'l, F j', $tz = null ) {
+        $d = self::parse_ymd( $ymd, $tz );
+        return $d ? $d->format( $format ) : '';
+    }
+
+    /**
+     * Expand an Invoice product's description into fish lines (shape C: orders
+     * placed before theme 1.25, and any Invoice line without readable
+     * _fh_invoice_lines meta — see lines_from_item_meta()).
+     *
+     * Each <li> is one line (when there is no list, every non-empty text line is
+     * one). Entities are decoded and tags stripped, so nested markup, &#8212; and
+     * &nbsp; all work. A line matching "Name xN — $price" (x / X / ×, optional
+     * spaces, — / – / - dashes, missing price allowed) yields fish/qty/price; a
+     * "Credit…" line or one carrying a negative amount is NOT a fish and is
+     * skipped; any other line is kept whole with qty 1 and flag 'check'.
+     *
+     * @return array<int,array{fish:string,qty:int,price:float|null,flag:string}>
+     */
+    public static function parse_invoice_lines( $html ) {
+        $html = (string) $html;
+        if ( '' === trim( $html ) ) {
+            return [];
+        }
+
+        $raw_lines = [];
+        if ( preg_match_all( '/<li\b[^>]*>(.*?)<\/li>/is', $html, $m ) && ! empty( $m[1] ) ) {
+            $raw_lines = $m[1];
+        } else {
+            $text      = preg_replace( '/<\s*(br|\/p|\/div|\/li|\/tr|\/h[1-6])\s*\/?\s*>/i', "\n", $html );
+            $raw_lines = preg_split( '/\r\n|\r|\n/', (string) $text );
+        }
+
+        $out = [];
+        foreach ( (array) $raw_lines as $raw ) {
+            $text = self::clean_text( $raw );
+            if ( '' === $text ) {
+                continue;
+            }
+            if ( preg_match( '/^credit\b/iu', $text ) ) {
+                continue; // a credit line is money, not a fish
+            }
+
+            // The fish grammar runs FIRST: its price group requires "$digits" right
+            // after the dash-run, so "— -$82", "$-82" and "−$5" can never parse as
+            // fish, while any dash-run touching the $ ("Goby x1 - $39", "Goby x1-$39",
+            // "Goby x1 -$39") is a separator and the line is a fish.
+            $pattern = '/^(?<name>.+?)\s*[x\x{00D7}X]\s*(?<qty>\d+)\s*(?:[\x{2014}\x{2013}-]+\s*(?<price>\$\s*\d[\d,]*(?:\.\d+)?)?)?\s*$/u';
+            if ( preg_match( $pattern, $text, $mm ) && '' !== trim( $mm['name'] ) ) {
+                $price = null;
+                if ( isset( $mm['price'] ) && '' !== $mm['price'] ) {
+                    $price = (float) str_replace( [ '$', ',', ' ' ], '', $mm['price'] );
+                }
+                $out[] = [
+                    'fish'  => trim( $mm['name'] ),
+                    'qty'   => max( 1, (int) $mm['qty'] ),
+                    'price' => $price,
+                    'flag'  => '',
+                ];
+                continue;
+            }
+
+            // Not a fish line. A negative amount ("— -$82", "$-82", "−$82": the sign
+            // sits right against the $ and follows a space, a dash or the start of
+            // the line) is money, not a fish — dropped. Anything else is kept whole
+            // for a hand check.
+            if ( preg_match( '/(?:^|(?<=[\s\x{2014}\x{2013}-]))(?:-|\x{2212})\$\s*\d|\$\s*(?:-|\x{2212})\s*\d/u', $text ) ) {
+                continue;
+            }
+
+            $out[] = [
+                'fish'  => $text,
+                'qty'   => 1,
+                'price' => null,
+                'flag'  => 'check',
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Expand the theme's _fh_invoice_lines item meta (theme 1.25+, shape B): the
+     * JSON array of {name, qty, price, kind} written at checkout on an Invoice
+     * product kept as one order line, kind = 'fish' | 'credit' | 'note'. Same row
+     * shape as parse_invoice_lines(): fish → fish / qty / price, credit → dropped
+     * (money, not a fish), note — or any kind that is not fish — → the name kept
+     * whole, qty 1, flag 'check', exactly like the parser's unparsable lines.
+     * Entries with no name are skipped; a bare string entry reads as a note. An
+     * already-unserialised array (WC hands one back when the theme stored an array
+     * rather than a JSON string) is read as is.
+     *
+     * @return array<int,array{fish:string,qty:int,price:float|null,flag:string}>|null
+     *         The lines (possibly empty), or null when the meta is absent or
+     *         unreadable (not JSON, not a list) — the caller then falls back to
+     *         parsing the product description, as for orders without the meta.
+     */
+    public static function lines_from_item_meta( $json ) {
+        if ( is_array( $json ) ) {
+            $data = $json;
+        } else {
+            if ( ! is_string( $json ) || '' === trim( $json ) ) {
+                return null;
+            }
+            $data = json_decode( trim( $json ), true );
+            if ( ! is_array( $data ) ) {
+                return null;
+            }
+        }
+        if ( isset( $data['name'] ) || isset( $data['kind'] ) ) {
+            $data = [ $data ]; // one object where a list was expected
+        }
+
+        $out = [];
+        foreach ( $data as $entry ) {
+            if ( is_string( $entry ) ) {
+                $entry = [ 'name' => $entry, 'kind' => 'note' ];
+            }
+            if ( ! is_array( $entry ) ) {
+                continue;
+            }
+            $name = self::clean_text( self::scalar_meta( $entry['name'] ?? '' ) );
+            if ( '' === $name ) {
+                continue;
+            }
+            $kind = strtolower( self::scalar_meta( $entry['kind'] ?? '' ) );
+            if ( 'credit' === $kind ) {
+                continue;
+            }
+            $price = ( isset( $entry['price'] ) && is_numeric( $entry['price'] ) ) ? (float) $entry['price'] : null;
+            if ( 'fish' === $kind ) {
+                $qty   = (int) self::scalar_meta( $entry['qty'] ?? 1 );
+                $out[] = [
+                    'fish'  => $name,
+                    'qty'   => max( 1, $qty ),
+                    'price' => $price,
+                    'flag'  => '',
+                ];
+                continue;
+            }
+            $out[] = [
+                'fish'  => $name,
+                'qty'   => 1,
+                'price' => $price,
+                'flag'  => 'check',
+            ];
+        }
+        return $out;
+    }
+
+    /** A meta value as a trimmed string ('' for arrays, objects and null). */
+    public static function scalar_meta( $value ) {
+        return is_scalar( $value ) ? trim( (string) $value ) : '';
+    }
+
+    /** True for the ways a "1" flag reaches us from item meta: 1, '1', true, 'yes', 'true', 'on'. */
+    public static function is_truthy_meta( $value ) {
+        return in_array( strtolower( self::scalar_meta( $value ) ), [ '1', 'yes', 'true', 'on' ], true );
+    }
+
+    /** Strip tags, decode entities, normalise whitespace (incl. nbsp). */
+    public static function clean_text( $html ) {
+        $text = strip_tags( (string) $html );
+        $text = html_entity_decode( $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+        $text = str_replace( [ "\xC2\xA0", "\xE2\x80\xAF" ], ' ', $text );
+        $text = preg_replace( '/\s+/u', ' ', $text );
+        return trim( (string) $text );
+    }
+
+    /**
+     * Classify a line item from its product's category slugs (parent product for
+     * variations) and its name: 'fish' | 'invoice' | 'dry'.
+     */
+    public static function classify( array $category_slugs, $item_name, $fish_categories = null ) {
+        $slugs = [];
+        foreach ( $category_slugs as $s ) {
+            $slugs[] = strtolower( trim( (string) $s ) );
+        }
+        $fish = null === $fish_categories ? self::fish_categories() : (array) $fish_categories;
+        $fish = array_map( 'strtolower', array_map( 'trim', array_map( 'strval', $fish ) ) );
+
+        if ( in_array( 'invoices', $slugs, true ) || preg_match( '/\bInvoice\b/i', (string) $item_name ) ) {
+            return self::CLASS_INVOICE;
+        }
+        foreach ( $fish as $cat ) {
+            if ( '' !== $cat && in_array( $cat, $slugs, true ) ) {
+                return self::CLASS_FISH;
+            }
+        }
+        return self::CLASS_DRY;
+    }
+
+    /**
+     * How one order line is listed, from its item meta (keyed by meta name, ''
+     * when absent), its product's category slugs, its name and whether it still
+     * has a product. Pure, so the shapes the theme writes are testable without
+     * WooCommerce. The meta is read BEFORE classify(), in this order:
+     *
+     *   credit  _fh_invoice_credit = 1 — an invoice credit is money, never a row.
+     *           The theme stores credits as FEE items, which rows_for_order()
+     *           never reads; this also drops one that arrives as a line item.
+     *   credit  _fh_invoice_fish = 1 on a product-less line named "Adjustment" —
+     *           the Misc plugin's Invoices section writes the amount that brings an
+     *           invoice up to its stated total as a fish line, and the name is its
+     *           only marker (is_invoice_adjustment()). Money, never a row.
+     *   fish    _fh_invoice_fish = 1 (theme 1.25+, shape A) — one fish of an
+     *           itemised invoice. It has no product and so no categories, which
+     *           classify() would read as dry goods. sub = the invoice title
+     *           (_fh_invoice_title, else "Invoice #<_fh_invoice_product_id>").
+     *           Trusted: not flagged CHECK for lacking a product.
+     *   fish    _fishotel_fish_id on a product-less line — this plugin's own
+     *           batch-invoice fish (ajax_generate_invoices). Trusted too.
+     *   other   classify() on the categories + name: an 'invoice' line is expanded
+     *           by the caller (lines_from_item_meta() first, the description when
+     *           that meta is absent); a product-less line is flagged CHECK since
+     *           nothing says what it is.
+     *
+     * @return array{class:string,sub:string,check:bool} class = CLASS_*; sub = the
+     *         "from …" sub-label; check = flag the row CHECK (unless another flag
+     *         already applies).
+     */
+    /**
+     * Whether a name is the "Adjustment" line of an invoice built by the Misc
+     * plugin's Invoices section: the amount that brings the invoice up to its
+     * stated total, which reaches the order as a fish line (the theme knows fish,
+     * credit and note only). That section owns the rule and answers it through
+     * fishotel_invoices_is_adjustment(), also while it is switched off. False
+     * when the function is absent or throws — lines are then listed as before.
+     *
+     * @param mixed $name The order line's (or invoice line's) name.
+     * @return bool
+     */
+    public static function is_invoice_adjustment( $name ) {
+        if ( ! function_exists( 'fishotel_invoices_is_adjustment' ) ) {
+            return false;
+        }
+        try {
+            return true === fishotel_invoices_is_adjustment( $name );
+        } catch ( \Throwable $e ) {
+            return false;
+        }
+    }
+
+    public static function row_kind_for_item( array $meta, array $category_slugs, $item_name, $has_product = true, $fish_categories = null ) {
+        if ( self::is_truthy_meta( $meta[ self::META_INV_CREDIT ] ?? '' ) ) {
+            return [ 'class' => self::CLASS_CREDIT, 'sub' => '', 'check' => false ];
+        }
+        if ( self::is_truthy_meta( $meta[ self::META_INV_FISH ] ?? '' ) ) {
+            if ( ! $has_product && self::is_invoice_adjustment( $item_name ) ) {
+                return [ 'class' => self::CLASS_CREDIT, 'sub' => '', 'check' => false ]; // money that brings the invoice up to its stated total
+            }
+            $title = self::clean_text( self::scalar_meta( $meta[ self::META_INV_TITLE ] ?? '' ) );
+            if ( '' === $title ) {
+                $pid   = (int) self::scalar_meta( $meta[ self::META_INV_PRODUCT_ID ] ?? '' );
+                $title = $pid > 0 ? 'Invoice #' . $pid : 'Invoice';
+            }
+            return [ 'class' => self::CLASS_FISH, 'sub' => $title, 'check' => false ];
+        }
+        $class = self::classify( $category_slugs, $item_name, $fish_categories );
+        if ( ! $has_product && self::CLASS_INVOICE !== $class && '' !== self::scalar_meta( $meta[ self::META_FISH_ID ] ?? '' ) ) {
+            return [ 'class' => self::CLASS_FISH, 'sub' => '', 'check' => false ];
+        }
+        return [ 'class' => $class, 'sub' => '', 'check' => ! $has_product ];
+    }
+
+    /** "Alerts: Flood Watch, Wind Advisory." → ['FLOOD WATCH', 'WIND ADVISORY']. */
+    public static function parse_alerts( $note ) {
+        $note = (string) $note;
+        if ( '' === $note || ! preg_match( '/\bAlerts:\s*(.+?)\.(?:\s|$)/u', $note, $m ) ) {
+            return [];
+        }
+        $out = [];
+        foreach ( preg_split( '/\s*,\s*/u', trim( $m[1] ) ) as $alert ) {
+            $alert = trim( $alert );
+            if ( '' === $alert ) {
+                continue;
+            }
+            $alert = function_exists( 'mb_strtoupper' ) ? mb_strtoupper( $alert, 'UTF-8' ) : strtoupper( $alert );
+            if ( ! in_array( $alert, $out, true ) ) {
+                $out[] = $alert;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Normalise the _fh_weather_* meta of an order into one state array.
+     *
+     * $meta is keyed by the meta names (missing keys = never checked). The stored
+     * result only counts when _fh_weather_checked_for equals the delivery date;
+     * otherwise it is stale and reads as not checked. A failed lookup stores
+     * action 'unavailable' (and removes checked_for), which reads as unavailable
+     * while _fh_weather_unavailable_for is the delivery date.
+     *
+     * @return array{status:string,action:string,at_line:bool,high:int|null,low:int|null,conditions:string,summary:string,alerts:string[],next_day:string,checked_for:string,checked_at:string,has_meta:bool}
+     */
+    public static function weather_state( array $meta, $delivery_date = null ) {
+        if ( null === $delivery_date ) {
+            $delivery_date = (string) ( $meta['delivery_date'] ?? ( $meta[ self::META_DELIVERY_DATE ] ?? '' ) );
+        }
+        $delivery_date   = trim( (string) $delivery_date );
+        $action          = trim( (string) ( $meta[ self::META_W_ACTION ] ?? '' ) );
+        $checked_for     = trim( (string) ( $meta[ self::META_W_CHECKED_FOR ] ?? '' ) );
+        $unavailable_for = trim( (string) ( $meta[ self::META_W_UNAVAILABLE_FOR ] ?? '' ) );
+        $note            = (string) ( $meta[ self::META_W_NOTE ] ?? '' );
+        $summary         = trim( (string) ( $meta[ self::META_W_SUMMARY ] ?? '' ) );
+
+        $has_meta = false;
+        foreach ( self::WEATHER_META_KEYS as $key ) {
+            if ( isset( $meta[ $key ] ) && '' !== trim( (string) $meta[ $key ] ) ) {
+                $has_meta = true;
+                break;
+            }
+        }
+
+        $current = ( '' === $delivery_date ) ? ( '' !== $checked_for ) : ( $checked_for === $delivery_date );
+
+        $state = [
+            'status'      => 'not_checked',
+            'action'      => '',
+            'at_line'     => false,
+            'high'        => null,
+            'low'         => null,
+            'conditions'  => '',
+            'summary'     => $summary,
+            'alerts'      => [],
+            'next_day'    => '',
+            'checked_for' => $checked_for,
+            'checked_at'  => trim( (string) ( $meta[ self::META_W_CHECKED_AT ] ?? '' ) ),
+            'has_meta'    => $has_meta,
+        ];
+
+        if ( 'unavailable' === $action ) {
+            $for_this_date = ( '' === $unavailable_for ) || ( '' === $delivery_date ) || ( $unavailable_for === $delivery_date );
+            if ( $for_this_date ) {
+                $state['status'] = 'unavailable';
+                $state['action'] = 'unavailable';
+            }
+            return $state;
+        }
+
+        if ( '' === $action || ! $current ) {
+            return $state;
+        }
+
+        $high = $meta[ self::META_W_HIGH ] ?? null;
+        $low  = $meta[ self::META_W_LOW ] ?? null;
+
+        $state['status']   = 'checked';
+        $state['action']   = $action;
+        $state['at_line']  = '1' === (string) ( $meta[ self::META_W_AT_LINE ] ?? '' );
+        $state['high']     = is_numeric( $high ) ? (int) $high : null;
+        $state['low']      = is_numeric( $low ) ? (int) $low : null;
+        $state['alerts']   = self::parse_alerts( $note );
+        $state['next_day'] = preg_match( '/[^.]*do not slip delivery\./u', $note, $m ) ? trim( $m[0] ) : '';
+
+        // Summary is "High 76°F / Low 57°F — Sunny, 10% chance of rain".
+        $parts               = preg_split( '/\s[\x{2014}\x{2013}-]\s/u', $summary, 2 );
+        $state['conditions'] = isset( $parts[1] ) ? trim( $parts[1] ) : $summary;
+
+        return $state;
+    }
+
+    /** Inline flag text for a normalised weather state. */
+    public static function flag_for_state( array $state ) {
+        $status = (string) ( $state['status'] ?? 'not_checked' );
+        if ( 'unavailable' === $status ) {
+            return '(WEATHER UNAVAILABLE)';
+        }
+        if ( 'checked' !== $status ) {
+            return '(NOT CHECKED)';
+        }
+
+        if ( ! empty( $state['at_line'] ) ) {
+            $flag = '(AT THE LINE — Jeff\'s call)';
+        } else {
+            switch ( (string) ( $state['action'] ?? '' ) ) {
+                case 'heat_pack':
+                    $flag = '(HEAT PACK)';
+                    break;
+                case 'cooling':
+                    $flag = '(COOLING PACKS)';
+                    break;
+                case 'ups_store_cold':
+                case 'ups_store_hot':
+                    $flag = '(UPS STORE)';
+                    break;
+                case 'hold_cold':
+                case 'hold_hot':
+                    $flag = '(HOLD)';
+                    break;
+                case 'none':
+                    $flag = '';
+                    break;
+                default:
+                    $flag = '(NOT CHECKED)';
+            }
+        }
+
+        foreach ( (array) ( $state['alerts'] ?? [] ) as $alert ) {
+            $flag .= ( '' === $flag ? '' : ' ' ) . '(' . $alert . ')';
+        }
+        return $flag;
+    }
+
+    /**
+     * Inline flag straight from the order meta: '(HEAT PACK)', '(COOLING PACKS)',
+     * '(UPS STORE)', '(HOLD)', '' for none, '(AT THE LINE — Jeff's call)',
+     * '(WEATHER UNAVAILABLE)', '(NOT CHECKED)' — alerts appended as '(FLOOD WATCH)'.
+     */
+    public static function weather_flag( array $meta, $delivery_date = null ) {
+        return self::flag_for_state( self::weather_state( $meta, $delivery_date ) );
+    }
+
+    /** Human action label for the overview table. */
+    public static function action_label( array $state ) {
+        $status = (string) ( $state['status'] ?? '' );
+        if ( 'unavailable' === $status ) {
+            return 'Unavailable — check manually';
+        }
+        if ( 'checked' !== $status ) {
+            return 'Not checked';
+        }
+        $labels = [
+            'heat_pack'      => 'Heat pack',
+            'none'           => 'Nothing needed',
+            'cooling'        => 'Cooling packs',
+            'ups_store_cold' => 'UPS Store (cold)',
+            'ups_store_hot'  => 'UPS Store (hot)',
+            'hold_cold'      => 'HOLD (cold)',
+            'hold_hot'       => 'HOLD (hot)',
+        ];
+        $action = (string) ( $state['action'] ?? '' );
+        $label  = $labels[ $action ] ?? $action;
+        return ! empty( $state['at_line'] ) ? 'AT THE LINE · ' . $label : $label;
+    }
+
+    /** Colour class for an overview row. */
+    public static function row_tone( array $state ) {
+        $status = (string) ( $state['status'] ?? '' );
+        if ( 'checked' !== $status ) {
+            return 'grey';
+        }
+        if ( ! empty( $state['at_line'] ) ) {
+            return 'amber';
+        }
+        switch ( (string) ( $state['action'] ?? '' ) ) {
+            case 'none':
+                return 'green';
+            case 'heat_pack':
+                return 'blue';
+            case 'cooling':
+                return 'orange';
+            case 'ups_store_cold':
+            case 'ups_store_hot':
+            case 'hold_cold':
+            case 'hold_hot':
+                return 'red';
+        }
+        return 'grey';
+    }
+
+    /**
+     * Sort overview rows coolest → hottest by 'high'; unknown highs last. Stable:
+     * equal highs keep their input order.
+     */
+    public static function sort_weather_rows( array $rows ) {
+        $indexed = [];
+        foreach ( array_values( $rows ) as $i => $row ) {
+            $indexed[] = [ $i, $row ];
+        }
+        usort( $indexed, function ( $a, $b ) {
+            $ha = $a[1]['high'] ?? null;
+            $hb = $b[1]['high'] ?? null;
+            $na = is_numeric( $ha );
+            $nb = is_numeric( $hb );
+            if ( $na && $nb ) {
+                if ( (int) $ha !== (int) $hb ) {
+                    return (int) $ha < (int) $hb ? -1 : 1;
+                }
+            } elseif ( $na !== $nb ) {
+                return $na ? -1 : 1; // known highs first
+            }
+            return $a[0] <=> $b[0];
+        } );
+        $out = [];
+        foreach ( $indexed as $pair ) {
+            $out[] = $pair[1];
+        }
+        return $out;
+    }
+
+    /**
+     * Totals across destinations: each has 'rows' (kind + qty) and 'weather'
+     * (a weather_state() array). 'fish' sums KIND_FISH rows, 'dry' sums KIND_DRY
+     * rows; KIND_EA rows (drop-shipped by EverythingAquatic) are in neither.
+     */
+    public static function totals( array $destinations ) {
+        $t = [
+            'orders'      => 0,
+            'fish'        => 0,
+            'dry'         => 0,
+            'heat_pack'   => 0,
+            'cooling'     => 0,
+            'ups_store'   => 0,
+            'hold'        => 0,
+            'none'        => 0,
+            'at_line'     => 0,
+            'unavailable' => 0,
+            'not_checked' => 0,
+        ];
+        foreach ( $destinations as $dest ) {
+            $t['orders']++;
+            foreach ( (array) ( $dest['rows'] ?? [] ) as $row ) {
+                $qty = max( 0, (int) ( $row['qty'] ?? 0 ) );
+                $kind = (string) ( $row['kind'] ?? '' );
+                if ( self::KIND_FISH === $kind ) {
+                    $t['fish'] += $qty;
+                } elseif ( self::KIND_DRY === $kind ) {
+                    $t['dry'] += $qty;
+                }
+            }
+            $w      = is_array( $dest['weather'] ?? null ) ? $dest['weather'] : [];
+            $status = (string) ( $w['status'] ?? 'not_checked' );
+            if ( 'unavailable' === $status ) {
+                $t['unavailable']++;
+                continue;
+            }
+            if ( 'checked' !== $status ) {
+                $t['not_checked']++;
+                continue;
+            }
+            if ( ! empty( $w['at_line'] ) ) {
+                $t['at_line']++;
+            }
+            switch ( (string) ( $w['action'] ?? '' ) ) {
+                case 'heat_pack':
+                    $t['heat_pack']++;
+                    break;
+                case 'cooling':
+                    $t['cooling']++;
+                    break;
+                case 'ups_store_cold':
+                case 'ups_store_hot':
+                    $t['ups_store']++;
+                    break;
+                case 'hold_cold':
+                case 'hold_hot':
+                    $t['hold']++;
+                    break;
+                case 'none':
+                    $t['none']++;
+                    break;
+            }
+        }
+        return $t;
+    }
+
+    /** "Order #W (combined: #a, #b)" for a fulfillment, "Order #N" otherwise. */
+    public static function order_label( $number, array $source_numbers = [] ) {
+        $label = 'Order #' . $number;
+        if ( $source_numbers ) {
+            $label .= ' (combined: #' . implode( ', #', $source_numbers ) . ')';
+        }
+        return $label;
+    }
+
+    /** "City, ST ZIP" from address parts (missing parts dropped). */
+    public static function place( $city, $state, $zip ) {
+        $city  = trim( (string) $city );
+        $state = trim( (string) $state );
+        $zip   = trim( (string) $zip );
+        $head  = implode( ', ', array_values( array_filter( [ $city, $state ], 'strlen' ) ) );
+        $out   = trim( $head . ' ' . $zip );
+        return '' !== $out ? $out : 'unknown';
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Orders (WordPress / WooCommerce)
+     * ───────────────────────────────────────────── */
+
+    /** True when WooCommerce's HPOS orders table is the active order store. */
+    public static function hpos_enabled() {
+        if ( class_exists( 'FisHotel_Delivery_Rules' ) ) {
+            return FisHotel_Delivery_Rules::hpos_enabled();
+        }
+        $util = '\Automattic\WooCommerce\Utilities\OrderUtil';
+        return class_exists( $util )
+            && is_callable( [ $util, 'custom_orders_table_usage_is_enabled' ] )
+            && (bool) call_user_func( [ $util, 'custom_orders_table_usage_is_enabled' ] );
+    }
+
+    /**
+     * Store-agnostic order query (the load_booked_map() pattern from
+     * class-delivery-rules.php): 'meta_query' is honoured by HPOS only — the CPT
+     * store drops it and, since WC 9.2, flags it with wc_doing_it_wrong() — so on
+     * CPT the clause rides on a private query var that the
+     * woocommerce_order_data_store_cpt_get_orders_query filter maps back into the
+     * final WP_Query. Every returned order is re-checked through get_meta() by the
+     * callers, so the result is right whatever the backend did.
+     *
+     * @return object[]
+     */
+    private static function query_orders( array $args, array $meta_clause ) {
+        if ( ! function_exists( 'wc_get_orders' ) ) {
+            return [];
+        }
+        $args['type']             = 'shop_order';
+        $args['return']           = 'objects';
+        $args['fishotel_ship_day'] = 1; // consumed by the CPT pass-through below
+
+        $cpt_passthrough = function ( $query, $query_vars ) use ( $meta_clause ) {
+            if ( ! empty( $query_vars['fishotel_ship_day'] ) ) {
+                if ( ! isset( $query['meta_query'] ) || ! is_array( $query['meta_query'] ) ) {
+                    $query['meta_query'] = [];
+                }
+                $query['meta_query'][] = $meta_clause;
+            }
+            return $query;
+        };
+        if ( self::hpos_enabled() ) {
+            $args['meta_query'] = [ $meta_clause ];
+        }
+
+        add_filter( 'woocommerce_order_data_store_cpt_get_orders_query', $cpt_passthrough, 10, 2 );
+        $orders = wc_get_orders( $args );
+        remove_filter( 'woocommerce_order_data_store_cpt_get_orders_query', $cpt_passthrough, 10 );
+
+        $out = [];
+        foreach ( (array) $orders as $order ) {
+            if ( is_object( $order ) && method_exists( $order, 'get_meta' ) ) {
+                $out[] = $order;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Open orders delivering on $ymd (folded sources excluded), bounded to LIMIT.
+     *
+     * @return array{orders:object[],truncated:bool}
+     */
+    public static function load_orders( $ymd ) {
+        if ( ! self::is_ymd( $ymd ) ) {
+            return [ 'orders' => [], 'truncated' => false ];
+        }
+        $rows = self::query_orders(
+            [
+                'status'  => self::statuses(),
+                'limit'   => self::LIMIT + 1,
+                'orderby' => 'ID',
+                'order'   => 'ASC',
+            ],
+            [ 'key' => self::META_DELIVERY_DATE, 'value' => $ymd, 'compare' => '=' ]
+        );
+        $truncated = count( $rows ) > self::LIMIT;
+        if ( $truncated ) {
+            $rows = array_slice( $rows, 0, self::LIMIT );
+        }
+        $orders = [];
+        foreach ( $rows as $order ) {
+            if ( trim( (string) $order->get_meta( self::META_DELIVERY_DATE ) ) !== $ymd ) {
+                continue; // backend ignored the filter
+            }
+            if ( '' !== trim( (string) $order->get_meta( self::META_FULFILLED_BY ) ) ) {
+                continue; // folded into a fulfillment — the wrapper carries it
+            }
+            $orders[] = $order;
+        }
+        return [ 'orders' => $orders, 'truncated' => $truncated ];
+    }
+
+    /**
+     * Upcoming delivery dates (today .. today + $days) that have open orders, with
+     * counts, from ONE store-agnostic query. Folded sources are not counted.
+     *
+     * @return array<string,int> Y-m-d => count, ascending
+     */
+    public static function upcoming_dates( $days = self::LOOKAHEAD, $now = null ) {
+        $tz    = self::timezone();
+        $today = ( $now instanceof DateTimeInterface )
+            ? ( new DateTimeImmutable( '@' . $now->getTimestamp() ) )->setTimezone( $tz )->setTime( 0, 0, 0 )
+            : ( new DateTimeImmutable( 'now', $tz ) )->setTime( 0, 0, 0 );
+        $from  = $today->format( 'Y-m-d' );
+        $to    = $today->modify( '+' . max( 0, (int) $days ) . ' days' )->format( 'Y-m-d' );
+
+        $rows = self::query_orders(
+            [ 'status' => self::statuses(), 'limit' => -1 ],
+            [ 'key' => self::META_DELIVERY_DATE, 'value' => [ $from, $to ], 'compare' => 'BETWEEN' ]
+        );
+        $counts = [];
+        foreach ( $rows as $order ) {
+            $date = trim( (string) $order->get_meta( self::META_DELIVERY_DATE ) );
+            if ( ! self::is_ymd( $date ) || $date < $from || $date > $to ) {
+                continue;
+            }
+            if ( '' !== trim( (string) $order->get_meta( self::META_FULFILLED_BY ) ) ) {
+                continue;
+            }
+            $counts[ $date ] = ( $counts[ $date ] ?? 0 ) + 1;
+        }
+        ksort( $counts );
+        return $counts;
+    }
+
+    /** The first upcoming date with orders, else today (site zone). */
+    public static function default_date( array $upcoming, $today = '' ) {
+        if ( '' === $today ) {
+            $today = ( new DateTimeImmutable( 'now', self::timezone() ) )->format( 'Y-m-d' );
+        }
+        foreach ( array_keys( $upcoming ) as $date ) {
+            if ( $date >= $today ) {
+                return $date;
+            }
+        }
+        return $today;
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Destinations
+     * ───────────────────────────────────────────── */
+
+    private static function is_fulfillment( $order ) {
+        return '1' === (string) $order->get_meta( self::META_IS_FULFILLMENT );
+    }
+
+    /** Source order IDs listed on a wrapper. */
+    public static function source_ids( $order ) {
+        $raw = $order->get_meta( self::META_SOURCES );
+        $ids = is_array( $raw ) ? $raw : explode( ',', (string) $raw );
+        $out = [];
+        $own = method_exists( $order, 'get_id' ) ? (int) $order->get_id() : 0;
+        foreach ( $ids as $id ) {
+            $id = (int) trim( (string) $id );
+            if ( $id > 0 && $id !== $own && ! in_array( $id, $out, true ) ) {
+                $out[] = $id;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Live source orders of a wrapper (dead statuses skipped). $resolved counts
+     * every listed source id that loaded as an order, dead or alive, so the
+     * caller can tell "no source could be loaded" from "all sources are dead".
+     */
+    private static function live_sources( $order, &$resolved = 0 ) {
+        $resolved = 0;
+        if ( ! function_exists( 'wc_get_order' ) ) {
+            return [];
+        }
+        $out = [];
+        foreach ( self::source_ids( $order ) as $sid ) {
+            $src = wc_get_order( $sid );
+            if ( ! is_object( $src ) || ! method_exists( $src, 'get_items' ) ) {
+                continue;
+            }
+            $resolved++;
+            if ( method_exists( $src, 'has_status' ) && $src->has_status( self::DEAD_STATUSES ) ) {
+                continue;
+            }
+            $out[ $sid ] = $src;
+        }
+        return $out;
+    }
+
+    /** Shipping address parts, billing when there is no shipping address. */
+    private static function destination_parts( $order ) {
+        $use_shipping = '' !== trim( (string) $order->get_shipping_postcode() ) || '' !== trim( (string) $order->get_shipping_city() );
+        $p            = $use_shipping ? 'shipping' : 'billing';
+        $name         = trim( (string) $order->{"get_{$p}_first_name"}() . ' ' . (string) $order->{"get_{$p}_last_name"}() );
+        if ( '' === $name ) {
+            $name = trim( (string) $order->get_billing_first_name() . ' ' . (string) $order->get_billing_last_name() );
+        }
+        if ( '' === $name ) {
+            $name = 'Guest';
+        }
+        return [
+            'name'      => $name,
+            'address_1' => trim( (string) $order->{"get_{$p}_address_1"}() ),
+            'address_2' => trim( (string) $order->{"get_{$p}_address_2"}() ),
+            'city'      => trim( (string) $order->{"get_{$p}_city"}() ),
+            'state'     => trim( (string) $order->{"get_{$p}_state"}() ),
+            'postcode'  => trim( (string) $order->{"get_{$p}_postcode"}() ),
+        ];
+    }
+
+    /** All _fh_weather_* meta of an order as an array keyed by meta name. */
+    private static function weather_meta( $order ) {
+        $meta = [];
+        foreach ( self::WEATHER_META_KEYS as $key ) {
+            $v = $order->get_meta( $key );
+            if ( is_scalar( $v ) ) {
+                $meta[ $key ] = (string) $v;
+            }
+        }
+        return $meta;
+    }
+
+    /** Category slugs of a product (its parent for variations). */
+    private static function product_category_slugs( $product ) {
+        if ( ! is_object( $product ) || ! function_exists( 'get_the_terms' ) ) {
+            return [];
+        }
+        $pid = (int) $product->get_id();
+        if ( method_exists( $product, 'get_parent_id' ) && (int) $product->get_parent_id() > 0 ) {
+            $pid = (int) $product->get_parent_id();
+        }
+        $terms = get_the_terms( $pid, 'product_cat' );
+        if ( ! is_array( $terms ) ) {
+            return [];
+        }
+        $slugs = [];
+        foreach ( $terms as $term ) {
+            if ( is_object( $term ) && isset( $term->slug ) ) {
+                $slugs[] = (string) $term->slug;
+            }
+        }
+        return $slugs;
+    }
+
+    /** Description HTML of a product (the parent's when a variation has none). */
+    private static function product_description( $product ) {
+        $desc = method_exists( $product, 'get_description' ) ? (string) $product->get_description() : '';
+        if ( '' === trim( $desc ) && method_exists( $product, 'get_parent_id' ) && (int) $product->get_parent_id() > 0 && function_exists( 'wc_get_product' ) ) {
+            $parent = wc_get_product( (int) $product->get_parent_id() );
+            if ( is_object( $parent ) && method_exists( $parent, 'get_description' ) ) {
+                $desc = (string) $parent->get_description();
+            }
+        }
+        return $desc;
+    }
+
+    /** ITEM_META_KEYS of one line item, keyed by meta name ('' when absent or unreadable). */
+    private static function item_meta( $item ) {
+        $meta = [];
+        $can  = is_object( $item ) && method_exists( $item, 'get_meta' );
+        foreach ( self::ITEM_META_KEYS as $key ) {
+            $v            = $can ? $item->get_meta( $key ) : '';
+            $meta[ $key ] = ( is_scalar( $v ) || is_array( $v ) ) ? $v : '';
+        }
+        return $meta;
+    }
+
+    /**
+     * Pick rows for one order's still-to-ship product lines — see INVOICE LINES
+     * in the file header for the three shapes an Invoice product can arrive in.
+     * Only 'line_item' items are read: fees (where the theme puts invoice
+     * credits), shipping and the rest never make a row.
+     *
+     * @return array<int,array{kind:string,qty:int,name:string,sub:string,flag:string}>
+     */
+    public static function rows_for_order( $order ) {
+        $rows = [];
+        if ( ! is_object( $order ) || ! method_exists( $order, 'get_items' ) ) {
+            return $rows;
+        }
+        $items = (array) $order->get_items( 'line_item' );
+
+        // Shape A: the invoice products whose fish are itemised on this order. Should
+        // the order ALSO still carry such an Invoice product line, it is not expanded
+        // again — its fish are already listed, one row each.
+        $itemised = [];
+        foreach ( $items as $item ) {
+            if ( is_object( $item ) && method_exists( $item, 'get_meta' ) && self::is_truthy_meta( $item->get_meta( self::META_INV_FISH ) ) ) {
+                $pid = (int) self::scalar_meta( $item->get_meta( self::META_INV_PRODUCT_ID ) );
+                if ( $pid > 0 ) {
+                    $itemised[ $pid ] = true;
+                }
+            }
+        }
+
+        foreach ( $items as $item_id => $item ) {
+            if ( ! is_object( $item ) || ! method_exists( $item, 'get_quantity' ) ) {
+                continue;
+            }
+            $meta   = self::item_meta( $item );
+            $status = self::scalar_meta( $meta[ self::META_LINE_STATUS ] );
+            if ( 'shipped' === $status ) {
+                continue; // already left through EA
+            }
+            if ( 'na' === $status ) {
+                continue; // theme: 'na' = never ships (counted as done by all_lines_shipped_or_na) — nothing to pack
+            }
+            $qty = (int) $item->get_quantity();
+            if ( method_exists( $order, 'get_qty_refunded_for_item' ) ) {
+                $item_id_int = method_exists( $item, 'get_id' ) ? (int) $item->get_id() : (int) $item_id;
+                $qty        -= abs( (int) $order->get_qty_refunded_for_item( $item_id_int ) ); // WC reports refunds as negatives
+            }
+            if ( $qty <= 0 ) {
+                continue; // fully refunded
+            }
+            $flag = 'backordered' === $status ? 'backordered' : '';
+            $name = method_exists( $item, 'get_name' ) ? trim( (string) $item->get_name() ) : '';
+
+            // A product-less line (shape A fish, batch-invoice fish, a deleted product)
+            // is normal here: nothing below assumes a product object exists.
+            $product = method_exists( $item, 'get_product' ) ? $item->get_product() : null;
+            $product = is_object( $product ) ? $product : null;
+            $spec    = self::row_kind_for_item( $meta, self::product_category_slugs( $product ), $name, null !== $product );
+            $class   = $spec['class'];
+
+            if ( self::CLASS_CREDIT === $class ) {
+                continue; // an invoice credit is money, not a fish
+            }
+
+            // Lines drop-shipped by EverythingAquatic (theme medication store) are
+            // listed so the order reads whole, but Jeff never boxes them.
+            $is_ea = false;
+            if ( self::CLASS_DRY === $class && null !== $product && function_exists( 'fishotel_is_ea_fulfilled_product' ) ) {
+                $pid = method_exists( $item, 'get_product_id' ) ? (int) $item->get_product_id() : 0;
+                $vid = method_exists( $item, 'get_variation_id' ) ? (int) $item->get_variation_id() : 0;
+                $is_ea = $pid > 0 && (bool) fishotel_is_ea_fulfilled_product( $pid, $vid );
+            }
+
+            if ( self::CLASS_INVOICE === $class ) {
+                if ( $itemised ) {
+                    $pid = method_exists( $item, 'get_product_id' ) ? (int) $item->get_product_id() : 0;
+                    $vid = method_exists( $item, 'get_variation_id' ) ? (int) $item->get_variation_id() : 0;
+                    if ( ( $pid > 0 && isset( $itemised[ $pid ] ) ) || ( $vid > 0 && isset( $itemised[ $vid ] ) ) ) {
+                        continue; // shape A already lists this invoice's fish
+                    }
+                }
+                // Shape B: the snapshot the theme wrote at checkout is read first and,
+                // when readable, is the whole story. Shape C (no meta, or meta that is
+                // not JSON): the description, as before.
+                $lines     = self::lines_from_item_meta( $meta[ self::META_INV_LINES ] );
+                $from_meta = null !== $lines;
+                if ( ! $from_meta ) {
+                    if ( ! $product ) {
+                        $rows[] = [ 'kind' => self::KIND_FISH, 'qty' => $qty, 'name' => 'Invoice — product missing', 'sub' => $name, 'flag' => 'check' ];
+                        continue;
+                    }
+                    $lines = self::parse_invoice_lines( self::product_description( $product ) );
+                }
+                // The invoice's "Adjustment" is money, not a fish to pick.
+                $lines = array_values( array_filter( $lines, function ( $line ) {
+                    return ! ( 1 === (int) $line['qty'] && self::is_invoice_adjustment( $line['fish'] ) );
+                } ) );
+                if ( empty( $lines ) ) {
+                    $where  = $from_meta ? 'no fish lines on the order line' : 'no fish lines in description';
+                    $rows[] = [ 'kind' => self::KIND_FISH, 'qty' => $qty, 'name' => $name . ' — ' . $where, 'sub' => $name, 'flag' => 'check' ];
+                    continue;
+                }
+                foreach ( $lines as $line ) {
+                    $rows[] = [
+                        'kind' => self::KIND_FISH,
+                        'qty'  => max( 1, (int) $line['qty'] ) * $qty,
+                        'name' => $line['fish'],
+                        'sub'  => $name,
+                        'flag' => '' !== $flag ? $flag : $line['flag'],
+                    ];
+                }
+                continue;
+            }
+
+            if ( self::CLASS_FISH === $class ) {
+                $kind = self::KIND_FISH;
+            } else {
+                $kind = $is_ea ? self::KIND_EA : self::KIND_DRY;
+            }
+            $row = [
+                'kind' => $kind,
+                'qty'  => $qty,
+                'name' => '' !== $name ? $name : '(unnamed item)',
+                'sub'  => $spec['sub'],
+                'flag' => ( '' === $flag && $spec['check'] ) ? 'check' : $flag,
+            ];
+            if ( self::KIND_EA !== $kind ) {
+                $bag = self::bag_name_for_item( $item );
+                if ( '' !== $bag ) {
+                    $row['bag'] = $bag; // only when the Packing section names one — rows are unchanged otherwise
+                }
+            }
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+
+    /**
+     * The name of the bag one order line is packed in, from the Misc plugin's
+     * Packing section (fishotel_packing_bag_for_item(): null while the section is
+     * off, or for a line that is not packed in a bag / has no bag size). '' when
+     * there is none, the contract is absent, or it throws. Staff-only: read for
+     * the pick list, never for the packing slip that goes in the box.
+     *
+     * @param object $item A WC_Order_Item_Product.
+     * @return string
+     */
+    public static function bag_name_for_item( $item ) {
+        if ( ! is_object( $item ) || ! function_exists( 'fishotel_packing_bag_for_item' ) ) {
+            return '';
+        }
+        try {
+            $bag = fishotel_packing_bag_for_item( $item );
+        } catch ( \Throwable $e ) {
+            return '';
+        }
+        if ( ! is_array( $bag ) ) {
+            return '';
+        }
+        foreach ( [ 'name', 'label' ] as $key ) {
+            if ( isset( $bag[ $key ] ) && is_scalar( $bag[ $key ] ) && '' !== trim( (string) $bag[ $key ] ) ) {
+                return trim( (string) $bag[ $key ] );
+            }
+        }
+        return '';
+    }
+
+    /**
+     * The name of the box confirmed on an order in the Packing section
+     * (fishotel_packing_confirmed_box(): "Medium box", "Large box + Small box"),
+     * or '' when none is confirmed, the contract is absent, or it throws. For a
+     * fulfillment wrapper this is the combined box's own confirmation.
+     *
+     * @param int $order_id Order ID.
+     * @return string
+     */
+    public static function confirmed_box_name( $order_id ) {
+        $order_id = (int) $order_id;
+        if ( $order_id <= 0 || ! function_exists( 'fishotel_packing_confirmed_box' ) ) {
+            return '';
+        }
+        try {
+            $box = fishotel_packing_confirmed_box( $order_id );
+        } catch ( \Throwable $e ) {
+            return '';
+        }
+        if ( ! is_array( $box ) || ! isset( $box['name'] ) || ! is_scalar( $box['name'] ) ) {
+            return '';
+        }
+        return trim( (string) $box['name'] );
+    }
+
+    /**
+     * One destination for the pick list: a regular order, or a fulfillment wrapper
+     * with the rows of its live sources.
+     */
+    public static function build_destination( $order, $ymd ) {
+        $is_ff   = self::is_fulfillment( $order );
+        $number  = (string) $order->get_order_number();
+        $sources = [];
+        $rows    = [];
+
+        if ( $is_ff ) {
+            $resolved = 0;
+            $live     = self::live_sources( $order, $resolved );
+            foreach ( $live as $sid => $src ) {
+                $sources[] = (string) $src->get_order_number();
+                foreach ( self::rows_for_order( $src ) as $row ) {
+                    $rows[] = $row;
+                }
+            }
+            if ( empty( $live ) ) {
+                if ( 0 === $resolved ) {
+                    // No source id loads as an order: fall back to the wrapper's own
+                    // copied lines so the box is still listed rather than silently dropped.
+                    $rows = self::rows_for_order( $order );
+                }
+                if ( empty( $rows ) ) {
+                    // Every listed source loaded but is cancelled/refunded/failed/trashed
+                    // (the theme leaves such a wrapper open): the copies on the wrapper
+                    // are those dead orders' fish, so nothing is listed to pick.
+                    $rows[] = [ 'kind' => self::KIND_DRY, 'qty' => 0, 'name' => 'Nothing to pick — every source order is cancelled/refunded. Check the fulfillment.', 'sub' => '', 'flag' => 'check' ];
+                }
+            }
+        } else {
+            $rows = self::rows_for_order( $order );
+        }
+
+        $parts   = self::destination_parts( $order );
+        $weather = self::weather_state( self::weather_meta( $order ), $ymd );
+
+        return [
+            'order_id'       => (int) $order->get_id(),
+            'number'         => $number,
+            'label'          => self::order_label( $number, $sources ),
+            'is_fulfillment' => $is_ff,
+            'sources'        => $sources,
+            'customer'       => $parts['name'],
+            'place'          => self::place( $parts['city'], $parts['state'], $parts['postcode'] ),
+            'address'        => $parts,
+            'edit_url'       => method_exists( $order, 'get_edit_order_url' ) ? (string) $order->get_edit_order_url() : '',
+            'email'          => (string) $order->get_billing_email(),
+            'phone'          => (string) $order->get_billing_phone(),
+            'note'           => (string) $order->get_customer_note(),
+            'rows'           => $rows,
+            'weather'        => $weather,
+            'flag'           => self::flag_for_state( $weather ),
+            'high'           => $weather['high'],
+            'box'            => self::confirmed_box_name( $order->get_id() ),
+        ];
+    }
+
+    /* ─────────────────────────────────────────────
+     *  Rendering
+     * ───────────────────────────────────────────── */
+
+    /**
+     * Build the whole Ship Day block for a delivery date.
+     *
+     * @return array|WP_Error {html, orders, fish, truncated}
+     */
+    public static function render( $ymd, $include_slips = false ) {
+        $ymd = trim( (string) $ymd );
+        if ( ! self::is_ymd( $ymd ) ) {
+            return new WP_Error( 'fishotel_ship_day_date', 'Pick a valid delivery date (Y-m-d).' );
+        }
+        if ( ! function_exists( 'wc_get_orders' ) ) {
+            return new WP_Error( 'fishotel_ship_day_wc', 'WooCommerce is not active.' );
+        }
+
+        $loaded = self::load_orders( $ymd );
+        $dests  = [];
+        foreach ( $loaded['orders'] as $order ) {
+            $dests[] = self::build_destination( $order, $ymd );
+        }
+        $totals = self::totals( $dests );
+
+        $html  = '<div class="fh-sd">';
+        $html .= self::render_screen( $ymd, $dests, $totals, $loaded['truncated'] );
+        if ( $dests ) {
+            $html .= '<div class="fh-sd-print">';
+            $html .= self::render_pick_list( $ymd, $dests, $totals );
+            $html .= self::render_weather_page( $ymd, $dests );
+            if ( $include_slips ) {
+                $html .= self::render_slips( $ymd, $dests );
+            }
+            $html .= '</div>';
+        }
+        $html .= '</div>';
+
+        return [
+            'html'      => $html,
+            'orders'    => $totals['orders'],
+            'fish'      => $totals['fish'],
+            'truncated' => $loaded['truncated'],
+        ];
+    }
+
+    /**
+     * Whether the Misc plugin's Weather section is switched on: the Misc
+     * plugin is active (its Weather class is loaded on every request, on or
+     * off) and 'weather' is in its list of switched-on sections. Not the
+     * admin menu: Ship Day's content is built in an AJAX request, where no
+     * menu is registered.
+     */
+    public static function weather_section_on() {
+        if ( ! class_exists( self::WEATHER_SECTION_CLASS, false ) || ! function_exists( 'get_option' ) ) {
+            return false;
+        }
+        $on = get_option( self::MISC_SECTIONS_OPTION, [] );
+        return is_array( $on ) && in_array( self::WEATHER_SECTION_SLUG, $on, true );
+    }
+
+    /**
+     * When the Weather section's nightly check runs, as "9:00 pm" (site
+     * time), or '' when its nightly job is switched off.
+     */
+    public static function weather_nightly_time() {
+        $s = function_exists( 'get_option' ) ? get_option( self::WEATHER_SETTINGS_OPTION, [] ) : [];
+        $s = is_array( $s ) ? $s : [];
+        if ( array_key_exists( 'enabled', $s ) && empty( $s['enabled'] ) ) {
+            return '';
+        }
+        $time = isset( $s['run_time'] ) && is_scalar( $s['run_time'] ) ? trim( (string) $s['run_time'] ) : '';
+        if ( 1 !== preg_match( '/^(\d{1,2}):(\d{1,2})(?::\d{2})?$/', $time, $m ) || (int) $m[1] > 23 || (int) $m[2] > 59 ) {
+            $time = self::WEATHER_DEFAULT_RUN;
+            preg_match( '/^(\d{1,2}):(\d{1,2})$/', $time, $m );
+        }
+        $h = (int) $m[1];
+        return sprintf( '%d:%02d %s', 0 === $h % 12 ? 12 : $h % 12, (int) $m[2], $h < 12 ? 'am' : 'pm' );
+    }
+
+    /**
+     * The line shown when no order of the date has a weather note yet. With
+     * the Weather section on it only means the check has not run for these
+     * orders yet: it says when it runs ($nightly_at, '' = nightly job off)
+     * and links to the Weather page to check now. With it off, it says where
+     * to switch it on.
+     */
+    public static function weather_missing_note( $ymd, $weather_on, $nightly_at = '' ) {
+        if ( $weather_on ) {
+            $when = '' !== (string) $nightly_at
+                ? ' The Weather section checks every night at ' . esc_html( $nightly_at ) . ', for deliveries up to three days out.'
+                : ' The nightly check is switched off (FisHotel Tools &rarr; Weather &rarr; Settings).';
+            return '<p class="fh-sd-warn">These orders have not been checked for weather yet.' . $when . ' <a href="' . esc_url( self::weather_overview_url( $ymd ) ) . '">Check them now on the Weather page for ' . esc_html( self::label( $ymd, 'D, M j' ) ) . ' &rarr;</a></p>';
+        }
+        return '<p class="fh-sd-warn">Weather is not checked: switch on the Weather section under FisHotel Tools &rarr; Dashboard.</p>';
+    }
+
+    /** Link to the Weather section's overview for a date. */
+    public static function weather_overview_url( $ymd ) {
+        if ( ! function_exists( 'admin_url' ) ) {
+            return '';
+        }
+        $url = admin_url( 'admin.php?page=' . self::WEATHER_PAGE_SLUG );
+        return function_exists( 'add_query_arg' ) ? add_query_arg( 'date', $ymd, $url ) : $url . '&date=' . rawurlencode( $ymd );
+    }
+
+    private static function render_screen( $ymd, array $dests, array $totals, $truncated ) {
+        $h  = '<div class="fh-sd-screen fh-no-print">';
+        $h .= '<div class="fh-sd-head"><h3>Deliver ' . esc_html( self::label( $ymd ) ) . ' — ship ' . esc_html( self::label( self::ship_date_for( $ymd ) ) ) . '</h3>';
+        if ( $dests ) {
+            $h .= '<button type="button" class="fh-sd-print-btn" id="fh-sd-print">&#128438; Print</button>';
+        }
+        $h .= '</div>';
+
+        if ( $truncated ) {
+            $h .= '<p class="fh-sd-warn">Showing the first ' . (int) self::LIMIT . ' orders only — this delivery date has more. Split the day or narrow the statuses with the fishotel_ship_day_statuses filter.</p>';
+        }
+        if ( ! $dests ) {
+            $h .= '<p class="fh-sd-empty">No open orders deliver on ' . esc_html( self::label( $ymd, 'l, F j, Y' ) ) . '.</p></div>';
+            return $h;
+        }
+
+        $chips = [
+            [ 'Orders', $totals['orders'], '' ],
+            [ 'Fish', $totals['fish'], '' ],
+            [ 'Dry goods', $totals['dry'], '' ],
+            [ 'Heat packs', $totals['heat_pack'], 'blue' ],
+            [ 'Cooling', $totals['cooling'], 'orange' ],
+            [ 'UPS Store', $totals['ups_store'], 'red' ],
+            [ 'Holds', $totals['hold'], 'red' ],
+            [ 'At the line', $totals['at_line'], 'amber' ],
+            [ 'Unavailable', $totals['unavailable'], 'grey' ],
+            [ 'Not checked', $totals['not_checked'], 'grey' ],
+        ];
+        $h .= '<div class="fh-sd-chips">';
+        foreach ( $chips as $chip ) {
+            $h .= '<span class="fh-sd-chip' . ( '' !== $chip[2] ? ' fh-sd-chip--' . esc_attr( $chip[2] ) : '' ) . '"><strong>' . (int) $chip[1] . '</strong> ' . esc_html( $chip[0] ) . '</span>';
+        }
+        $h .= '</div>';
+
+        $any_meta = false;
+        foreach ( $dests as $d ) {
+            if ( ! empty( $d['weather']['has_meta'] ) ) {
+                $any_meta = true;
+                break;
+            }
+        }
+        if ( ! $any_meta ) {
+            $wx_on = self::weather_section_on();
+            $h    .= self::weather_missing_note( $ymd, $wx_on, $wx_on ? self::weather_nightly_time() : '' );
+        }
+
+        $attention = [];
+        foreach ( $dests as $d ) {
+            $w      = $d['weather'];
+            $status = $w['status'];
+            $action = $w['action'];
+            $why    = '';
+            if ( 'unavailable' === $status ) {
+                $why = 'Weather unavailable — check manually' . ( '' !== $w['summary'] ? ' (' . $w['summary'] . ')' : '' );
+            } elseif ( 'checked' !== $status ) {
+                $why = 'Not checked for this date';
+            } elseif ( in_array( $action, [ 'hold_cold', 'hold_hot' ], true ) ) {
+                $why = self::action_label( $w ) . ( null !== $w['high'] ? ' — high ' . $w['high'] . '°F' : '' );
+            } elseif ( in_array( $action, [ 'ups_store_cold', 'ups_store_hot' ], true ) ) {
+                $why = self::action_label( $w ) . ( null !== $w['high'] ? ' — high ' . $w['high'] . '°F' : '' ) . ' · the customer email draft is in the order\'s Weather meta box';
+            }
+            if ( '' !== $why ) {
+                $attention[] = [ $d, $why ];
+            }
+        }
+        if ( $attention ) {
+            $h .= '<h4>Needs attention</h4><ul class="fh-sd-attention">';
+            foreach ( $attention as $pair ) {
+                list( $d, $why ) = $pair;
+                $link = '' !== $d['edit_url'] ? '<a href="' . esc_url( $d['edit_url'] ) . '" target="_blank" rel="noopener">' . esc_html( $d['label'] ) . '</a>' : esc_html( $d['label'] );
+                $h   .= '<li>' . $link . ' — ' . esc_html( $d['customer'] ) . ', ' . esc_html( $d['place'] ) . ': <strong>' . esc_html( $why ) . '</strong></li>';
+            }
+            $h .= '</ul>';
+        }
+        $h .= '</div>';
+        return $h;
+    }
+
+    private static function render_pick_list( $ymd, array $dests, array $totals ) {
+        $ship = self::ship_date_for( $ymd );
+        $h    = '<section class="fh-sd-page fh-sd-page--pick">';
+        $h   .= '<h1>FisHotel Pick List</h1>';
+        $h   .= '<p class="fh-sd-sub">Ship ' . esc_html( self::label( $ship ) ) . ' &bull; Deliver ' . esc_html( self::label( $ymd ) ) . ' &bull; ' . (int) $totals['orders'] . ' orders / ' . (int) $totals['fish'] . ' fish</p>';
+        $h   .= '<table class="fh-sd-table fh-sd-table--pick"><thead><tr><th class="fh-sd-col-pick">Pick</th><th class="fh-sd-col-qty">Qty</th><th>Fish</th><th class="fh-sd-col-order">Order</th><th class="fh-sd-col-dest">Destination</th></tr></thead><tbody>';
+
+        $packing = false; // a bag or a confirmed box from the Packing section is on the list
+        foreach ( $dests as $d ) {
+            $first = true;
+            $rows  = $d['rows'];
+            if ( empty( $rows ) ) {
+                $rows = [ [ 'kind' => self::KIND_DRY, 'qty' => 0, 'name' => 'Nothing left to ship on this order', 'sub' => '', 'flag' => 'check' ] ];
+            }
+            foreach ( $rows as $row ) {
+                $name = esc_html( $row['name'] );
+                if ( self::KIND_DRY === $row['kind'] && 0 !== (int) $row['qty'] ) {
+                    $name .= ' <span class="fh-sd-tag">(dry goods)</span>';
+                } elseif ( self::KIND_EA === $row['kind'] ) {
+                    $name .= ' <span class="fh-sd-tag">(EA SHIPS)</span>';
+                }
+                if ( 'backordered' === $row['flag'] ) {
+                    $name .= ' <span class="fh-sd-tag fh-sd-tag--warn">(BACKORDERED)</span>';
+                } elseif ( 'check' === $row['flag'] ) {
+                    $name .= ' <span class="fh-sd-tag fh-sd-tag--warn">(CHECK)</span>';
+                }
+                if ( isset( $row['bag'] ) && '' !== $row['bag'] ) {
+                    $packing = true;
+                    $name   .= ' <span class="fh-sd-bag">Bag: ' . esc_html( $row['bag'] ) . '</span>';
+                }
+                if ( '' !== $row['sub'] ) {
+                    $name .= '<br><span class="fh-sd-sublabel">from ' . esc_html( $row['sub'] ) . '</span>';
+                }
+                $h .= '<tr class="' . ( $first ? 'fh-sd-row-first' : 'fh-sd-row' ) . '">';
+                $h .= '<td class="fh-sd-col-pick"><span class="fh-sd-box"></span></td>';
+                $h .= '<td class="fh-sd-col-qty">' . (int) $row['qty'] . '</td>';
+                $h .= '<td>' . $name . '</td>';
+                if ( $first ) {
+                    $box     = isset( $d['box'] ) ? (string) $d['box'] : '';
+                    $packing = $packing || '' !== $box;
+                    $h  .= '<td class="fh-sd-col-order"><strong>' . esc_html( $d['label'] ) . '</strong><br>' . esc_html( $d['customer'] ) . ( '' !== $box ? '<br><span class="fh-sd-boxname">Box: ' . esc_html( $box ) . '</span>' : '' ) . '</td>';
+                    $h .= '<td class="fh-sd-col-dest">' . esc_html( $d['place'] ) . ( '' !== $d['flag'] ? '<br><strong class="fh-sd-flag">' . esc_html( $d['flag'] ) . '</strong>' : '' ) . '</td>';
+                } else {
+                    $h .= '<td class="fh-sd-col-order"></td><td class="fh-sd-col-dest"></td>';
+                }
+                $h    .= '</tr>';
+                $first = false;
+            }
+        }
+        $h .= '</tbody></table>';
+        $h .= '<p class="fh-sd-foot"><strong>' . (int) $totals['fish'] . ' fish &middot; ' . (int) $totals['dry'] . ' dry goods &middot; ' . (int) $totals['orders'] . ' orders</strong></p>';
+        $h .= '<p class="fh-sd-legend">Legend: (HEAT PACK) heat pack in the box &middot; (COOLING PACKS) cooling packs &middot; (UPS STORE) ship to a UPS Store, email draft in the order\'s Weather box &middot; (HOLD) do not ship &middot; (AT THE LINE — Jeff\'s call) high exactly on a band line &middot; (NOT CHECKED) no weather note for this date &middot; (dry goods) box it, not a fish &middot; (EA SHIPS) drop-shipped by EverythingAquatic, not in this box &middot; (BACKORDERED) not in stock &middot; (CHECK) verify by hand' . ( $packing ? ' &middot; Bag: the bag to pack that fish in &middot; Box: the box confirmed for the order (Packing)' : '' ) . '</p>';
+        $h .= '</section>';
+        return $h;
+    }
+
+    private static function render_weather_page( $ymd, array $dests ) {
+        $rows = [];
+        foreach ( $dests as $d ) {
+            $rows[] = [
+                'number' => $d['label'],
+                'place'  => $d['place'],
+                'high'   => $d['weather']['high'],
+                'low'    => $d['weather']['low'],
+                'cond'   => 'checked' === $d['weather']['status'] ? $d['weather']['conditions'] : ( 'unavailable' === $d['weather']['status'] ? $d['weather']['summary'] : '' ),
+                'action' => self::action_label( $d['weather'] ),
+                'tone'   => self::row_tone( $d['weather'] ),
+                'dest'   => $d,
+            ];
+        }
+        $rows = self::sort_weather_rows( $rows );
+
+        $h  = '<section class="fh-sd-page fh-sd-page--weather">';
+        $h .= '<h1>Weather Overview — Delivery ' . esc_html( self::label( $ymd ) ) . '</h1>';
+        $h .= '<p class="fh-sd-sub">' . esc_html( self::CHART_SUBTITLE ) . '</p>';
+        $h .= '<table class="fh-sd-table fh-sd-table--weather"><thead><tr><th>Order</th><th>Destination</th><th class="fh-sd-col-num">High</th><th class="fh-sd-col-num">Low</th><th>Conditions</th><th>Action</th></tr></thead><tbody>';
+        foreach ( $rows as $r ) {
+            $h .= '<tr class="fh-sd-tone-' . esc_attr( $r['tone'] ) . '">';
+            $h .= '<td>' . esc_html( $r['number'] ) . '</td>';
+            $h .= '<td>' . esc_html( $r['place'] ) . '</td>';
+            $h .= '<td class="fh-sd-col-num">' . ( null === $r['high'] ? '—' : (int) $r['high'] . '°F' ) . '</td>';
+            $h .= '<td class="fh-sd-col-num">' . ( null === $r['low'] ? '—' : (int) $r['low'] . '°F' ) . '</td>';
+            $h .= '<td>' . esc_html( $r['cond'] ) . '</td>';
+            $h .= '<td>' . esc_html( $r['action'] ) . '</td>';
+            $h .= '</tr>';
+        }
+        $h .= '</tbody></table>';
+
+        $notes      = [];
+        $alerts     = [];
+        $next_day   = [];
+        $checked_at = '';
+        $any_checked = false;
+        foreach ( $dests as $d ) {
+            $w = $d['weather'];
+            if ( 'checked' === $w['status'] ) {
+                $any_checked = true;
+                if ( $w['checked_at'] > $checked_at ) {
+                    $checked_at = $w['checked_at'];
+                }
+            }
+            if ( ! empty( $w['alerts'] ) ) {
+                $alerts[] = $d['label'] . ' (' . $d['place'] . '): ' . implode( ', ', $w['alerts'] );
+            }
+            if ( '' !== $w['next_day'] ) {
+                $next_day[] = $d['label'] . ' (' . $d['place'] . '): ' . $w['next_day'];
+            }
+        }
+        if ( $alerts ) {
+            $notes[] = 'Active NWS alerts — ' . implode( '; ', $alerts );
+        }
+        if ( $next_day ) {
+            $notes[] = 'Next-day extremes, do not slip delivery — ' . implode( '; ', $next_day );
+        }
+        if ( $any_checked ) {
+            $when    = '' !== $checked_at ? self::datetime_label( $checked_at ) : self::label( $ymd );
+            $notes[] = 'Notes written in WooCommerce by the Weather section on ' . $when;
+        }
+        $notes[] = 'Data: National Weather Service (api.weather.gov) via the FisHotel Tools Weather section nightly scan' . ( '' !== $checked_at ? '; last pulled ' . self::datetime_label( $checked_at ) : '' );
+
+        $h .= '<ul class="fh-sd-notes">';
+        foreach ( $notes as $n ) {
+            $h .= '<li>' . esc_html( $n ) . '</li>';
+        }
+        $h .= '</ul></section>';
+        return $h;
+    }
+
+    /** 'Y-m-d H:i:s' (site-local, as the Weather section stores it) → 'l, F j, g:i a'. */
+    public static function datetime_label( $mysql ) {
+        $mysql = trim( (string) $mysql );
+        if ( '' === $mysql ) {
+            return '';
+        }
+        try {
+            $d = new DateTimeImmutable( $mysql, self::timezone() );
+            return $d->format( 'l, F j, g:i a' );
+        } catch ( Exception $e ) {
+            return $mysql;
+        }
+    }
+
+    /* ─────────────────────────────────────────────
+     *  The page's home: FisHotel Tools → Ship Day (10.34)
+     * ───────────────────────────────────────────── */
+
+    /** Ship Day's page, optionally opened on a delivery date (?date=Y-m-d). */
+    public static function page_url( $delivery_ymd = '' ) {
+        $url = function_exists( 'admin_url' ) ? admin_url( 'admin.php?page=' . self::PAGE_SLUG ) : 'admin.php?page=' . self::PAGE_SLUG;
+        if ( self::is_ymd( $delivery_ymd ) ) {
+            $url = function_exists( 'add_query_arg' ) ? add_query_arg( self::DATE_VAR, $delivery_ymd, $url ) : $url . '&' . self::DATE_VAR . '=' . rawurlencode( $delivery_ymd );
+        }
+        return $url;
+    }
+
+    /** The address Ship Day had until 10.33 (Group-order invoices → Ship Day tab); it now shows a pointer. */
+    public static function old_tab_url() {
+        $path = 'admin.php?page=' . self::INVOICES_PAGE_SLUG . '&tab=' . self::OLD_TAB;
+        return function_exists( 'admin_url' ) ? admin_url( $path ) : $path;
+    }
+
+    /**
+     * Whether the Misc plugin's FisHotel Tools menu is registered in this
+     * request. add_menu_page() files every top-level slug in
+     * $admin_page_hooks whatever the user's capabilities, so this is "the
+     * Misc plugin is active", read at admin_menu time.
+     *
+     * @param array|null $admin_page_hooks The global, or a stand-in.
+     */
+    public static function misc_menu_present( $admin_page_hooks = null ) {
+        if ( null === $admin_page_hooks ) {
+            $admin_page_hooks = isset( $GLOBALS['admin_page_hooks'] ) ? $GLOBALS['admin_page_hooks'] : [];
+        }
+        return is_array( $admin_page_hooks ) && isset( $admin_page_hooks[ self::MISC_MENU_SLUG ] );
+    }
+
+    /** True for a menu slug that is the old tab's address (the Misc plugin's own "Ship Day" entry up to 0.46.4). */
+    public static function is_old_tab_entry( $slug ) {
+        $slug = (string) $slug;
+        if ( false === strpos( $slug, 'page=' . self::INVOICES_PAGE_SLUG ) ) {
+            return false;
+        }
+        return false !== strpos( $slug, 'tab=' . self::OLD_TAB ) || false !== strpos( $slug, 'tab=packing' );
+    }
+
+    /**
+     * FisHotel Tools' submenu with Ship Day placed right after Today (after
+     * the Dashboard entry when Today is switched off), and without the Misc
+     * plugin's own "Ship Day" entry that pointed at the old tab — one Ship
+     * Day in the menu, not two. Every other entry keeps its order. Pure.
+     *
+     * @param array $entries $submenu['fishotel-misc'] (each [ title, cap, slug, page title ]).
+     * @return array
+     */
+    public static function place_menu_entry( array $entries ) {
+        $mine = null;
+        $rest = [];
+        foreach ( $entries as $entry ) {
+            $slug = is_array( $entry ) && isset( $entry[2] ) ? (string) $entry[2] : '';
+            if ( self::PAGE_SLUG === $slug ) {
+                if ( null === $mine ) {
+                    $mine = $entry;
+                }
+                continue;
+            }
+            if ( self::is_old_tab_entry( $slug ) ) {
+                continue;
+            }
+            $rest[] = $entry;
+        }
+        if ( null === $mine ) {
+            return $rest;
+        }
+        $at = null;
+        foreach ( [ self::MISC_TODAY_SLUG, self::MISC_MENU_SLUG ] as $anchor ) {
+            foreach ( $rest as $i => $entry ) {
+                if ( is_array( $entry ) && isset( $entry[2] ) && $anchor === (string) $entry[2] ) {
+                    $at = $i + 1;
+                    break 2;
+                }
+            }
+        }
+        array_splice( $rest, null === $at ? 0 : $at, 0, [ $mine ] );
+        return $rest;
+    }
+
+    /**
+     * Register the page (admin_menu, after the Misc plugin's menus).
+     * With FisHotel Tools there: a submenu entry right after Today, so
+     * WordPress highlights FisHotel Tools → Ship Day by itself. Without it:
+     * a hidden page that highlights Group Orders → Group-order invoices,
+     * where Ship Day has always been.
+     *
+     * @param callable $render The page callback.
+     * @return string 'misc' | 'group-orders'
+     */
+    public static function register_menu( $render ) {
+        if ( self::misc_menu_present() ) {
+            add_submenu_page( self::MISC_MENU_SLUG, 'Ship Day', 'Ship Day', self::CAPABILITY, self::PAGE_SLUG, $render );
+            global $submenu;
+            if ( isset( $submenu[ self::MISC_MENU_SLUG ] ) && is_array( $submenu[ self::MISC_MENU_SLUG ] ) ) {
+                $submenu[ self::MISC_MENU_SLUG ] = self::place_menu_entry( $submenu[ self::MISC_MENU_SLUG ] ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+            }
+            return 'misc';
+        }
+        $hook = add_submenu_page( null, 'Ship Day', '', self::CAPABILITY, self::PAGE_SLUG, $render );
+        if ( is_string( $hook ) && '' !== $hook ) {
+            add_action( 'load-' . $hook, [ __CLASS__, 'set_hidden_page_title' ] );
+        }
+        add_filter( 'parent_file', [ __CLASS__, 'highlight_parent_file' ] );
+        add_filter( 'submenu_file', [ __CLASS__, 'highlight_submenu_file' ] );
+        return 'group-orders';
+    }
+
+    /**
+     * load-{hook} of the hidden page (Misc absent): WordPress finds no title
+     * for a page with no parent and hands null to strip_tags() in
+     * admin-header.php (a PHP 8.1+ deprecation in debug.log), so the title
+     * is set before the header is printed.
+     */
+    public static function set_hidden_page_title() {
+        if ( empty( $GLOBALS['title'] ) ) {
+            $GLOBALS['title'] = 'Ship Day'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+        }
+    }
+
+    /** Whether the current admin request is Ship Day's page. */
+    public static function is_page_request() {
+        $page = isset( $GLOBALS['plugin_page'] ) && is_string( $GLOBALS['plugin_page'] ) ? $GLOBALS['plugin_page'] : (string) ( $_GET['page'] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        return self::PAGE_SLUG === $page;
+    }
+
+    /**
+     * parent_file filter (Misc absent): Ship Day's page opens Group Orders.
+     * Right after this filter WordPress calls get_admin_page_parent(), which
+     * finds a hidden page under the '' parent and resets $parent_file to ''
+     * (the menu then stays shut). So on Ship Day's request its hidden entry is
+     * dropped first: the access checks have already run by then, and the
+     * page is never listed anyway.
+     */
+    public static function highlight_parent_file( $parent_file ) {
+        if ( ! self::is_page_request() ) {
+            return $parent_file;
+        }
+        if ( isset( $GLOBALS['submenu'][''] ) && is_array( $GLOBALS['submenu'][''] ) ) {
+            foreach ( $GLOBALS['submenu'][''] as $i => $entry ) {
+                if ( is_array( $entry ) && isset( $entry[2] ) && self::PAGE_SLUG === $entry[2] ) {
+                    unset( $GLOBALS['submenu'][''][ $i ] );
+                }
+            }
+        }
+        return 'fishotel-batch-hq';
+    }
+
+    /** submenu_file filter (Misc absent): ... and highlights Group-order invoices. */
+    public static function highlight_submenu_file( $submenu_file ) {
+        return self::is_page_request() ? self::INVOICES_PAGE_SLUG : $submenu_file;
+    }
+
+    /** The one line the old Group-order invoices → Ship Day tab shows now. */
+    public static function old_tab_pointer_html( $misc_menu = null ) {
+        $misc_menu = null === $misc_menu ? self::misc_menu_present() : (bool) $misc_menu;
+        $where     = $misc_menu ? 'FisHotel Tools &rarr; Ship Day' : 'its own page';
+        return '<p class="fh-sd-moved" style="font-size:14px;color:#ddd;">Ship Day has moved to ' . $where . '. <a href="' . esc_url( self::page_url() ) . '" style="color:#2986cc;font-weight:600;">Open Ship Day &rarr;</a></p>';
+    }
+
+    /* ─────────────────────────────────────────────
+     *  "Built for <ship date> at <time>"
+     * ───────────────────────────────────────────── */
+
+    /**
+     * The built-record map with one build added (pure). Only a delivery date
+     * that yields a ship date counts; the newest BUILT_KEEP ship dates are kept.
+     *
+     * @return array<string,array{delivery:string,at:string,orders:int,fish:int}>
+     */
+    public static function built_map_with( $map, $delivery_ymd, $at, $orders, $fish, $keep = self::BUILT_KEEP ) {
+        $out = [];
+        foreach ( is_array( $map ) ? $map : [] as $ship => $entry ) {
+            if ( self::is_ymd( (string) $ship ) && null !== self::built_entry( [ $ship => $entry ], (string) $ship ) ) {
+                $out[ (string) $ship ] = $entry;
+            }
+        }
+        $ship = self::ship_date_for( $delivery_ymd );
+        if ( '' === $ship || ! is_string( $at ) || '' === trim( $at ) ) {
+            return $out;
+        }
+        $out[ $ship ] = [
+            'delivery' => (string) $delivery_ymd,
+            'at'       => trim( $at ),
+            'orders'   => max( 0, (int) $orders ),
+            'fish'     => max( 0, (int) $fish ),
+        ];
+        ksort( $out );
+        return array_slice( $out, -max( 1, (int) $keep ), null, true );
+    }
+
+    /** One ship date's build from the map, or null (pure). */
+    public static function built_entry( $map, $ship_ymd ) {
+        if ( ! is_array( $map ) || ! isset( $map[ $ship_ymd ] ) || ! is_array( $map[ $ship_ymd ] ) ) {
+            return null;
+        }
+        $e  = $map[ $ship_ymd ];
+        $at = isset( $e['at'] ) && is_string( $e['at'] ) ? trim( $e['at'] ) : '';
+        if ( '' === $at ) {
+            return null;
+        }
+        return [
+            'delivery' => isset( $e['delivery'] ) && is_string( $e['delivery'] ) ? $e['delivery'] : self::delivery_date_for( $ship_ymd ),
+            'at'       => $at,
+            'orders'   => max( 0, (int) ( $e['orders'] ?? 0 ) ),
+            'fish'     => max( 0, (int) ( $e['fish'] ?? 0 ) ),
+        ];
+    }
+
+    /**
+     * The recorded build for a ship date, or null. Only a build made ON that
+     * ship date counts: opening Ship Day days ahead (the page builds the next
+     * delivery date as it opens) must not silence that day's reminder.
+     */
+    public static function built_for( $ship_ymd ) {
+        if ( ! function_exists( 'get_option' ) ) {
+            return null;
+        }
+        $entry = self::built_entry( get_option( self::BUILT_OPTION, [] ), (string) $ship_ymd );
+        return null !== $entry && self::built_on_ship_day( $entry['at'], $ship_ymd ) ? $entry : null;
+    }
+
+    /** Whether a build time ('Y-m-d H:i:s', site-local) falls on the ship date (pure). */
+    public static function built_on_ship_day( $at, $ship_ymd ) {
+        return self::is_ymd( (string) $ship_ymd ) && substr( trim( (string) $at ), 0, 10 ) === (string) $ship_ymd;
+    }
+
+    /**
+     * Record that the pick list for a delivery date was built (the AJAX build
+     * succeeded with at least one order) on its ship date. A small option, not
+     * autoloaded; no order is written.
+     *
+     * @return bool Whether a record was written.
+     */
+    public static function record_built( $delivery_ymd, $orders, $fish, $at = null ) {
+        if ( (int) $orders <= 0 || '' === self::ship_date_for( $delivery_ymd ) || ! function_exists( 'update_option' ) ) {
+            return false;
+        }
+        if ( null === $at ) {
+            $at = function_exists( 'current_time' ) ? (string) current_time( 'mysql' ) : ( new DateTimeImmutable( 'now', self::timezone() ) )->format( 'Y-m-d H:i:s' );
+        }
+        if ( ! self::built_on_ship_day( $at, self::ship_date_for( $delivery_ymd ) ) ) {
+            return false; // built ahead of (or after) its ship date: not that day's build
+        }
+        $map = self::built_map_with( get_option( self::BUILT_OPTION, [] ), $delivery_ymd, $at, $orders, $fish );
+        update_option( self::BUILT_OPTION, $map, false );
+        return true;
+    }
+
+    /** 'Y-m-d H:i:s' (site-local) → '9:12 am' ('' when unreadable). */
+    public static function time_label( $mysql ) {
+        $mysql = trim( (string) $mysql );
+        if ( 1 !== preg_match( '/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/', $mysql ) ) {
+            return '';
+        }
+        try {
+            return ( new DateTimeImmutable( $mysql, self::timezone() ) )->format( 'g:i a' );
+        } catch ( Exception $e ) {
+            return '';
+        }
+    }
+
+    /**
+     * Orders and fish for a delivery date, counted exactly as the pick list
+     * counts them (load_orders() + build_destination() + totals()).
+     *
+     * @return array{orders:int,fish:int}
+     */
+    public static function day_totals( $delivery_ymd ) {
+        if ( ! self::is_ymd( $delivery_ymd ) || ! function_exists( 'wc_get_orders' ) ) {
+            return [ 'orders' => 0, 'fish' => 0 ];
+        }
+        $dests = [];
+        foreach ( self::load_orders( $delivery_ymd )['orders'] as $order ) {
+            $dests[] = self::build_destination( $order, $delivery_ymd );
+        }
+        $t = self::totals( $dests );
+        return [ 'orders' => (int) $t['orders'], 'fish' => (int) $t['fish'] ];
+    }
+
+    /** Per-destination packing slips — the old Packing Lists card markup, one card per box. */
+    private static function render_slips( $ymd, array $dests ) {
+        $h  = '<div class="fh-packing-list fh-sd-slips">';
+        $h .= '<div class="fh-packing-list-header"><h1>FisHotel Packing List</h1><h2>Delivery Date: ' . esc_html( self::label( $ymd, 'l, F j, Y' ) ) . '</h2><p>Total Orders: ' . count( $dests ) . '</p></div>';
+        foreach ( $dests as $d ) {
+            $a  = $d['address'];
+            $h .= '<div class="fh-packing-list-order">';
+            $h .= '<div class="fh-packing-order-header"><h3>' . esc_html( $d['label'] ) . ' &mdash; ' . esc_html( $d['customer'] ) . '</h3>';
+            if ( '' !== $d['flag'] ) {
+                $h .= '<p><strong>Weather:</strong> ' . esc_html( $d['flag'] ) . '</p>';
+            }
+            $h .= '<p><strong>Email:</strong> ' . esc_html( $d['email'] ) . '</p><p><strong>Phone:</strong> ' . esc_html( $d['phone'] ) . '</p></div>';
+            $h .= '<div class="fh-packing-address"><h4>Shipping Address</h4><p>' . esc_html( $a['name'] ) . '<br>' . esc_html( $a['address_1'] ) . '<br>' . ( '' !== $a['address_2'] ? esc_html( $a['address_2'] ) . '<br>' : '' ) . esc_html( $d['place'] ) . '</p></div>';
+            $h .= '<div class="fh-packing-items"><h4>Fish to Pack</h4><table class="fh-packing-table"><thead><tr><th>Species</th><th>Qty</th><th style="width:60px;">Packed</th></tr></thead><tbody>';
+            foreach ( $d['rows'] as $row ) {
+                $name = esc_html( $row['name'] );
+                if ( self::KIND_DRY === $row['kind'] && 0 !== (int) $row['qty'] ) {
+                    $name .= ' (dry goods)';
+                } elseif ( self::KIND_EA === $row['kind'] ) {
+                    $name .= ' (EA SHIPS)';
+                }
+                if ( 'backordered' === $row['flag'] ) {
+                    $name .= ' (BACKORDERED)';
+                } elseif ( 'check' === $row['flag'] ) {
+                    $name .= ' (CHECK)';
+                }
+                if ( '' !== $row['sub'] ) {
+                    $name .= ' <em>— from ' . esc_html( $row['sub'] ) . '</em>';
+                }
+                $h .= '<tr><td>' . $name . '</td><td>' . (int) $row['qty'] . '</td><td><span class="fh-sd-box"></span></td></tr>';
+            }
+            $h .= '</tbody></table></div>';
+            $h .= '<div class="fh-packing-notes"><h4>Customer Notes</h4><p>' . ( '' !== trim( $d['note'] ) ? esc_html( $d['note'] ) : '<em>None</em>' ) . '</p></div>';
+            $h .= '<div class="fh-packing-signature"><p>Packed by: ______________________ &nbsp;&nbsp; Date: ______________________</p></div>';
+            $h .= '</div><div class="fh-packing-page-break"></div>';
+        }
+        $h .= '</div>';
+        return $h;
+    }
+}

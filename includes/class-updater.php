@@ -161,7 +161,14 @@ class FisHotel_GitHub_Updater {
             return $source;
         }
 
-        $corrected = trailingslashit( dirname( $source ) ) . 'fishotel-batch-manager/';
+        // Derive the target folder from the active plugin basename so the update lands in the
+        // directory WordPress already has in active_plugins. A hard-coded literal would install
+        // into a different folder when the plugin lives elsewhere, leaving the active entry dangling.
+        $folder = dirname( $this->plugin_slug );
+        if ( $folder === '.' || $folder === '' ) {
+            $folder = 'fishotel-batch-manager';
+        }
+        $corrected = trailingslashit( dirname( $source ) ) . trailingslashit( $folder );
 
         if ( $source !== $corrected ) {
             global $wp_filesystem;
