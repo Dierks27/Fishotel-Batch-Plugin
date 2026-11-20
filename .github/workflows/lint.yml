@@ -37,3 +37,22 @@ jobs:
           for t in $(git ls-files 'tests/*.php'); do
             echo "== $t"; php "$t"
           done
+
+  js:
+    name: JavaScript (Ship Day paperwork)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: node --check the plugin's own scripts
+        run: |
+          set -e
+          node --check assists/ship-day/paperwork.js
+      - name: Tests (node)
+        run: |
+          set -e
+          for t in $(git ls-files 'tests/*.js'); do
+            echo "== $t"; node "$t"
+          done

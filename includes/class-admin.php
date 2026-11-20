@@ -5311,6 +5311,22 @@ trait FisHotel_Admin {
      *  Ship Day page (FisHotel Tools → Ship Day, 10.34)
      * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
+    /**
+     * admin-post: Ship Day → Paperwork settings (10.35). The two Media Library
+     * PDFs (each must be a PDF attachment, else it is cleared) and the label
+     * count. Ship Day's capability and the form's own nonce; back to the page.
+     */
+    public function save_ship_day_paperwork_settings() {
+        if ( ! current_user_can( FisHotel_Ship_Day::CAPABILITY ) ) {
+            wp_die( 'Unauthorized.' );
+        }
+        check_admin_referer( FisHotel_Ship_Day_Paperwork::SAVE_ACTION );
+        $settings = FisHotel_Ship_Day_Paperwork::settings_from_post( wp_unslash( $_POST ), [ 'FisHotel_Ship_Day_Paperwork', 'is_pdf_attachment' ] );
+        update_option( FisHotel_Ship_Day_Paperwork::OPTION, $settings, false );
+        wp_safe_redirect( add_query_arg( FisHotel_Ship_Day_Paperwork::SAVED_VAR, 'saved', FisHotel_Ship_Day::page_url() ) );
+        exit;
+    }
+
     /** admin_menu (priority 20, after the Misc plugin): Ship Day's own page — see FisHotel_Ship_Day::register_menu(). */
     public function add_ship_day_menu() {
         FisHotel_Ship_Day::register_menu( [ $this, 'render_ship_day_page' ] );
@@ -5343,6 +5359,8 @@ trait FisHotel_Admin {
             $sd_default = $sd_asked; // the Today line opens tomorrow's delivery date
         }
         $sd_rules = function_exists( 'fishotel_delivery_rules' ) ? fishotel_delivery_rules() : null;
+        FisHotel_Ship_Day_Paperwork::enqueue(); // pdf-lib + the paperwork button's script, this page only
+        $sd_paper_saved = 'saved' === sanitize_key( (string) ( $_GET[ FisHotel_Ship_Day_Paperwork::SAVED_VAR ] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only
         ?>
         <div class="wrap">
         <?php if ( $sd_misc ) : ?>
@@ -5387,9 +5405,11 @@ trait FisHotel_Admin {
                     <input type="checkbox" id="fh-sd-slips" value="1"> Also print per-order packing slips
                 </label>
                 <button id="fh-sd-generate" style="background:#1e6fa5;color:#fff;font-weight:700;border:none;border-radius:6px;padding:8px 24px;font-size:13px;cursor:pointer;">Build Ship Day</button>
+                <?php echo FisHotel_Ship_Day_Paperwork::button_html( $ajax_url ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside ?>
                 <span id="fh-sd-spinner" style="display:none;color:#aaa;font-size:13px;">&#8987; Loading&hellip;</span>
             </div>
             <div id="fh-sd-error" style="display:none;color:#e74c3c;font-size:13px;margin-bottom:10px;"></div>
+            <?php echo FisHotel_Ship_Day_Paperwork::panel_html( FisHotel_Ship_Day_Paperwork::settings(), FisHotel_Ship_Day_Paperwork::pdf_choices(), $sd_paper_saved ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside ?>
         </div>
 
         <div id="fh-sd-output" style="margin-top:16px;"></div>
