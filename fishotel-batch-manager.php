@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.34 - Ship Day under FisHotel Tools
- * Version:           10.34
+ * Description:       v10.35 - Ship Day prints the day's paperwork
+ * Version:           10.35
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.34' );
+define( 'FISHOTEL_VERSION', '10.35' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
@@ -20,6 +20,7 @@ require_once FISHOTEL_PLUGIN_DIR . 'includes/class-delivery-rules.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-order-meta.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ship-day.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ship-day-today-line.php';
+require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ship-day-paperwork.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ajax.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-woocommerce.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-shortcodes.php';
@@ -198,6 +199,7 @@ class FisHotel_Batch_Manager {
         add_action( 'admin_post_fishotel_reset_test_data', [$this, 'reset_test_data_handler'] );
         add_action( 'admin_post_fishotel_create_test_requests', [$this, 'create_test_requests_handler'] );
         add_action( 'admin_post_fishotel_export_order_excel', [$this, 'export_order_excel'] );
+        add_action( 'admin_post_fishotel_ship_day_paperwork_settings', [$this, 'save_ship_day_paperwork_settings'] );
         add_action( 'admin_post_fishotel_delete_batch',       [$this, 'delete_batch'] );
         add_action( 'admin_post_fishotel_add_location',       [$this, 'add_location_handler'] );
         add_action( 'admin_post_fishotel_delete_location',    [$this, 'delete_location_handler'] );
@@ -316,6 +318,7 @@ class FisHotel_Batch_Manager {
         add_action( 'wp_ajax_fishotel_get_unpaid_invoices',    [$this, 'ajax_get_unpaid_invoices'] );
         add_action( 'wp_ajax_fishotel_get_packing_list',       [$this, 'ajax_get_packing_list'] ); // legacy Packing Lists (kept for back-compat)
         add_action( 'wp_ajax_fishotel_get_ship_day',           [$this, 'ajax_get_ship_day'] );
+        add_action( 'wp_ajax_fishotel_ship_day_paperwork',     [$this, 'ajax_ship_day_paperwork'] ); // the day's paperwork: the plan (10.35)
 
         add_action( 'woocommerce_after_checkout_form', [$this, 'add_return_to_fish_button'] );
         add_action( 'woocommerce_thankyou', [$this, 'add_return_to_fish_button'] );

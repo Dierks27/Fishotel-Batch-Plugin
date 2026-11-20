@@ -108,6 +108,9 @@ function wp_create_nonce( $action ) {
 function wp_verify_nonce( $nonce, $action ) {
     return 'nonce-' . $action === $nonce ? 1 : false;
 }
+function wp_nonce_field( $action, $name = '_wpnonce', $referer = true, $echo = true ) {
+    return '<input type="hidden" name="' . $name . '" value="nonce-' . $action . '">';
+}
 function sanitize_key( $s ) {
     return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $s ) );
 }
@@ -269,6 +272,7 @@ function get_the_terms( $pid, $tax ) {
 
 require_once dirname( __DIR__ ) . '/includes/class-ship-day.php';
 require_once dirname( __DIR__ ) . '/includes/class-ship-day-today-line.php';
+require_once dirname( __DIR__ ) . '/includes/class-ship-day-paperwork.php';
 require_once dirname( __DIR__ ) . '/includes/class-ajax.php';
 require_once dirname( __DIR__ ) . '/includes/class-admin.php';
 

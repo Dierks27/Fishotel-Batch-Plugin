@@ -163,6 +163,16 @@ class FisHotel_Ship_Day {
 
     const CHART_SUBTITLE = 'by delivery-day high: <30 hold · 30–40 UPS Store · 40–70 heat pack · 70–80 nothing · 80–90 cooling · 90–95 UPS Store · >95 hold';
 
+    /** Overview row colours, as the print CSS paints them (.fh-sd-tone-*). */
+    const TONE_COLOURS = [
+        'green'  => '#dff5e1',
+        'blue'   => '#dbeeff',
+        'orange' => '#ffe6cc',
+        'amber'  => '#ffe9a8',
+        'red'    => '#f8d0d0',
+        'grey'   => '#e6e6e6',
+    ];
+
     /**
      * Ship Day's own page (10.34). It is listed under FisHotel Tools right
      * after Today when the Misc plugin's menu is there, and otherwise sits
@@ -1069,6 +1079,31 @@ class FisHotel_Ship_Day {
         return $out;
     }
 
+    /**
+     * The orders whose own paperwork (the invoice) goes in one box: the order
+     * itself, or — for a fulfillment wrapper — its LIVE source orders, never the
+     * wrapper (its line items are copies) and never a cancelled / refunded /
+     * failed / trashed source. state: 'ok', 'no_live_source' (every listed
+     * source loads but is dead: nothing ships) or 'sources_missing' (no listed
+     * source loads; the pick list then falls back to the wrapper's copies).
+     *
+     * @return array{orders:object[],state:string}
+     */
+    public static function box_orders( $order ) {
+        if ( ! is_object( $order ) || ! method_exists( $order, 'get_meta' ) ) {
+            return [ 'orders' => [], 'state' => 'sources_missing' ];
+        }
+        if ( ! self::is_fulfillment( $order ) ) {
+            return [ 'orders' => [ $order ], 'state' => 'ok' ];
+        }
+        $resolved = 0;
+        $live     = self::live_sources( $order, $resolved );
+        if ( $live ) {
+            return [ 'orders' => array_values( $live ), 'state' => 'ok' ];
+        }
+        return [ 'orders' => [], 'state' => 0 === $resolved ? 'sources_missing' : 'no_live_source' ];
+    }
+
     /** Shipping address parts, billing when there is no shipping address. */
     private static function destination_parts( $order ) {
         $use_shipping = '' !== trim( (string) $order->get_shipping_postcode() ) || '' !== trim( (string) $order->get_shipping_city() );
@@ -1638,20 +1673,7 @@ class FisHotel_Ship_Day {
     }
 
     private static function render_weather_page( $ymd, array $dests ) {
-        $rows = [];
-        foreach ( $dests as $d ) {
-            $rows[] = [
-                'number' => $d['label'],
-                'place'  => $d['place'],
-                'high'   => $d['weather']['high'],
-                'low'    => $d['weather']['low'],
-                'cond'   => 'checked' === $d['weather']['status'] ? $d['weather']['conditions'] : ( 'unavailable' === $d['weather']['status'] ? $d['weather']['summary'] : '' ),
-                'action' => self::action_label( $d['weather'] ),
-                'tone'   => self::row_tone( $d['weather'] ),
-                'dest'   => $d,
-            ];
-        }
-        $rows = self::sort_weather_rows( $rows );
+        $rows = self::weather_rows( $dests );
 
         $h  = '<section class="fh-sd-page fh-sd-page--weather">';
         $h .= '<h1>Weather Overview — Delivery ' . esc_html( self::label( $ymd ) ) . '</h1>';
@@ -1669,10 +1691,148 @@ class FisHotel_Ship_Day {
         }
         $h .= '</tbody></table>';
 
-        $notes      = [];
-        $alerts     = [];
-        $next_day   = [];
-        $checked_at = '';
+        $notes = self::weather_notes( $ymd, $dests );
+
+        $h .= '<ul class="fh-sd-notes">';
+        foreach ( $notes as $n ) {
+            $h .= '<li>' . esc_html( $n ) . '</li>';
+        }
+        $h .= '</ul></section>';
+        return $h;
+    }
+
+    /* ─────────────────────────────────────────────
+     *  The two print pages as data (10.35)
+     * ───────────────────────────────────────────── */
+
+    /**
+     * The pick list and the weather overview as plain data, cell for cell what
+     * render_pick_list() and render_weather_page() print — "Print the day's
+     * paperwork" draws them into its PDF (assists/ship-day/paperwork.js), so
+     * the same day reads the same on paper either way. Text is plain (no
+     * HTML); a cell is a list of runs {t, s} where s is the print style:
+     * n (normal), b (bold), tag (small grey), warn (small bold red), bag
+     * (small bold, boxed), tagb (small bold), sub (small grey italic), flag
+     * (bold red), and a run {br:1} is a line break.
+     *
+     * @return array{pick:array,weather:array}
+     */
+    public static function print_pages( $ymd, array $dests, array $totals ) {
+        $ship = self::ship_date_for( $ymd );
+        $rows = [];
+        $packing = false;
+        foreach ( $dests as $d ) {
+            $first = true;
+            $list  = $d['rows'];
+            if ( empty( $list ) ) {
+                $list = [ [ 'kind' => self::KIND_DRY, 'qty' => 0, 'name' => 'Nothing left to ship on this order', 'sub' => '', 'flag' => 'check' ] ];
+            }
+            foreach ( $list as $row ) {
+                $fish = [ [ 't' => (string) $row['name'], 's' => 'n' ] ];
+                if ( self::KIND_DRY === $row['kind'] && 0 !== (int) $row['qty'] ) {
+                    $fish[] = [ 't' => '(dry goods)', 's' => 'tag' ];
+                } elseif ( self::KIND_EA === $row['kind'] ) {
+                    $fish[] = [ 't' => '(EA SHIPS)', 's' => 'tag' ];
+                }
+                if ( 'backordered' === $row['flag'] ) {
+                    $fish[] = [ 't' => '(BACKORDERED)', 's' => 'warn' ];
+                } elseif ( 'check' === $row['flag'] ) {
+                    $fish[] = [ 't' => '(CHECK)', 's' => 'warn' ];
+                }
+                if ( isset( $row['bag'] ) && '' !== $row['bag'] ) {
+                    $packing = true;
+                    $fish[]  = [ 't' => 'Bag: ' . $row['bag'], 's' => 'bag' ];
+                }
+                if ( '' !== $row['sub'] ) {
+                    $fish[] = [ 'br' => 1 ];
+                    $fish[] = [ 't' => 'from ' . $row['sub'], 's' => 'sub' ];
+                }
+                $order = [];
+                $dest  = [];
+                if ( $first ) {
+                    $box     = isset( $d['box'] ) ? (string) $d['box'] : '';
+                    $packing = $packing || '' !== $box;
+                    $order   = [ [ 't' => (string) $d['label'], 's' => 'b' ], [ 'br' => 1 ], [ 't' => (string) $d['customer'], 's' => 'n' ] ];
+                    if ( '' !== $box ) {
+                        $order[] = [ 'br' => 1 ];
+                        $order[] = [ 't' => 'Box: ' . $box, 's' => 'tagb' ];
+                    }
+                    $dest = [ [ 't' => (string) $d['place'], 's' => 'n' ] ];
+                    if ( '' !== $d['flag'] ) {
+                        $dest[] = [ 'br' => 1 ];
+                        $dest[] = [ 't' => (string) $d['flag'], 's' => 'flag' ];
+                    }
+                }
+                $rows[] = [
+                    'first' => $first,
+                    'qty'   => (int) $row['qty'],
+                    'fish'  => $fish,
+                    'order' => $order,
+                    'dest'  => $dest,
+                ];
+                $first = false;
+            }
+        }
+
+        $pick = [
+            'title'  => 'FisHotel Pick List',
+            'sub'    => 'Ship ' . self::label( $ship ) . ' • Deliver ' . self::label( $ymd ) . ' • ' . (int) $totals['orders'] . ' orders / ' . (int) $totals['fish'] . ' fish',
+            'head'   => [ 'Pick', 'Qty', 'Fish', 'Order', 'Destination' ],
+            'rows'   => $rows,
+            'foot'   => (int) $totals['fish'] . ' fish · ' . (int) $totals['dry'] . ' dry goods · ' . (int) $totals['orders'] . ' orders',
+            'legend' => 'Legend: (HEAT PACK) heat pack in the box · (COOLING PACKS) cooling packs · (UPS STORE) ship to a UPS Store, email draft in the order\'s Weather box · (HOLD) do not ship · (AT THE LINE — Jeff\'s call) high exactly on a band line · (NOT CHECKED) no weather note for this date · (dry goods) box it, not a fish · (EA SHIPS) drop-shipped by EverythingAquatic, not in this box · (BACKORDERED) not in stock · (CHECK) verify by hand' . ( $packing ? ' · Bag: the bag to pack that fish in · Box: the box confirmed for the order (Packing)' : '' ),
+        ];
+
+        $wrows = [];
+        foreach ( self::weather_rows( $dests ) as $r ) {
+            $wrows[] = [
+                'cells' => [
+                    (string) $r['number'],
+                    (string) $r['place'],
+                    null === $r['high'] ? '—' : (int) $r['high'] . '°F',
+                    null === $r['low'] ? '—' : (int) $r['low'] . '°F',
+                    (string) $r['cond'],
+                    (string) $r['action'],
+                ],
+                'tone'  => (string) $r['tone'],
+                'fill'  => self::TONE_COLOURS[ $r['tone'] ] ?? self::TONE_COLOURS['grey'],
+            ];
+        }
+        $weather = [
+            'title' => 'Weather Overview — Delivery ' . self::label( $ymd ),
+            'sub'   => self::CHART_SUBTITLE,
+            'head'  => [ 'Order', 'Destination', 'High', 'Low', 'Conditions', 'Action' ],
+            'rows'  => $wrows,
+            'notes' => self::weather_notes( $ymd, $dests ),
+        ];
+
+        return [ 'pick' => $pick, 'weather' => $weather ];
+    }
+
+    /** The overview's rows, coolest → hottest (render_weather_page() and print_pages()). */
+    private static function weather_rows( array $dests ) {
+        $rows = [];
+        foreach ( $dests as $d ) {
+            $rows[] = [
+                'number' => $d['label'],
+                'place'  => $d['place'],
+                'high'   => $d['weather']['high'],
+                'low'    => $d['weather']['low'],
+                'cond'   => 'checked' === $d['weather']['status'] ? $d['weather']['conditions'] : ( 'unavailable' === $d['weather']['status'] ? $d['weather']['summary'] : '' ),
+                'action' => self::action_label( $d['weather'] ),
+                'tone'   => self::row_tone( $d['weather'] ),
+                'dest'   => $d,
+            ];
+        }
+        return self::sort_weather_rows( $rows );
+    }
+
+    /** The bullet notes under the overview (render_weather_page() and print_pages()). */
+    private static function weather_notes( $ymd, array $dests ) {
+        $notes       = [];
+        $alerts      = [];
+        $next_day    = [];
+        $checked_at  = '';
         $any_checked = false;
         foreach ( $dests as $d ) {
             $w = $d['weather'];
@@ -1700,13 +1860,7 @@ class FisHotel_Ship_Day {
             $notes[] = 'Notes written in WooCommerce by the Weather section on ' . $when;
         }
         $notes[] = 'Data: National Weather Service (api.weather.gov) via the FisHotel Tools Weather section nightly scan' . ( '' !== $checked_at ? '; last pulled ' . self::datetime_label( $checked_at ) : '' );
-
-        $h .= '<ul class="fh-sd-notes">';
-        foreach ( $notes as $n ) {
-            $h .= '<li>' . esc_html( $n ) . '</li>';
-        }
-        $h .= '</ul></section>';
-        return $h;
+        return $notes;
     }
 
     /** 'Y-m-d H:i:s' (site-local, as the Weather section stores it) → 'l, F j, g:i a'. */

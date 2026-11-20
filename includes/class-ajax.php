@@ -1767,4 +1767,23 @@ trait FisHotel_Ajax {
         wp_send_json_success( $result );
     }
 
+    /**
+     * "Print the day's paperwork" (10.35): the plan for one delivery date —
+     * boxes in pick-list order, each order's invoice link (the invoice plugin's
+     * own), the static PDFs, the product sheets and the two print pages. The
+     * browser fetches the invoices and makes the two files. Reads only.
+     * POST: delivery_date (Y-m-d). Capability and nonce as the Ship Day page.
+     */
+    public function ajax_ship_day_paperwork() {
+        if ( ! current_user_can( FisHotel_Ship_Day::CAPABILITY ) || ! wp_verify_nonce( (string) ( $_POST['nonce'] ?? '' ), FisHotel_Ship_Day_Paperwork::PLAN_ACTION ) ) {
+            wp_send_json_error( [ 'message' => 'Unauthorized.' ] );
+        }
+        $date = sanitize_text_field( wp_unslash( (string) ( $_POST['delivery_date'] ?? '' ) ) );
+        $plan = FisHotel_Ship_Day_Paperwork::plan( $date );
+        if ( is_wp_error( $plan ) ) {
+            wp_send_json_error( [ 'message' => $plan->get_error_message() ] );
+        }
+        wp_send_json_success( $plan );
+    }
+
 }

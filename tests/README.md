@@ -6,6 +6,7 @@ plugin zip ships this folder).
 
 ```bash
 for t in tests/*.php; do php "$t" || break; done
+for t in tests/*.js; do node "$t" || break; done
 ```
 
 | Test | Covers |
@@ -14,8 +15,11 @@ for t in tests/*.php; do php "$t" || break; done
 | `order-meta-test.php` | `FisHotel_Order_Meta` through the WooCommerce order API, and a source scan that fails when raw post-meta calls on orders come back (see `docs/HPOS.md`) |
 | `ship-day-test.php` | The Ship Day pick list: invoice lines in every shape, classify(), weather flags, the "not checked" weather line (Weather off / on but not checked yet / checked), bags and confirmed boxes |
 | `ship-day-home-test.php` | Ship Day's own page (10.34): the menu with the Misc plugin (FisHotel Tools → Ship Day right after Today, the Misc plugin's old-tab entry dropped) and without it (hidden page, Group Orders → Group-order invoices highlighted), the old tab's one-line pointer, the page's screen and `?date=`, the AJAX build returning exactly `render()` and recording "built", and the Today line's states (ship day not built / built / not a ship day), its filter, capability, per-request cache and "Open Ship Day" button |
+| `ship-day-paperwork-test.php` | "Print the day's paperwork" (10.35), the server half: the settings (Media Library PDFs only, label count 1–20, default 4), the file names (`BROTHER_shipday_<ship date>.pdf` / `RX106HD_shipday_<ship date>.pdf`), "Invoice" product detection, product sheet lines, and the plan — boxes in the pick list's order, a combined box's live source orders only (never the wrapper, never a dead source), only Processing / Fulfillment boxes with a fish or dry-goods row get paperwork (on-hold, weather HOLD, all-shipped and EverythingAquatic-only boxes are warnings), missing or over-20 MB settings files and the invoice plugin absent as plain warnings, the invoice plugin's own link per order and never a document made or numbered by the plan, the print pages cell for cell as the pick list prints them; the AJAX nonce and capability, the settings form (capability, nonce, saved), the button beside Build Ship Day and the scripts loaded from the plugin only |
+| `ship-day-paperwork-js-test.js` | The browser half under node (`assists/ship-day/paperwork.js` + the vendored pdf-lib): both files page by page in box order (invoices then one acclimation sheet per box, then the pick list and weather overview; labels × the count then product sheets), a non-PDF or failed invoice skipped with a warning, missing static files, the invoice plugin absent, the label count, letters the print font lacks, and a 60-box day staying small (static PDFs shared, not copied per box) |
 | `hook-callbacks-test.php` | A static scan (no plugin code is run): every `add_action` / `add_filter` / `remove_*` / `add_shortcode` / `register_*_hook` callback and every other `[ $this, 'x' ]` / `[ __CLASS__, 'x' ]` literal names a method or function the plugin defines. `$this` inside a trait is `FisHotel_Batch_Manager`, so a hook in `class-admin.php` may point at a method in `class-ajax.php`. A hook that names a missing method is a fatal error the moment it fires, so a typo fails here instead of on the live site. A self-check proves the scanner still reports each kind of broken callback. |
 
 GitHub Actions (`.github/workflows/lint.yml`) runs `php -l` on every PHP
-file under PHP 7.4 and 8.3 and every test under 8.3, on each push to `main`
-and each pull request.
+file under PHP 7.4 and 8.3 and every PHP test under 8.3, and `node --check`
+plus every `tests/*.js` under node 20, on each push to `main` and each pull
+request.
