@@ -395,7 +395,7 @@ check( 'across the DST change and month ends', 'BROTHER_shipday_2026-10-31.pdf' 
 check( 'no date, no names', null === FisHotel_Ship_Day_Paperwork::file_names( '2026-02-30' ) && null === FisHotel_Ship_Day_Paperwork::file_names( '' ) );
 
 section( '"Invoice" products: which get a product sheet' );
-check( 'is_invoice_name(): the word Invoice in any case, not a word that merely ends in it', FisHotel_Ship_Day_Paperwork::is_invoice_name( 'Invoice #3 - Sam' ) && FisHotel_Ship_Day_Paperwork::is_invoice_name( 'Group order invoice' ) && FisHotel_Ship_Day_Paperwork::is_invoice_name( 'INVOICES' ) && ! FisHotel_Ship_Day_Paperwork::is_invoice_name( 'Hectors Goby' ) && ! FisHotel_Ship_Day_Paperwork::is_invoice_name( 'Reinvoiced tang' ) && ! FisHotel_Ship_Day_Paperwork::is_invoice_name( [ 'Invoice' ] ) );
+check( 'is_invoice_name(): "Invoice" anywhere in the name, any case — also inside a word, as the old routine matched', FisHotel_Ship_Day_Paperwork::is_invoice_name( 'Invoice #3 - Sam' ) && FisHotel_Ship_Day_Paperwork::is_invoice_name( 'Group order invoice' ) && FisHotel_Ship_Day_Paperwork::is_invoice_name( 'INVOICES' ) && FisHotel_Ship_Day_Paperwork::is_invoice_name( 'FishInvoice 12' ) && ! FisHotel_Ship_Day_Paperwork::is_invoice_name( 'Hectors Goby' ) && ! FisHotel_Ship_Day_Paperwork::is_invoice_name( 'Invo ice' ) && ! FisHotel_Ship_Day_Paperwork::is_invoice_name( [ 'Invoice' ] ) );
 $lines = [
     [ 'name' => 'Hectors Goby', 'product_name' => 'Hectors Goby', 'product_id' => 10, 'qty' => 1, 'meta' => [] ],
     [ 'name' => 'Invoice - Sam', 'product_name' => 'Invoice - Sam', 'product_id' => 71, 'qty' => 1, 'meta' => [] ],
@@ -417,17 +417,37 @@ check( 'plain lines, the "Description" heading dropped, blanks skipped', [ 'Goby
 check( 'empty description → no lines', [] === FisHotel_Ship_Day_Paperwork::sheet_lines( '  ' ) );
 check( 'price_text(): wc_price() HTML → "$125.00"', '$125.00' === FisHotel_Ship_Day_Paperwork::price_text( wc_price( 125 ) ) );
 
+section( 'which boxes get paperwork: Processing / Fulfillment, not held, something to box' );
+$fish_row = [ 'kind' => 'fish', 'qty' => 1 ];
+$dry_row  = [ 'kind' => 'dry', 'qty' => 2 ];
+$ok_wx    = [ 'status' => 'checked', 'action' => 'heat_pack', 'at_line' => false ];
+check( 'processing / fulfillment (with or without wc-) with a fish or a dry-goods row: printed', '' === FisHotel_Ship_Day_Paperwork::box_skip( 'processing', [ 'rows' => [ $fish_row ], 'weather' => $ok_wx ] ) && '' === FisHotel_Ship_Day_Paperwork::box_skip( 'wc-fulfillment', [ 'rows' => [ $dry_row ], 'weather' => [ 'status' => 'not_checked' ] ] ) );
+check( 'on-hold (or any other status the pick list is filtered to show): held', 'held' === FisHotel_Ship_Day_Paperwork::box_skip( 'on-hold', [ 'rows' => [ $fish_row ], 'weather' => $ok_wx ] ) && 'held' === FisHotel_Ship_Day_Paperwork::box_skip( 'wc-pending', [ 'rows' => [ $fish_row ] ] ) && 'held' === FisHotel_Ship_Day_Paperwork::box_skip( '', [ 'rows' => [ $fish_row ] ] ) );
+check( 'weather HOLD (cold or hot): held; a high exactly on a band line stays the owner\'s call and is printed', 'weather_hold' === FisHotel_Ship_Day_Paperwork::box_skip( 'processing', [ 'rows' => [ $fish_row ], 'weather' => [ 'status' => 'checked', 'action' => 'hold_cold', 'at_line' => false ] ] ) && 'weather_hold' === FisHotel_Ship_Day_Paperwork::box_skip( 'processing', [ 'rows' => [ $fish_row ], 'weather' => [ 'status' => 'checked', 'action' => 'hold_hot' ] ] ) && '' === FisHotel_Ship_Day_Paperwork::box_skip( 'processing', [ 'rows' => [ $fish_row ], 'weather' => [ 'status' => 'checked', 'action' => 'hold_cold', 'at_line' => true ] ] ) && '' === FisHotel_Ship_Day_Paperwork::box_skip( 'processing', [ 'rows' => [ $fish_row ], 'weather' => [ 'status' => 'not_checked', 'action' => 'hold_cold' ] ] ) );
+check( 'no rows, only EverythingAquatic rows, or only zero-qty "check" rows: nothing to ship', 'nothing_to_ship' === FisHotel_Ship_Day_Paperwork::box_skip( 'processing', [ 'rows' => [] ] ) && 'nothing_to_ship' === FisHotel_Ship_Day_Paperwork::box_skip( 'processing', [ 'rows' => [ [ 'kind' => 'ea', 'qty' => 3 ] ] ] ) && 'nothing_to_ship' === FisHotel_Ship_Day_Paperwork::box_skip( 'processing', [ 'rows' => [ [ 'kind' => 'dry', 'qty' => 0 ] ] ] ) && '' === FisHotel_Ship_Day_Paperwork::box_skip( 'processing', [ 'rows' => [ [ 'kind' => 'ea', 'qty' => 3 ], $dry_row ] ] ) );
+check( 'each reason has a plain warning', 'Order #9: held (on hold) — no paperwork for this box.' === FisHotel_Ship_Day_Paperwork::box_warning( 'held', 'Order #9', 'wc-on-hold' ) && 0 === strpos( FisHotel_Ship_Day_Paperwork::box_warning( 'weather_hold', 'Order #9' ), 'Order #9: held for weather (HOLD)' ) && 0 === strpos( FisHotel_Ship_Day_Paperwork::box_warning( 'nothing_to_ship', 'Order #9' ), 'Order #9: nothing left to box' ) );
+
 /* ── The plan ─────────────────────────────────────────────────────── */
 
 $goby  = new FH_P_Product( 10, 'Hectors Goby' );
 $prazi = new FH_P_Product( 12, 'PraziPro' );
+$eafood = new FH_P_Product( 13, 'Coral food (EverythingAquatic)' );
+/** The theme's EverythingAquatic drop-ship test: product 13 only. */
+function fishotel_is_ea_fulfilled_product( $pid, $vid = 0 ) {
+    return 13 === (int) $pid;
+}
 $inv71 = new FH_P_Product( 71, 'Invoice - Sam', '<ul><li>Hectors Goby x1 &#8212; $39</li><li>Yellow Tang x1 &#8212; $86</li></ul>' );
-$GLOBALS['fh_products'] = [ 10 => $goby, 12 => $prazi, 71 => $inv71 ];
+$GLOBALS['fh_products'] = [ 10 => $goby, 12 => $prazi, 13 => $eafood, 71 => $inv71 ];
 $day = [ '_fishotel_shipping_date' => '2026-11-20' ];
 $GLOBALS['fh_orders'] = [
-    // pick list order is order ID: 101, 102, 104 (wrapper), 105 (dead wrapper)
+    // pick list order is order ID: 101, 102 (on hold), 103, 104 (wrapper), 105 (dead wrapper),
+    // 107 (all shipped), 108 (weather HOLD), 109 (EverythingAquatic only)
     101 => new FH_P_Order( 101, 'processing', $day, [ 1 => new FH_P_Item( 1, 'Hectors Goby', 2, $goby ) ] ),
     102 => new FH_P_Order( 102, 'on-hold', $day, [ 1 => new FH_P_Item( 1, 'Invoice - Sam', 1, $inv71 ), 2 => new FH_P_Item( 2, 'PraziPro', 1, $prazi ) ] ),
+    103 => new FH_P_Order( 103, 'processing', $day, [ 1 => new FH_P_Item( 1, 'Invoice - Sam', 1, $inv71 ), 2 => new FH_P_Item( 2, 'PraziPro', 1, $prazi ) ] ),
+    107 => new FH_P_Order( 107, 'processing', $day, [ 1 => new FH_P_Item( 1, 'Hectors Goby', 1, $goby, [ '_fishotel_line_status' => 'shipped' ] ), 2 => new FH_P_Item( 2, 'Invoice - Sam', 1, $inv71, [ '_fishotel_line_status' => 'shipped' ] ) ] ),
+    108 => new FH_P_Order( 108, 'processing', $day + [ '_fh_weather_checked_for' => '2026-11-20', '_fh_weather_action' => 'hold_cold', '_fh_weather_high' => '24' ], [ 1 => new FH_P_Item( 1, 'Invoice - Sam', 1, $inv71 ) ] ),
+    109 => new FH_P_Order( 109, 'processing', $day, [ 1 => new FH_P_Item( 1, 'Coral food (EverythingAquatic)', 1, $eafood ) ] ),
     104 => new FH_P_Order( 104, 'fulfillment', $day + [ '_fishotel_is_fulfillment' => '1', '_fishotel_fulfillment_sources' => '201,202,203' ], [ 1 => new FH_P_Item( 1, 'Copy of a fish', 1, $goby ) ] ),
     105 => new FH_P_Order( 105, 'fulfillment', $day + [ '_fishotel_is_fulfillment' => '1', '_fishotel_fulfillment_sources' => '204' ], [ 1 => new FH_P_Item( 1, 'Copy of a dead fish', 1, $goby ) ] ),
     201 => new FH_P_Order( 201, 'processing', [ '_fishotel_fulfilled_by_order' => '104' ], [ 1 => new FH_P_Item( 1, 'Hectors Goby', 1, $goby ) ] ),
@@ -454,7 +474,7 @@ if ( true ) {
     class FH_WPO_Endpoint {
         public function get_document_link( $order, $type ) {
             $GLOBALS['fh_wpo_link_calls'][] = [ $order->get_id(), $type ];
-            if ( 102 === $order->get_id() && ! empty( $GLOBALS['fh_wpo_no_link_102'] ) ) {
+            if ( 103 === $order->get_id() && ! empty( $GLOBALS['fh_wpo_no_link_103'] ) ) {
                 return '';
             }
             return esc_url( 'https://example.test/wp-admin/admin-ajax.php?action=generate_wpo_wcpdf&document_type=' . $type . '&order_ids=' . $order->get_id() . '&access_key=nonce-generate_wpo_wcpdf' );
@@ -478,14 +498,17 @@ foreach ( $m[1] as $l ) {
     $labels_in_pick[] = html_entity_decode( $l, ENT_QUOTES );
 }
 $box_labels = array_map( function ( $b ) { return $b['label']; }, $plan['boxes'] );
-check( 'box order = the pick list\'s order (the box whose sources are all dead is on the list but gets no paperwork)', [ 'Order #101', 'Order #102', 'Order #104 (combined: #201, #203)' ] === $box_labels && array_values( array_diff( $labels_in_pick, [ 'Order #105' ] ) ) === $box_labels, json_encode( [ $box_labels, $labels_in_pick ] ) );
+check( 'box order = the pick list\'s order (held, nothing-to-box and dead-source boxes are on the list but get no paperwork)', [ 'Order #101', 'Order #103', 'Order #104 (combined: #201, #203)' ] === $box_labels && array_values( array_diff( $labels_in_pick, [ 'Order #102', 'Order #105', 'Order #107', 'Order #108', 'Order #109' ] ) ) === $box_labels && 8 === count( $labels_in_pick ), json_encode( [ $box_labels, $labels_in_pick ] ) );
 check( 'one invoice per order, the plugin\'s own link with its &#038; decoded back to &', 'https://example.test/wp-admin/admin-ajax.php?action=generate_wpo_wcpdf&document_type=invoice&order_ids=101&access_key=nonce-generate_wpo_wcpdf' === $plan['boxes'][0]['invoices'][0]['url'] && 1 === count( $plan['boxes'][1]['invoices'] ) );
+check( 'an on-hold order: no invoice (it would be numbered for good), no labels, no sheet — a plain warning', 1 === count( preg_grep( '/^Order #102: held \(on hold\) — no paperwork for this box\.$/', $plan['warnings'] ) ), json_encode( $plan['warnings'] ) );
+check( 'a box the weather holds: no paperwork, a plain warning', 1 === count( preg_grep( '/^Order #108: held for weather \(HOLD\)/', $plan['warnings'] ) ) );
+check( 'every line already shipped, or only EverythingAquatic lines: no paperwork, a plain warning', 1 === count( preg_grep( '/^Order #107: nothing left to box/', $plan['warnings'] ) ) && 1 === count( preg_grep( '/^Order #109: nothing left to box/', $plan['warnings'] ) ) );
 check( 'combined box: each LIVE source order\'s invoice (201, 203) — never the wrapper 104, never the cancelled 202', [ 201, 203 ] === array_map( function ( $i ) { return $i['order_id']; }, $plan['boxes'][2]['invoices'] ) );
-check( 'the invoice plugin was asked for links only for those orders', [ [ 101, 'invoice' ], [ 102, 'invoice' ], [ 201, 'invoice' ], [ 203, 'invoice' ] ] === $GLOBALS['fh_wpo_link_calls'], json_encode( $GLOBALS['fh_wpo_link_calls'] ) );
+check( 'the invoice plugin was asked for links only for those orders (never 102, 107, 108, 109)', [ [ 101, 'invoice' ], [ 103, 'invoice' ], [ 201, 'invoice' ], [ 203, 'invoice' ] ] === $GLOBALS['fh_wpo_link_calls'], json_encode( $GLOBALS['fh_wpo_link_calls'] ) );
 check( 'a wrapper whose every source is dead: no paperwork, a plain warning', 1 === count( preg_grep( '/^Order #105: every source order is cancelled, refunded or failed/', $plan['warnings'] ) ), json_encode( $plan['warnings'] ) );
 check( 'the settings files: both found, label count 3', 501 === $plan['acclimation']['id'] && 'https://example.test/wp-content/uploads/file-501.pdf' === $plan['acclimation']['url'] && 502 === $plan['labels']['id'] && 3 === $plan['label_copies'] );
 check( 'no warnings about the plugin or the files now', [] === preg_grep( '/not active|is chosen/', $plan['warnings'] ) );
-check( 'product sheets: box 102 and the combined box (via source 203) each get the "Invoice - Sam" sheet; box 101 none', [] === $plan['boxes'][0]['sheets'] && [ 71 ] === $plan['boxes'][1]['sheets'] && [ 71 ] === $plan['boxes'][2]['sheets'] );
+check( 'product sheets: box 103 and the combined box (via source 203) each get the "Invoice - Sam" sheet; box 101 none', [] === $plan['boxes'][0]['sheets'] && [ 71 ] === $plan['boxes'][1]['sheets'] && [ 71 ] === $plan['boxes'][2]['sheets'] );
 $sheet = ( (array) $plan['sheets'] )['71'] ?? null;
 check( 'the sheet: title, price, picture, description lines', is_array( $sheet ) && 'Invoice - Sam' === $sheet['title'] && '$125.00' === $sheet['price'] && 'https://example.test/wp-content/uploads/img-971-large.jpg' === $sheet['image'] && [ 'Hectors Goby x1 — $39', 'Yellow Tang x1 — $86' ] === $sheet['lines'], json_encode( $sheet ) );
 check( 'the plan never makes, numbers or saves an invoice, and writes no order', 0 === $GLOBALS['fh_wpo_doc_calls'] && 0 === $GLOBALS['fh_writes'] );
@@ -493,28 +516,40 @@ check( 'the plan JSON-encodes (what the AJAX reply carries)', false !== json_enc
 
 section( 'plan: the print pages are the pick list and weather overview, cell for cell' );
 $pages = $plan['pages'];
-check( 'pick list title and line', 'FisHotel Pick List' === $pages['pick']['title'] && false !== strpos( $pick, esc_html( $pages['pick']['title'] ) ) && 'Ship Thursday, November 19 • Deliver Friday, November 20 • 4 orders / 7 fish' === $pages['pick']['sub'] && false !== strpos( $pick, '4 orders / 7 fish' ), $pages['pick']['sub'] );
+check( 'pick list title and line', 'FisHotel Pick List' === $pages['pick']['title'] && false !== strpos( $pick, esc_html( $pages['pick']['title'] ) ) && 'Ship Thursday, November 19 • Deliver Friday, November 20 • 8 orders / 11 fish' === $pages['pick']['sub'] && false !== strpos( $pick, '8 orders / 11 fish' ), $pages['pick']['sub'] );
 $rows_text = array_map( function ( $r ) { return $r['qty'] . ' ' . $r['fish'][0]['t']; }, $pages['pick']['rows'] );
 preg_match_all( '/<td class="fh-sd-col-qty">(\d+)<\/td><td>([^<]+)/', $pick, $hm, PREG_SET_ORDER );
 $html_rows = array_map( function ( $x ) { return $x[1] . ' ' . html_entity_decode( trim( $x[2] ), ENT_QUOTES ); }, $hm );
 check( 'every pick row in the same order with the same qty and name as the printed list', $rows_text === $html_rows, json_encode( [ $rows_text, $html_rows ] ) );
 $first = array_values( array_filter( $pages['pick']['rows'], function ( $r ) { return $r['first']; } ) );
-check( 'order and destination only on a box\'s first row', 4 === count( $first ) && 'Order #104 (combined: #201, #203)' === $first[2]['order'][0]['t'] && [] === $pages['pick']['rows'][2]['order'] );
+check( 'order and destination only on a box\'s first row', 8 === count( $first ) && 'Order #104 (combined: #201, #203)' === $first[6]['order'][0]['t'] && [] === $pages['pick']['rows'][2]['order'] );
 check( 'the foot and legend read as printed', html_entity_decode( strip_tags( preg_replace( '/.*<p class="fh-sd-foot">(.*?)<\/p>.*/s', '$1', $pick ) ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) === $pages['pick']['foot'] && html_entity_decode( strip_tags( preg_replace( '/.*<p class="fh-sd-legend">(.*?)<\/p>.*/s', '$1', $pick ) ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ) === $pages['pick']['legend'] );
-check( 'weather overview: title, chart line, one row per box (not checked → grey), the data note', 'Weather Overview — Delivery Friday, November 20' === $pages['weather']['title'] && FisHotel_Ship_Day::CHART_SUBTITLE === $pages['weather']['sub'] && 4 === count( $pages['weather']['rows'] ) && 'grey' === $pages['weather']['rows'][0]['tone'] && '#e6e6e6' === $pages['weather']['rows'][0]['fill'] && 'Not checked' === $pages['weather']['rows'][0]['cells'][5] && false !== strpos( end( $pages['weather']['notes'] ), 'National Weather Service' ) );
+check( 'weather overview: title, chart line, one row per box (the HOLD red, not checked grey), the data note', 'Weather Overview — Delivery Friday, November 20' === $pages['weather']['title'] && FisHotel_Ship_Day::CHART_SUBTITLE === $pages['weather']['sub'] && 8 === count( $pages['weather']['rows'] ) && 'red' === $pages['weather']['rows'][0]['tone'] && 'HOLD (cold)' === $pages['weather']['rows'][0]['cells'][5] && 'grey' === $pages['weather']['rows'][1]['tone'] && '#e6e6e6' === $pages['weather']['rows'][1]['fill'] && 'Not checked' === $pages['weather']['rows'][1]['cells'][5] && false !== strpos( end( $pages['weather']['notes'] ), 'National Weather Service' ) );
 
 section( 'plan: edges' );
-$GLOBALS['fh_wpo_no_link_102'] = true;
+$GLOBALS['fh_wpo_no_link_103'] = true;
 $plan2 = FisHotel_Ship_Day_Paperwork::plan( '2026-11-20' );
-unset( $GLOBALS['fh_wpo_no_link_102'] );
-check( 'the plugin gives no link for an order: that invoice is left out with a warning, the box stays', [] === $plan2['boxes'][1]['invoices'] && 1 === count( preg_grep( '/^Order #102: the invoice plugin gave no invoice link/', $plan2['warnings'] ) ) );
+unset( $GLOBALS['fh_wpo_no_link_103'] );
+check( 'the plugin gives no link for an order: that invoice is left out with a warning, the box stays', [] === $plan2['boxes'][1]['invoices'] && 1 === count( preg_grep( '/^Order #103: the invoice plugin gave no invoice link/', $plan2['warnings'] ) ) );
 $GLOBALS['fh_options'] = [ 'fishotel_ship_day_paperwork' => [ 'acclimation_id' => 503, 'labels_id' => 504 ] ];
 $plan3 = FisHotel_Ship_Day_Paperwork::plan( '2026-11-20' );
 check( 'a chosen file that is not a PDF, or whose file is gone: skipped with the warning', null === $plan3['acclimation'] && null === $plan3['labels'] && 2 === count( preg_grep( '/is chosen \(or it is gone/', $plan3['warnings'] ) ) );
+$big = tempnam( sys_get_temp_dir(), 'fh-big' );
+$fh  = fopen( $big, 'wb' );
+fseek( $fh, FisHotel_Ship_Day_Paperwork::MAX_STATIC_BYTES ); // sparse: over 20 MB on paper, nothing on disk
+fwrite( $fh, '1' );
+fclose( $fh );
+$GLOBALS['fh_media'][505] = [ 'mime' => 'application/pdf', 'file' => $big, 'title' => 'Huge' ];
+$GLOBALS['fh_options']    = [ 'fishotel_ship_day_paperwork' => [ 'acclimation_id' => 501, 'labels_id' => 505 ] ];
+$plan3b = FisHotel_Ship_Day_Paperwork::plan( '2026-11-20' );
+unlink( $big );
+unset( $GLOBALS['fh_media'][505] );
+check( 'a chosen PDF over 20 MB: skipped with a plain warning (the browser would download it whole), the other file kept', 501 === $plan3b['acclimation']['id'] && null === $plan3b['labels'] && 1 === count( preg_grep( '/^The chosen shipping-labels PDF is over 20 MB — skipped\./', $plan3b['warnings'] ) ) && [] === preg_grep( '/is chosen \(or it is gone/', $plan3b['warnings'] ), json_encode( $plan3b['warnings'] ) );
+check( 'a PDF at the limit or under: kept', null !== FisHotel_Ship_Day_Paperwork::static_file( 502, $why ) && '' === $why );
 $GLOBALS['fh_orders'][203]->status = 'failed';
 $GLOBALS['fh_orders'][201]->status = 'cancelled';
 $plan4 = FisHotel_Ship_Day_Paperwork::plan( '2026-11-20' );
-check( 'the combined box loses its last live source: no paperwork for it', [ 'Order #101', 'Order #102' ] === array_map( function ( $b ) { return $b['label']; }, $plan4['boxes'] ) );
+check( 'the combined box loses its last live source: no paperwork for it', [ 'Order #101', 'Order #103' ] === array_map( function ( $b ) { return $b['label']; }, $plan4['boxes'] ) );
 $GLOBALS['fh_orders'][203]->status = 'processing';
 $GLOBALS['fh_orders'][201]->status = 'processing';
 $GLOBALS['fh_orders'][104]->meta['_fishotel_fulfillment_sources'] = '901,902';

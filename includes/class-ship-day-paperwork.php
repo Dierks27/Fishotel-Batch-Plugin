@@ -33,6 +33,12 @@
  * printing the paperwork twice re-uses the same number; this file never
  * creates, numbers or saves an invoice itself.
  *
+ * WHICH BOXES. Every box on the pick list, in its order, except: a box whose
+ * order is not Processing / Fulfillment (on-hold), one the weather holds, one
+ * with nothing left to box, and a combined box whose sources are all dead —
+ * each is a warning instead (box_skip()), so no invoice is numbered for a box
+ * that is not going out.
+ *
  * Nothing here writes an order, a note or order meta, and nothing is e-mailed.
  * The only write is this page's own option (the two Media Library PDFs and
  * the label count).
@@ -65,6 +71,15 @@ class FisHotel_Ship_Day_Paperwork {
 
     const PDF_MIME       = 'application/pdf';
     const PDF_LIST_LIMIT = 100;
+    /** A static PDF bigger than this is skipped with a warning (the browser downloads it whole). */
+    const MAX_STATIC_BYTES = 20971520; // 20 MB
+
+    /**
+     * Order statuses (unprefixed) whose boxes get paperwork — the old routine
+     * ran on Processing and Fulfillment only. The pick list also lists
+     * on-hold orders; those are held, so they get none.
+     */
+    const PRINT_STATUSES = [ 'processing', 'fulfillment' ];
 
     const LIB_HANDLE    = 'fishotel-pdf-lib';
     const LIB_VERSION   = '1.17.1';
@@ -126,9 +141,9 @@ class FisHotel_Ship_Day_Paperwork {
         ];
     }
 
-    /** Whether a product name is an "Invoice" product: the word Invoice in it, any case. */
+    /** Whether a product name is an "Invoice" product: "Invoice" anywhere in it, any case (as the old routine matched). */
     public static function is_invoice_name( $name ) {
-        return is_scalar( $name ) && 1 === preg_match( '/\binvoice/i', (string) $name );
+        return is_scalar( $name ) && false !== stripos( (string) $name, 'invoice' );
     }
 
     /**
@@ -205,8 +220,53 @@ class FisHotel_Ship_Day_Paperwork {
         return FisHotel_Ship_Day::clean_text( (string) $html );
     }
 
+    /**
+     * Why a box on the pick list gets no paperwork, or '' when it gets it:
+     * 'held' (the order is not Processing / Fulfillment, e.g. on-hold),
+     * 'weather_hold' (the weather says HOLD — wait / no ship; a high exactly
+     * on a band line stays the owner's call and is printed) or
+     * 'nothing_to_ship' (no fish or dry-goods row left: every line already
+     * shipped, is drop-shipped by EverythingAquatic, never ships or is
+     * refunded). Invoices are numbered for good when first made, so a box
+     * that is not going out today must not get one.
+     *
+     * @param string $status The box's order status (the wrapper's for a combined box).
+     * @param array  $dest   FisHotel_Ship_Day::build_destination() output.
+     */
+    public static function box_skip( $status, array $dest ) {
+        $status = (string) $status;
+        if ( 0 === strpos( $status, 'wc-' ) ) {
+            $status = substr( $status, 3 );
+        }
+        if ( ! in_array( $status, self::PRINT_STATUSES, true ) ) {
+            return 'held';
+        }
+        $w = is_array( $dest['weather'] ?? null ) ? $dest['weather'] : [];
+        if ( 'checked' === (string) ( $w['status'] ?? '' ) && empty( $w['at_line'] ) && in_array( (string) ( $w['action'] ?? '' ), [ 'hold_cold', 'hold_hot' ], true ) ) {
+            return 'weather_hold';
+        }
+        foreach ( (array) ( $dest['rows'] ?? [] ) as $row ) {
+            $kind = (string) ( $row['kind'] ?? '' );
+            if ( ( FisHotel_Ship_Day::KIND_FISH === $kind || FisHotel_Ship_Day::KIND_DRY === $kind ) && (int) ( $row['qty'] ?? 0 ) > 0 ) {
+                return '';
+            }
+        }
+        return 'nothing_to_ship';
+    }
+
     /** One plain warning line per problem; never a failure. */
-    public static function box_warning( $state, $label ) {
+    public static function box_warning( $state, $label, $status = '' ) {
+        if ( 'held' === $state ) {
+            $status = (string) $status;
+            $status = 0 === strpos( $status, 'wc-' ) ? substr( $status, 3 ) : $status;
+            return $label . ': held (' . ( '' !== $status ? str_replace( '-', ' ', $status ) : 'not Processing or Fulfillment' ) . ') — no paperwork for this box.';
+        }
+        if ( 'weather_hold' === $state ) {
+            return $label . ': held for weather (HOLD) — no paperwork for this box.';
+        }
+        if ( 'nothing_to_ship' === $state ) {
+            return $label . ': nothing left to box (every line already shipped, drop-shipped by EverythingAquatic or refunded) — no paperwork for this box.';
+        }
         if ( 'no_live_source' === $state ) {
             return $label . ': every source order is cancelled, refunded or failed — nothing ships, so no paperwork for this box.';
         }
@@ -233,12 +293,14 @@ class FisHotel_Ship_Day_Paperwork {
 
     /**
      * A chosen static PDF, or null when none is chosen, it is gone from the
-     * Media Library or is not a PDF.
+     * Media Library, is not a PDF or is over MAX_STATIC_BYTES ($problem is
+     * then 'too_big', else 'missing').
      *
      * @return array{id:int,url:string,title:string}|null
      */
-    public static function static_file( $id ) {
-        $id = (int) $id;
+    public static function static_file( $id, &$problem = null ) {
+        $problem = 'missing';
+        $id      = (int) $id;
         if ( $id <= 0 || ! self::is_pdf_attachment( $id ) || ! function_exists( 'wp_get_attachment_url' ) ) {
             return null;
         }
@@ -247,7 +309,13 @@ class FisHotel_Ship_Day_Paperwork {
             if ( ! is_string( $path ) || '' === $path || ! file_exists( $path ) ) {
                 return null;
             }
+            $size = @filesize( $path );
+            if ( false !== $size && $size > self::MAX_STATIC_BYTES ) {
+                $problem = 'too_big';
+                return null;
+            }
         }
+        $problem = '';
         $url = (string) wp_get_attachment_url( $id );
         if ( '' === $url ) {
             return null;
@@ -371,13 +439,14 @@ class FisHotel_Ship_Day_Paperwork {
         if ( ! $wpo ) {
             $warnings[] = 'The "PDF Invoices & Packing Slips for WooCommerce" plugin is not active, so the Brother file has no invoices — only the acclimation sheets, the pick list and the weather overview.';
         }
-        $acclimation = self::static_file( $settings['acclimation_id'] );
+        $too_big     = ' is over ' . (int) ( self::MAX_STATIC_BYTES / 1048576 ) . ' MB — skipped. Is it the right file? Choose it under Paperwork settings.';
+        $acclimation = self::static_file( $settings['acclimation_id'], $problem );
         if ( ! $acclimation ) {
-            $warnings[] = 'No acclimation sheet PDF is chosen (or it is gone from the Media Library) — skipped. Choose it under Paperwork settings.';
+            $warnings[] = 'too_big' === $problem ? 'The chosen acclimation sheet PDF' . $too_big : 'No acclimation sheet PDF is chosen (or it is gone from the Media Library) — skipped. Choose it under Paperwork settings.';
         }
-        $labels = self::static_file( $settings['labels_id'] );
+        $labels = self::static_file( $settings['labels_id'], $problem );
         if ( ! $labels ) {
-            $warnings[] = 'No shipping-labels PDF is chosen (or it is gone from the Media Library) — skipped. Choose it under Paperwork settings.';
+            $warnings[] = 'too_big' === $problem ? 'The chosen shipping-labels PDF' . $too_big : 'No shipping-labels PDF is chosen (or it is gone from the Media Library) — skipped. Choose it under Paperwork settings.';
         }
 
         $loaded = FisHotel_Ship_Day::load_orders( $ymd );
@@ -392,12 +461,17 @@ class FisHotel_Ship_Day_Paperwork {
             $dest    = FisHotel_Ship_Day::build_destination( $order, $ymd );
             $dests[] = $dest;
             $in_box  = FisHotel_Ship_Day::box_orders( $order );
-            $note    = self::box_warning( $in_box['state'], $dest['label'] );
+            $status  = method_exists( $order, 'get_status' ) ? (string) $order->get_status() : '';
+            // Held, nothing to box, or every source dead: on the pick list,
+            // but no invoice (it would be numbered for good), labels or sheet.
+            $skip = 'no_live_source' === $in_box['state'] ? 'no_live_source' : self::box_skip( $status, $dest );
+            if ( '' !== $skip ) {
+                $warnings[] = self::box_warning( $skip, $dest['label'], $status );
+                continue;
+            }
+            $note = self::box_warning( $in_box['state'], $dest['label'] );
             if ( '' !== $note ) {
                 $warnings[] = $note;
-            }
-            if ( 'no_live_source' === $in_box['state'] ) {
-                continue; // nothing ships in this box
             }
             $invoices = [];
             $products = [];
@@ -518,6 +592,7 @@ class FisHotel_Ship_Day_Paperwork {
         $h .= '<p style="margin:8px 0;"><label for="fh-sd-label-copies" style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Shipping labels per box</label>';
         $h .= '<input type="number" id="fh-sd-label-copies" name="label_copies" min="1" max="' . (int) self::MAX_COPIES . '" value="' . (int) $settings['label_copies'] . '" style="width:80px;padding:5px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;"></p>';
         $h .= '<p style="color:#aaa;font-size:12px;margin:6px 0;">Upload the PDFs once under <a href="' . esc_url( admin_url( 'media-new.php' ) ) . '" style="color:#2986cc;">Media &rarr; Add New</a>, then choose them here. A file that is not chosen is skipped with a warning.</p>';
+        $h .= '<p style="color:#aaa;font-size:12px;margin:6px 0;">Only Processing and Fulfillment boxes with something to box get paperwork; on-hold boxes, weather HOLD boxes and boxes with nothing left to ship are listed as warnings instead. The pick list and weather overview at the end of the Brother file are drawn from the same rows and words as the printed pick list, so they read the same but the layout is close, not identical.</p>';
         $h .= '<button type="submit" style="background:#1e6fa5;color:#fff;font-weight:700;border:none;border-radius:6px;padding:6px 18px;font-size:13px;cursor:pointer;">Save paperwork settings</button>';
         $h .= '</form></details>';
         return $h;
