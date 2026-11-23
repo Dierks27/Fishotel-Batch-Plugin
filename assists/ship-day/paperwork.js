@@ -1,5 +1,6 @@
 /**
- * Ship Day → "Print the day's paperwork" (FisHotel Batch Manager 10.35).
+ * Ship Day → "Print the day's paperwork" (FisHotel Batch Manager 10.35; the
+ * Print Watcher hand-over 10.36).
  *
  * Asks the server for the day's plan (FisHotel_Ship_Day_Paperwork::plan()),
  * then makes two PDF files in the browser with the vendored pdf-lib:
@@ -14,6 +15,12 @@
  * Invoices are fetched one at a time, in box order, and copied in as they
  * arrive, so no request is large and the page shows progress. A file that is
  * missing or cannot be read is skipped with a plain warning, never a failure.
+ *
+ * Each file gets its Open to print / Download links. Where the browser can be
+ * given the Print Watcher's folder (print-watcher.js, Chrome / Edge on the
+ * PC), the same bytes are also handed to its "Send to the printers" box; once
+ * a folder is chosen in this browser the two print tabs are no longer opened
+ * (the links still open them).
  *
  * makeFiles() takes its I/O as a parameter so tests can run it under node:
  *   node tests/ship-day-paperwork-js-test.js
@@ -637,6 +644,16 @@
             var filesEl = doc.getElementById('fh-sd-paperwork-files');
             var busy = false;
             var urls = [];
+            // "Send to the printers" (print-watcher.js). Absent or failing, the links below are all there is.
+            var sendEl = doc.getElementById('fh-sd-paperwork-send');
+            var watcher = null;
+            try {
+                if (sendEl && win.FisHotelPrintWatcher) {
+                    watcher = win.FisHotelPrintWatcher.mount(win, sendEl);
+                }
+            } catch (e) {
+                watcher = null;
+            }
 
             function status(text) {
                 statusEl.style.display = text ? 'block' : 'none';
@@ -719,9 +736,14 @@
                 filesEl.innerHTML = '';
                 filesEl.style.display = 'none';
                 showWarnings([]);
+                if (watcher) {
+                    watcher.clearFiles();
+                }
+                // With a Print Watcher folder chosen in this browser the files go there, so no print tabs.
+                var straight = !!(watcher && watcher.hasFolder());
                 // Opened now, while the click still counts, so the browser lets them open.
-                var tabB = win.open('', '_blank');
-                var tabR = win.open('', '_blank');
+                var tabB = straight ? null : win.open('', '_blank');
+                var tabR = straight ? null : win.open('', '_blank');
                 waitingTab(tabB, 'the Brother file');
                 waitingTab(tabR, 'the RX106HD file');
                 status('Planning the day...');
@@ -746,18 +768,26 @@
                         }
                         return makeFiles(plan, browserIo(win), win.PDFLib, status).then(function (out) {
                             filesEl.style.display = 'block';
+                            var ready = [];
                             if (out.brother) {
                                 fileRow(plan.files.brother, out.brother, out.brotherPages, tabB, 'Brother');
+                                ready.push({ printer: 'Brother', name: plan.files.brother, bytes: out.brother });
                             } else {
                                 closeTab(tabB);
                             }
                             if (out.rx) {
                                 fileRow(plan.files.rx, out.rx, out.rxPages, tabR, 'RX106HD');
+                                ready.push({ printer: 'RX106HD', name: plan.files.rx, bytes: out.rx });
                             } else {
                                 closeTab(tabR);
                             }
                             showWarnings(out.warnings);
-                            status('Done: ' + plan.boxes.length + ' box' + (plan.boxes.length === 1 ? '' : 'es') + '. Each file opened in its own tab — press Print there once (or use the links below).');
+                            var done = 'Done: ' + plan.boxes.length + ' box' + (plan.boxes.length === 1 ? '' : 'es') + '. ';
+                            status(done + (straight ? 'The files are ready below.' : 'Each file opened in its own tab — press Print there once (or use the links below).'));
+                            if (watcher) {
+                                // The very bytes the links carry. Sent by itself only with the tick on and the folder's permission held.
+                                watcher.setFiles(ready);
+                            }
                         });
                     })
                     .catch(function (e) {

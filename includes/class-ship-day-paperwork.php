@@ -39,6 +39,22 @@
  * each is a warning instead (box_skip()), so no invoice is numbered for a box
  * that is not going out.
  *
+ * THE PRINT WATCHER (10.36). The owner's PC runs the FisHotel Print Watcher:
+ * a program that prints every PDF dropped into Documents\FisHotel-PrintQueue
+ * on the printer its name starts with (BROTHER_ / RX106HD_) and then deletes
+ * it. The two files are named for it, so in Chrome / Edge on that PC the page
+ * offers "Send to the printers" (assists/ship-day/print-watcher.js): the
+ * browser is given that folder once (File System Access API; the folder is
+ * kept in that browser's IndexedDB, the tick and "already sent" in its
+ * localStorage) and the page writes both files there — each under a temp name
+ * first and then renamed, so the Print Watcher can never read a half-written
+ * file — then looks in the folder for about 90 seconds and says whether the
+ * Print Watcher took them. A file that was already sent, or is still in the
+ * folder, is only sent again after a question. The server has no part in it:
+ * no request, no option, no capability; the plan, the two files' bytes and
+ * names, and the Open to print / Download links are as before, and a browser
+ * without that API only shows one quiet line.
+ *
  * Nothing here writes an order, a note or order meta, and nothing is e-mailed.
  * The only write is this page's own option (the two Media Library PDFs and
  * the label count).
@@ -84,6 +100,8 @@ class FisHotel_Ship_Day_Paperwork {
     const LIB_HANDLE    = 'fishotel-pdf-lib';
     const LIB_VERSION   = '1.17.1';
     const SCRIPT_HANDLE = 'fishotel-ship-day-paperwork';
+    /** "Send to the printers": the Print Watcher folder, in the browser only (10.36). */
+    const WATCHER_HANDLE = 'fishotel-ship-day-print-watcher';
 
     /* ─────────────────────────────────────────────
      *  Pure helpers (no WordPress)
@@ -551,13 +569,15 @@ class FisHotel_Ship_Day_Paperwork {
         return $out;
     }
 
-    /** Load the PDF library and the button's script on the Ship Day page only. */
+    /** Load the PDF library, the Print Watcher hand-over and the button's script on the Ship Day page only. */
     public static function enqueue() {
         if ( ! function_exists( 'wp_enqueue_script' ) || ! function_exists( 'plugins_url' ) || ! defined( 'FISHOTEL_PLUGIN_FILE' ) ) {
             return;
         }
         wp_enqueue_script( self::LIB_HANDLE, plugins_url( 'assists/vendor/pdf-lib/pdf-lib.min.js', FISHOTEL_PLUGIN_FILE ), [], self::LIB_VERSION, true );
-        wp_enqueue_script( self::SCRIPT_HANDLE, plugins_url( 'assists/ship-day/paperwork.js', FISHOTEL_PLUGIN_FILE ), [ self::LIB_HANDLE ], defined( 'FISHOTEL_VERSION' ) ? FISHOTEL_VERSION : false, true );
+        $ver = defined( 'FISHOTEL_VERSION' ) ? FISHOTEL_VERSION : false;
+        wp_enqueue_script( self::WATCHER_HANDLE, plugins_url( 'assists/ship-day/print-watcher.js', FISHOTEL_PLUGIN_FILE ), [], $ver, true );
+        wp_enqueue_script( self::SCRIPT_HANDLE, plugins_url( 'assists/ship-day/paperwork.js', FISHOTEL_PLUGIN_FILE ), [ self::LIB_HANDLE, self::WATCHER_HANDLE ], $ver, true );
     }
 
     /** The button beside Build Ship Day. Its request carries its own nonce. */
@@ -566,9 +586,11 @@ class FisHotel_Ship_Day_Paperwork {
     }
 
     /**
-     * Progress + result area, and the settings form (admin-only: the page is
-     * manage_options already, and the form posts to admin-post.php with its
-     * own nonce).
+     * Progress + result area, the "Send to the printers" box (empty here:
+     * print-watcher.js fills it, in the browser only, and leaves it hidden
+     * where it has nothing to say), and the settings form (admin-only: the
+     * page is manage_options already, and the form posts to admin-post.php
+     * with its own nonce).
      *
      * @param array      $settings normalize_settings() output.
      * @param array      $choices  pdf_choices() output.
@@ -578,6 +600,7 @@ class FisHotel_Ship_Day_Paperwork {
         $h  = '<div id="fh-sd-paperwork-status" style="display:none;margin:4px 0 10px;font-size:13px;color:#ddd;"></div>';
         $h .= '<ul id="fh-sd-paperwork-warnings" style="display:none;margin:0 0 10px 18px;padding:0;font-size:13px;color:#f0c060;"></ul>';
         $h .= '<div id="fh-sd-paperwork-files" style="display:none;margin:0 0 12px;font-size:13px;"></div>';
+        $h .= '<div id="fh-sd-paperwork-send" style="display:none;margin:0 0 12px;padding:10px 12px;border:1px solid #444;border-radius:6px;font-size:13px;color:#ddd;"></div>';
 
         $h .= '<details style="margin-top:6px;color:#ddd;font-size:13px;"' . ( $saved ? ' open' : '' ) . '>';
         $h .= '<summary style="cursor:pointer;color:#2986cc;">Paperwork settings</summary>';
@@ -592,6 +615,7 @@ class FisHotel_Ship_Day_Paperwork {
         $h .= '<p style="margin:8px 0;"><label for="fh-sd-label-copies" style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Shipping labels per box</label>';
         $h .= '<input type="number" id="fh-sd-label-copies" name="label_copies" min="1" max="' . (int) self::MAX_COPIES . '" value="' . (int) $settings['label_copies'] . '" style="width:80px;padding:5px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;"></p>';
         $h .= '<p style="color:#aaa;font-size:12px;margin:6px 0;">Upload the PDFs once under <a href="' . esc_url( admin_url( 'media-new.php' ) ) . '" style="color:#2986cc;">Media &rarr; Add New</a>, then choose them here. A file that is not chosen is skipped with a warning.</p>';
+        $h .= '<p style="color:#aaa;font-size:12px;margin:6px 0;">Print Watcher: in Chrome or Edge on the shop PC, <strong>Send to the printers</strong> puts the two files straight into the Print Watcher&rsquo;s folder (Documents &rarr; FisHotel-PrintQueue), and the Print Watcher prints each on its own printer. Choose the folder once; that browser remembers it (&ldquo;change&rdquo; picks another, &ldquo;forget&rdquo; stops using it). The Print Watcher must be running &mdash; the fish icon near the clock. Nothing about it is saved on the website, and the links to open or download each file stay as they are.</p>';
         $h .= '<p style="color:#aaa;font-size:12px;margin:6px 0;">Only Processing and Fulfillment boxes with something to box get paperwork; on-hold boxes, weather HOLD boxes and boxes with nothing left to ship are listed as warnings instead. The pick list and weather overview at the end of the Brother file are drawn from the same rows and words as the printed pick list, so they read the same but the layout is close, not identical.</p>';
         $h .= '<button type="submit" style="background:#1e6fa5;color:#fff;font-weight:700;border:none;border-radius:6px;padding:6px 18px;font-size:13px;cursor:pointer;">Save paperwork settings</button>';
         $h .= '</form></details>';

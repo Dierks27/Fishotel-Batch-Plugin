@@ -49,7 +49,9 @@ jobs:
       - name: node --check the plugin's own scripts
         run: |
           set -e
-          node --check assists/ship-day/paperwork.js
+          for f in $(git ls-files 'assists/ship-day/*.js'); do
+            echo "== $f"; node --check "$f"
+          done
       - name: Tests (node)
         run: |
           set -e

@@ -157,7 +157,7 @@ function wp_enqueue_script( $handle, $src = '', $deps = [], $ver = false, $foote
     $GLOBALS['fh_scripts'][ $handle ] = [ 'src' => $src, 'deps' => $deps, 'ver' => $ver, 'footer' => $footer ];
 }
 define( 'FISHOTEL_PLUGIN_FILE', dirname( __DIR__ ) . '/fishotel-batch-manager.php' );
-define( 'FISHOTEL_VERSION', '10.35' );
+define( 'FISHOTEL_VERSION', '10.36' );
 
 /* Media Library: 501 and 502 are PDFs, 503 an image, 504 a PDF whose file is gone. */
 $GLOBALS['fh_media'] = [
@@ -618,7 +618,14 @@ check( 'the two selects list the Media Library PDFs (not the image), the saved o
 check( 'no "Saved." unless just saved', false === strpos( $page, '>Saved.<' ) );
 $_GET = [ 'page' => 'fishotel-ship-day', 'paperwork' => 'saved' ];
 check( '?paperwork=saved shows "Saved." with the settings open', false !== strpos( fh_capture( [ $host, 'render_ship_day_page' ] ), '<p style="color:#7bd88f;margin:8px 0;">Saved.</p>' ) );
-check( 'scripts: the vendored pdf-lib and the button script, from the plugin itself (no CDN), in the footer', 'https://example.test/wp-content/plugins/fishotel-batch-manager/assists/vendor/pdf-lib/pdf-lib.min.js' === $GLOBALS['fh_scripts']['fishotel-pdf-lib']['src'] && 'https://example.test/wp-content/plugins/fishotel-batch-manager/assists/ship-day/paperwork.js' === $GLOBALS['fh_scripts']['fishotel-ship-day-paperwork']['src'] && [ 'fishotel-pdf-lib' ] === $GLOBALS['fh_scripts']['fishotel-ship-day-paperwork']['deps'] && true === $GLOBALS['fh_scripts']['fishotel-pdf-lib']['footer'] );
+check( 'scripts: the vendored pdf-lib and the button script, from the plugin itself (no CDN), in the footer', 'https://example.test/wp-content/plugins/fishotel-batch-manager/assists/vendor/pdf-lib/pdf-lib.min.js' === $GLOBALS['fh_scripts']['fishotel-pdf-lib']['src'] && 'https://example.test/wp-content/plugins/fishotel-batch-manager/assists/ship-day/paperwork.js' === $GLOBALS['fh_scripts']['fishotel-ship-day-paperwork']['src'] && [ 'fishotel-pdf-lib', 'fishotel-ship-day-print-watcher' ] === $GLOBALS['fh_scripts']['fishotel-ship-day-paperwork']['deps'] && true === $GLOBALS['fh_scripts']['fishotel-pdf-lib']['footer'] );
+check( '"Send to the printers" (10.36): its script from the plugin itself, in the footer, loaded before the button script and versioned with the plugin', 'https://example.test/wp-content/plugins/fishotel-batch-manager/assists/ship-day/print-watcher.js' === $GLOBALS['fh_scripts']['fishotel-ship-day-print-watcher']['src'] && true === $GLOBALS['fh_scripts']['fishotel-ship-day-print-watcher']['footer'] && '10.36' === $GLOBALS['fh_scripts']['fishotel-ship-day-print-watcher']['ver'] && is_file( dirname( __DIR__ ) . '/assists/ship-day/print-watcher.js' ) );
+$files_at = strpos( $page, 'id="fh-sd-paperwork-files"' );
+$send_at  = strpos( $page, '<div id="fh-sd-paperwork-send" style="display:none;' );
+check( '... its box right under the files, empty and hidden until the script has something to show (no button in the page itself)', false !== $send_at && $send_at > $files_at && 1 === preg_match( '#<div id="fh-sd-paperwork-send" style="display:none;[^"]*"></div>#', $page ) && false === strpos( $page, 'fh-sd-pw-send' ) );
+check( '... plain words under Paperwork settings: what it does, the folder, that the Print Watcher must be running, how to change the folder, nothing saved on the website', false !== strpos( $page, '<strong>Send to the printers</strong> puts the two files straight into the Print Watcher&rsquo;s folder (Documents &rarr; FisHotel-PrintQueue)' ) && false !== strpos( $page, 'The Print Watcher must be running &mdash; the fish icon near the clock.' ) && false !== strpos( $page, '&ldquo;change&rdquo; picks another, &ldquo;forget&rdquo; stops using it' ) && false !== strpos( $page, 'Nothing about it is saved on the website' ) );
+$watcher_js = (string) file_get_contents( dirname( __DIR__ ) . '/assists/ship-day/print-watcher.js' );
+check( '... and the server has no part in it: the script makes no request, and the plugin has no new action, option or capability for it', 0 === preg_match( '/\bfetch\s*\(|XMLHttpRequest|sendBeacon|admin-ajax|wp-json|\.ajax\s*\(/', $watcher_js ) && 0 === preg_match( '/print[_-]?watcher/i', (string) file_get_contents( dirname( __DIR__ ) . '/fishotel-batch-manager.php' ) . (string) file_get_contents( dirname( __DIR__ ) . '/includes/class-ajax.php' ) ) && 1 === preg_match_all( '/_option\s*\(/', (string) file_get_contents( dirname( __DIR__ ) . '/includes/class-ship-day-paperwork.php' ) ) );
 check( 'the vendored library and its MIT licence are in the plugin', is_file( dirname( __DIR__ ) . '/assists/vendor/pdf-lib/pdf-lib.min.js' ) && false !== strpos( (string) file_get_contents( dirname( __DIR__ ) . '/assists/vendor/pdf-lib/LICENSE.md' ), 'MIT License' ) );
 $GLOBALS['fh_can'] = false;
 $GLOBALS['fh_scripts'] = [];
