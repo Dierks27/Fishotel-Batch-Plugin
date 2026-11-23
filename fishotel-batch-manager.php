@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.35 - Ship Day prints the day's paperwork
- * Version:           10.35
+ * Description:       v10.36 - Ship Day sends the day's paperwork to the Print Watcher (Send to the printers)
+ * Version:           10.36
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.35' );
+define( 'FISHOTEL_VERSION', '10.36' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 

@@ -399,12 +399,22 @@ check( 'Unpaid Invoices tab still works (default tab, its form and its script)',
 section( 'the page: FisHotel Tools → Ship Day renders the Ship Day screen itself' );
 $goby  = new FH_Home_Product( 10 );
 $prazi = new FH_Home_Product( 12 );
-$GLOBALS['fh_orders'] = [
-    101 => new FH_Home_Order( 101, 'processing', [ '_fishotel_shipping_date' => '2026-11-20' ], [ 1 => new FH_Home_Item( 1, 'Hectors Goby', 2, $goby ), 2 => new FH_Home_Item( 2, 'PraziPro', 1, $prazi ) ] ),
-    102 => new FH_Home_Order( 102, 'on-hold', [ '_fishotel_shipping_date' => '2026-11-20' ], [ 1 => new FH_Home_Item( 1, 'Yellow Tang', 3, $goby ) ] ),
-    103 => new FH_Home_Order( 103, 'processing', [ '_fishotel_shipping_date' => '2026-11-24' ], [ 1 => new FH_Home_Item( 1, 'Mandarin', 1, $goby ) ] ),
-    104 => new FH_Home_Order( 104, 'completed', [ '_fishotel_shipping_date' => '2026-11-20' ], [ 1 => new FH_Home_Item( 1, 'Old Goby', 9, $goby ) ] ),
-];
+$fh_home_orders = function ( $near, $far ) use ( $goby, $prazi ) {
+    return [
+        101 => new FH_Home_Order( 101, 'processing', [ '_fishotel_shipping_date' => $near ], [ 1 => new FH_Home_Item( 1, 'Hectors Goby', 2, $goby ), 2 => new FH_Home_Item( 2, 'PraziPro', 1, $prazi ) ] ),
+        102 => new FH_Home_Order( 102, 'on-hold', [ '_fishotel_shipping_date' => $near ], [ 1 => new FH_Home_Item( 1, 'Yellow Tang', 3, $goby ) ] ),
+        103 => new FH_Home_Order( 103, 'processing', [ '_fishotel_shipping_date' => $far ], [ 1 => new FH_Home_Item( 1, 'Mandarin', 1, $goby ) ] ),
+        104 => new FH_Home_Order( 104, 'completed', [ '_fishotel_shipping_date' => $near ], [ 1 => new FH_Home_Item( 1, 'Old Goby', 9, $goby ) ] ),
+    ];
+};
+// The page lists the open delivery dates from TODAY on (the real clock), so
+// this section's two dates are counted from today — fixed November days here
+// stopped being "upcoming" once they had passed. The fixed days come back for
+// the sections below, which pass their own clock.
+$fh_real_today = new DateTimeImmutable( 'now', wp_timezone() );
+$fh_near       = $fh_real_today->modify( '+1 day' )->format( 'Y-m-d' );
+$fh_far        = $fh_real_today->modify( '+5 days' )->format( 'Y-m-d' );
+$GLOBALS['fh_orders'] = $fh_home_orders( $fh_near, $fh_far );
 fh_misc_menu();
 $_GET = [ 'page' => 'fishotel-ship-day' ];
 $page = fh_capture( [ $host, 'render_ship_day_page' ] );
@@ -412,14 +422,14 @@ check( 'heading "Ship Day", no Group-order invoices tabs', false !== strpos( $pa
 check( '"← Today" link back to Today', false !== strpos( $page, 'href="https://example.test/wp-admin/admin.php?page=fishotel-misc-today"' ) && false !== strpos( $page, '&larr; Today' ) );
 check( 'the Ship Day screen: date input, slips box, Build button, output', false !== strpos( $page, 'id="fh-sd-date"' ) && false !== strpos( $page, 'id="fh-sd-slips"' ) && false !== strpos( $page, 'id="fh-sd-generate"' ) && false !== strpos( $page, 'id="fh-sd-output"' ) );
 check( 'builds through the same AJAX action and nonce as before', false !== strpos( $page, "fd.append('action', 'fishotel_get_ship_day');" ) && false !== strpos( $page, "fd.append('nonce', 'nonce-fishotel_ship_day');" ) );
-check( 'date chips for the open delivery dates (20th: 2 orders, 24th: 1), the next one picked', false !== strpos( $page, 'data-date="2026-11-20"' ) && false !== strpos( $page, 'data-date="2026-11-24"' ) && false !== strpos( $page, 'value="2026-11-20"' ), $page );
+check( 'date chips for the open delivery dates (tomorrow: 2 orders, in 5 days: 1), the next one picked', false !== strpos( $page, 'data-date="' . $fh_near . '"' ) && false !== strpos( $page, 'data-date="' . $fh_far . '"' ) && false !== strpos( $page, 'value="' . $fh_near . '"' ), $page );
 check( 'the print styles come along (pick list page, slips, @media print)', false !== strpos( $page, '.fh-sd-print {' ) && false !== strpos( $page, '@media print' ) && false !== strpos( $page, '.fh-packing-list {' ) );
-$_GET = [ 'page' => 'fishotel-ship-day', 'date' => '2026-11-24' ];
+$_GET = [ 'page' => 'fishotel-ship-day', 'date' => $fh_far ];
 $page = fh_capture( [ $host, 'render_ship_day_page' ] );
-check( '?date=2026-11-24 opens that day', false !== strpos( $page, 'id="fh-sd-date" value="2026-11-24"' ), $page );
+check( '?date=<the later day> opens that day', false !== strpos( $page, 'id="fh-sd-date" value="' . $fh_far . '"' ), $page );
 $_GET = [ 'page' => 'fishotel-ship-day', 'date' => '2026-02-30' ];
 $page = fh_capture( [ $host, 'render_ship_day_page' ] );
-check( 'a date that is not a date is ignored', false !== strpos( $page, 'id="fh-sd-date" value="2026-11-20"' ) );
+check( 'a date that is not a date is ignored', false !== strpos( $page, 'id="fh-sd-date" value="' . $fh_near . '"' ) );
 fh_no_misc_menu();
 $_GET = [ 'page' => 'fishotel-ship-day' ];
 $page = fh_capture( [ $host, 'render_ship_day_page' ] );
@@ -427,6 +437,7 @@ check( 'without the Misc plugin: the Group-order invoices heading and tabs, Ship
 $GLOBALS['fh_can'] = false;
 check( 'a user without manage_options is turned away', '[wp_die: Unauthorized.]' === fh_capture( [ $host, 'render_ship_day_page' ] ) );
 $GLOBALS['fh_can'] = true;
+$GLOBALS['fh_orders'] = $fh_home_orders( '2026-11-20', '2026-11-24' );
 
 section( 'the pick list: the AJAX build is the same render(), and it records "built"' );
 $GLOBALS['fh_options'] = [];
