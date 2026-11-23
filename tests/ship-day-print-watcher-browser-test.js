@@ -22,9 +22,11 @@
  *      writing without its question (nobody can press it here);
  *   3. the Ship Day page itself (paperwork.js + print-watcher.js + pdf-lib,
  *      a stand-in for admin-ajax) with window.showDirectoryPicker stood in
- *      for: first use, Send, a stand-in Print Watcher (this test deleting a
- *      file from the disk folder), "still in the folder", a second send
- *      asking, the tick, and browsers without the API.
+ *      for: first use (also the chooser ending without a folder), the
+ *      question when the files also opened in their print tabs, Send, a
+ *      stand-in Print Watcher (this test deleting a file from the disk
+ *      folder), "still in the folder", a second send asking, the tick,
+ *      Chrome under an Android phone's name and browsers without the API.
  *
  * Each part runs in a browser with an ordinary profile of its own (a
  * throw-away folder): in Playwright's default private-window contexts this
@@ -376,6 +378,24 @@ async function main() {
             check('a browser without move(): written directly — the real name was seen empty, then whole, never part-written (what createWritable()\'s swap file gives)', r.howDirect === 'direct' && JSON.stringify(rec.of('RX106HD_shipday_2026-11-19.pdf').filter(function (s) { return s !== 0; })) === JSON.stringify([SIZE]) && rec.of('RX106HD_shipday_2026-11-19.pdf.crswap').some(function (s) { return s > 0 && s < SIZE; }), JSON.stringify(rec.of('RX106HD_shipday_2026-11-19.pdf')));
             check('nothing but the two files is left in the folder', onDisk.join() === 'BROTHER_shipday_2026-11-19.pdf,RX106HD_shipday_2026-11-19.pdf', onDisk.join());
 
+            // What a browser stopped mid-write leaves: the empty temp file and its swap file (made here by hand, an hour old).
+            var hourAgo = new Date(Date.now() - 3600 * 1000);
+            var stale = ['sending-1-of-2-shipday_2026-11-18-k3x9ab.txt', 'sending-1-of-2-shipday_2026-11-18-k3x9ab.txt.crswap', 'sending-2-of-2-shipday_2026-11-18.txt.1.crswap'];
+            var kept = ['sending-1-of-2-shipday_2026-11-19-zz9zz9.txt.crswap', 'notes.txt'];
+            stale.concat(kept).forEach(function (n, k) {
+                fs.writeFileSync(path.join(queue, n), k === 0 ? '' : 'part of a file');
+            });
+            stale.concat(['notes.txt']).forEach(function (n) {
+                fs.utimesSync(path.join(queue, n), hourAgo, hourAgo);
+            });
+            r = await page.evaluate(async function () {
+                var pw = window.FisHotelPrintWatcher;
+                return (await pw.sweep(window.__dropped, await pw.listNames(window.__dropped), Date.now())).sort();
+            });
+            onDisk = fs.readdirSync(queue).sort();
+            check('leftovers of a cut-off send (the temp file, its .crswap) are cleared once they are old; a young one (another tab writing) and files that are not this script\'s stay', r.join() === stale.slice().sort().join() && onDisk.join() === ['BROTHER_shipday_2026-11-19.pdf', 'RX106HD_shipday_2026-11-19.pdf'].concat(kept).sort().join(), r.join() + ' | ' + onDisk.join());
+            kept.forEach(function (n) { fs.unlinkSync(path.join(queue, n)); });
+
             // A stand-in Print Watcher outside the browser takes one file; then the folder is deleted.
             setTimeout(function () { fs.unlinkSync(path.join(queue, 'BROTHER_shipday_2026-11-19.pdf')); }, 200);
             r = await page.evaluate(function () {
@@ -417,6 +437,12 @@ async function main() {
             window.__picks = [];
             Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, writable: true, value: async function (opts) {
                 window.__picks.push(opts);
+                if (window.__pickAbort) {
+                    // What the browser reports when the chooser is closed, and when its own
+                    // "let this page edit files?" question after the chooser is answered no.
+                    window.__pickAbort = false;
+                    throw new DOMException('The user aborted a request.', 'AbortError');
+                }
                 if (window.__dropped) {
                     return window.__dropped;
                 }
@@ -488,15 +514,21 @@ async function main() {
 
         await page.waitForSelector('#fh-sd-pw-choose');
         var text = await boxText();
-        check('before anything: the box explains itself and names the folder; no Send button, nothing chosen', /Send to the printers\./.test(text) && /Documents → FisHotel-PrintQueue/.test(text) && /The Print Watcher must be running on this PC \(the fish icon near the clock\)/.test(text) && (await page.locator('#fh-sd-pw-send').count()) === 0, text);
+        check('before anything: the box explains itself, names the folder and says the browser will ask to edit files there; no Send button, nothing chosen', /Send to the printers\./.test(text) && /Documents → FisHotel-PrintQueue\); the browser then asks whether this page may edit files there — allow it\./.test(text) && (await page.locator('#fh-sd-pw-send').count()) === 0, text);
+        check('... and under it one short line, with no "change" or "forget" to press yet', /The Print Watcher must be running on this PC \(the fish icon near the clock\)\.$/.test(text.trim()) && !/change|forget/.test(text), text);
         check('one plan request, then both files with their links as before', (await printPaperwork()) === 1 && (await page.locator('#fh-sd-paperwork-files a[download]').count()) === 2 && (await page.locator('#fh-sd-paperwork-files a', { hasText: 'Open to print' }).count()) === 2);
         check('no folder chosen yet: the two print tabs open as in 10.35', ctx.pages().length === 3, String(ctx.pages().length));
         check('... and nothing was written anywhere', Object.keys(await folderNow()).length === 0 && (await page.locator('#fh-sd-pw-send').count()) === 0);
+        await page.evaluate(function () { window.__pickAbort = true; });
+        await page.click('#fh-sd-pw-choose');
+        await page.waitForFunction(function () { return /No folder was chosen\./.test(document.getElementById('fh-sd-paperwork-send').textContent); }, null, { timeout: 10000 });
+        text = await boxText();
+        check('the chooser ended without a folder (closed, or "Don\'t allow" on the browser\'s own question): one line says so and what to do; still nothing chosen', /No folder was chosen\. Press Choose the Print Watcher folder again, pick FisHotel-PrintQueue, and when the browser asks whether this page may edit files there, allow it\./.test(text) && (await page.locator('#fh-sd-pw-choose').count()) === 1 && (await page.locator('#fh-sd-pw-send').count()) === 0, text);
         await page.click('#fh-sd-pw-choose');
         await page.waitForSelector('#fh-sd-pw-send');
         text = await boxText();
         var picks = await page.evaluate(function () { return window.__picks; });
-        check('"Choose the Print Watcher folder" asks the browser for a folder to read and write, starting in Documents', picks.length === 1 && picks[0].mode === 'readwrite' && picks[0].startIn === 'documents', JSON.stringify(picks));
+        check('"Choose the Print Watcher folder" asks the browser for a folder to read and write, starting in Documents', picks.length === 2 && picks[1].mode === 'readwrite' && picks[1].startIn === 'documents' && !/No folder was chosen/.test(text), JSON.stringify(picks));
         check('the choice is shown by name with "change" and "forget"; choosing sent nothing', /Print Watcher folder: FisHotel-PrintQueue · change · forget/.test(text) && Object.keys(await folderNow()).length === 0, text);
         check('the tick is there and off', (await page.locator('#fh-sd-pw-auto').isChecked()) === false && /Send to the printers by itself when the files are ready/.test(text));
 
@@ -510,8 +542,16 @@ async function main() {
             }
             return out;
         });
-        await page.dblclick('#fh-sd-pw-send'); // a double click
-        await line(B).waitFor();
+        // Both files are open in their print tabs (no folder was chosen when they were made): Send asks first.
+        answer = false;
+        await page.click('#fh-sd-pw-send');
+        await page.waitForFunction(function (n) { var p = document.querySelector('#fh-sd-paperwork-send p[data-file="' + n + '"]'); return p && p.getAttribute('data-state') === 'left'; }, B, { timeout: 10000 });
+        check('the files also opened in their print tabs: Send asks before anything is written ("Sending can print the same paperwork twice." … also opened in its own tab)', dialogs.length === 1 && /^Sending can print the same paperwork twice\./.test(dialogs[0]) && dialogs[0].indexOf('- ' + B + ': also opened in its own tab — if it was printed there, it prints again') !== -1 && dialogs[0].indexOf('- ' + R + ': also opened in its own tab') !== -1, dialogs.join(' / '));
+        check('Cancel: nothing is written; the line says the file is open in its tab', Object.keys(await folderNow()).length === 0 && (await line(B).innerText()) === 'Brother: not sent — it is open in its own tab to print from there.', await line(B).innerText());
+        answer = true;
+        dialogs.length = 0;
+        await page.dblclick('#fh-sd-pw-send'); // a double click, answered OK
+        await page.waitForFunction(function (n) { var p = document.querySelector('#fh-sd-paperwork-send p[data-file="' + n + '"]'); return p && p.getAttribute('data-state') === 'waiting'; }, B, { timeout: 10000 });
         await page.waitForFunction(function () { return document.querySelectorAll('#fh-sd-paperwork-send p[data-state="waiting"]').length === 2; }, null, { timeout: 10000 });
         var now = await folderNow();
         check('both files are in the folder under their names, nothing else', Object.keys(now).sort().join() === B + ',' + R, JSON.stringify(now));
@@ -527,7 +567,8 @@ async function main() {
             }, name);
         }
         check('byte for byte the files the Download links carry (sha256)', (await shaOnDisk(B)) === linkBytes[B].sha && (await shaOnDisk(R)) === linkBytes[R].sha && now[B] === linkBytes[B].size);
-        check('the double click sent once: no question was asked', dialogs.length === 0, dialogs.join(' / '));
+        check('the double click sent once: the question was asked once', dialogs.length === 1 && /also opened in its own tab/.test(dialogs[0]), dialogs.join(' / '));
+        dialogs.length = 0;
         check('each line: "in the folder (sent today at 9:14 AM) — waiting for the Print Watcher to take it…"', (await line(B).innerText()) === 'Brother: in the folder (sent today at 9:14 AM) — waiting for the Print Watcher to take it…', await line(B).innerText());
         await take(B); // the stand-in Print Watcher takes the Brother file
         await ctx.clock.runFor(2100);
@@ -539,7 +580,9 @@ async function main() {
             await sleep(20);
         }
         text = await line(R).innerText();
-        check('after about 90 seconds in the folder: "still in the folder — is the Print Watcher running? (the fish icon near the clock)" with Look again', text.indexOf('RX106HD: still in the folder — is the Print Watcher running? (the fish icon near the clock)') === 0 && /Look again$/.test(text) && i >= 40 && i <= 46, i + ' ' + text);
+        check('after about 90 seconds in the folder: "still in the folder — is the Print Watcher running? (the fish icon near the clock)" with Look again', text === 'RX106HD: still in the folder — is the Print Watcher running? (the fish icon near the clock) Look again' && i >= 40 && i <= 46, i + ' ' + text);
+        text = await boxText();
+        check('... then, once, that the file need not be sent again; the fish icon is named once, not again in the line under it', /A file that is still in the folder prints when the Print Watcher takes it, so it does not need sending again\.\s+The Print Watcher must be running on this PC\.$/.test(text.trim()) && text.split('the fish icon near the clock').length === 2, text);
         await take(R);
         await line(R).locator('a', { hasText: 'Look again' }).click();
         await page.waitForFunction(function (n) { var p = document.querySelector('#fh-sd-paperwork-send p[data-file="' + n + '"]'); return p && p.getAttribute('data-state') === 'taken'; }, R, { timeout: 10000 });
@@ -606,7 +649,20 @@ async function main() {
         await ctx.close();
 
         section('browsers without the folder API: the links only, one quiet line, no error');
-        for (var kind of ['no API (Firefox, Safari, a phone)', 'plain http (not a secure page)']) {
+        // Chrome on Android has had the folder chooser since about version 132, and so does this
+        // Chromium under a phone's name: it must get the quiet line, not a folder to choose.
+        ctx = await openBrowser({ args: FLAGS, userAgent: 'Mozilla/5.0 (Linux; Android 16; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36', viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true });
+        page = ctx.pages()[0] || await ctx.newPage();
+        var phoneErrs = [];
+        page.on('pageerror', function (e) { phoneErrs.push(e.message); });
+        await page.goto(base + '/');
+        var phoneHas = await page.evaluate(function () { return typeof window.showDirectoryPicker; });
+        await page.click('#fh-sd-paperwork');
+        await page.waitForFunction(function () { return /^Done: /.test(document.getElementById('fh-sd-paperwork-status').textContent); }, null, { timeout: 20000 });
+        text = await page.locator('#fh-sd-paperwork-send').innerText();
+        check('Chrome on an Android phone (the chooser is there: ' + phoneHas + '): no folder to choose, no button — the quiet line and the links; nothing threw', phoneHas === 'function' && (await page.locator('#fh-sd-paperwork-send button, #fh-sd-paperwork-send input').count()) === 0 && /^Sending the files straight to the Print Watcher needs Chrome or Edge on the PC\. Here, use the links above\.$/.test(text.trim()) && (await page.locator('#fh-sd-paperwork-files a[download]').count()) === 2 && phoneErrs.length === 0, text + ' ' + phoneErrs.join(' / '));
+        await ctx.close();
+        for (var kind of ['no API (Firefox, Safari, an iPhone)', 'plain http (not a secure page)']) {
             ctx = await openBrowser({ args: FLAGS });
             var http_ = kind.indexOf('http') !== -1;
             if (!http_) {

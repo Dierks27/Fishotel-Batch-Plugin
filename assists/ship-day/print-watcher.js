@@ -31,9 +31,16 @@
  *     permission the folder already has, and replaces a file of that name.
  *
  * So writeWhole() writes each file under a name the Print Watcher does not
- * print ("sending-1-of-2-shipday_<date>.txt": no printer at the front, not a
- * PDF by name — and so neither is its ".crswap"), checks its size, and renames
- * it to the real name: the real name is never empty and never part-written.
+ * print ("sending-1-of-2-shipday_<date>-<a few random letters>.txt": no
+ * printer at the front, not a PDF by name — and so neither is its ".crswap"),
+ * checks its size, and renames it to the real name: the real name is never
+ * empty and never part-written. The random letters are new for every send, so
+ * two Ship Day tabs sending in the same instant never write under one temp
+ * name (with one shared name, the second tab's fresh empty file could be
+ * renamed to the real name by the first). What a send that was cut off leaves
+ * behind (a closed tab: the empty ".txt"; a killed browser: also its
+ * ".crswap") is cleared by a later send once it is ten minutes old — never
+ * sooner, it could be another tab's write under way.
  * (Why ".txt": Chrome asks its Safe Browsing service about every written file
  * whose type it does not know — ".part", ".tmp", no ending at all — and holds
  * the file back until the answer is in; ".txt" and ".pdf" are types it does
@@ -47,9 +54,10 @@
  * that fails takes its own leftovers away.
  *
  * NEVER TWICE BY ACCIDENT. A file that was sent from this browser before
- * ("Sent today at 9:14 AM"), or whose name is still in the folder, is only sent
- * again after a plain question; the tick never sends such a file by itself; a
- * double click is one send.
+ * ("Sent today at 9:14 AM"), whose name is still in the folder, or that also
+ * opened in its own print tab (the folder was chosen after "Print the day's
+ * paperwork" was pressed), is only sent after a plain question; the tick never
+ * sends such a file by itself; a double click is one send.
  *
  * WHAT THE PAGE CAN KNOW. It sees the folder, not the printers. After a send
  * it looks in the folder for about 90 seconds: the file gone means the Print
@@ -81,6 +89,10 @@
     var MEMORY_KEY = 'fishotel_print_watcher';
     /** "Already sent" is forgotten after three weeks (the file name carries the ship date). */
     var KEEP_SENT_MS = 21 * 24 * 3600 * 1000;
+    /** What a cut-off send left in the folder: the temp names below and their swap files ("….txt.crswap", "….txt.1.crswap"). */
+    var LEFTOVER = /^sending-\d+-of-\d+-.*\.txt(\.\d+)?(\.crswap)?$/;
+    /** ... cleared once this old; younger, it may be another tab's write under way. */
+    var LEFTOVER_MS = 10 * 60 * 1000;
     var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     /* ── small helpers ─────────────────────────────────────────── */
@@ -89,10 +101,22 @@
         return e && e.name ? String(e.name) : '';
     }
 
-    /** True when this browser can be given a folder (Chrome / Edge on a computer, over https). */
+    /**
+     * True when this browser can be given a folder (Chrome / Edge on a
+     * computer, over https). Chrome on an Android phone or tablet has the
+     * folder chooser too, but the Print Watcher's folder is on the PC, so a
+     * phone gets the quiet line like any other browser without it.
+     */
     function supported(win) {
         try {
-            return !!win && typeof win.showDirectoryPicker === 'function' && !!win.indexedDB;
+            if (!win || typeof win.showDirectoryPicker !== 'function' || !win.indexedDB) {
+                return false;
+            }
+            var nav = win.navigator || {};
+            if (nav.userAgentData && nav.userAgentData.mobile === true) {
+                return false;
+            }
+            return !/Android|Mobile/i.test(String(nav.userAgent || ''));
         } catch (e) {
             return false;
         }
@@ -113,13 +137,20 @@
     /**
      * The name a file is written under before it is renamed: nothing the Print
      * Watcher prints (no printer at the front, not ".pdf"), different for each
-     * file of one send, and ".txt" for the reason in the file comment.
+     * file of one send, and ".txt" for the reason in the file comment. With a
+     * token (newToken(), one per send) no other tab's send has the same name.
      */
-    function tempNameFor(name, index, count) {
+    function tempNameFor(name, index, count, token) {
         var rest = String(name).replace(/\.pdf$/i, '');
         var cut = rest.indexOf('_');
         rest = cut === -1 ? 'file' : rest.slice(cut + 1);
-        return 'sending-' + ((index || 0) + 1) + '-of-' + (count || 1) + '-' + rest + '.txt';
+        token = String(token || '').replace(/[^a-z0-9]/gi, '');
+        return 'sending-' + ((index || 0) + 1) + '-of-' + (count || 1) + '-' + rest + (token ? '-' + token : '') + '.txt';
+    }
+
+    /** A few random letters and digits: new for every send. */
+    function newToken() {
+        return (Math.random().toString(36) + '000000').slice(2, 8);
     }
 
     /** "today at 9:14 AM" / "on Nov 19 at 9:14 AM", in the PC's own time. */
@@ -198,6 +229,33 @@
         } catch (e) { /* not there */ }
     }
 
+    /**
+     * Take away what a cut-off send left in the folder (see LEFTOVER): only
+     * this script's own temp names, and only once they are ten minutes old.
+     * A file that is in use, or went meanwhile, is left alone.
+     *
+     * @param {object}   dir   FileSystemDirectoryHandle (write permission held)
+     * @param {string[]} names the folder's names (listNames())
+     * @param {number}   now
+     * @return {Promise<string[]>} the names removed
+     */
+    async function sweep(dir, names, now) {
+        var removed = [];
+        for (var i = 0; i < names.length; i++) {
+            if (!LEFTOVER.test(names[i])) {
+                continue;
+            }
+            try {
+                var file = await (await dir.getFileHandle(names[i])).getFile();
+                if (now - file.lastModified > LEFTOVER_MS) {
+                    await dir.removeEntry(names[i]);
+                    removed.push(names[i]);
+                }
+            } catch (e) { /* in use, or gone: not ours to take */ }
+        }
+        return removed;
+    }
+
     /** Write all the bytes through the handle's swap file; on any failure nothing of it is kept. */
     async function fill(handle, bytes) {
         var writable = await handle.createWritable();
@@ -232,7 +290,7 @@
      */
     async function writeWhole(dir, name, bytes, opts) {
         opts = opts || {};
-        var temp = opts.tempName || tempNameFor(name, 0, 1);
+        var temp = opts.tempName || tempNameFor(name, 0, 1, newToken());
         if (!opts.replace && await exists(dir, name)) {
             throw namedError('FileThereError', 'A file of this name is already in the folder.');
         }
@@ -257,6 +315,8 @@
                 throw namedError('FileThereError', 'A file of this name is already in the folder.');
             }
             try {
+                // No look at the real name afterwards: a second tab may by now have put
+                // its own whole file there, and that one is not this send's to take away.
                 await handle.move(name);
                 return 'renamed';
             } catch (e) {
@@ -462,10 +522,23 @@
             case 'taken':
                 return p + 'printing — the Print Watcher took the file.';
             case 'still':
-                return p + 'still in the folder — is the Print Watcher running? (the fish icon near the clock) The file prints when the Print Watcher takes it, so it does not need sending again.';
+                return p + 'still in the folder — is the Print Watcher running? (the fish icon near the clock)';
             case 'held':
-                return p + 'not sent by itself — ' + (f.at ? 'it was ' + sent : '') + (f.at && f.there ? ' and ' : '') + (f.there ? 'a file of this name is still in the folder' : '') + '. Send to the printers sends it again.';
+                var why = [];
+                if (f.at) {
+                    why.push('it was ' + sent);
+                }
+                if (f.there) {
+                    why.push('a file of this name is still in the folder');
+                }
+                if (f.tab) {
+                    why.push('it also opened in its own tab');
+                }
+                return p + 'not sent by itself — ' + why.join(' and ') + '. Send to the printers sends it' + (f.at || f.there ? ' again.' : '.');
             case 'left':
+                if (!f.at && !f.there) {
+                    return p + 'not sent — it is open in its own tab to print from there.';
+                }
                 return p + 'not sent again' + (f.at ? ' (' + sent + ')' : '') + (f.there ? ' — the earlier file is still in the folder.' : '.');
             case 'there':
                 return p + 'a file of this name is already in the folder — left as it was, nothing sent.';
@@ -482,10 +555,11 @@
         }
     }
 
-    /** The question before a file is sent a second time. */
+    /** The question before a file is sent that may already have been printed. */
     function question(ask, others, now) {
         var one = ask.length === 1;
-        var lines = ['Sending again can print the same paperwork twice.', ''];
+        var again = ask.some(function (f) { return f.at || f.there; });
+        var lines = [again ? 'Sending again can print the same paperwork twice.' : 'Sending can print the same paperwork twice.', ''];
         var anyThere = false;
         ask.forEach(function (f) {
             var why = [];
@@ -496,10 +570,13 @@
                 anyThere = true;
                 why.push('still in the folder (the Print Watcher has not taken it)');
             }
+            if (f.tab) {
+                why.push('also opened in its own tab — if it was printed there, it prints again');
+            }
             lines.push('- ' + f.name + ': ' + why.join('; '));
         });
         lines.push('');
-        lines.push('OK: send ' + (one ? 'it' : 'them') + ' again' + (anyThere ? ' (a file still in the folder is replaced)' : '') + '.');
+        lines.push('OK: send ' + (one ? 'it' : 'them') + (again ? ' again' : ' to the printers') + (anyThere ? ' (a file still in the folder is replaced)' : '') + '.');
         lines.push('Cancel: leave ' + (one ? 'it' : 'them') + ' alone.' + (others ? ' The other file is sent either way.' : ''));
         return lines.join('\n');
     }
@@ -514,6 +591,7 @@
      *     memory     makeMemory()
      *     confirm(text) → bool | Promise<bool>
      *     now(), wait(ms)
+     *     token()    → the random letters of one send's temp names (tests)
      *     paint(view)
      *     watchMs, watchEveryMs   (tests)
      * }
@@ -544,6 +622,7 @@
                 canSend: !!folder && files.length > 0 && !busy,
                 busy: busy,
                 message: message,
+                stillNote: files.some(function (f) { return f.state === 'still'; }) ? 'A file that is still in the folder prints when the Print Watcher takes it, so it does not need sending again.' : '',
                 lines: files.map(function (f) {
                     return { printer: f.printer, name: f.name, state: f.state, text: lineText(f, t), lookAgain: f.state === 'still' || f.state === 'unknown' };
                 }).filter(function (l) { return l.text !== ''; })
@@ -594,19 +673,23 @@
             try {
                 picked = await deps.pick();
             } catch (e) {
+                // Closed without choosing — or the browser's own question after the
+                // chooser ("let this page edit files?") was answered no: the browser
+                // reports both the same way (AbortError), and nothing changes.
                 if (errName(e) !== 'AbortError') {
                     message = 'The browser would not open the folder chooser' + (e && e.message ? ' (' + e.message + ')' : '') + '.';
-                    paint();
+                } else if (!folder) {
+                    message = 'No folder was chosen. Press Choose the Print Watcher folder again, pick ' + FOLDER_NAME + ', and when the browser asks whether this page may edit files there, allow it.';
                 }
-                return false; // closed without choosing: nothing changes
+                paint();
+                return false;
             }
             if (!picked) {
                 return false;
             }
             folder = picked;
             perm = await permission(folder, false);
-            message = '';
-            await deps.store.set(folder);
+            message = (await deps.store.set(folder)) ? '' : 'This browser could not keep the folder (a private window?), so it will have to be chosen again the next time this page is opened.';
             paint();
             return true;
         };
@@ -638,16 +721,17 @@
         };
 
         /**
-         * The files are ready: [{ printer, name, bytes }]. With the tick on, a
-         * folder chosen and the permission held they are sent now; otherwise
-         * the button waits. Resolves when that is settled (not when the
-         * watching ends).
+         * The files are ready: [{ printer, name, bytes, tab }] — tab: the
+         * file also opened in its own print tab, so sending it asks first.
+         * With the tick on, a folder chosen and the permission held they are
+         * sent now; otherwise the button waits. Resolves when that is settled
+         * (not when the watching ends).
          */
         ctl.setFiles = function (list) {
             round++;
             message = '';
             files = (list || []).filter(function (f) { return f && f.name && f.bytes; }).map(function (f) {
-                return { printer: f.printer, name: f.name, bytes: f.bytes, state: 'ready', at: memory.sentAt(f.name), there: false, detail: '' };
+                return { printer: f.printer, name: f.name, bytes: f.bytes, state: 'ready', at: memory.sentAt(f.name), there: false, tab: !!f.tab, detail: '' };
             });
             paint();
             if (deps.supported && folder && files.length && memory.auto()) {
@@ -700,20 +784,23 @@
                 return result;
             }
 
-            // Which files would be a second send?
+            await sweep(folder, listed, now());
+
+            // Which files may already have been printed: sent before, still in the folder, or open in a print tab?
             var go = [];
             var ask = [];
             mine.forEach(function (f) {
                 f.at = memory.sentAt(f.name);
                 f.there = listed.indexOf(f.name) !== -1;
                 f.replace = false;
-                (f.at || f.there ? ask : go).push(f);
+                (f.at || f.there || f.tab ? ask : go).push(f);
             });
             if (ask.length) {
                 var again = auto ? false : !!(await deps.confirm(question(ask, go.length, now())));
                 ask.forEach(function (f) {
                     if (again) {
                         f.replace = f.there;
+                        f.tab = false; // answered: from here on "sent today at …" is what asks
                         go.push(f);
                     } else {
                         f.state = auto ? 'held' : 'left';
@@ -724,6 +811,7 @@
                 return result; // a new set of files arrived while the question was open
             }
 
+            var token = deps.token ? deps.token() : newToken();
             for (var i = 0; i < mine.length; i++) {
                 var f = mine[i];
                 if (go.indexOf(f) === -1) {
@@ -732,7 +820,7 @@
                 f.state = 'writing';
                 paint();
                 try {
-                    await writeWhole(folder, f.name, f.bytes, { tempName: tempNameFor(f.name, i, mine.length), replace: f.replace });
+                    await writeWhole(folder, f.name, f.bytes, { tempName: tempNameFor(f.name, i, mine.length, token), replace: f.replace });
                     memory.markSent(f.name);
                     f.at = memory.sentAt(f.name) || now();
                     f.state = 'waiting';
@@ -862,7 +950,7 @@
             if (!v.folder) {
                 var p = el('p', '', 'margin:4px 0;');
                 p.appendChild(el('strong', 'Send to the printers. '));
-                p.appendChild(doc.createTextNode('This page can put the two files straight into the Print Watcher’s folder, and the Print Watcher prints each one on its own printer — no Print to press. Choose the folder once (Documents → ' + v.expected + '); this browser remembers it.'));
+                p.appendChild(doc.createTextNode('This page can put the two files straight into the Print Watcher’s folder, and the Print Watcher prints each one on its own printer — no Print to press. Choose the folder once (Documents → ' + v.expected + '); the browser then asks whether this page may edit files there — allow it. This browser remembers the folder.'));
                 box.appendChild(p);
                 var pc = el('p', '', 'margin:8px 0;');
                 pc.appendChild(button('Choose the Print Watcher folder', 'fh-sd-pw-choose', function () { ctl.choose(); }, v.ready));
@@ -914,7 +1002,11 @@
                 }
                 box.appendChild(row);
             });
-            box.appendChild(el('p', 'The Print Watcher must be running on this PC (the fish icon near the clock). This page sees the folder, not the printers: “printing” means the Print Watcher took the file. To use another folder, press “change”; “forget” makes this browser stop using it.', MUTED));
+            if (v.stillNote) {
+                box.appendChild(el('p', v.stillNote, 'margin:4px 0;color:#f0c060;'));
+            }
+            // One short line; the fish icon is not named again under a line that just named it.
+            box.appendChild(el('p', 'The Print Watcher must be running on this PC' + (v.stillNote ? '.' : ' (the fish icon near the clock).'), MUTED));
         }
 
         var ctl = create({
@@ -939,6 +1031,7 @@
         supported: supported,
         folderProblem: folderProblem,
         tempNameFor: tempNameFor,
+        sweep: sweep,
         whenWords: whenWords,
         permission: permission,
         listNames: listNames,

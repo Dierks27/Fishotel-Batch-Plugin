@@ -67,7 +67,10 @@ function fakeDir(name) {
         asked: 0,
         gone: false,      // the folder was deleted / renamed
         hasMove: true,
-        fail: {}          // { create|write|close|move: Error } — thrown once
+        fail: {},         // { create|write|close|move: Error } — thrown once
+        created: [],      // names getFileHandle(…, { create: true }) made
+        modified: {},     // name → when it was last written (ms); a name not listed here is fresh
+        gate: null        // async hook(op, name): runs when a 'write' or a 'move' starts, before it happens
     };
     function snap() {
         var s = {};
@@ -93,6 +96,9 @@ function fakeDir(name) {
         var h = { kind: 'file', name: n };
         h.createWritable = async function () {
             guard();
+            if (dir.gate) {
+                await dir.gate('write', h.name);
+            }
             var swap = h.name + '.crswap';
             dir.files[swap] = new Uint8Array(0);
             snap();
@@ -125,12 +131,15 @@ function fakeDir(name) {
             if (!(h.name in dir.files)) {
                 throw err('NotFoundError');
             }
-            return { size: dir.files[h.name].length };
+            return { size: dir.files[h.name].length, lastModified: h.name in dir.modified ? dir.modified[h.name] : Date.now() + 60000 };
         };
         if (dir.hasMove) {
             h.move = async function (to) {
                 guard();
                 maybeFail('move');
+                if (dir.gate) {
+                    await dir.gate('move', h.name);
+                }
                 if (!(h.name in dir.files)) {
                     throw err('NotFoundError');
                 }
@@ -150,6 +159,7 @@ function fakeDir(name) {
             }
             maybeFail('create');
             dir.files[n] = new Uint8Array(0);
+            dir.created.push(n);
             snap();
         }
         return fileHandle(n);
@@ -263,6 +273,9 @@ function rig(opts) {
         store: {
             get: function () { return Promise.resolve(r.stored); },
             set: function (h) {
+                if (opts.storeFails) {
+                    return Promise.resolve(false); // IndexedDB refused (handleStore().set() answers false)
+                }
                 r.stored = h;
                 return Promise.resolve(true);
             },
@@ -285,10 +298,12 @@ function rig(opts) {
             }
             return Promise.resolve();
         },
+        token: opts.token ? function () { return opts.token; } : undefined,
         paint: function (v) { r.views.push(v); }
     });
-    r.files = function () {
-        return [{ printer: 'Brother', name: BROTHER, bytes: bytesOf(5000, 1) }, { printer: 'RX106HD', name: RX, bytes: bytesOf(7000, 9) }];
+    /** tabs: both files also opened in their own print tabs (no folder was chosen when the paperwork was made). */
+    r.files = function (tabs) {
+        return [{ printer: 'Brother', name: BROTHER, bytes: bytesOf(5000, 1), tab: !!tabs }, { printer: 'RX106HD', name: RX, bytes: bytesOf(7000, 9), tab: !!tabs }];
     };
     r.line = function (name) {
         var l = r.ctl.view().lines.filter(function (x) { return x.name === name; })[0];
@@ -319,6 +334,7 @@ async function main() {
     check('the part-written bytes were in the folder only under the temp name\'s swap file', d.sizesOf('sending-1-of-2-shipday_2026-11-19.txt.crswap').indexOf(20000) !== -1);
     check('only the file is left, byte for byte', Object.keys(d.files).join() === BROTHER && same(d.files[BROTHER], big));
     check('temp names: one per file of a send, no printer at the front, not .pdf', pw.tempNameFor(BROTHER, 0, 2) === 'sending-1-of-2-shipday_2026-11-19.txt' && pw.tempNameFor(RX, 1, 2) === 'sending-2-of-2-shipday_2026-11-19.txt' && !printable(pw.tempNameFor('odd.pdf', 0, 1)));
+    check('... and with a send\'s own letters, so no other send has the same name', pw.tempNameFor(BROTHER, 0, 2, 'k3x9ab') === 'sending-1-of-2-shipday_2026-11-19-k3x9ab.txt' && pw.tempNameFor(RX, 1, 2, '../a b.pdf') === 'sending-2-of-2-shipday_2026-11-19-abpdf.txt' && !printable(pw.tempNameFor(BROTHER, 0, 2, 'pdf')));
     d.files['sending-1-of-2-shipday_2026-11-19.txt'] = bytesOf(10, 0); // a send that was cut off
     d.take(BROTHER);
     await pw.writeWhole(d, BROTHER, big, { tempName: pw.tempNameFor(BROTHER, 0, 2) });
@@ -456,7 +472,13 @@ async function main() {
     await r.ctl.choose();
     check('another folder than FisHotel-PrintQueue is allowed, with a plain note', r.ctl.view().folder === 'Downloads' && /normally watches FisHotel-PrintQueue/.test(r.ctl.view().folderNote));
     r = rig({ pickError: err('AbortError') });
-    check('the chooser closed without choosing: nothing changes, no message', (await r.ctl.choose()) === false && r.ctl.view().folder === '' && r.ctl.view().message === '' && r.stored === null);
+    check('the chooser closed without a folder — or the browser\'s own "edit files?" question answered no (it reports both alike): nothing changes, and one line says what to do', (await r.ctl.choose()) === false && r.ctl.view().folder === '' && r.stored === null && r.ctl.view().message === 'No folder was chosen. Press Choose the Print Watcher folder again, pick FisHotel-PrintQueue, and when the browser asks whether this page may edit files there, allow it.', r.ctl.view().message);
+    var keep = fakeDir();
+    r = rig({ stored: keep, pickError: err('AbortError') });
+    await r.ctl.init();
+    check('"change" closed without choosing: the folder in use stays, nothing is said', (await r.ctl.choose()) === false && r.ctl.view().folder === 'FisHotel-PrintQueue' && r.ctl.view().message === '' && r.stored === keep);
+    r = rig({ storeFails: true });
+    check('a browser that cannot keep the folder (a private window): it works for this page and says it must be chosen again next time', (await r.ctl.choose()) === true && r.ctl.view().folder === 'FisHotel-PrintQueue' && /could not keep the folder \(a private window\?\), so it will have to be chosen again/.test(r.ctl.view().message), r.ctl.view().message);
     r = rig({ pickError: err('SecurityError', 'Must be handling a user gesture') });
     check('the chooser refused by the browser: a plain message, no error', (await r.ctl.choose()) === false && /would not open the folder chooser/.test(r.ctl.view().message));
 
@@ -479,11 +501,12 @@ async function main() {
     check('while it looks: "in the folder ... waiting for the Print Watcher to take it"', r.views.some(function (x) { return x.lines.some(function (l) { return l.text === 'Brother: in the folder (sent today at 9:14 AM) — waiting for the Print Watcher to take it…'; }); }));
     await r.ctl.watching;
     check('the file that is gone: "printing — the Print Watcher took the file"', r.line(BROTHER) === 'Brother: printing — the Print Watcher took the file.', r.line(BROTHER));
-    check('the file still there after about 90 seconds: the question about the Print Watcher', r.line(RX) === 'RX106HD: still in the folder — is the Print Watcher running? (the fish icon near the clock) The file prints when the Print Watcher takes it, so it does not need sending again.' && r.waits === 45, r.line(RX) + ' ' + r.waits);
+    check('the file still there after about 90 seconds: the question about the Print Watcher', r.line(RX) === 'RX106HD: still in the folder — is the Print Watcher running? (the fish icon near the clock)' && r.waits === 45, r.line(RX) + ' ' + r.waits);
+    check('... and, once for all such files, that it need not be sent again', r.ctl.view().stillNote === 'A file that is still in the folder prints when the Print Watcher takes it, so it does not need sending again.');
     check('"Look again" is offered for the file still there only', r.ctl.view().lines.filter(function (l) { return l.lookAgain; }).map(function (l) { return l.name; }).join() === RX);
     r.onWait = function (x) { x.dir.take(RX); };
     await r.ctl.lookAgain();
-    check('Look again, after the Print Watcher was started: taken', r.line(RX) === 'RX106HD: printing — the Print Watcher took the file.');
+    check('Look again, after the Print Watcher was started: taken, and the note is gone', r.line(RX) === 'RX106HD: printing — the Print Watcher took the file.' && r.ctl.view().stillNote === '');
     var said = [];
     r.views.forEach(function (x) { x.lines.forEach(function (l) { said.push(l.text); }); said.push(x.message); });
     check('the page never says a sheet was printed or came out', !said.some(function (s) { return /\bprinted\b|came out|has printed|done printing/i.test(s); }));
@@ -527,6 +550,100 @@ async function main() {
     r.answer = true;
     out = await r.ctl.send();
     check('with OK the file in the folder is replaced by the new one, whole', same(r.dir.files[BROTHER], files[0].bytes) && r.dir.sizesOf(BROTHER).filter(function (s) { return s !== 300 && s !== 5000; }).length === 0 && /a file still in the folder is replaced/.test(r.questions[1]));
+    await r.ctl.watching;
+
+    section('the files also opened in their print tabs (the folder chosen after "Print the day\'s paperwork")');
+    r = rig();
+    await r.ctl.init();
+    await r.ctl.setFiles(r.files(true)); // no folder yet: the page opened both print tabs
+    await r.ctl.choose();
+    r.answer = false;
+    out = await r.ctl.send();
+    check('Send asks first: the files may already be printed from their tabs', r.questions.length === 1 && /^Sending can print the same paperwork twice\./.test(r.questions[0]) && r.questions[0].indexOf('- ' + BROTHER + ': also opened in its own tab — if it was printed there, it prints again') !== -1 && r.questions[0].indexOf('- ' + RX + ': also opened in its own tab') !== -1 && /OK: send them to the printers\./.test(r.questions[0]), r.questions[0]);
+    check('Cancel: nothing is written, nothing is remembered as sent, and the line says where the file is', out.sent.length === 0 && r.dir.history.length === 0 && r.memory.sentAt(BROTHER) === 0 && r.line(BROTHER) === 'Brother: not sent — it is open in its own tab to print from there.', r.line(BROTHER));
+    r.answer = true;
+    out = await r.ctl.send();
+    check('OK: both are sent', out.sent.length === 2 && r.questions.length === 2 && r.dir.closes.length === 2);
+    await r.ctl.watching;
+    r = rig({ stored: fakeDir() });
+    r.dir = r.stored;
+    r.memory.setAuto(true);
+    await r.ctl.init();
+    out = await r.ctl.setFiles(r.files(true));
+    check('the tick never sends a file that is open in a print tab by itself', out.sent.length === 0 && r.dir.history.length === 0 && r.questions.length === 0 && r.line(RX) === 'RX106HD: not sent by itself — it also opened in its own tab. Send to the printers sends it.', r.line(RX));
+    r = rig({ stored: fakeDir() });
+    r.dir = r.stored;
+    await r.ctl.init();
+    await r.ctl.setFiles(r.files(false));
+    out = await r.ctl.send();
+    check('with a folder chosen beforehand no tabs open, and a first send asks nothing', out.sent.length === 2 && r.questions.length === 0);
+    await r.ctl.watching;
+
+    section('two Ship Day tabs sending in the same instant');
+    d = fakeDir();
+    var tabA = rig({ stored: d });
+    var tabB = rig({ stored: d });
+    tabA.dir = tabB.dir = d;
+    await tabA.ctl.init();
+    await tabB.ctl.init();
+    await tabA.ctl.setFiles(tabA.files());
+    await tabB.ctl.setFiles(tabB.files());
+    // The order that left an empty file under a printer's name when both tabs wrote under ONE temp name:
+    // tab A has written its file and is about to rename it; tab B clears "the leftover", makes its own
+    // empty temp file and is about to write; A renames; only then does B write.
+    var sendB = null;
+    var held = false;
+    var bAboutToWrite, letBWrite;
+    var reached = new Promise(function (resolve) { bAboutToWrite = resolve; });
+    var release = new Promise(function (resolve) { letBWrite = resolve; });
+    d.gate = async function (op) {
+        if (op === 'move' && !sendB) {
+            sendB = tabB.ctl.send();
+            await reached;
+            setImmediate(letBWrite); // after A's rename
+        } else if (op === 'write' && sendB && !held) {
+            held = true;
+            bAboutToWrite();
+            await release;
+        }
+    };
+    var outA = await tabA.ctl.send();
+    var outB = await sendB;
+    d.gate = null;
+    var temps = d.created.filter(function (n) { return /^sending-/.test(n); });
+    check('each send writes under temp names of its own (the second tab made one before it saw the first tab\'s file)', temps.length === 3 && temps.filter(function (n, i) { return temps.indexOf(n) === i; }).length === 3 && temps.every(function (n) { return /^sending-[12]-of-2-shipday_2026-11-19-[a-z0-9]{6}\.txt$/.test(n) && !printable(n); }), temps.join());
+    check('neither printer\'s name was ever empty or part-written in the folder', JSON.stringify(d.sizesOf(BROTHER)) === '[5000]' && JSON.stringify(d.sizesOf(RX)) === '[7000]', JSON.stringify(d.sizesOf(BROTHER)) + ' ' + JSON.stringify(d.sizesOf(RX)));
+    check('each file is in the folder once and whole; nothing else is left', Object.keys(d.files).sort().join() === BROTHER + ',' + RX && same(d.files[BROTHER], bytesOf(5000, 1)) && same(d.files[RX], bytesOf(7000, 9)), Object.keys(d.files).join());
+    check('the first tab sent both; the second says each was already in the folder and remembers nothing as sent', outA.sent.length === 2 && outB.sent.length === 0 && tabB.line(BROTHER) === 'Brother: a file of this name is already in the folder — left as it was, nothing sent.' && tabB.line(RX) === 'RX106HD: a file of this name is already in the folder — left as it was, nothing sent.' && tabB.memory.sentAt(BROTHER) === 0, JSON.stringify([outA, outB]) + ' ' + tabB.line(BROTHER));
+    d.take(BROTHER);
+    d.take(RX);
+    await tabA.ctl.watching;
+    await tabB.ctl.watching;
+
+    section('what a cut-off send left in the folder');
+    r = rig({ stored: fakeDir(), token: 'abc123' });
+    r.dir = r.stored;
+    var OLD = ['sending-1-of-2-shipday_2026-11-18.txt', 'sending-1-of-2-shipday_2026-11-18.txt.crswap', 'sending-2-of-2-shipday_2026-11-18-k3x9ab.txt.1.crswap'];
+    var YOUNG = 'sending-1-of-2-shipday_2026-11-19-zz9zz9.txt.crswap'; // another tab's write under way
+    var NOT_OURS = ['notes.txt', 'BROTHER_other.pdf', 'sending-list.txt', 'report.crswap'];
+    OLD.forEach(function (n) {
+        r.dir.files[n] = bytesOf(40, 2);
+        r.dir.modified[n] = r.t - 11 * 60000;
+    });
+    r.dir.files[YOUNG] = bytesOf(40, 2);
+    r.dir.modified[YOUNG] = r.t - 9 * 60000;
+    NOT_OURS.forEach(function (n) {
+        r.dir.files[n] = bytesOf(40, 2);
+        r.dir.modified[n] = r.t - 24 * 3600000;
+    });
+    await r.ctl.init();
+    await r.ctl.setFiles(r.files());
+    out = await r.ctl.send();
+    check('a send clears this script\'s own temp files and their swap files once they are ten minutes old (a tab closed or a browser stopped mid-write)', out.sent.length === 2 && OLD.every(function (n) { return !(n in r.dir.files); }), Object.keys(r.dir.files).join());
+    check('... but not a younger one (another tab may be writing it), and never a file that is not its own', YOUNG in r.dir.files && NOT_OURS.every(function (n) { return same(r.dir.files[n], bytesOf(40, 2)); }), Object.keys(r.dir.files).join());
+    check('... and its own temp names carry the send\'s letters', r.dir.created.join() === 'sending-1-of-2-shipday_2026-11-19-abc123.txt,sending-2-of-2-shipday_2026-11-19-abc123.txt', r.dir.created.join());
+    r.dir.take(BROTHER);
+    r.dir.take(RX);
     await r.ctl.watching;
 
     section('the tick: "by itself when the files are ready"');
@@ -626,6 +743,11 @@ async function main() {
 
     section('a browser without the folder API: no button, no error');
     check('supported(): needs showDirectoryPicker and IndexedDB; anything else is a plain no', pw.supported({ showDirectoryPicker: function () {}, indexedDB: {} }) === true && pw.supported({ indexedDB: {} }) === false && pw.supported({ showDirectoryPicker: function () {} }) === false && pw.supported(undefined) === false && pw.supported(Object.defineProperty({ showDirectoryPicker: function () {} }, 'indexedDB', { get: function () { throw err('SecurityError'); } })) === false);
+    var phone = { showDirectoryPicker: function () {}, indexedDB: {}, navigator: { userAgent: 'Mozilla/5.0 (Linux; Android 16; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36' } };
+    var tablet = { showDirectoryPicker: function () {}, indexedDB: {}, navigator: { userAgent: 'Mozilla/5.0 (Linux; Android 16; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36' } };
+    var hinted = { showDirectoryPicker: function () {}, indexedDB: {}, navigator: { userAgent: 'Mozilla/5.0 (X11; Linux x86_64)', userAgentData: { mobile: true } } };
+    var pc = { showDirectoryPicker: function () {}, indexedDB: {}, navigator: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', userAgentData: { mobile: false } } };
+    check('supported(): Chrome on an Android phone or tablet has the chooser but not the PC\'s folder — a plain no; Chrome / Edge on Windows yes', pw.supported(phone) === false && pw.supported(tablet) === false && pw.supported(hinted) === false && pw.supported(pc) === true);
     r = rig({ supported: false });
     r.memory.setAuto(true);
     await r.ctl.init();

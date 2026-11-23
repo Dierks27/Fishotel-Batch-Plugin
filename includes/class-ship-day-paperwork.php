@@ -49,11 +49,12 @@
  * localStorage) and the page writes both files there — each under a temp name
  * first and then renamed, so the Print Watcher can never read a half-written
  * file — then looks in the folder for about 90 seconds and says whether the
- * Print Watcher took them. A file that was already sent, or is still in the
- * folder, is only sent again after a question. The server has no part in it:
- * no request, no option, no capability; the plan, the two files' bytes and
- * names, and the Open to print / Download links are as before, and a browser
- * without that API only shows one quiet line.
+ * Print Watcher took them. A file that was already sent, is still in the
+ * folder, or also opened in its own print tab is only sent after a question.
+ * The server has no part in it: no request, no option, no capability; the
+ * plan, the two files' bytes and names, and the Open to print / Download
+ * links are as before, and a browser without that API only shows one quiet
+ * line.
  *
  * Nothing here writes an order, a note or order meta, and nothing is e-mailed.
  * The only write is this page's own option (the two Media Library PDFs and

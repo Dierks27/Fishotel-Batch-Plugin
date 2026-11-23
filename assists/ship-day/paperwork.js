@@ -20,7 +20,8 @@
  * given the Print Watcher's folder (print-watcher.js, Chrome / Edge on the
  * PC), the same bytes are also handed to its "Send to the printers" box; once
  * a folder is chosen in this browser the two print tabs are no longer opened
- * (the links still open them).
+ * (the links still open them); a file that did open in its tab is only sent
+ * to the folder after a question, so nothing prints twice by accident.
  *
  * makeFiles() takes its I/O as a parameter so tests can run it under node:
  *   node tests/ship-day-paperwork-js-test.js
@@ -684,6 +685,14 @@
                     }
                 } catch (e) { /* ignore */ }
             }
+            /** True when the file's own print tab is open: "Send to the printers" then asks first. */
+            function tabOpen(tab) {
+                try {
+                    return !!tab && !tab.closed;
+                } catch (e) {
+                    return false;
+                }
+            }
             function fileRow(name, bytes, pages, tab, printer) {
                 var url = win.URL.createObjectURL(new win.Blob([bytes], { type: 'application/pdf' }));
                 urls.push(url);
@@ -771,13 +780,13 @@
                             var ready = [];
                             if (out.brother) {
                                 fileRow(plan.files.brother, out.brother, out.brotherPages, tabB, 'Brother');
-                                ready.push({ printer: 'Brother', name: plan.files.brother, bytes: out.brother });
+                                ready.push({ printer: 'Brother', name: plan.files.brother, bytes: out.brother, tab: tabOpen(tabB) });
                             } else {
                                 closeTab(tabB);
                             }
                             if (out.rx) {
                                 fileRow(plan.files.rx, out.rx, out.rxPages, tabR, 'RX106HD');
-                                ready.push({ printer: 'RX106HD', name: plan.files.rx, bytes: out.rx });
+                                ready.push({ printer: 'RX106HD', name: plan.files.rx, bytes: out.rx, tab: tabOpen(tabR) });
                             } else {
                                 closeTab(tabR);
                             }
@@ -785,7 +794,8 @@
                             var done = 'Done: ' + plan.boxes.length + ' box' + (plan.boxes.length === 1 ? '' : 'es') + '. ';
                             status(done + (straight ? 'The files are ready below.' : 'Each file opened in its own tab — press Print there once (or use the links below).'));
                             if (watcher) {
-                                // The very bytes the links carry. Sent by itself only with the tick on and the folder's permission held.
+                                // The very bytes the links carry. Sent by itself only with the tick on and the folder's permission held;
+                                // a file that also opened in its print tab is never sent without a question (it may be printed there).
                                 watcher.setFiles(ready);
                             }
                         });
