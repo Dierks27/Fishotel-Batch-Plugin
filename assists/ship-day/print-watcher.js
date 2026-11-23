@@ -31,9 +31,15 @@
  *     permission the folder already has, and replaces a file of that name.
  *
  * So writeWhole() writes each file under a name the Print Watcher does not
- * print ("sending-1-of-2-shipday_<date>.part": no printer at the front, not a
+ * print ("sending-1-of-2-shipday_<date>.txt": no printer at the front, not a
  * PDF by name — and so neither is its ".crswap"), checks its size, and renames
  * it to the real name: the real name is never empty and never part-written.
+ * (Why ".txt": Chrome asks its Safe Browsing service about every written file
+ * whose type it does not know — ".part", ".tmp", no ending at all — and holds
+ * the file back until the answer is in; ".txt" and ".pdf" are types it does
+ * not ask about (download_file_types.asciipb, check_file_system_access_write_
+ * request.cc), so a send does not wait on that service. Not ".partial": Chrome
+ * treats that one as dangerous on Windows.)
  * Only when the browser has no move() or refuses the rename does it write
  * straight to the real name; that still can never be read half-written (the
  * swap file above), but the name exists empty while the file is written, and
@@ -106,14 +112,14 @@
 
     /**
      * The name a file is written under before it is renamed: nothing the Print
-     * Watcher prints (no printer at the front, not ".pdf"), and different for
-     * each file of one send.
+     * Watcher prints (no printer at the front, not ".pdf"), different for each
+     * file of one send, and ".txt" for the reason in the file comment.
      */
     function tempNameFor(name, index, count) {
         var rest = String(name).replace(/\.pdf$/i, '');
         var cut = rest.indexOf('_');
         rest = cut === -1 ? 'file' : rest.slice(cut + 1);
-        return 'sending-' + ((index || 0) + 1) + '-of-' + (count || 1) + '-' + rest + '.part';
+        return 'sending-' + ((index || 0) + 1) + '-of-' + (count || 1) + '-' + rest + '.txt';
     }
 
     /** "today at 9:14 AM" / "on Nov 19 at 9:14 AM", in the PC's own time. */

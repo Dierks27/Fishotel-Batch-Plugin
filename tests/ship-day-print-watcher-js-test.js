@@ -316,10 +316,10 @@ async function main() {
     check('written under another name and renamed', how === 'renamed');
     check('the real name was never empty and never part-written: it only ever had its full size', JSON.stringify(d.sizesOf(BROTHER)) === JSON.stringify([40000]), JSON.stringify(d.sizesOf(BROTHER)));
     check('nothing else that the Print Watcher prints was ever in the folder (the temp name and its .crswap are neither a printer\'s nor a PDF)', d.namesEver().filter(printable).join() === BROTHER, d.namesEver().join());
-    check('the part-written bytes were in the folder only under the temp name\'s swap file', d.sizesOf('sending-1-of-2-shipday_2026-11-19.part.crswap').indexOf(20000) !== -1);
+    check('the part-written bytes were in the folder only under the temp name\'s swap file', d.sizesOf('sending-1-of-2-shipday_2026-11-19.txt.crswap').indexOf(20000) !== -1);
     check('only the file is left, byte for byte', Object.keys(d.files).join() === BROTHER && same(d.files[BROTHER], big));
-    check('temp names: one per file of a send, no printer at the front, not .pdf', pw.tempNameFor(BROTHER, 0, 2) === 'sending-1-of-2-shipday_2026-11-19.part' && pw.tempNameFor(RX, 1, 2) === 'sending-2-of-2-shipday_2026-11-19.part' && !printable(pw.tempNameFor('odd.pdf', 0, 1)));
-    d.files['sending-1-of-2-shipday_2026-11-19.part'] = bytesOf(10, 0); // a send that was cut off
+    check('temp names: one per file of a send, no printer at the front, not .pdf', pw.tempNameFor(BROTHER, 0, 2) === 'sending-1-of-2-shipday_2026-11-19.txt' && pw.tempNameFor(RX, 1, 2) === 'sending-2-of-2-shipday_2026-11-19.txt' && !printable(pw.tempNameFor('odd.pdf', 0, 1)));
+    d.files['sending-1-of-2-shipday_2026-11-19.txt'] = bytesOf(10, 0); // a send that was cut off
     d.take(BROTHER);
     await pw.writeWhole(d, BROTHER, big, { tempName: pw.tempNameFor(BROTHER, 0, 2) });
     check('a temp file left by a send that was cut off is cleared, not renamed', Object.keys(d.files).join() === BROTHER && same(d.files[BROTHER], big));
