@@ -674,12 +674,12 @@
                 picked = await deps.pick();
             } catch (e) {
                 // Closed without choosing — or the browser's own question after the
-                // chooser ("let this page edit files?") was answered no: the browser
+                // chooser ("Allow this site to edit files?") was answered Don't Allow: the browser
                 // reports both the same way (AbortError), and nothing changes.
                 if (errName(e) !== 'AbortError') {
                     message = 'The browser would not open the folder chooser' + (e && e.message ? ' (' + e.message + ')' : '') + '.';
                 } else if (!folder) {
-                    message = 'No folder was chosen. Press Choose the Print Watcher folder again, pick ' + FOLDER_NAME + ', and when the browser asks whether this page may edit files there, allow it.';
+                    message = 'No folder was chosen. Press Choose the Print Watcher folder again, pick ' + FOLDER_NAME + ', and when the browser asks whether this site may edit files there, press Allow.';
                 }
                 paint();
                 return false;
@@ -950,7 +950,7 @@
             if (!v.folder) {
                 var p = el('p', '', 'margin:4px 0;');
                 p.appendChild(el('strong', 'Send to the printers. '));
-                p.appendChild(doc.createTextNode('This page can put the two files straight into the Print Watcher’s folder, and the Print Watcher prints each one on its own printer — no Print to press. Choose the folder once (Documents → ' + v.expected + '); the browser then asks whether this page may edit files there — allow it. This browser remembers the folder.'));
+                p.appendChild(doc.createTextNode('This page can put the two files straight into the Print Watcher’s folder, and the Print Watcher prints each one on its own printer — no Print to press. Choose the folder once (Documents → ' + v.expected + '); the browser then asks whether this site may edit files there — press Allow. This browser remembers the folder.'));
                 box.appendChild(p);
                 var pc = el('p', '', 'margin:8px 0;');
                 pc.appendChild(button('Choose the Print Watcher folder', 'fh-sd-pw-choose', function () { ctl.choose(); }, v.ready));

@@ -514,7 +514,7 @@ async function main() {
 
         await page.waitForSelector('#fh-sd-pw-choose');
         var text = await boxText();
-        check('before anything: the box explains itself, names the folder and says the browser will ask to edit files there; no Send button, nothing chosen', /Send to the printers\./.test(text) && /Documents → FisHotel-PrintQueue\); the browser then asks whether this page may edit files there — allow it\./.test(text) && (await page.locator('#fh-sd-pw-send').count()) === 0, text);
+        check('before anything: the box explains itself, names the folder and says the browser will ask to edit files there; no Send button, nothing chosen', /Send to the printers\./.test(text) && /Documents → FisHotel-PrintQueue\); the browser then asks whether this site may edit files there — press Allow\./.test(text) && (await page.locator('#fh-sd-pw-send').count()) === 0, text);
         check('... and under it one short line, with no "change" or "forget" to press yet', /The Print Watcher must be running on this PC \(the fish icon near the clock\)\.$/.test(text.trim()) && !/change|forget/.test(text), text);
         check('one plan request, then both files with their links as before', (await printPaperwork()) === 1 && (await page.locator('#fh-sd-paperwork-files a[download]').count()) === 2 && (await page.locator('#fh-sd-paperwork-files a', { hasText: 'Open to print' }).count()) === 2);
         check('no folder chosen yet: the two print tabs open as in 10.35', ctx.pages().length === 3, String(ctx.pages().length));
@@ -523,7 +523,7 @@ async function main() {
         await page.click('#fh-sd-pw-choose');
         await page.waitForFunction(function () { return /No folder was chosen\./.test(document.getElementById('fh-sd-paperwork-send').textContent); }, null, { timeout: 10000 });
         text = await boxText();
-        check('the chooser ended without a folder (closed, or "Don\'t allow" on the browser\'s own question): one line says so and what to do; still nothing chosen', /No folder was chosen\. Press Choose the Print Watcher folder again, pick FisHotel-PrintQueue, and when the browser asks whether this page may edit files there, allow it\./.test(text) && (await page.locator('#fh-sd-pw-choose').count()) === 1 && (await page.locator('#fh-sd-pw-send').count()) === 0, text);
+        check('the chooser ended without a folder (closed, or "Don\'t allow" on the browser\'s own question): one line says so and what to do; still nothing chosen', /No folder was chosen\. Press Choose the Print Watcher folder again, pick FisHotel-PrintQueue, and when the browser asks whether this site may edit files there, press Allow\./.test(text) && (await page.locator('#fh-sd-pw-choose').count()) === 1 && (await page.locator('#fh-sd-pw-send').count()) === 0, text);
         await page.click('#fh-sd-pw-choose');
         await page.waitForSelector('#fh-sd-pw-send');
         text = await boxText();

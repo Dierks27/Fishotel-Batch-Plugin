@@ -472,7 +472,7 @@ async function main() {
     await r.ctl.choose();
     check('another folder than FisHotel-PrintQueue is allowed, with a plain note', r.ctl.view().folder === 'Downloads' && /normally watches FisHotel-PrintQueue/.test(r.ctl.view().folderNote));
     r = rig({ pickError: err('AbortError') });
-    check('the chooser closed without a folder — or the browser\'s own "edit files?" question answered no (it reports both alike): nothing changes, and one line says what to do', (await r.ctl.choose()) === false && r.ctl.view().folder === '' && r.stored === null && r.ctl.view().message === 'No folder was chosen. Press Choose the Print Watcher folder again, pick FisHotel-PrintQueue, and when the browser asks whether this page may edit files there, allow it.', r.ctl.view().message);
+    check('the chooser closed without a folder — or the browser\'s own "edit files?" question answered no (it reports both alike): nothing changes, and one line says what to do', (await r.ctl.choose()) === false && r.ctl.view().folder === '' && r.stored === null && r.ctl.view().message === 'No folder was chosen. Press Choose the Print Watcher folder again, pick FisHotel-PrintQueue, and when the browser asks whether this site may edit files there, press Allow.', r.ctl.view().message);
     var keep = fakeDir();
     r = rig({ stored: keep, pickError: err('AbortError') });
     await r.ctl.init();
