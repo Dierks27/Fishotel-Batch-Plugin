@@ -935,26 +935,123 @@ trait FisHotel_WooCommerce {
         }
     }
 
-    public function add_fishotel_price_field() {
-        woocommerce_wp_text_input( [
-            'id'          => '_fishotel_selling_price',
-            'label'       => 'FisHotel Selling Price',
-            'placeholder' => '0.00',
-            'desc_tip'    => 'true',
-            'description' => 'This price will be used in the Master Fish Library and public list.',
-            'type'        => 'number',
-            'custom_attributes' => [ 'step' => '0.01' ]
-        ]);
+    /*
+     * FisHotel Selling Price (10.37): no box on the product screen any more — Regular
+     * price is the one price people type. The rules are FisHotel_Selling_Price's
+     * (includes/class-selling-price.php); these are the WordPress ends.
+     */
+
+    /** Stored prices before a product save, by product id (save_post_product, priority 5). */
+    private $fishotel_prices_before_save = [];
+
+    public function remember_prices_before_save( $post_id ) {
+        $post_id = (int) $post_id;
+        if ( $post_id <= 0 ) return;
+        $this->fishotel_prices_before_save[ $post_id ] = [
+            'selling' => (string) get_post_meta( $post_id, FisHotel_Selling_Price::META, true ),
+            'regular' => (string) get_post_meta( $post_id, '_regular_price', true ),
+        ];
     }
 
+    /**
+     * woocommerce_process_product_meta, priority 20 — after WooCommerce has saved the
+     * posted prices. Writes the Selling Price only when the form posted it; otherwise a
+     * copy of the old Regular price follows the new one. Then the Master Fish price.
+     */
     public function save_fishotel_price_field( $post_id ) {
-        $price = isset( $_POST['_fishotel_selling_price'] ) ? wc_clean( $_POST['_fishotel_selling_price'] ) : '';
-        update_post_meta( $post_id, '_fishotel_selling_price', $price );
+        $post_id = (int) $post_id;
+        $post    = isset( $_POST[ FisHotel_Selling_Price::META ] ) && ! is_array( $_POST[ FisHotel_Selling_Price::META ] )
+            ? [ FisHotel_Selling_Price::META => wc_clean( wp_unslash( $_POST[ FisHotel_Selling_Price::META ] ) ) ]
+            : [];
+        $posted  = FisHotel_Selling_Price::posted( $post );
+        if ( 'write' === $posted['action'] ) {
+            update_post_meta( $post_id, FisHotel_Selling_Price::META, $posted['value'] );
+        } elseif ( 'delete' === $posted['action'] ) {
+            delete_post_meta( $post_id, FisHotel_Selling_Price::META );
+        } else {
+            $this->selling_price_follows_regular( $post_id );
+        }
+        unset( $this->fishotel_prices_before_save[ $post_id ] );
+        $this->refresh_master_price( $post_id );
     }
 
-    public function sync_wc_to_master( $post_id, $post, $update ) {
+    /** woocommerce_product_quick_edit_save / woocommerce_product_bulk_edit_save (the products list). */
+    public function selling_price_after_list_edit( $product ) {
+        if ( ! is_object( $product ) || ! method_exists( $product, 'get_id' ) ) return;
+        $post_id = (int) $product->get_id();
+        if ( $post_id <= 0 ) return;
+        $this->selling_price_follows_regular( $post_id );
+        unset( $this->fishotel_prices_before_save[ $post_id ] );
+        $this->refresh_master_price( $post_id );
+    }
+
+    private function selling_price_follows_regular( $post_id ) {
+        if ( ! isset( $this->fishotel_prices_before_save[ $post_id ] ) ) return;
+        $before = $this->fishotel_prices_before_save[ $post_id ];
+        $next   = FisHotel_Selling_Price::follow(
+            $before['selling'],
+            $before['regular'],
+            (string) get_post_meta( $post_id, '_regular_price', true )
+        );
+        if ( null === $next ) return;
+        if ( FisHotel_Selling_Price::keep_copy( $before['selling'], $before['regular'], $next ) ) {
+            // A Selling Price set apart from Regular price once: kept, never lost.
+            add_post_meta( $post_id, FisHotel_Selling_Price::REPLACED_META, $before['selling'] );
+        }
+        update_post_meta( $post_id, FisHotel_Selling_Price::META, $next ); // the updated_post_meta sync carries it to the Master Fish
+    }
+
+    /**
+     * woocommerce_product_options_pricing — the one line under Regular price when a
+     * Selling Price from before 10.37 still differs from it, so the price the Master
+     * Fish Library and the public list use is never out of sight.
+     */
+    public function selling_price_note() {
+        global $post;
+        $post_id = is_object( $post ) && isset( $post->ID ) ? (int) $post->ID : 0;
+        if ( $post_id <= 0 ) return;
+        $note = FisHotel_Selling_Price::note(
+            (string) get_post_meta( $post_id, FisHotel_Selling_Price::META, true ),
+            (string) get_post_meta( $post_id, '_regular_price', true )
+        );
+        if ( '' === $note ) return;
+        echo '<p class="form-field fishotel-selling-price-note"><span class="description">' . esc_html( $note ) . '</span></p>';
+    }
+
+    /**
+     * The linked Master Fish's price, worked out again once WooCommerce has saved
+     * (quick and bulk edit reach here before wp_insert_post has finished).
+     * Same rule and same fish as sync_wc_to_master; a blank price never overwrites it.
+     */
+    private function refresh_master_price( $post_id ) {
+        $master_id = (int) get_post_meta( $post_id, '_linked_fish_master', true );
+        if ( $master_id <= 0 || 'fish_master' !== get_post_type( $master_id ) ) return;
+        $categories = wp_get_post_terms( $post_id, 'product_cat', [ 'fields' => 'slugs' ] );
+        if ( ! is_array( $categories ) || ! in_array( 'quarantined-fish', $categories, true ) ) return;
+        $product = function_exists( 'wc_get_product' ) ? wc_get_product( $post_id ) : false;
+        if ( ! $product ) return;
+
+        $price = FisHotel_Selling_Price::master_price(
+            (string) get_post_meta( $post_id, FisHotel_Selling_Price::META, true ),
+            (string) $product->get_price()
+        );
+        if ( ! FisHotel_Selling_Price::needs_master_update( get_post_meta( $master_id, '_selling_price', true ), $price ) ) return;
+        $this->is_syncing = true; // product → master only: never echoed back into the product
+        update_post_meta( $master_id, '_selling_price', floatval( $price ) );
+        $this->is_syncing = false;
+    }
+
+    /**
+     * Product → Master Fish Library (name, scientific name, price). Runs on
+     * wp_after_insert_post: after every save_post callback has saved its part —
+     * WooCommerce's prices, and a scientific name written into the short
+     * description by another plugin's box (FisHotel Misc's Fish essentials) — so
+     * one save files the fish under its new name and price, not the ones from
+     * before the save (until 10.37 it ran on save_post_product, ahead of them all).
+     */
+    public function sync_wc_to_master( $post_id, $post, $update = true ) {
         if ( wp_is_post_revision( $post_id ) ) return;
-        if ( $post->post_type !== 'product' ) return;
+        if ( ! is_object( $post ) || $post->post_type !== 'product' ) return;
 
         $categories = wp_get_post_terms( $post_id, 'product_cat', [ 'fields' => 'slugs' ] );
         if ( ! in_array( 'quarantined-fish', $categories ) ) return;
@@ -967,7 +1064,7 @@ trait FisHotel_WooCommerce {
         $sci_name = ucwords( strtolower( $sci_name ) );
 
         $common_name = ucwords( strtolower( $product->get_name() ) );
-        $price = $product->get_meta( '_fishotel_selling_price' ) ?: $product->get_price(); // product CRUD: the WC_Product is already in hand
+        $price = FisHotel_Selling_Price::master_price( $product->get_meta( '_fishotel_selling_price' ), $product->get_price() ); // product CRUD: the WC_Product is already in hand
 
         $master = get_posts( [
             'post_type'   => 'fish_master',
@@ -988,7 +1085,13 @@ trait FisHotel_WooCommerce {
 
         if ( $master_id ) {
             update_post_meta( $master_id, '_scientific_name', $sci_name );
+            // 10.37: product → master only. Before, this write was echoed straight back
+            // (sync_price_master_to_woo) into the product's Selling Price, _price and
+            // _regular_price with the price from BEFORE the save — it overwrote Regular
+            // price with a sale price and left a stale Selling Price behind.
+            $this->is_syncing = true;
             update_post_meta( $master_id, '_selling_price', floatval( $price ) );
+            $this->is_syncing = false;
             update_post_meta( $master_id, '_wc_product_id', $post_id );
             update_post_meta( $post_id, '_linked_fish_master', $master_id );
         }

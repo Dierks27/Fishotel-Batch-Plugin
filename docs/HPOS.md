@@ -85,7 +85,7 @@ There is no direct `wp_postmeta` SQL on orders anywhere in the plugin.
 | `includes/class-admin.php` | 3282–3286 | **product** (`wp_insert_post` id, no `WC_Product` in hand yet) | `_price`, `_regular_price`, `_fishotel_selling_price`, `_linked_fish_master`, `_sku` | unchanged (post meta on products is supported by WooCommerce; HPOS does not move products) |
 | `includes/class-ajax.php` | 46–108, 185–353, 1028–1035, 1245, 1421–1492 | fish_batch, fish_request, fish_master, fishotel_notification | as above | unchanged |
 | `includes/class-woocommerce.php` | 46–143, 356–365 | fish_request, fish_batch | `_customer_id`, `_batch_name`, `_cart_items`, `_total`, `_status` | unchanged |
-| `includes/class-woocommerce.php` | 919–921, 958–982 | fish_master + **product** (`save_post_product`, `updated_post_meta` sync) | `_fishotel_selling_price`, `_price`, `_regular_price`, `_linked_fish_master`, `_wc_product_id` | unchanged except **938**: `get_post_meta( $post_id, '_fishotel_selling_price' )` → `$product->get_meta()` (the `WC_Product` was already loaded) + a `wc_get_product()` false guard |
+| `includes/class-woocommerce.php` | 919–921, 958–982 | fish_master + **product** (`wp_after_insert_post` since 10.37, `updated_post_meta` sync) | `_fishotel_selling_price`, `_price`, `_regular_price`, `_linked_fish_master`, `_wc_product_id` | unchanged except **938**: `get_post_meta( $post_id, '_fishotel_selling_price' )` → `$product->get_meta()` (the `WC_Product` was already loaded) + a `wc_get_product()` false guard. 10.37: the Selling Price box is gone; `save_fishotel_price_field` / `selling_price_after_list_edit` / `refresh_master_price` (products and fish_master only, still post meta) — rules in `includes/class-selling-price.php` |
 | `includes/class-shortcodes.php` | 96–256, 1070–1126, 1887–1926, 2637–2687, 3067–3263, 3943–4025, 4728 | fish_batch, fish_request, fish_master, fishotel_notification | as above | unchanged |
 | `includes/class-hotel-program.php` | 43–51, 554–600, 3543–3610, 3727–3741, 3897–3901, 4043–4075 | fish_batch, fish_request, fishotel_notification | as above + `_fh_notif_*` | unchanged |
 | `includes/class-northstar.php` | 252–301, 468–620, 1216–1266 | fish_master, fish_batch (`$wpdb->posts` title lookups) | `_master_id`, `_batch_name`, `_northstar_price`, `_stock`, `_item_code`, `_sdc_import` | unchanged |
@@ -157,11 +157,12 @@ FeaturesUtil::declare_compatibility( 'cart_checkout_blocks', FISHOTEL_PLUGIN_FIL
   the classic `[woocommerce_checkout]` shortcode until a blocks integration
   exists** (not part of this change).
 - **`product_block_editor` → deliberately not declared.** The "FisHotel Selling
-  Price" field is added on `woocommerce_product_options_general_product_data`
-  and saved on `woocommerce_process_product_meta` — classic product editor hooks
-  that the block product editor never fires — so the field would silently
-  disappear. Declaring compatibility would be untrue; leave the new product
-  editor off.
+  Price" has no box on the screen since 10.37, but keeping it in step with
+  Regular price and refreshing the Master Fish price after a save runs on
+  `woocommerce_process_product_meta` and the quick/bulk edit hooks — classic
+  product editor hooks that the block product editor never fires — so the Master
+  Fish Library would silently stop following price changes. Declaring
+  compatibility would be untrue; leave the new product editor off.
 
 ## 4. Testing on a staging site
 

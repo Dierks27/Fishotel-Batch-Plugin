@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.36 - Ship Day sends the day's paperwork to the Print Watcher (Send to the printers)
- * Version:           10.36
+ * Description:       v10.37 - FisHotel Selling Price box gone from the product screen; saved only when posted and follows Regular price (an old different one kept as a copy); Master Fish gets the new price and scientific name on the same save
+ * Version:           10.37
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,13 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.36' );
+define( 'FISHOTEL_VERSION', '10.37' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-helpers.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-delivery-rules.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-order-meta.php';
+require_once FISHOTEL_PLUGIN_DIR . 'includes/class-selling-price.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ship-day.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ship-day-today-line.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-ship-day-paperwork.php';
@@ -45,9 +46,10 @@ require_once FISHOTEL_PLUGIN_DIR . 'includes/class-arcade.php';
  *   WooCommerce now warns before enabling it. Keep it off until a blocks
  *   integration exists.
  * - product_block_editor: deliberately NOT declared. The FisHotel Selling Price
- *   field hooks woocommerce_product_options_general_product_data and is saved on
- *   woocommerce_process_product_meta — classic product editor hooks the block
- *   product editor never fires — so declaring compatibility would be untrue.
+ *   (no box on the screen since 10.37) follows Regular price and refreshes the
+ *   Master Fish price on woocommerce_process_product_meta and the quick/bulk edit
+ *   hooks — classic product editor hooks the block product editor never fires —
+ *   so declaring compatibility would be untrue.
  */
 add_action( 'before_woocommerce_init', function () {
     if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
@@ -242,9 +244,13 @@ class FisHotel_Batch_Manager {
         add_filter( 'woocommerce_is_purchasable', [$this, 'force_deposit_purchasable'], 9999, 2 );
         add_filter( 'woocommerce_order_item_name', [$this, 'force_deposit_order_item_name'], 9999, 3 );
 
-        add_action( 'woocommerce_product_options_general_product_data', [$this, 'add_fishotel_price_field'] );
-        add_action( 'woocommerce_process_product_meta', [$this, 'save_fishotel_price_field'] );
-        add_action( 'save_post_product', [$this, 'sync_wc_to_master'], 10, 3 );
+        // FisHotel Selling Price (10.37): no box on the screen; saved only when posted (FisHotel_Selling_Price).
+        add_action( 'save_post_product', [$this, 'remember_prices_before_save'], 5 );
+        add_action( 'woocommerce_process_product_meta', [$this, 'save_fishotel_price_field'], 20 );
+        add_action( 'woocommerce_product_quick_edit_save', [$this, 'selling_price_after_list_edit'] );
+        add_action( 'woocommerce_product_bulk_edit_save', [$this, 'selling_price_after_list_edit'] );
+        add_action( 'woocommerce_product_options_pricing', [$this, 'selling_price_note'] );
+        add_action( 'wp_after_insert_post', [$this, 'sync_wc_to_master'], 10, 3 ); // after every save_post box has saved
 
         add_action( 'admin_post_fishotel_sync_quarantined', [$this, 'sync_all_quarantined'] );
 
