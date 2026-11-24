@@ -15,14 +15,16 @@
  *                            the form really posted it (posted(): a number is written,
  *                            a blank removes the value, anything else is ignored).
  *                            Nothing posted = nothing written, never a blank.
- *   A COPY FOLLOWS           Most stored values are copies of Regular price (the Master
- *                            Fish Library writes both at once: its price box, the CSV
- *                            import, "Create product"). When a save changes Regular
- *                            price and the stored Selling Price was equal to the old
- *                            Regular price, it follows the new one (follow()), so the
- *                            Master Fish Library sees the new price. A value that
- *                            differed from Regular price before the save was set on
- *                            purpose and is kept.
+ *   IT FOLLOWS REGULAR       When a save changes Regular price, a stored Selling Price
+ *                            follows the new one (follow()), so the Master Fish Library
+ *                            and the public list show what the product page shows. With
+ *                            no box on the screen, a Selling Price kept apart from
+ *                            Regular price could never be seen or changed again, so it
+ *                            follows too. A value that differed from the old Regular
+ *                            price is not lost: it is kept as a copy under
+ *                            REPLACED_META (keep_copy()). Until Regular price changes,
+ *                            such a value stays and the product's price box says so
+ *                            (note()).
  *   MASTER PRICE             As before: the Selling Price when it is set, otherwise the
  *                            product's price (master_price(), the old "?:"). Worked out
  *                            again after WooCommerce has saved the new prices
@@ -38,6 +40,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 class FisHotel_Selling_Price {
 
     const META = '_fishotel_selling_price';
+
+    /** Copies of Selling Prices that differed from Regular price when Regular price replaced them. */
+    const REPLACED_META = '_fishotel_selling_price_replaced';
 
     /** Two prices closer than this are the same price ("12" = "12.00" = 12.0). */
     const CENT = 0.005;
@@ -83,7 +88,9 @@ class FisHotel_Selling_Price {
 
     /**
      * The Selling Price to write after a save that did not post it, or null to
-     * write nothing.
+     * write nothing. When Regular price changed, a stored Selling Price follows it —
+     * a copy of the old Regular price and one that differed alike (keep_copy() says
+     * when to keep the old value first).
      *
      * @param mixed $old_selling Stored Selling Price before the save.
      * @param mixed $old_regular Stored Regular price before the save.
@@ -91,16 +98,42 @@ class FisHotel_Selling_Price {
      * @return string|null
      */
     public static function follow( $old_selling, $old_regular, $new_regular ) {
-        if ( ! self::same_price( $old_selling, $old_regular ) ) {
-            return null; // no Selling Price, or one set on purpose: keep it
+        if ( ! self::is_price( $old_selling ) ) {
+            return null; // no Selling Price: the Master Fish uses the product price
         }
         if ( ! self::is_price( $new_regular ) ) {
             return null; // Regular price emptied: never write a blank
         }
+        if ( self::same_price( $old_regular, $new_regular ) ) {
+            return null; // Regular price unchanged: leave the Selling Price as it is
+        }
         if ( self::same_price( $old_selling, $new_regular ) ) {
-            return null; // price unchanged
+            return null; // already the new price
         }
         return trim( (string) $new_regular );
+    }
+
+    /**
+     * Whether follow() is about to replace a Selling Price that differed from the
+     * old Regular price — set apart on purpose once — so it is kept as a copy first.
+     */
+    public static function keep_copy( $old_selling, $old_regular, $next ) {
+        return null !== $next && self::is_price( $old_selling ) && ! self::same_price( $old_selling, $old_regular );
+    }
+
+    /**
+     * The line under Regular price when a stored Selling Price differs from it (the
+     * Master Fish Library and the public list use the Selling Price), or '' when
+     * there is nothing to say.
+     */
+    public static function note( $selling, $regular ) {
+        if ( ! self::is_price( $selling ) || self::same_price( $selling, $regular ) ) {
+            return '';
+        }
+        return sprintf(
+            'The Master Fish Library and the public list show this fish at %s, set before Regular price was the one price. Change Regular price and they follow it.',
+            number_format( (float) $selling, 2, '.', '' )
+        );
     }
 
     /**

@@ -47,11 +47,12 @@ $GLOBALS['fh_types']  = [];  // [post_id] => post type
 $GLOBALS['fh_terms']  = [];  // [post_id] => [slugs]
 $GLOBALS['fh_posts']  = [];  // [post_id] => ['post_title' => .., 'post_excerpt' => .., 'post_content' => ..]
 $GLOBALS['fh_hooks']  = [];  // [hook][priority][] => [callable, args]
+$GLOBALS['fh_added']  = [];  // [post_id][key] => [values] (add_post_meta)
 $GLOBALS['fh_writes'] = [];  // log of meta writes: "post_id:key=value" / "post_id:key deleted"
 $GLOBALS['fh_next_id'] = 1000;
 
 function fh_reset() {
-    $GLOBALS['fh_meta'] = $GLOBALS['fh_types'] = $GLOBALS['fh_terms'] = $GLOBALS['fh_posts'] = $GLOBALS['fh_writes'] = [];
+    $GLOBALS['fh_meta'] = $GLOBALS['fh_types'] = $GLOBALS['fh_terms'] = $GLOBALS['fh_posts'] = $GLOBALS['fh_writes'] = $GLOBALS['fh_added'] = [];
 }
 function add_action( $hook, $cb, $priority = 10, $args = 1 ) {
     $GLOBALS['fh_hooks'][ $hook ][ $priority ][] = [ $cb, $args ];
@@ -82,6 +83,12 @@ function update_post_meta( $id, $key, $value ) {
     do_action( $exists ? 'updated_post_meta' : 'added_post_meta', 1, $id, $key, $value );
     return true;
 }
+function add_post_meta( $id, $key, $value, $unique = false ) {
+    // Several values under one key are kept as a list (what get_post_meta( $id, $key ) returns).
+    $GLOBALS['fh_added'][ $id ][ $key ][] = (string) $value;
+    $GLOBALS['fh_writes'][] = "{$id}:{$key}+=" . (string) $value;
+    return true;
+}
 function delete_post_meta( $id, $key ) {
     if ( ! isset( $GLOBALS['fh_meta'][ $id ] ) || ! array_key_exists( $key, $GLOBALS['fh_meta'][ $id ] ) ) return false;
     unset( $GLOBALS['fh_meta'][ $id ][ $key ] );
@@ -96,6 +103,7 @@ function wp_is_post_revision( $id ) { return false; }
 function wp_strip_all_tags( $s ) { return trim( strip_tags( (string) $s ) ); }
 function wp_unslash( $v ) { return is_string( $v ) ? stripslashes( $v ) : $v; }
 function wc_clean( $v ) { return is_scalar( $v ) ? trim( strip_tags( (string) $v ) ) : $v; }
+function esc_html( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES ); }
 function wp_update_post( $arr ) {
     foreach ( $arr as $k => $v ) if ( 'ID' !== $k ) $GLOBALS['fh_posts'][ $arr['ID'] ][ $k ] = $v;
     return $arr['ID'];
@@ -168,10 +176,19 @@ check( 'same_price: blank is never the same', ! $S::same_price( '', '' ) && ! $S
 check( 'follow: a copy follows the new Regular price', '15' === $S::follow( '12', '12', '15' ) );
 check( 'follow: "12.00" copy of "12" follows', '15.50' === $S::follow( '12.00', '12', '15.50' ) );
 check( 'follow: no Selling Price → nothing written', null === $S::follow( '', '12', '15' ) );
-check( 'follow: set on purpose (differed) → kept', null === $S::follow( '20', '12', '15' ) );
+check( 'follow: set apart (differed) → follows too, once Regular price changes', '15' === $S::follow( '20', '12', '15' ) );
+check( 'follow: set apart, Regular price unchanged → kept', null === $S::follow( '20', '12', '12' ) );
+check( 'keep_copy: a value that differed is kept before it is replaced', $S::keep_copy( '20', '12', '15' ) );
+check( 'keep_copy: a copy of the old Regular price needs no copy', ! $S::keep_copy( '12', '12.00', '15' ) );
+check( 'keep_copy: nothing replaced → nothing kept', ! $S::keep_copy( '20', '12', null ) );
+check( 'keep_copy: no Selling Price → nothing kept', ! $S::keep_copy( '', '12', '15' ) );
+check( 'note: a Selling Price apart from Regular price is shown', false !== strpos( $S::note( '20', '12' ), '20.00' ) );
+check( 'note: same as Regular price → nothing to say', '' === $S::note( '12.00', '12' ) );
+check( 'note: no Selling Price → nothing to say', '' === $S::note( '', '12' ) );
 check( 'follow: Regular price unchanged → nothing written', null === $S::follow( '12', '12', '12.00' ) );
 check( 'follow: Regular price emptied → never a blank', null === $S::follow( '12', '12', '' ) );
-check( 'follow: no old Regular price → nothing written', null === $S::follow( '12', '', '15' ) );
+check( 'follow: no old Regular price, one typed now → follows it', '15' === $S::follow( '12', '', '15' ) );
+check( 'follow: variable fish (no Regular price before or after) → nothing written', null === $S::follow( '12', '', '' ) );
 
 check( 'master_price: Selling Price when set (as 10.36)', '20' === $S::master_price( '20', '15' ) );
 check( 'master_price: product price when blank (as 10.36)', '15' === $S::master_price( '', '15' ) );
@@ -191,7 +208,8 @@ add_action( 'save_post_product', [ $plugin, 'remember_prices_before_save' ], 5 )
 add_action( 'woocommerce_process_product_meta', [ $plugin, 'save_fishotel_price_field' ], 20 );
 add_action( 'woocommerce_product_quick_edit_save', [ $plugin, 'selling_price_after_list_edit' ] );
 add_action( 'woocommerce_product_bulk_edit_save', [ $plugin, 'selling_price_after_list_edit' ] );
-add_action( 'save_post_product', [ $plugin, 'sync_wc_to_master' ], 10, 3 );
+add_action( 'woocommerce_product_options_pricing', [ $plugin, 'selling_price_note' ] );
+add_action( 'wp_after_insert_post', [ $plugin, 'sync_wc_to_master' ], 10, 3 );
 add_action( 'updated_post_meta', [ $plugin, 'sync_price_master_to_woo' ], 10, 4 );
 add_action( 'updated_post_meta', [ $plugin, 'sync_price_woo_to_master' ], 10, 4 );
 
@@ -212,6 +230,7 @@ function fh_screen_save( $id, array $post ) {
     $GLOBALS['fh_writes'] = [];
     do_action( 'save_post_product', $id, get_post( $id ), true );
     do_action( 'woocommerce_process_product_meta', $id, get_post( $id ) ); // from save_post, priority 1
+    do_action( 'wp_after_insert_post', $id, get_post( $id ), true ); // wp_insert_post's last word
     $_POST = [];
 }
 /** Quick edit (or bulk edit) in the products list. */
@@ -222,6 +241,7 @@ function fh_list_save( $id, $regular, $hook = 'woocommerce_product_quick_edit_sa
     update_post_meta( $id, '_regular_price', $regular ); // WooCommerce's quick/bulk edit save (save_post, 10)
     update_post_meta( $id, '_price', $regular );
     do_action( $hook, new FH_Test_Product( $id ) );
+    do_action( 'wp_after_insert_post', $id, get_post( $id ), true );
     $_POST = [];
 }
 function fh_product( $id, $cats, $meta, $title = 'Yellow Tang', $excerpt = 'Zebrasoma flavescens' ) {
@@ -270,14 +290,31 @@ check( 'copy: Regular price is what was typed', '15' === fh_m( 30, '_regular_pri
 fh_screen_save( 30, [ '_regular_price' => '15.00' ] );
 check( 'copy: "15.00" for "15" is not a change of Selling Price', '15' === fh_m( 30, '_fishotel_selling_price' ) && ! fh_wrote( 30, '_fishotel_selling_price' ) );
 
-// D. A Selling Price set on purpose (20 while Regular is 12): kept.
+// D. A Selling Price set apart before 10.37 (20 while Regular is 12). Nothing on the
+//    screen can change it any more, so it must not freeze the public list.
 fh_reset();
 fh_product( 40, [ 'quarantined-fish' ], [ '_regular_price' => '12', '_price' => '12', '_fishotel_selling_price' => '20' ] );
 fh_master( 41, 40, '20' );
+fh_screen_save( 40, [ '_regular_price' => '12' ] );
+check( 'set apart, Regular price unchanged: Selling Price kept', '20' === fh_m( 40, '_fishotel_selling_price' ) && ! fh_wrote( 40, '_fishotel_selling_price' ) );
+check( 'set apart, Regular price unchanged: Master Fish price stays 20 (as 10.36)', '20' === fh_m( 41, '_selling_price' ) );
+$GLOBALS['post'] = get_post( 40 );
+ob_start(); do_action( 'woocommerce_product_options_pricing' ); $note = ob_get_clean();
+check( 'set apart: the price box says the public list shows 20.00', false !== strpos( $note, '20.00' ) && false !== strpos( $note, 'fishotel-selling-price-note' ), $note );
 fh_screen_save( 40, [ '_regular_price' => '15' ] );
-check( 'on purpose: Selling Price kept', '20' === fh_m( 40, '_fishotel_selling_price' ) && ! fh_wrote( 40, '_fishotel_selling_price' ) );
-check( 'on purpose: Master Fish price stays the Selling Price (as 10.36)', '20' === fh_m( 41, '_selling_price' ) );
-check( 'on purpose: Regular price is what was typed (not overwritten by the Selling Price)', '15' === fh_m( 40, '_regular_price' ) && '15' === fh_m( 40, '_price' ) );
+check( 'set apart, Regular price 12 → 15: Selling Price follows (the public list is not frozen)', '15' === fh_m( 40, '_fishotel_selling_price' ) );
+check( 'set apart, Regular price 12 → 15: Master Fish price 15 after ONE save', '15' === fh_m( 41, '_selling_price' ), (string) fh_m( 41, '_selling_price' ) );
+check( 'set apart: the old 20 is kept as a copy (nothing lost)', [ '20' ] === ( $GLOBALS['fh_added'][40]['_fishotel_selling_price_replaced'] ?? null ) );
+check( 'set apart: Regular price is what was typed (not overwritten by the Selling Price)', '15' === fh_m( 40, '_regular_price' ) && '15' === fh_m( 40, '_price' ) );
+ob_start(); do_action( 'woocommerce_product_options_pricing' ); $note = ob_get_clean();
+check( 'set apart: once followed, the price box says nothing', '' === $note, $note );
+fh_screen_save( 40, [ '_regular_price' => '16' ] );
+check( 'set apart: the next change follows with no second copy', '16' === fh_m( 40, '_fishotel_selling_price' ) && 1 === count( $GLOBALS['fh_added'][40]['_fishotel_selling_price_replaced'] ) );
+fh_list_save( 40, '18' );
+check( 'quick edit on a value set apart: follows too', '18' === fh_m( 40, '_fishotel_selling_price' ) && '18' === fh_m( 41, '_selling_price' ) );
+unset( $GLOBALS['post'] );
+ob_start(); do_action( 'woocommerce_product_options_pricing' ); $note = ob_get_clean();
+check( 'price box note: no product in hand → nothing printed', '' === $note );
 
 // E. The field posted (nothing draws it now, but a form that posts it is obeyed).
 fh_reset();
@@ -350,6 +387,28 @@ check( 'new fish: a Master Fish is made and linked', $mid > 0 && 'fish_master' =
 check( 'new fish: Master price 30', '30' === fh_m( $mid, '_selling_price' ) );
 check( 'new fish: no Selling Price written', null === fh_m( 110, '_fishotel_selling_price' ) );
 
+// L. Another plugin's box writes the scientific name into the short description
+//    during save_post (FisHotel Misc's Fish essentials: woocommerce_process_product_meta
+//    50, through $product->save(), which does not run save_post again). The Master
+//    Fish must get the new name on THAT save, not one save late.
+fh_reset();
+add_action( 'woocommerce_process_product_meta', function ( $id ) {
+    if ( isset( $_POST['fh_test_sci'] ) ) {
+        $GLOBALS['fh_posts'][ $id ]['post_excerpt'] = (string) $_POST['fh_test_sci'];
+    }
+}, 50 );
+fh_product( 120, [ 'quarantined-fish' ], [ '_regular_price' => '40', '_price' => '40' ], 'Firefish', 'Nemateleotris fictiva' );
+fh_master( 121, 120, '40', 'Nemateleotris Fictiva' );
+fh_screen_save( 120, [ '_regular_price' => '40', 'fh_test_sci' => 'Nemateleotris reviewii' ] );
+$mid = (int) fh_m( 120, '_linked_fish_master' );
+check( 'rename: linked to a Master Fish under the NEW name after one save', 'Nemateleotris Reviewii' === fh_m( $mid, '_scientific_name' ), (string) fh_m( $mid, '_scientific_name' ) );
+check( 'rename: the old Master Fish is not refiled under the old name again', 121 !== $mid && 'Nemateleotris Fictiva' === fh_m( 121, '_scientific_name' ) );
+$masters = count( array_keys( $GLOBALS['fh_types'], 'fish_master', true ) );
+fh_screen_save( 120, [ '_regular_price' => '40', 'fh_test_sci' => 'Nemateleotris reviewii' ] );
+check( 'rename: the next save makes no further Master Fish', $masters === count( array_keys( $GLOBALS['fh_types'], 'fish_master', true ) ) && $mid === (int) fh_m( 120, '_linked_fish_master' ) );
+check( 'rename: new Master Fish price 40', '40' === fh_m( $mid, '_selling_price' ) );
+$plugin->sync_wc_to_master( 120, null, true ); // a caller with no post in hand: nothing happens, no error
+
 // ---------------------------------------------------------------------------
 // Part 3 — the source.
 // ---------------------------------------------------------------------------
@@ -365,12 +424,13 @@ $want = [
     "add_action( 'woocommerce_process_product_meta', [\$this, 'save_fishotel_price_field'], 20 );",
     "add_action( 'woocommerce_product_quick_edit_save', [\$this, 'selling_price_after_list_edit'] );",
     "add_action( 'woocommerce_product_bulk_edit_save', [\$this, 'selling_price_after_list_edit'] );",
-    "add_action( 'save_post_product', [\$this, 'sync_wc_to_master'], 10, 3 );",
+    "add_action( 'wp_after_insert_post', [\$this, 'sync_wc_to_master'], 10, 3 );",
+    "add_action( 'woocommerce_product_options_pricing', [\$this, 'selling_price_note'] );",
 ];
 foreach ( $want as $line ) {
     check( 'main file registers: ' . $line, false !== strpos( $main, $line ) );
 }
-check( 'remember runs before sync_wc_to_master (5 < 10)', strpos( $main, $want[0] ) < strpos( $main, $want[4] ) );
+check( 'sync_wc_to_master is no longer on save_post_product (ahead of every box)', false === strpos( $main, "add_action( 'save_post_product', [\$this, 'sync_wc_to_master']" ) );
 
 echo "\n{$passes} passed, {$failures} failed.\n";
 exit( $failures > 0 ? 1 : 0 );

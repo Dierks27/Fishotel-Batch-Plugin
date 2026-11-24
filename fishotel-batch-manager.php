@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.37 - FisHotel Selling Price box gone from the product screen; saved only when posted, Master Fish price follows Regular price
+ * Description:       v10.37 - FisHotel Selling Price box gone from the product screen; saved only when posted and follows Regular price (an old different one kept as a copy); Master Fish gets the new price and scientific name on the same save
  * Version:           10.37
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
@@ -249,7 +249,8 @@ class FisHotel_Batch_Manager {
         add_action( 'woocommerce_process_product_meta', [$this, 'save_fishotel_price_field'], 20 );
         add_action( 'woocommerce_product_quick_edit_save', [$this, 'selling_price_after_list_edit'] );
         add_action( 'woocommerce_product_bulk_edit_save', [$this, 'selling_price_after_list_edit'] );
-        add_action( 'save_post_product', [$this, 'sync_wc_to_master'], 10, 3 );
+        add_action( 'woocommerce_product_options_pricing', [$this, 'selling_price_note'] );
+        add_action( 'wp_after_insert_post', [$this, 'sync_wc_to_master'], 10, 3 ); // after every save_post box has saved
 
         add_action( 'admin_post_fishotel_sync_quarantined', [$this, 'sync_all_quarantined'] );
 

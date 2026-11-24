@@ -993,14 +993,34 @@ trait FisHotel_WooCommerce {
             $before['regular'],
             (string) get_post_meta( $post_id, '_regular_price', true )
         );
-        if ( null !== $next ) {
-            update_post_meta( $post_id, FisHotel_Selling_Price::META, $next ); // the updated_post_meta sync carries it to the Master Fish
+        if ( null === $next ) return;
+        if ( FisHotel_Selling_Price::keep_copy( $before['selling'], $before['regular'], $next ) ) {
+            // A Selling Price set apart from Regular price once: kept, never lost.
+            add_post_meta( $post_id, FisHotel_Selling_Price::REPLACED_META, $before['selling'] );
         }
+        update_post_meta( $post_id, FisHotel_Selling_Price::META, $next ); // the updated_post_meta sync carries it to the Master Fish
+    }
+
+    /**
+     * woocommerce_product_options_pricing — the one line under Regular price when a
+     * Selling Price from before 10.37 still differs from it, so the price the Master
+     * Fish Library and the public list use is never out of sight.
+     */
+    public function selling_price_note() {
+        global $post;
+        $post_id = is_object( $post ) && isset( $post->ID ) ? (int) $post->ID : 0;
+        if ( $post_id <= 0 ) return;
+        $note = FisHotel_Selling_Price::note(
+            (string) get_post_meta( $post_id, FisHotel_Selling_Price::META, true ),
+            (string) get_post_meta( $post_id, '_regular_price', true )
+        );
+        if ( '' === $note ) return;
+        echo '<p class="form-field fishotel-selling-price-note"><span class="description">' . esc_html( $note ) . '</span></p>';
     }
 
     /**
      * The linked Master Fish's price, worked out again once WooCommerce has saved
-     * (sync_wc_to_master runs on save_post_product, before the new prices are saved).
+     * (quick and bulk edit reach here before wp_insert_post has finished).
      * Same rule and same fish as sync_wc_to_master; a blank price never overwrites it.
      */
     private function refresh_master_price( $post_id ) {
@@ -1021,9 +1041,17 @@ trait FisHotel_WooCommerce {
         $this->is_syncing = false;
     }
 
-    public function sync_wc_to_master( $post_id, $post, $update ) {
+    /**
+     * Product → Master Fish Library (name, scientific name, price). Runs on
+     * wp_after_insert_post: after every save_post callback has saved its part —
+     * WooCommerce's prices, and a scientific name written into the short
+     * description by another plugin's box (FisHotel Misc's Fish essentials) — so
+     * one save files the fish under its new name and price, not the ones from
+     * before the save (until 10.37 it ran on save_post_product, ahead of them all).
+     */
+    public function sync_wc_to_master( $post_id, $post, $update = true ) {
         if ( wp_is_post_revision( $post_id ) ) return;
-        if ( $post->post_type !== 'product' ) return;
+        if ( ! is_object( $post ) || $post->post_type !== 'product' ) return;
 
         $categories = wp_get_post_terms( $post_id, 'product_cat', [ 'fields' => 'slugs' ] );
         if ( ! in_array( 'quarantined-fish', $categories ) ) return;
