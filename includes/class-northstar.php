@@ -580,6 +580,7 @@ trait FisHotel_NorthStar {
 
     public function northstar_stock_html() {
         if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
+        $this->fishotel_enqueue_us_dates(); // "Last fetched" reads MM-DD-YY after a fetch too
 
         // Auto-fix orphaned fish_batch posts missing _batch_name or _master_id meta
         $orphan_count = 0;
@@ -670,7 +671,7 @@ trait FisHotel_NorthStar {
         <div id="ns-results" style="background:#1e1e1e;border:1px solid #444;border-radius:8px;padding:25px;margin-bottom:20px;<?php echo empty( $cached_products ) ? 'display:none;' : ''; ?>">
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px;">
                 <h2 style="color:#fff;font-size:18px;margin:0;">Results</h2>
-                <span id="ns-fetched-at" style="color:#888;font-size:13px;"><?php echo $fetched_at ? 'Last fetched: ' . esc_html( $fetched_at ) : ''; ?></span>
+                <span id="ns-fetched-at" style="color:#888;font-size:13px;"><?php echo $fetched_at ? 'Last fetched: ' . esc_html( FisHotel_US_Dates::show_datetime( $fetched_at ) ) : ''; ?></span>
                 <button type="button" id="ns-refresh-btn" style="background:#2a2a2a;color:#2986cc;border:1px solid #555;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:13px;margin-left:auto;">Refresh</button>
             </div>
             <!-- Persistent partial-fetch warning (filled from the cache on load, updated after each fetch) -->
@@ -719,6 +720,8 @@ trait FisHotel_NorthStar {
             var products = <?php echo wp_json_encode( $cached_products ); ?>;
             var ajaxUrl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
             var nonce = '<?php echo esc_js( $nonce ); ?>';
+            // What a person reads is month-day-year (assists/us-dates.js); the reply itself keeps the stored form.
+            function fhUsDateTime(stored) { var h = window.FisHotelUSDates; return h ? h.showDateTime(stored) : stored; }
 
             // ─── Category controls ──────────────────────────
             document.getElementById('ns-select-all').addEventListener('click', function(){
@@ -835,7 +838,7 @@ trait FisHotel_NorthStar {
 
                         if ( res.success ) {
                             products = res.data.products;
-                            document.getElementById('ns-fetched-at').textContent = 'Last fetched: ' + res.data.fetched_at;
+                            document.getElementById('ns-fetched-at').textContent = 'Last fetched: ' + fhUsDateTime(res.data.fetched_at);
                             document.getElementById('ns-results').style.display = '';
                             document.getElementById('ns-import-section').style.display = '';
                             renderTable();

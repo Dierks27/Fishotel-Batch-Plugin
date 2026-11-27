@@ -71,4 +71,13 @@ trait FisHotel_Helpers {
         update_user_meta( $user_id, '_fishotel_deposit_balance', $current + $amount );
     }
 
+    /**
+     * Load assists/us-dates.js (window.FisHotelUSDates) on the wp-admin page
+     * being drawn: the browser's twin of FisHotel_US_Dates, for a page whose own
+     * script shows a date. Called while the page renders, so it lands in the footer.
+     */
+    private function fishotel_enqueue_us_dates() {
+        wp_enqueue_script( 'fishotel-us-dates', plugins_url( 'assists/us-dates.js', FISHOTEL_PLUGIN_FILE ), [], FISHOTEL_VERSION, true );
+    }
+
 }

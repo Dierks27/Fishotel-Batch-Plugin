@@ -317,6 +317,7 @@ trait FisHotel_Admin {
 
     public function shipping_html() {
         if ( ! current_user_can( 'manage_options' ) ) wp_die( 'Access denied.' );
+        $this->fishotel_enqueue_us_dates(); // the Blocked Dates row just added reads MM-DD-YY
 
         // Handle save
         if ( isset( $_POST['fishotel_save_shipping'] ) && check_admin_referer( 'fishotel_save_shipping_nonce' ) ) {
@@ -401,7 +402,7 @@ trait FisHotel_Admin {
                             <th style="color:#ddd;vertical-align:top;padding-top:10px;">Block Specific Dates</th>
                             <td>
                                 <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
-                                    <input type="date" id="fh-bl-datepicker" style="padding:5px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">
+                                    <input type="date" id="fh-bl-datepicker" style="padding:5px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color-scheme:dark;color:#fff;">
                                     <button type="button" id="fh-bl-add" style="background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:6px 14px;font-size:12px;cursor:pointer;">+ Add Date</button>
                                 </div>
                                 <div id="fh-bl-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;">
@@ -488,6 +489,8 @@ trait FisHotel_Admin {
             var list    = document.getElementById('fh-bl-list');
             var empty   = document.getElementById('fh-bl-empty');
             var addVal  = document.getElementById('fh-bl-add-val');
+            // What a person reads is month-day-year (assists/us-dates.js); what is saved stays the calendar's own value.
+            function fhUsDate(ymd) { var h = window.FisHotelUSDates; return h ? h.show(ymd) : ymd; }
 
             addBtn.addEventListener('click', function(){
                 var d = dp.value;
@@ -501,7 +504,7 @@ trait FisHotel_Admin {
                 var label = document.createElement('span');
                 label.setAttribute('data-date', d);
                 label.style.cssText = 'color:#ddd;font-size:13px;';
-                label.textContent = d + ' (pending save)';
+                label.textContent = fhUsDate(d) + ' (pending save)';
                 var rmBtn = document.createElement('button');
                 rmBtn.type = 'button';
                 rmBtn.textContent = 'Remove';
@@ -877,15 +880,15 @@ trait FisHotel_Admin {
                                     </div>
                                     <div>
                                         <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Closed Date</label>
-                                        <input type="date" name="closed_date_<?php echo $key; ?>" value="<?php echo esc_attr( $closed_date ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:140px;">
+                                        <input type="date" name="closed_date_<?php echo $key; ?>" value="<?php echo esc_attr( $closed_date ); ?>" style="background:#2a2a2a;color-scheme:dark;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:140px;">
                                     </div>
                                     <div>
                                         <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Close Time</label>
-                                        <input type="time" name="closed_time_<?php echo $key; ?>" value="<?php echo esc_attr( $closed_time_val ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:100px;">
+                                        <input type="time" name="closed_time_<?php echo $key; ?>" value="<?php echo esc_attr( $closed_time_val ); ?>" style="background:#2a2a2a;color-scheme:dark;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:100px;">
                                     </div>
                                     <div>
                                         <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Arrival Date</label>
-                                        <input type="date" name="arrival_date_<?php echo $key; ?>" value="<?php echo esc_attr( $arrival_date ); ?>" style="background:#2a2a2a;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:140px;">
+                                        <input type="date" name="arrival_date_<?php echo $key; ?>" value="<?php echo esc_attr( $arrival_date ); ?>" style="background:#2a2a2a;color-scheme:dark;border:1px solid #555;color:#fff;padding:5px 8px;border-radius:4px;width:140px;">
                                     </div>
                                     <div>
                                         <label style="display:block;color:#aaa;font-size:12px;margin-bottom:4px;">Preview Day</label>
@@ -1730,7 +1733,7 @@ trait FisHotel_Admin {
                                 <td><?php echo esc_html( $humble_username ?: 'Not set' ); ?></td>
                                 <td><strong><?php echo esc_html( $batch_name ); ?></strong></td>
                                 <td>$<?php echo number_format( $total, 2 ); ?></td>
-                                <td><?php echo esc_html( $req->post_date ); ?></td>
+                                <td><?php echo esc_html( FisHotel_US_Dates::show_datetime( $req->post_date ) ); ?></td>
                                 <td><?php echo $paid_html; ?></td>
                                 <td style="white-space:nowrap;">
                                     <a href="<?php echo admin_url( 'post.php?post=' . $req->ID . '&action=edit' ); ?>" class="button button-small" style="background:#3498db;color:#fff;" title="View Fish">View</a>
@@ -4196,7 +4199,7 @@ trait FisHotel_Admin {
         echo '<input type="hidden" name="batch_name" value="' . esc_attr( $selected ) . '">';
         echo '<label style="color:#aaa;font-size:13px;">Deadline:</label>';
         $dl_val = $lc_deadline ? date( 'Y-m-d\TH:i', $lc_deadline ) : '';
-        echo '<input type="datetime-local" name="lc_deadline" value="' . esc_attr( $dl_val ) . '" style="padding:5px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">';
+        echo '<input type="datetime-local" name="lc_deadline" value="' . esc_attr( $dl_val ) . '" style="padding:5px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color-scheme:dark;color:#fff;">';
         echo '<label style="color:#aaa;font-size:13px;margin-left:12px;">Rounds:</label>';
         echo '<input type="number" name="lc_rounds" value="' . esc_attr( $lc_rounds_val ) . '" min="1" max="10" style="width:60px;padding:5px 8px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">';
         echo '<button type="submit" style="background:#444;color:#ddd;border:1px solid #666;border-radius:4px;padding:6px 16px;font-size:12px;cursor:pointer;">Save</button>';
@@ -5399,7 +5402,7 @@ trait FisHotel_Admin {
             <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px;">
                 <div>
                     <label for="fh-sd-date" style="color:#aaa;font-size:12px;display:block;margin-bottom:4px;">Delivery Date</label>
-                    <input type="date" id="fh-sd-date" value="<?php echo esc_attr( $sd_default ); ?>" style="padding:7px 10px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color:#fff;">
+                    <input type="date" id="fh-sd-date" value="<?php echo esc_attr( $sd_default ); ?>" style="padding:7px 10px;border-radius:4px;border:1px solid #555;background:#2a2a2a;color-scheme:dark;color:#fff;">
                 </div>
                 <label style="color:#ddd;font-size:13px;display:flex;align-items:center;gap:6px;padding-bottom:8px;">
                     <input type="checkbox" id="fh-sd-slips" value="1"> Also print per-order packing slips

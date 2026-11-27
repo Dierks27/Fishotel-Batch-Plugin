@@ -16,6 +16,7 @@ define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-helpers.php';
+require_once FISHOTEL_PLUGIN_DIR . 'includes/class-us-dates.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-delivery-rules.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-order-meta.php';
 require_once FISHOTEL_PLUGIN_DIR . 'includes/class-selling-price.php';

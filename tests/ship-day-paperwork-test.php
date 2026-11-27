@@ -579,7 +579,7 @@ $GLOBALS['fh_can'] = true;
 check( 'without the Ship Day page\'s capability: refused', $reply && ! $reply->ok );
 $_POST = [ 'nonce' => 'nonce-fishotel_ship_day_paperwork', 'delivery_date' => 'soon' ];
 $reply = fh_json( [ $host, 'ajax_ship_day_paperwork' ] );
-check( 'a bad date: a plain error', $reply && ! $reply->ok && 'Pick a valid delivery date (Y-m-d).' === $reply->data['message'] );
+check( 'a bad date: a plain error', $reply && ! $reply->ok && 'Pick a valid delivery date.' === $reply->data['message'] );
 
 section( 'settings form: capability, nonce, saved, back to Ship Day' );
 $GLOBALS['fh_options'] = [];

@@ -581,7 +581,7 @@ trait FisHotel_WooCommerce {
             return;
         }
         $order->add_order_note(
-            'FISHOTEL NOTICE (' . $context . '): delivery date ' . $date . ' breaks a delivery rule — '
+            'FISHOTEL NOTICE (' . $context . '): delivery date ' . FisHotel_US_Dates::show( $date ) . ' breaks a delivery rule — '
             . $why['message'] . ' Left as-is; review before packing.'
         );
     }
@@ -866,7 +866,7 @@ trait FisHotel_WooCommerce {
         if ( $date ) {
             $rules  = fishotel_delivery_rules();
             $pretty = $rules->format_label( $date );
-            echo '<br><span style="color:#999;font-size:12px;">' . esc_html( '' !== $pretty ? $pretty : $date ) . '</span>';
+            echo '<br><span style="color:#999;font-size:12px;">' . esc_html( '' !== $pretty ? $pretty : FisHotel_US_Dates::show( $date ) ) . '</span>';
 
             // Admin override is allowed (any Y-m-d saves), but say when the date
             // itself is one we cannot deliver on (closed weekday, blocked date, or
@@ -925,7 +925,7 @@ trait FisHotel_WooCommerce {
                 $why = fishotel_delivery_rules()->why_not( $date, null, false );
                 if ( FisHotel_Delivery_Rules::CODE_OK !== $why['code'] ) {
                     $order->add_order_note(
-                        'FISHOTEL NOTICE (admin override): delivery date set to ' . $date . ', which breaks a delivery rule — '
+                        'FISHOTEL NOTICE (admin override): delivery date set to ' . FisHotel_US_Dates::show( $date ) . ', which breaks a delivery rule — '
                         . $why['message'] . ' Saved as entered.'
                     );
                 }

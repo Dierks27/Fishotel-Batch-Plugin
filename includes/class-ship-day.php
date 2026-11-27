@@ -1444,7 +1444,7 @@ class FisHotel_Ship_Day {
     public static function render( $ymd, $include_slips = false ) {
         $ymd = trim( (string) $ymd );
         if ( ! self::is_ymd( $ymd ) ) {
-            return new WP_Error( 'fishotel_ship_day_date', 'Pick a valid delivery date (Y-m-d).' );
+            return new WP_Error( 'fishotel_ship_day_date', 'Pick a valid delivery date.' );
         }
         if ( ! function_exists( 'wc_get_orders' ) ) {
             return new WP_Error( 'fishotel_ship_day_wc', 'WooCommerce is not active.' );
