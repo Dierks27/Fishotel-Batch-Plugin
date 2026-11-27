@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       FisHotel Batch Manager
- * Description:       v10.37 - FisHotel Selling Price box gone from the product screen; saved only when posted and follows Regular price (an old different one kept as a copy); Master Fish gets the new price and scientific name on the same save
- * Version:           10.37
+ * Description:       v10.38 - Dates read month-day-year (11-27-26) in wp-admin and order notes: the Blocked Dates row just added, delivery-date order notes, the Deposits table, Supplier Stock "Last fetched"; every date is picked from a calendar; stored dates are unchanged
+ * Version:           10.38
  * Author:            Dierks & Claude
  * Text Domain:       fishotel-batch-manager
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'FISHOTEL_VERSION', '10.37' );
+define( 'FISHOTEL_VERSION', '10.38' );
 define( 'FISHOTEL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FISHOTEL_PLUGIN_FILE', __FILE__ );
 
